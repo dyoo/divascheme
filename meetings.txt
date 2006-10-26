@@ -1,0 +1,111 @@
+Reports on meetings and semantics decision
+""""""""""""""""""""""""""""""""""""""""""
+
+* July the 20th
+
+Meeting to clear the semantic of CLOSE and POP.
+-> CLOSE
+    debate between the usual semantics and the Guillaume's one.
+
+   the usual semantics
+       close the current ellipsis template
+       i.e. delete the current place-holders and ellipsis.
+     examples -> CLOSE("*$name$* ---") = "**" 
+              -> CLOSE("*$name$*") = "*$name$*"
+              -> CLOSE("$a$ --- $b$ *$c$* --- 67 $d$") = "$a$ --- $b$ 67 *$d$*"
+	      -> CLOSE("$a$ *---*") = "$a$ *---*"
+
+   the Guillaume's one
+       delete all the placeholders and the ellipsis from the current position until the end of the expression,
+       and then clean up all the remaining silly ellipsis.
+     examples -> CLOSE("*$name$* ---") = "**"
+              -> CLOSE("*$name$*") = "**"
+              -> CLOSE("$a$ --- $b$ *$c$* --- 67 $d$") = "$a$ --- $b$ **67"
+	      -> CLOSE("$a$ *---*") = "$a$**"
+
+    What was reproached is that can drive to incorrect syntax form, like this one:
+       (let ([a *$expression$*][$name$ $expression$] ---) $body$ ---)
+     ===> Guillaume's CLOSE
+       (let ([a][*$name$* $expression$] ---) $body$ ---)
+    Guillaume argued on the point that from thirty years of doing editor
+    which prevents you from typing incorrect syntax form,
+    we now have big difficulties to go from one point to another one.
+
+    The Guillaume's form was accepted as the new one.
+
+
+-> POP
+    We started on this point:
+     POP of (let ([x 1]
+                  [y 4]
+                  [z *$expression$*]
+                  [$name$ $expression$] ---)
+               (+ x (* y y))
+               $body$ ---)
+
+    gave  (let ([x 1]
+                [y 4]
+                [z (+ x (* y y))]
+                [*$name$* $expression$] ---)
+              $body$ ---)
+ 
+    and that was good.
+    But what for this:
+     POP of (let ([x *1*]
+                  [y 4]
+                  [z $expression$]
+                  [$name$ $expression$] ---)
+               (+ x (* y y))
+               $body$ ---)
+	       
+    POP replaced 1 by [y 4], which is not very expected, instead of (+ x (* y y))
+    The purpose was to get easily this expression. We have the commands
+     POP NEXT
+    or
+     POP +
+    
+    Kathy introduced the idea of a second selection: the mark.
+    So we have two current expressions: 
+     - the usual one, which is the end of the operation
+     - the mark, which is the start of the operation
+    For instance, in that example, we should say
+     MARK +
+     POP
+
+-> MARK    
+    So MARK is a new command.
+    MARK is a selection, a search, but whose result is kept for the next operation.
+    This creates a second selection, different of the main one, which live is 
+    independant of the current selection and the cursor position.
+    MARK replaces the FORWARD and BACK commands.
+    Thus we can navigate around the matches.
+    The metric of MARK is the FIND one, i.e. it looks forward only.
+    Becareful, we have a mark to manipulate start of POP, 
+    but MARK and POP do not have the same metric.
+    So FORWARD and NEXT would not have the same metric.
+
+-> UNMARK
+    This command unmark the current mark.
+
+-> PUSH 
+    Guillaume suggested also a new command: PUSH.
+    POP replaced the current selection with the marked text.
+    POP replaced the marked text with the current selection.
+    This was not accepted.
+
+-> PRETTY PRINT
+    The problem of the pretty print was also exhibited.
+    The pretty function in the library does not insert newline
+    and removes square brackets.
+    Guillaume had the idea of a line pretty-print: 
+    remove all the extra spaces.
+    ==> refused because impossible to do with problems 
+        like multiple lines string.
+    Shriram adviced to take more care of the insertion and deletion.
+    No decision taken.
+    On the TODO list.
+
+
+
+
+

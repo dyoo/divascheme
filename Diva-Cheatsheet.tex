@@ -1,0 +1,150 @@
+\documentclass[landscape,twocolumn,letterpaper]{article}
+\begin{document}
+
+
+{\bf DivaScheme Editing Commands}
+
+\begin{tabular}{|l|l|} \hline
+       x &           cut \\ \hline
+       c    &        copy \\ \hline
+       v       &     paste \\ \hline
+       d         &   delete \\ \hline
+       u           & undo \\ \hline
+       y            &redo \\ \hline
+       t            & transpose sexp \\ \hline
+       J	    & join lines \\ \hline
+	~ & ~ \\ \hline 
+       i	    & go to insert mode \\ \hline
+    (, [	    & open parenthesis \\ \hline
+       \{   & open square brace \\ \hline
+    ), ], or \} &	    close parenthesis \\ \hline
+\end{tabular}    
+
+~ \\
+  
+{\bf DivaScheme Inserting Commands}
+
+\begin{tabular}{|l|l|} \hline
+      esc	&    return to command mode \\ \hline
+     ctrl-c	 &   cancel insertion \\ \hline
+    (, [	   &  open parenthesis \\ \hline
+       \{	   &  open square brace \\ \hline
+    ), ], or \}	 &    close parenthesis \\ \hline
+ 	~ & ~ \\ \hline
+     alt-/	&    auto-completion (Emacs' style) \\ \hline
+     alt-?       &   pass to the next template \\ \hline
+\end{tabular} 
+
+~ \\
+
+~ \\ 
+
+~ \\
+
+{\bf DivaScheme Moving Commands}
+
+\begin{tabular}{|l|l|} \hline
+     arrows  &       standard character-based motion \\ \hline
+ ~ & ~  \\ \hline
+       h          &  previous sexp \\ \hline
+       j	    & in, move to the first (enclosed) sub-sexp \\ \hline
+       k	    & out, move to enclosing sexp \\ \hline
+       l	   & next sexp	       \\ \hline
+ ~ & ~ \\ \hline
+       a          & move to previous sibling
+       e          & move to next sibling
+ ~ & ~ \\ \hline
+     ctrl-h	&    move to the nearest placeholder \\ \hline
+       z	   & return to the previous position (undoing if necessary) \\ \hline
+ ~ & ~ \\ \hline
+       H	&    move before the current expression, go to insert mode \\ \hline
+       L	 &   move after the current expression, go to insert mode \\ \hline
+\end{tabular} 
+
+~ \\
+
+{\bf DivaScheme Searching Commands }
+
+ \begin{tabular}{|l|l|} \hline
+       s	 &   select the nearest match\\ \hline
+       f	  &  search forward \\ \hline
+       r	  &  search backward\\ \hline
+       <&	    search from the top of the file\\ \hline
+       >	&    search from the bottom of the file\\ \hline
+ ~ & ~ \\ \hline
+       n&	    skip to the next match\\ \hline
+       p	&    skip to the previous match\\ \hline
+\end{tabular} 
+
+~ \\
+ 
+ 
+ 
+{\bf DivaScheme Rearranging Commands }
+
+\begin{tabular}{|l|l|} \hline
+       m&	    mark this\\ \hline
+       b	&    bring here\\ \hline
+       B	&    put there\\ \hline
+       M	&    unmark\\ \hline
+       X	&    exchange the selection and the mark\\ \hline
+\end{tabular} 
+
+~ \\
+  
+  \newpage
+ 
+{\bf DivaScheme Voicing Commands}
+
+\begin{tabular}{|l|l|} \hline
+       x    &        cut\\ \hline
+       c    &        copy\\ \hline
+       v     &       paste\\ \hline
+       d    &        delete\\ \hline
+       u    &        undo\\ \hline
+       y    &        redo\\ \hline
+       t    &        transpose\\ \hline
+       J	  &  join\\ \hline
+ ~ & ~ \\ \hline
+    (, [	  &  open\\ \hline
+       \{	&    open square\\ \hline
+    ), ], or \}	 &   close\\ \hline
+ ~ & ~ \\ \hline
+     alt-/	&    magic\\ \hline
+     alt-?   &       pass\\ \hline
+ ~ & ~ \\ \hline
+       h      &      backward\\ \hline
+       j	 &  in\\ \hline
+       k	  &  out\\ \hline
+       l	 &   forward\\ \hline
+ ~ & ~ \\ \hline
+       a         &   younger
+       e         &   older
+~ & ~ \\ \hline
+     ctrl-h	&    holder\\ \hline
+       z	  &  cancel\\ \hline
+\end{tabular}       
+\begin{tabular}{|l|l|} \hline
+       H	&    insert before this\\ \hline
+       L&	    insert after this\\ \hline
+       s	  &  select\\ \hline
+       f	 &   search forward \\ \hline
+       r	 &   search backward\\ \hline
+       >	&    search top\\ \hline
+       <	&    search bottom\\ \hline
+ ~ & ~ \\ \hline
+       n	&    next\\ \hline
+       p	&    previous\\ \hline
+       m&	    mark\\ \hline
+       b	&    bring\\ \hline
+       B	&    put\\ \hline
+       M	&    unmark\\ \hline
+       X	&    exchange\\ \hline
+ ~ & ~ \\ \hline
+       enter	 &   enter\\ \hline
+ \end{tabular} 
+
+~ \\
+ 
+  \end{document}
+

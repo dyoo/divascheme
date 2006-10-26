@@ -1,0 +1,130 @@
+% -*- compile-command: "latex \\\\nonstopmode\\\\input cheatsheet.tex && dvips -t landscape cheatsheet.dvi" -*-
+\documentclass[landscape,letterpaper]{article}
+\usepackage{multicol}
+\oddsidemargin 0.0in
+\evensidemargin 0.0in
+\textwidth 10.0in
+\headheight 0.0in
+\topmargin 0.0in
+\textheight 5.5in
+
+
+\begin{document}
+
+\pagestyle{empty}
+
+\section*{DivaScheme Keybinding Cheatsheet}
+
+\begin{multicols}{2}
+
+\subsection*{Editing}
+\begin{tabular}{|l|l|} \hline
+       x &           cut \\ \hline
+       c    &        copy \\ \hline
+       v       &     paste \\ \hline
+       d         &   delete \\ \hline
+       u           & undo \\ \hline
+       y            &redo \\ \hline
+       t            & transpose sexp \\ \hline
+       o            & join lines \\ \hline
+        ~ & ~ \\ \hline 
+       r            & replace, go to insert mode \\ \hline
+       w            & edit symbol, go to insert mode \\ \hline       
+    (, [            & open parenthesis \\ \hline
+       \{   & open square brace \\ \hline
+    ), ], or \} &           close parenthesis \\ \hline
+        ~ & ~ \\ \hline 
+       F2     &      toggle the focus to and from the Diva Box  \\ \hline
+       F4     &     toggle DivaScheme on and off \\  \hline
+\end{tabular}    
+
+~ \\
+  
+\subsection*{In Insert Mode}
+\begin{tabular}{|l|l|} \hline
+      esc       &    return to command mode \\ \hline
+     ctrl-c      &   cancel insertion \\ \hline
+    (, [           &  open parenthesis \\ \hline
+       \{          &  open square brace \\ \hline
+    ), ], or \}  &    close parenthesis \\ \hline
+     alt-b       &    bring \\ \hline
+        ~ & ~ \\ \hline
+     tab        &    auto-completion \\ \hline
+     tab       &   pass to the next template \\ \hline
+\end{tabular} 
+
+\subsection*{Moving}
+\begin{tabular}{|l|l|} \hline
+       j          &  left, previous sexp \\ \hline
+       k            & down, move to the sexp below \\ \hline
+       i            & up, move to sexp above \\ \hline
+       l           & right, next sexp         \\ \hline
+       shift-K   &   out, move to enclosing sexp  \\ \hline
+       shift-H   &    move to the nearest placeholder \\ \hline
+       z           & return to the previous position (undoing if necessary) \\ \hline
+ ~ & ~ \\ \hline
+       h        &    move before the current expression, go to insert mode \\ \hline
+       ;         &   move after the current expression, go to insert mode \\ \hline
+\end{tabular} 
+
+\subsection*{Searching}
+ \begin{tabular}{|l|l|} \hline
+       s         &   select the nearest match\\ \hline
+       f          &  search forward \\ \hline
+       $<$        &   search from the top of the file\\ \hline
+       $>$        &   search from the bottom of the file\\ \hline
+ ~ & ~ \\ \hline
+       n       &     skip to the next match\\ \hline
+       p        &    skip to the previous match\\ \hline
+ ~ & ~ \\ \hline
+       .          &  jump to definition \\ \hline
+\end{tabular} 
+ 
+\subsection*{Rearranging}
+\begin{tabular}{|l|l|} \hline
+       m&           mark this\\ \hline
+       b        &    bring here\\ \hline
+       B        &    put there\\ \hline
+       M        &    unmark\\ \hline
+       X        &    exchange the selection and the mark\\ \hline
+\end{tabular} 
+\end{multicols}
+
+\newpage
+ 
+\subsection*{Voicing}
+\begin{tabular}{|c|c|c|c|c|} 
+ To obtain this command  & Say (or type) this word  & ~ &  To obtain this command  & Say (or type) this word \\
+ ~ & ~  & ~ & ~ & ~  \\
+       x    &        ``cut''    & \hspace{1in}  &       h    &       ``insert before this''  \\
+       c    &        ``copy''              & ~  &       ;&           ``insert after this''    \\
+       v     &       ``paste''             & ~  &       s         &  ``select''              \\
+       d    &        ``delete''            & ~  &       f        &   ``search forward''      \\
+       u    &        ``undo''              & ~  &       $>$       &    ``search top''          \\
+       y    &        ``redo''              & ~  &       $<$       &    ``search bottom''       \\
+       t    &        ``transpose''         & ~  &    ~ & ~                           \\    
+       o          &  ``join''              & ~  &    ~ & ~                           \\
+ ~ & ~                                 & ~  &           n       &    ``next''                \\
+    (, [          &  ``open''              & ~  &       p       &    ``previous''            \\
+       \{       &    ``open square''       & ~  &       m   &        ``mark''                 \\
+    ), ], or \}  &   ``close''             & ~  &       b       &    ``bring''               \\
+ ~ & ~                                 & ~  &           B   &        ``put''                 \\
+     tab        &    ``magic''             & ~  &       M       &    ``unmark''              \\
+     tab   &       ``pass''              & ~  &         X       &    ``exchange''            \\
+ ~ & ~                                 & ~  &   ~ & ~                             \\
+       j      &      ``backward''          & ~  &       enter    &   ``enter''               \\
+       k         &   ``down'' & ~ & ~ & ~              \\
+       i          &  ``up'' & ~ & ~ & ~  \\
+       l         &   ``forward'' & ~ & ~ & ~  \\
+ ~ & ~  & ~ & ~ & ~  \\
+       shift-K     &   ``out'' & ~ & ~ & ~ \\
+       shift-H     &    ``holder'' & ~ & ~ & ~  \\
+       z          &  ``cancel'' & ~ & ~ & ~
+\end{tabular}       
+
+
+
+
+ 
+\end{document}
+

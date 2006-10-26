@@ -1,0 +1,356 @@
+
+
+============================================================
+
+  _About DivaScheme_
+
+
+DivaScheme is an alternative set of key bindings for DrScheme. The
+keystrokes that navigates sexps are essential to Scheme programmers,
+but they are also very harsh on the wrists. The chord ctrl-alt-shift-f
+is hardly ergonomic. 
+
+DivaScheme is an alternative. When DivaScheme is on, the most important
+functions of DrScheme are available through unchorded keystrokes, and
+the motion commands operate on sexps by default. DivaScheme also takes cares
+of layout concerns. It automatically maintains the white spaces, the
+indentation, and the balance of the parentheses.
+
+Once installed, you can toggle DivaScheme on and off by pressing F4.
+Enabling DivaScheme sets the key bindings in the DrScheme
+editor window to DivaScheme's command mode.  We will discuss how to
+use DivaScheme's commands via key bindings.
+
+Like Vi, DivaScheme has a command mode and an insert mode. The command
+mode contains code-editing key bindings, and almost all of them are
+unchorded. These keys are bound in the DrScheme definitions editing
+window. DivaScheme key bindings override the normal DrScheme key
+bindings; at the times you need to use the normal key bindings of
+DrScheme, strike F4 to disable DivaScheme momentarily, then strike F4
+to bring DivaScheme back.
+
+
+ ,--------------------------------------------------------------------------------.
+ |                                                                                |
+ |    Table 1 : _DivaScheme Editing Commands_                                     |
+ |                                                                                |
+ |        key           command                                                   |
+ |                                                                                |
+ |         x            cut                                                       |
+ |         c            copy                                                      |
+ |         v            paste                                                     |
+ |         d            delete                                                    |
+ |         u            undo                                                      |
+ |         y            redo                                                      |
+ |         t            transpose sexp                                            |
+ |         o            join lines                                                |
+ |                                                                                |
+ |         r            replace, enter insert mode                                |
+ |         w            edit symbol, enter insert mode                            |
+ |                                                                                |
+ |         h            insert before the current expression, enter insert mode   |
+ |         ;            insert after the current expression, enter insert mode    |
+ |                                                                                |
+ |      (, [            open parenthesis, enter insert mode                       |
+ |         {            open square brace, enter insert mode                      |
+ |      ), ], or }      close parenthesis                                         |
+ |                                                                                |
+ |         F4           toggle DivaScheme on and off                              |
+ |                                                                                |
+ `--------------------------------------------------------------------------------'
+
+
+In DivaScheme, the _open_ command inserts both an opening and a
+closing parenthesis. This way, DivaScheme ensures that all parentheses
+in the program remain balanced. The _close_ command simply skips over
+the next closing parenthesis (as opposed to inserting an
+out-of-balance close parenthesis character).
+
+The _replace_, _edit_, _insert_, and _open_ commands switch to insert
+mode.  While in insert mode, keyboard keys insert characters instead
+of triggering commands, allowing the programmer to write the name of
+Scheme identifiers. The ESC key leaves insert mode and returns to the
+command mode. The CTRL-c key cancels the insert mode: it returns to
+the command mode undoing any inserts done.
+
+
+ ,---------------------------------------------------------.
+ |                                                         |
+ |    Table 2 : _DivaScheme Insert Mode Commands_          |
+ |                                                         |
+ |        key           command                            |
+ |                                                         |
+ |        esc           return to command mode             |
+ |   ctrl-c, ctrl-g     cancel insertion                   |
+ |      (, [            open parenthesis                   |
+ |         {            open square brace                  |
+ |      ), ], or }      close parenthesis                  |
+ |       alt-b          bring                              |
+ |                                                         |
+ |       tab            dynamic auto-completion            |
+ |                                                         |
+ `---------------------------------------------------------'
+
+
+
+.============================================================
+|
+|    _DivaScheme Tutorial #1 : Inserting Text_
+|
+|
+|  Using the command above, we can type a short Scheme expression:
+|
+|        In an empty DivaScheme command window, press the following keys:
+|
+|          [ * [ + space 1 space 2 ] esc a c shift-H v e ]
+|
+|        This will insert the expression:
+|
+|          (* (+ 1 2) (+ 1 2))
+|
+|  Let's go over this key by key.
+|
+|  Pressing "[" at the beginning of this sequence of keys builds
+|  a pair of parentheses, and enters the insert mode. We then type
+|  the multiplication and the first subexpression, and type ESC to
+|  exit the insert mode. We use the navigation commands and the 
+|  copy-paste commands of the command mode to copy the first
+|  subexpression. At this point the window contains this expression:
+|
+|          (* (+ 1 2) $expr$ ---)
+|                     ^
+|                     |
+|                     position of the cursor
+|
+|  The $expr$ is a _placeholder_. As we type, DivaScheme inserts
+|  stand-ins for expressions that need to be filled in. In this example,
+|  $expr$ is a placeholder for the subsequent arguments to multiply. The
+|  --- symbol signifies that zero, one, or more expressions can take
+|  place for $expr$. So, when we fill $expr$ another $expr$ placeholder
+|  appears to its right.
+|
+|  Using DivaScheme's motion commands, we can copy the first
+|  subexpression to the placeholder:
+|
+|         keys pressed                   result
+|
+|      [ * [ + space 1 space 2 ]         inserts the first subexpression
+|      esc                               returns to command mode
+|      a                                 moves to the previous s-expression,
+|                                        selects "(+ 1 2)"
+|      c                                 copies "(+ 1 2)" to the clipboard
+|      shift-H                           jumps to placeholder $expr$
+|
+|      v                                 paste "(+ 1 2)" onto the placeholder
+|                                        (a new placeholder appears)
+|
+|      e                                 moves to the next s-expression
+|
+|      ]                                 collapse the placeholder and
+|                                        skips over the closing parenthesis
+|
+|  The DrScheme window, now shows the expression we want:
+|
+|          (* (+ 1 2) (+ 1 2))
+|
+|
+`===========================================================
+
+
+DivaScheme has the following motion commands to move between sexps and
+between placeholders.
+
+
+ ,--------------------------------------------------------------------------------.
+ |                                                                                |
+ |    Table 3 : _DivaScheme Moving Commands_                                      |
+ |                                                                                |
+ |        key           command                                                   |
+ |                                                                                |
+ |       arrows         standard character-based motion                           |
+ |                                                                                |
+ |         a            previous sexp                                             |
+ |         e            next sexp                                                 |
+ |         i            up                                                        |
+ |         k            down                                                      |
+ |         j            left                                                      |
+ |         l            right                                                     |
+ |                                                                                |
+ |         space        extend, next motions will extend the selection            |
+ |                      (press space again to turn off)                           |
+ |                                                                                |
+ |         shift-K      out, move to enclosing sexp                               |
+ |         shift-H      move to the nearest placeholder                           |
+ |         z            return to the previous position (undoing if necessary)    |
+ |                                                                                |
+ |                                                                                |
+ `--------------------------------------------------------------------------------'
+
+The key "z" is bound to the command _cancel_, which acts as a
+fine-grained undo. It reverts changes made to the cursor position as
+well as changes to the text.
+
+
+DivaScheme supports navigation via searching. The searching commands
+only match prefixes of identifiers. They will not match characters in
+the middle of an identifier, and will not match words inside of
+comments. Searching selects the entire sexp whenever the search
+matches the first symbol in the sexp. To select the first symbol
+itself, execute the search then use the _forward_ command by pressing the
+"l" key.
+
+DivaScheme can also compute and jump to the difinition point of an 
+identifier. In the DivaScheme directory, you will find an
+executable "stags", short for Scheme Tags. This executable consumes
+the name of all the Scheme source files composing your project, as 
+a command line arguments. It will produce a file called STAGS in the current
+directory. Load this file by selecting "File/Load Navigation Tags" in the
+menus of the main window of DrScheme. Note that DivaScheme automatically 
+load the STAGS file in the current directory when DrScheme starts, if any.
+
+Once a tag file is loaded, use the "." key to jump to the definition
+point of an identifier. Also, the names mentioned in the tag file will be 
+considered as possible completions of identifier, when pressing the TAB key.
+
+ ,-------------------------------------------------------------.
+ |                                                             |
+ |    Table 4 : _DivaScheme Searching Commands_                |
+ |                                                             |
+ |        key           command                                |
+ |                                                             |
+ |         s            select the nearest match               |
+ |         f            search forward                         |
+ |         <            search from the top of the file        |
+ |         >            search from the bottom of the file     |
+ |                                                             |
+ |         n            skip to the next match                 |
+ |         p            skip to the previous match             |
+ |                                                             |
+ |         .            jump to definition                     |
+ |                                                             |
+ `-------------------------------------------------------------'
+
+
+DivaScheme has a set of commands for rearranging nearby subexpressions
+into a new expression.
+
+The "m" key marks the current expression. The currently marked
+expression is indicated with a orange highlight. The _bring_ command
+(or the "b" key) moves the currently marked expression to the cursor,
+then moves the mark to the next expression forward. This allows the
+programmer to bring multiple subsequent expressions in quick
+succession. Inversely, the _put_ command (on the shift-B key) sends
+the current expression to the mark, and moves the mark forward.
+Finally, the _exchange_ command switches the position of the
+cursor with that of the mark (and vice-versa). When using the command _bring_ and
+_put_, if no expression is currently marked, Divascheme gets the
+next expression on the right of the cursor, by default.
+
+
+Here is the summary of the rearranging command:
+
+
+ ,--------------------------------------------------------------.
+ |                                                              |
+ |     Table 5 : _DivaScheme Rearranging Commands_              |
+ |                                                              |
+ |        key           command                                 |
+ |                                                              |
+ |         m            mark this                               |
+ |         b            bring here                              |
+ |         shift-B      put there                               |
+ |         shift-M      unmark                                  |
+ |         shift-X      exchange the selection and the mark     |
+ |                                                              |
+ `--------------------------------------------------------------'
+
+
+
+.===========================================================
+|
+|    _DivaScheme Tutorial #2 : Rearranging Text_
+|
+|
+|  You can use the mark and the bring/put commands to rebuild an
+|  expression into a similar expression. For instance, we can rewrite a
+|  LET-LAMBDA into a DEFINE as follow:
+|
+|          Starting with this text:
+|
+|                  (let ([foo (lambda (x y) (+ x y))])
+|                    (foo 1 2))
+|
+|          we will transform the LET expression into this:
+|
+|                  (define foo 
+|                    (lambda (x y) (+ x y))
+|
+|                  (foo 1 2)
+|
+|          by typing these keys :
+|
+|            s l e t enter
+|            up-arrow
+|            enter up-arrow
+|            enter up-arrow     inserts two empty lines
+|            [                  opens a parenthesis, goes to insert mode
+|            d e f i n e space  inserts the define template
+|            esc                returns to command mode
+|
+|          The buffer now has a define s-expression, with the selection on $expr$.
+|
+|                  (define $expr$ ---)
+|
+|                  (let ([foo (lambda (x y) (+ x y))])
+|                    (foo 1 2))
+|
+|            m                  marks the placeholder $name$
+|            s f o o enter      selects "[foo (lambda (x y) (+ x y))]"
+|            l                  selects "foo"
+|            shift-B            moves the name "foo" to the define
+|            shift-B            moves the lambda expression into the define
+|            shift-H            selects the placeholder
+|            ]                  closes the argument placeholder
+|            s l a m enter      selects "(lambda)"
+|            enter              moves the lambda down one line
+|
+|          After these, the text looks like this:
+|
+|                  (define foo
+|                    (lambda (x y) (+ x y)))
+|
+|                  (let ([])
+|                    (foo 1 2))
+|
+|          Continuing:
+|
+|            s foo enter        selects the first foo definition
+|            n                  move to the next occurence of foo
+|            x                  cuts the foo application
+|            shift-K            selects the surrounding let
+|            v                  pastes the foo application
+|
+|          At the end of this command sequence, the resulting text is:
+|
+|                  (define foo
+|                    (lambda (x y) (+ x y)))
+|
+|                  (foo 1 2)
+|
+|          as we wanted.
+|
+`===========================================================
+
+
+
+============================================================
+
+  _Credits_
+
+
+DivaScheme was designed and implemented by Romain Legendre, Guillaume
+Marceau, Danny Yoo, Kathi Fisler and Shriram Krishnamurthi.  We thank
+Jay McCarthy for his help. Send comments and bug reports to dyoo@wpi.edu.
+
+
+                             "Your future dream is a shopping scheme."

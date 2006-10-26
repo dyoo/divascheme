@@ -1,0 +1,36 @@
+Subject: Announcing DivaScheme: semi-structured program editing
+
+                              DivaScheme
+         ...for times when you wish your doctor would listen
+
+
+DivaScheme is an alternative set of key bindings for DrScheme.  When
+DivaScheme is on, the most important functions of DrScheme are
+available through unchorded keystrokes, and the motion commands
+operate on sexps by default.  DivaScheme also automatically manages
+whitespace and balances parentheses.
+
+DivaScheme can be downloaded from:
+
+http://www.cs.brown.edu/research/plt/software/divascheme/
+
+DivaScheme was designed and implemented by Romain Legendre, Guillaume
+Marceau, Danny Yoo, Kathi Fisler and Shriram Krishnamurthi.  We thank
+Jay McCarthy for his help. Send comments and bug reports to
+dyoo@wpi.edu.
+
+Changes in this release:
+
+* Stripped out most template support in preparation for redesign
+* Stripped out Diva Box functionality in preparation for redesign
+* Added jump-to-def'n based on precomputed locations (a la ETAGS)
+* Reworked the motion keymap to use an inverted-T layout
+* Added a syntax flash on s-expression close
+* Improved performance and reduced garbage
+* Fixed miscellaneous bugs
+
+DivaScheme was designed and implemented by Guillaume Marceau, Danny
+Yoo, Romain Legendre, Kathi Fisler and Shriram Krishnamurthi.  We
+thank Jay McCarthy for his help.
+
+Send comments and bug reports to dyoo@wpi.edu.
