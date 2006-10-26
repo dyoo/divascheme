@@ -1,3 +1,86 @@
+dyoo 2006/10/26: I need to put all acccumlated bugs in a real bug
+tracker.  I'll list the ones that I've accumulated from others:
+
+
+Jon Rafkind:
+
+* it would be nice if shift-t would transpose the current sexp with the
+next sexp, as t transposes it with the previous one
+* hitting backspace when the current token is empty should go back to
+the last token and edit that instead. If I type "fo bar" and realize I
+meant "foo" I have to go back to command mode, move to 'fo' and edit it.
+It would be easier to hit backspace 3 times, erasing 'bar' and edit 'fo'
+directly.
+* pressing space on whitespace and then moving breaks divascheme with
+the error
+DivaScheme Error: #(struct:exn:fail:contract first: expected argument of
+type <non-empty list>; given #f #<continuation-mark-set>)
+first: expected argument of type <non-empty list>; given #f
+
+
+
+Matthias Felleisen:
+
+Did you read all the articles on structured editing from the 1980s?
+Also try to find some documentation on how to edit in Franz Lisp.
+P.S. Why don't you make it into a PLANET tool?
+
+
+
+
+Mark Haniford:
+
+I have a different problem with DivaScheme.  Sometimes after I've
+typed in a function and hit run, I'll get a "colorizer exception" and
+the editor is unusable so I have to restart Dr. Scheme
+
+
+
+Chris Warrington:
+
+Could the [ key insert the proper '(' or '[' depending on the context
+as the [ currently does now? For examples, using only the [ key, I can
+produce
+(cond [(zero? n) 1]
+      [else 0])
+With DivaScheme, I have to use { to get the '['.
+CTRL+C does not seem to work on Windows.
+The F5 key does not work in insert mode. I think that it should exit
+insert mode and run the definitions.
+
+
+David Cabana:
+
+I want to thank you and your team for DivaScheme. It is a very nice
+addition to an already outstanding product.  I have a question (of
+course). I use the Dvorak keyboard layout, so the i,j,k,l keys do not
+form an inverted T for me. Is there an easy way to remap these?  I
+looked at the code, but I am just a novice schemer. I could not see
+how to do it.
+
+
+
+Guillaume Marceau:
+
+sources on a public svn
+add an link to the high-res movie on the web page
+
+release via planet
+
+space-extend is broken
+
+I think ctrl-space should auto-complete too. Also, Eclipse
+auto-completes on space+space. Aka, space on an empty token
+auto-completes the previous token.
+
+the "backspace on empty token" idea is good
+
+
+
+
+;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+
+
 Mon Mar 27 03:50:11 2006  --- Guillaume
 
 - mark should disapear after edits (?)
