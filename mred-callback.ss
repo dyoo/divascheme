@@ -122,11 +122,11 @@
       
       (define/public (diva:-update-text text)
 	(dynamic-wind
-         (lambda () (freeze-colorer))
+         (lambda () (begin-edit-sequence))
          (lambda () (update-text text))
-         (lambda () (thaw-colorer false false))))
-
-
+         (lambda () (end-edit-sequence))))
+      
+      
       ;;
       ;; MARK STUFFS
       ;;
