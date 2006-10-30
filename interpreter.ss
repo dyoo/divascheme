@@ -67,7 +67,6 @@
                    [_ (copy-struct World world
                                    [World-again ast])])]
            [world (trim-undos world max-undo-count)])
-      
       (match ast
         [(struct Verb ((struct Command ('Open))    loc what))
          (eval-Open false world loc what 0 0 false 'Normal)]

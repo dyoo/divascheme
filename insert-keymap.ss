@@ -245,11 +245,17 @@
 
         
         (define (delete-backward)
-          (when (< left-edge-of-insert
-                   (send window get-start-position))
-            (send window delete)))
+          (cond
+            [(= left-edge-of-insert (send window get-start-position))
+             (void)
+             ;; not quite working yet
+             #;(eval-text&cmd 'Younger)
+               ]
+            [(< left-edge-of-insert
+                (send window get-start-position))
+             (send window delete)]))
         
-
+        
         (define (delete-forward)
           (when (< (send window get-start-position)
                    right-edge-of-insert)
@@ -400,6 +406,7 @@
           (set! this-insert-mode-exited? true))
         
         
+        ;; Returns a new event handler that can handle failure.
         (define-syntax (wrap-up stx)
           (syntax-case stx ()
             [(wrap-up fun ...)
@@ -411,18 +418,18 @@
             (dynamic-wind
              (lambda () (send window begin-edit-sequence))
              (lambda () 
-               (with-handlers ([voice-exn? (lambda (exn) 
+               (with-handlers ([voice-exn? (lambda (exn)
                                              (diva-message (voice-exn-message exn))
                                              (exit))])
                  (for-each (lambda (t) (t)) thunks)))
              (lambda () (send window end-edit-sequence)))))
-
+        
         
         (define (maybe-literal* c  . thunks)
           (if (in-something? (get-text-to-cursor))
               (send window insert c)
               (for-each (lambda (t) (t)) thunks)))
-
+        
         (define-syntax (maybe-literal stx)
           (syntax-case stx ()
             [(_ c e ...)
