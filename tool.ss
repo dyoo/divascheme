@@ -4,6 +4,7 @@
   (require (lib "unitsig.ss")
            (lib "tool.ss" "drscheme")
            (lib "framework.ss" "framework")
+           (lib "mred.ss" "mred")
            "language.ss" (lib "unitsig.ss")
 	   (lib "class.ss")
            "diva-panel.ss"
@@ -15,6 +16,25 @@
   (print-struct #t)
   
   (provide tool@)
+  
+
+  ;; We add a small menu option here for people who can't press F4.
+  (define (diva:menu-option-frame-mixin super%)
+    (class super%
+      (override file-menu:between-print-and-close)
+      (super-new)
+
+      (define (file-menu:between-print-and-close menu)
+        (super file-menu:between-print-and-close menu)
+        (new menu-item% 
+             [label "Enable/disable DivaScheme"]
+             [parent menu]
+             [callback 
+              (lambda (menu-item control-event)
+                (let ([defns
+                        (send (get-top-level-focus-window) 
+                              get-definitions-text)])
+                  (send defns toggle-divascheme)))]))))
   
   
   (define voice@
@@ -49,7 +69,8 @@
       
       (define (diva-frame-mixin super%)
         (diva-panel:frame-mixin 
-         (tag-gui-unit:frame-mixin super%)))
+         (tag-gui-unit:frame-mixin
+          (diva:menu-option-frame-mixin super%))))
       
       
       ;; Extension of DrScheme.

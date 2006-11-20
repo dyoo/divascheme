@@ -352,7 +352,7 @@
       
       
       
-      (define (toggle-divascheme)
+      (define/public (toggle-divascheme)
         (if (preferences:get 'divascheme:on?)
             (to-normal-mode)
             (to-command-mode)))

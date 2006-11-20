@@ -6,7 +6,7 @@
            "tag-reader.ss"
            "tag-state.ss")
 
-    
+
   ;; Adds the support necessary to load new tag files.
   ;; This adds a new menu to the File menu called "Load Navigation Tags".
   (provide tag-gui-unit:frame-mixin)
