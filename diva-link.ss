@@ -12,7 +12,8 @@
            "command-keymap.ss"
 	   "insert-keymap.ss"
 	   "structures.ss"
-           "utilities.ss")
+           "utilities.ss"
+           "diva-central.ss")
   
   (provide diva-link:canvas-mixin)
   (provide diva-link:text-mixin)
@@ -66,6 +67,7 @@
                begin-edit-sequence
                end-edit-sequence
 	       diva:-get-text       ;;  from mred-callback mixin
+               get-diva-central
                )
       
       (super-instantiate ())
@@ -352,17 +354,10 @@
       
       
       
-      (define/public (toggle-divascheme)
-        (if (preferences:get 'divascheme:on?)
-            (to-normal-mode)
-            (to-command-mode)))
-      
-      
-            
-      
       (define f4-keymap (new keymap:aug-keymap%))
       (send f4-keymap add-function "diva:toggle" 
-            (lambda (any event) (toggle-divascheme)))
+            (lambda (any event)
+              (send (get-diva-central) switch-toggle)))
       (send f4-keymap map-function "f4" "diva:toggle")
       
       
@@ -373,10 +368,12 @@
         (set-keymap dummy-head-keymap))
       
       
+      (define (handle-diva-central-event evt)
+        (match evt
+          [(struct diva-switch-on-evt ())
+           (to-command-mode)]
+          [(struct diva-switch-off-evt ())
+           (to-normal-mode)]
+          [else (void)]))
       
-      
-      (queue-callback
-       (lambda ()
-         (when (preferences:get 'divascheme:on?)
-           (to-command-mode)))
-       #f))))
+      (send (get-diva-central) add-listener handle-diva-central-event))))

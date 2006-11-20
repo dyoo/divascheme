@@ -11,6 +11,7 @@
            "diva-link.ss"
            "mred-callback.ss"
            "diva-central.ss"
+           "diva-file-menu.ss"
            (prefix marker: "marker.ss")
            "tag-gui.ss")
   (current-inspector oi)
@@ -19,23 +20,7 @@
   (provide tool@)
   
   
-  ;; We add a small menu option here for people who can't press F4.
-  (define (diva:menu-option-frame-mixin super%)
-    (class super%
-      (override file-menu:between-print-and-close)
-      (super-new)
-      
-      (define (file-menu:between-print-and-close menu)
-        (super file-menu:between-print-and-close menu)
-        (new menu-item% 
-             [label "Enable/Disable DivaScheme"]
-             [parent menu]
-             [callback 
-              (lambda (menu-item control-event)
-                (let ([defns
-                        (send (get-top-level-focus-window) 
-                              get-definitions-text)])
-                  (send defns toggle-divascheme)))]))))
+  
   
   
   (define voice@
@@ -55,10 +40,12 @@
       ;; Currently, each class - mixin - is overloaded twice: a panel overloading and a mred overloading.
       ;; The Panel overloading deals with input stuffs, with giving a command to DivaScheme: hitting F4, the DivaBox, etc..
       ;; The MrEd overloading deals with output stuffs, with the actions to be performed on the text according to the given commmand.
-
+      
+      
+      (define shared-diva-central (new diva-central%))
       
       (define (phase1)
-        (let ([diva-central-mixin (make-diva-central-mixin)])
+        (let ([diva-central-mixin (make-diva-central-mixin shared-diva-central)])
           
           (define (diva-definitions-canvas-mixin super%)
             (diva-link:canvas-mixin
@@ -84,7 +71,12 @@
           (preferences:set-default 'divascheme:on? #f boolean?)))
       
       
-      (define phase2 void)))
+      (define (phase2)
+        (queue-callback
+         (lambda ()
+           (when (preferences:get 'divascheme:on?)
+             (send shared-diva-central switch-on)))
+         #f))))
   
   
   (define tool@

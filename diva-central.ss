@@ -3,15 +3,21 @@
   ;; Central location for global divascheme actions, like toggling divascheme
   (require (lib "class.ss")
            (lib "list.ss"))
-  (provide make-diva-central-mixin)
+  
+  (provide diva-central%
+           make-diva-central-mixin
+           diva-switch-on-evt
+           diva-switch-off-evt)
+  
+  (define-struct diva-switch-on-evt ())
+  (define-struct diva-switch-off-evt ())
   
   
-  (define (make-diva-central-mixin)
-    (let ([shared-diva-central (new diva-central%)])
-      (lambda (super%)
-        (class super%
-          (super-new)
-          (define/public (get-diva-central) shared-diva-central)))))
+  (define (make-diva-central-mixin shared-diva-central)
+    (lambda (super%)
+      (class super%
+        (super-new)
+        (define/public (get-diva-central) shared-diva-central))))
   
   
   (define diva-central%
@@ -19,9 +25,23 @@
       (super-new)
       
       (define listeners empty)
+      (define divascheme-is-on? #f)
       
       (define/public (add-listener listener)
         (set! listeners (cons listener listeners)))
       
-      (define/public (notify event)
-        (for-each (lambda (l) (l event)) listeners)))))
+      (define (notify event)
+        (for-each (lambda (l) (l event)) listeners))
+      
+      (define/public (switch-toggle)
+        (cond
+          [divascheme-is-on? (switch-off)]
+          [else (switch-on)]))
+      
+      (define/public (switch-on)
+        (notify (make-diva-switch-on-evt))
+        (set! divascheme-is-on? #t))
+      
+      (define/public (switch-off)
+        (notify (make-diva-switch-off-evt))
+        (set! divascheme-is-on? #f)))))
