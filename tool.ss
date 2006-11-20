@@ -10,6 +10,7 @@
            "diva-panel.ss"
            "diva-link.ss"
            "mred-callback.ss"
+           "diva-central.ss"
            (prefix marker: "marker.ss")
            "tag-gui.ss")
   (current-inspector oi)
@@ -17,17 +18,17 @@
   
   (provide tool@)
   
-
+  
   ;; We add a small menu option here for people who can't press F4.
   (define (diva:menu-option-frame-mixin super%)
     (class super%
       (override file-menu:between-print-and-close)
       (super-new)
-
+      
       (define (file-menu:between-print-and-close menu)
         (super file-menu:between-print-and-close menu)
         (new menu-item% 
-             [label "Enable/disable DivaScheme"]
+             [label "Enable/Disable DivaScheme"]
              [parent menu]
              [callback 
               (lambda (menu-item control-event)
@@ -40,9 +41,6 @@
   (define voice@
     (unit/sig drscheme:tool-exports^
       (import drscheme:tool^)
-      
-      (define phase1 void)
-      (define phase2 void)
       
       ;; ~H~
       
@@ -58,27 +56,35 @@
       ;; The Panel overloading deals with input stuffs, with giving a command to DivaScheme: hitting F4, the DivaBox, etc..
       ;; The MrEd overloading deals with output stuffs, with the actions to be performed on the text according to the given commmand.
 
-      (define (diva-definitions-canvas-mixin super%)
-        (diva-link:canvas-mixin super%))
       
-      (define (diva-definitions-text-mixin super%)
-        (diva-link:text-mixin
-         keymap:remove-chained-keymap
-         (voice-mred-text-callback-mixin
-          (marker:marker-mixin super%))))
+      (define (phase1)
+        (let ([diva-central-mixin (make-diva-central-mixin)])
+          
+          (define (diva-definitions-canvas-mixin super%)
+            (diva-link:canvas-mixin
+             (diva-central-mixin super%)))
+          
+          (define (diva-definitions-text-mixin super%)
+            (diva-link:text-mixin
+             keymap:remove-chained-keymap
+             (voice-mred-text-callback-mixin
+              (marker:marker-mixin
+               (diva-central-mixin super%)))))
+          
+          (define (diva-frame-mixin super%)
+            (diva-panel:frame-mixin
+             (tag-gui-unit:frame-mixin
+              (diva:menu-option-frame-mixin
+               (diva-central-mixin super%)))))
+          
+          (drscheme:get/extend:extend-unit-frame diva-frame-mixin)
+          (drscheme:get/extend:extend-definitions-canvas diva-definitions-canvas-mixin)
+          (drscheme:get/extend:extend-definitions-text diva-definitions-text-mixin)
+          
+          (preferences:set-default 'divascheme:on? #f boolean?)))
       
-      (define (diva-frame-mixin super%)
-        (diva-panel:frame-mixin 
-         (tag-gui-unit:frame-mixin
-          (diva:menu-option-frame-mixin super%))))
       
-      
-      ;; Extension of DrScheme.
-      (drscheme:get/extend:extend-unit-frame          diva-frame-mixin)
-      (drscheme:get/extend:extend-definitions-canvas  diva-definitions-canvas-mixin)
-      (drscheme:get/extend:extend-definitions-text    diva-definitions-text-mixin)
-      
-      (preferences:set-default 'divascheme:on? #f boolean?)))
+      (define phase2 void)))
   
   
   (define tool@
