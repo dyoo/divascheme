@@ -80,7 +80,7 @@
       (define diva-label/message/question-panel
         (make-object voice-label/message/question-panel% diva-container-panel))
       
-      (define/public (diva-label label)
+      (define (diva-label label)
         (send diva-label/message/question-panel voice-label label))
       
       (define/public (diva-message message . args)
@@ -96,5 +96,9 @@
            (diva-show)]
           [(struct diva-switch-off-evt ())
            (diva-hide)]
+          [(struct diva-label-evt (label))
+           (diva-label label)]
           [else (void)]))
-      (send (get-diva-central) add-listener diva-central-handler))))
+      (send (get-diva-central) add-listener diva-central-handler)
+      (when (send (get-diva-central) diva-on?)
+        (diva-show)))))

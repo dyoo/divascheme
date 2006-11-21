@@ -6,11 +6,13 @@
   
   (provide diva-central%
            make-diva-central-mixin
-           diva-switch-on-evt
-           diva-switch-off-evt)
+           (struct diva-switch-on-evt ())
+           (struct diva-switch-off-evt ())
+           (struct diva-label-evt (label)))
   
   (define-struct diva-switch-on-evt ())
   (define-struct diva-switch-off-evt ())
+  (define-struct diva-label-evt (label))
   
   
   (define (make-diva-central-mixin shared-diva-central)
@@ -30,8 +32,12 @@
       (define/public (add-listener listener)
         (set! listeners (cons listener listeners)))
       
+      (define/public (remove-listener listener)
+        (set! listeners (remq listener listeners)))
+      
       (define (notify event)
-        (for-each (lambda (l) (l event)) listeners))
+        (for-each (lambda (l) (l event))
+                  listeners))
       
       (define/public (switch-toggle)
         (cond
@@ -40,6 +46,9 @@
       
       (define/public (diva-on?)
         divascheme-is-on?)
+      
+      (define/public (diva-label label)
+        (notify (make-diva-label-evt label)))
       
       (define/public (switch-on)
         (set! divascheme-is-on? #t)

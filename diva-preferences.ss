@@ -12,7 +12,8 @@
         [(struct diva-switch-on-evt ())
          (preferences:set 'divascheme:on? #t)]
         [(struct diva-switch-off-evt ())
-         (preferences:set 'divascheme:on? #f)]))
+         (preferences:set 'divascheme:on? #f)]
+        [else (void)]))
     (send diva-central add-listener handler))
   
   

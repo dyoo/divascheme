@@ -78,7 +78,7 @@
               (send command-keymap call-keyname (second m))
               (super do-paste start time))))
       
-      (define (diva-label label) (send (get-top-level-window) diva-label label))
+      (define (diva-label label) (send (get-diva-central) diva-label label))
       (define (diva-message msg)
         (when (get-top-level-window)
           (send (get-top-level-window) diva-message msg)))
@@ -375,4 +375,9 @@
            (to-normal-mode)]
           [else (void)]))
       
-      (send (get-diva-central) add-listener handle-diva-central-event))))
+      (send (get-diva-central) add-listener handle-diva-central-event)
+      
+      (when (send (get-diva-central) diva-on?)
+        (to-command-mode))
+      
+      )))
