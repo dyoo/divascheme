@@ -291,9 +291,8 @@
       ;;
       
       (define/public (to-normal-mode)
-        (preferences:set 'divascheme:on? #f)
         (keymap:remove-chained-keymap this command-keymap)
-        (send (get-top-level-window) diva-hide)
+        #;(send (get-top-level-window) diva-hide)
 	(diva-label false))
       
             
@@ -306,7 +305,7 @@
             #f
             (lambda ()
               (parse-syntax/dot (diva:-get-text)) ; checking if the text has a good Scheme syntax
-              (send (get-top-level-window) diva-show)
+              #;(send (get-top-level-window) diva-show)
               (diva-label "DivaScheme: insertion mode")
               (diva-message "")
               
@@ -342,7 +341,6 @@
                              (lambda (ast) (diva-ast-put/wait ast))))
       
       (define (to-command-mode)
-        (preferences:set 'divascheme:on? #t)
         (send (get-keymap) chain-to-keymap command-keymap #t)
         (with-divascheme-handlers
          #f
@@ -350,7 +348,8 @@
            ; checking if the text has a good Scheme syntax
            (parse-syntax/dot (diva:-get-text))))
         (when (get-top-level-window)
-          (send (get-top-level-window) diva-show))) 
+          (void)
+          #;(send (get-top-level-window) diva-show))) 
       
       
       

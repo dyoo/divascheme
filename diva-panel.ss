@@ -2,9 +2,11 @@
   (require (lib "etc.ss")
 	   (lib "list.ss")
            (lib "class.ss")
+           (lib "plt-match.ss")
            (lib "mred.ss" "mred")
            (lib "framework.ss" "framework")
-           "voice-message.ss")
+           "voice-message.ss"
+           "diva-central.ss")
   
   (provide diva-panel:frame-mixin)
   
@@ -43,32 +45,12 @@
       (inherit ;get-canvas
 	       ;caret-hidden? 
 	       ;blink-caret
+        get-diva-central
         get-area-container)
       
       (super-instantiate ())
 
-      (define diva-blinking-caret-thread false)
-      
-      #;(define (diva-start-blinking-caret)
-        (define blinking-time 0.6)
-        (define (blinking-loop)
-          (sleep blinking-time)
-          (blink-caret)
-          (blinking-loop))
-        (unless diva-blinking-caret-thread
-          (send (get-canvas) force-display-focus true)
-          (set! diva-blinking-caret-thread (thread blinking-loop))))
-      
-      #;(define (diva-stop-blinking-caret)
-        (when diva-blinking-caret-thread
-          (send (get-canvas) force-display-focus false)
-          (kill-thread diva-blinking-caret-thread)
-          (set! diva-blinking-caret-thread false)))
 
-      
-      ;; This function should be called between a `begin-container-sequence' and a `end-container-sequence'.
-      (public diva:-panel-setup)
-      (define (diva:-panel-setup) (void))
 
       
       (define area (get-area-container))
@@ -80,25 +62,19 @@
              [stretchable-height false]
              [stretchable-width true]))
       
-      (define/public (diva-displayed?)
+      (define (diva-displayed?)
         (member diva-container-panel (send area get-children)))
       
-      (define/public (diva-show)
+      (define (diva-show)
         (diva-label "DivaScheme: command mode")
         (diva-message "")
         (unless (diva-displayed?)
           (send area change-children (lambda (children) `(,@children ,diva-container-panel)))))
       
-      (define/public (diva-hide)
+      (define (diva-hide)
         (when (diva-displayed?)
-          #;(diva-stop-blinking-caret)
           (send area change-children (lambda (children) (remq diva-container-panel children)))))
-      
-      (define/public (diva-toggle)
-        (if (diva-displayed?)
-            (diva-hide)
-            (diva-show)))
-      
+            
       
       ;; The Voice Label, Message and Question Panel.
       (define diva-label/message/question-panel
@@ -113,6 +89,12 @@
       (define/public (diva-question question default cancel answer)
         (send diva-label/message/question-panel voice-question question default cancel answer))
       
-      (if (preferences:get 'divascheme:on?)
-          (diva-show)
-          (diva-hide)))))
+      
+      (define (diva-central-handler evt)
+        (match evt
+          [(struct diva-switch-on-evt ())
+           (diva-show)]
+          [(struct diva-switch-off-evt ())
+           (diva-hide)]
+          [else (void)]))
+      (send (get-diva-central) add-listener diva-central-handler))))

@@ -76,20 +76,18 @@
       (send voice-question-panel set-line-count 1)
       (send voice-label/message/question-panel min-height (+ 8 (send voice-question-panel min-height)))
       
-      (define voice-label-hide
-        (lambda ()
-          (send voice-label-panel min-width 0)
-          (send voice-label-panel show false)))
+      (define (voice-label-hide)
+        (send voice-label-panel min-width 0)
+        (send voice-label-panel show false))
       
-      (define voice-label-show
-        (lambda ()
-          (send voice-label-panel min-width 180)
-          (send voice-label-panel show true)))
+      (define (voice-label-show)
+        (send voice-label-panel min-width 180)
+        (send voice-label-panel show true))
 
-      (define voice-label-shown?
-        (lambda ()
-          (send voice-label-panel is-shown?)))
+      (define (voice-label-shown?)
+        (send voice-label-panel is-shown?))
 
+      
       (define/public (voice-label label)
         (if label
             (begin

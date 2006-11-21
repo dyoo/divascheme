@@ -12,6 +12,7 @@
            "mred-callback.ss"
            "diva-central.ss"
            "diva-file-menu.ss"
+           (prefix preferences: "diva-preferences.ss")
            (prefix marker: "marker.ss")
            "tag-gui.ss")
   (current-inspector oi)
@@ -68,7 +69,7 @@
           (drscheme:get/extend:extend-definitions-canvas diva-definitions-canvas-mixin)
           (drscheme:get/extend:extend-definitions-text diva-definitions-text-mixin)
           
-          (preferences:set-default 'divascheme:on? #f boolean?)))
+          (preferences:install-diva-central-handler shared-diva-central)))
       
       
       (define (phase2)

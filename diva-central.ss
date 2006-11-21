@@ -17,15 +17,15 @@
     (lambda (super%)
       (class super%
         (super-new)
-        (define/public (get-diva-central) shared-diva-central))))
+        (define/public (get-diva-central)
+          shared-diva-central))))
   
   
   (define diva-central%
-    (class object%
-      (super-new)
-      
+    (class object%      
       (define listeners empty)
       (define divascheme-is-on? #f)
+      (super-new)
       
       (define/public (add-listener listener)
         (set! listeners (cons listener listeners)))
@@ -39,9 +39,9 @@
           [else (switch-on)]))
       
       (define/public (switch-on)
-        (notify (make-diva-switch-on-evt))
-        (set! divascheme-is-on? #t))
+        (set! divascheme-is-on? #t)
+        (notify (make-diva-switch-on-evt)))
       
       (define/public (switch-off)
-        (notify (make-diva-switch-off-evt))
-        (set! divascheme-is-on? #f)))))
+        (set! divascheme-is-on? #f)
+        (notify (make-diva-switch-off-evt))))))
