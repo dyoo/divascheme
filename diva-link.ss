@@ -312,7 +312,7 @@
               (make-insert-mode this                                     ;; window
                                 (current-actions)                        ;; actions
                                 (lambda args (apply diva-message args))  ;; diva-message
-                                (lambda () (to-normal-mode))             ;; f4-callback
+                                (lambda () (send (get-diva-central) switch-off))             ;; f4-callback
                                 (lambda () (send this get-mred))         ;; get-world
                                 (lambda (world) (send this set-mred world)) ;; set-world
                                 set-on-loss-focus                        ;; set-on-loss-focus
@@ -337,7 +337,7 @@
                                                command))
                              diva-message
                              diva-question
-                             (lambda () (to-normal-mode))
+                             (lambda () (send (get-diva-central) switch-off))
                              (lambda (ast) (diva-ast-put/wait ast))))
       
       (define (to-command-mode)

@@ -38,6 +38,9 @@
           [divascheme-is-on? (switch-off)]
           [else (switch-on)]))
       
+      (define/public (diva-on?)
+        divascheme-is-on?)
+      
       (define/public (switch-on)
         (set! divascheme-is-on? #t)
         (notify (make-diva-switch-on-evt)))
