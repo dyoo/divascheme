@@ -54,7 +54,6 @@
           
           (define (diva-definitions-text-mixin super%)
             (diva-link:text-mixin
-             keymap:remove-chained-keymap
              (voice-mred-text-callback-mixin
               (marker:marker-mixin
                (diva-central-mixin super%)))))
@@ -75,7 +74,7 @@
       (define (phase2)
         (queue-callback
          (lambda ()
-           (when (preferences:get 'divascheme:on?)
+           (when (preferences:enable-on-startup?)
              (send shared-diva-central switch-on)))
          #f))))
   

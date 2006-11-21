@@ -3,7 +3,8 @@
            (lib "class.ss")
            (lib "framework.ss" "framework")
            "diva-central.ss")
-  (provide install-diva-central-handler)
+  (provide install-diva-central-handler
+           enable-on-startup?)
   
   (define (install-diva-central-handler diva-central)
     (define (handler evt)
@@ -15,4 +16,11 @@
     (send diva-central add-listener handler))
   
   
-  (preferences:set-default 'divascheme:on? #f boolean?))
+  (preferences:set-default 'divascheme:on? #f boolean?)
+
+  ;; enable-on-startup?: -> boolean
+  ;; Should return true if we should turn Divascheme on.
+  (define (enable-on-startup?)
+    (preferences:get 'divascheme:on?))
+  
+  )

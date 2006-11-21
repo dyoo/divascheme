@@ -58,7 +58,7 @@
   ;; Problem: when the object is created, `get-top-level-window' returns false,
   ;; that's why we should wait for the first hit on F4 on to set all the things.
   
-  (define (diva-link:text-mixin keymap:remove-chained-keymap super%)
+  (define (diva-link:text-mixin super%)
     (class super%
       (inherit get-top-level-window
                get-keymap
