@@ -53,14 +53,19 @@
         (send (get-definitions-text) to-normal-mode)
         (set! started? #f))
       
+      (define/augment (on-tab-change from-tab to-tab)
+        (inner (void) on-tab-change from-tab to-tab)
+        (when started?
+          (send (send from-tab get-defs) to-normal-mode)
+          (send (send to-tab get-defs) to-command-mode)))
+      
       (define (handle-diva-central-evt evt)
         (match evt
           [(struct diva-switch-on-evt ()) (startup)]
           [(struct diva-switch-off-evt ()) (shutdown)]
           [else (void)]))
       
-      (initialize)
-      (printf "diva-link:frame-mixin instantiated~n")))
+      (initialize)))
   
   
   
@@ -76,9 +81,7 @@
       (define/override (on-focus on?)
         (super on-focus on?)
         (unless on?
-          (send (get-editor) diva:-on-loss-focus)))
-      
-      (printf "diva-link:canvas-mixin instantiated~n")))
+          (send (get-editor) diva:-on-loss-focus)))))
   
   
   ;;
@@ -406,8 +409,4 @@
             [original-keymap (get-keymap)])
         (send dummy-head-keymap chain-to-keymap original-keymap #t)
         (send dummy-head-keymap chain-to-keymap f4-keymap #t)
-        (set-keymap dummy-head-keymap))
-      
-      
-      
-      (printf "diva-link:text-mixin instantiated~n"))))
+        (set-keymap dummy-head-keymap)))))

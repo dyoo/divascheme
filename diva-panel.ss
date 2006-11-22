@@ -70,7 +70,6 @@
         (when (diva-displayed?)
           (send area change-children (lambda (children) (remq diva-container-panel children)))))
             
-      
       ;; The Voice Label, Message and Question Panel.
       (define diva-label/message/question-panel
         (make-object voice-label/message/question-panel% diva-container-panel))
@@ -82,4 +81,7 @@
         (send/apply diva-label/message/question-panel voice-message message args))
       
       (define/public (diva-question question default cancel answer)
-        (send diva-label/message/question-panel voice-question question default cancel answer)))))
+        (send diva-label/message/question-panel voice-question question default cancel answer))
+      
+      ;; Initially, hide the panel.
+      (diva-panel-hide))))
