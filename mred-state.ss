@@ -104,21 +104,21 @@
         (parse-syntax/dot (get-text)))
       
       (define/public (update-text text)
-	(send window-text diva:-update-text text))
-
-
+        (send window-text diva:-update-text text))
+      
+      
       ;; STOP COLORING:          (send window-text freeze-colorer)
       ;; CONTINUE HARD COLORING: (send window-text thaw-colorer true true)
       ;; CONTINUE SOFT COLORING: (send window-text thaw-colorer false false)
       
-
+      
       ;;
       ;; CURSOR STUFFS
       ;;
-
+      
       (define/public (get-cursor-position)
         (index->pos (send window-text get-start-position)))
-
+      
       (define/public (set-cursor-position pos)
         (send window-text set-position (pos->index pos)))
 

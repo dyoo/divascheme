@@ -400,7 +400,7 @@
         (define (exit)
           (send window set-keymap previous-keymap)
           (clear-highlight)
-          (set-on-focus-lost void)
+          (set-on-focus-lost (lambda () (void)))
           (unset-insert&delete-callbacks)
           (post-exit-hook)
           (set! this-insert-mode-exited? true))

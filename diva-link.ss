@@ -18,6 +18,7 @@
   (provide diva-link:frame-mixin)
   (provide diva-link:canvas-mixin)
   (provide diva-link:text-mixin)
+  (provide diva-link:interactions-text-mixin)
   
   ;; This file is the file which links every parts of DivaScheme into one:
   ;;  - the infrastructure
@@ -403,7 +404,6 @@
            (parse-syntax/dot (diva:-get-text)))))
       
       
-      
       (define f4-keymap (new keymap:aug-keymap%))
       (send f4-keymap add-function "diva:toggle" 
             (lambda (any event)
@@ -418,4 +418,31 @@
                [original-keymap (get-keymap)])
            (send dummy-head-keymap chain-to-keymap original-keymap #t)
            (send dummy-head-keymap chain-to-keymap f4-keymap #t)
-           (set-keymap dummy-head-keymap)))))))
+           (set-keymap dummy-head-keymap))))))
+  
+  
+  (define (diva-link:interactions-text-mixin super%)
+    (class super%
+      (super-new)
+      (inherit get-start-position get-end-position submit-to-port?)
+
+      ;; The following is extremely ugly, but has to be done: whenever
+      ;; the user presses enter, framework/private/text.ss will call
+      ;; on-local-char and interpose an on-submit if we're sending
+      ;; something to the interaction repl.  We must turn insert mode off
+      ;; before that happens, or our state gets messed up.
+      (define/override (on-local-char key)
+        (let ([start (get-start-position)]
+              [end (get-end-position)]
+              [code (send key get-key-code)])
+          (cond
+            [(not (or (eq? code 'numpad-enter)
+                      (equal? code #\return)
+                      (equal? code #\newline)))
+             (super on-local-char key)]
+            [(and (= start end)
+                  (submit-to-port? key))
+             (send this diva:-on-loss-focus)
+             (super on-local-char key)]
+            [else
+             (super on-local-char key)]))))))

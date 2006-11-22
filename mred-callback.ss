@@ -178,8 +178,8 @@
 
       (inherit get-text)
 
-      (define annotations-length false)
-
+      (define annotations-length 3)
+      
       (define (get-annotations-length)
         annotations-length)
 
@@ -190,5 +190,10 @@
       (define/override (diva:-get-text)
         (let ([text (get-text)]
               [annotations-length (get-annotations-length)])
-          (diva-printf "TEXT2:~a~n" text)
-          (b (format "~a~n~n~n~a" (make-string (- annotations-length 3) #\space) (substring text annotations-length (string-length text)))))))))
+          
+          (cond
+            [(= 0 (string-length text)) text]
+            [else
+             (format "~a~n~n~n~a"
+                     (make-string (- annotations-length 3) #\space)
+                     (substring text annotations-length (string-length text)))]))))))
