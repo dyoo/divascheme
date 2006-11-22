@@ -1,6 +1,6 @@
 (module diva-central mzscheme
   
-  ;; Central location for global divascheme actions, like toggling divascheme
+  ;; Central location for triggering global divascheme on-off behavior.
   (require (lib "class.ss")
            (lib "list.ss"))
   
@@ -8,12 +8,10 @@
            make-diva-central-mixin
            (struct diva-switch-on-evt ())
            (struct diva-switch-off-evt ())
-           (struct diva-label-evt (label)))
+           #;(struct diva-label-evt (label)))
   
   (define-struct diva-switch-on-evt ())
-  (define-struct diva-switch-off-evt ())
-  (define-struct diva-label-evt (label))
-  
+  (define-struct diva-switch-off-evt ())  
   
   (define (make-diva-central-mixin shared-diva-central)
     (lambda (super%)
@@ -47,13 +45,10 @@
       (define/public (diva-on?)
         divascheme-is-on?)
       
-      (define/public (diva-label label)
-        (notify (make-diva-label-evt label)))
-      
       (define/public (switch-on)
-        (set! divascheme-is-on? #t)
-        (notify (make-diva-switch-on-evt)))
+        (notify (make-diva-switch-on-evt))
+        (set! divascheme-is-on? #t))
       
       (define/public (switch-off)
-        (set! divascheme-is-on? #f)
-        (notify (make-diva-switch-off-evt))))))
+        (notify (make-diva-switch-off-evt))
+        (set! divascheme-is-on? #f)))))

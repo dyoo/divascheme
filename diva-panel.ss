@@ -29,7 +29,6 @@
   ;; A work around of that is our overriding method can accept two arguments, 
   ;; but call the super one with only one.
   
-  ;; TODO : when leaving tab with DivaBox focus, when coming back the DivaBox should get the focus (not the definitions window as currently)
 
   ;; So what we want here is when we are switching from a tab to another one,
   ;; to save the current Diva-state of the window so that when we are coming back, the window is as we left it.
@@ -38,20 +37,16 @@
   ;;  * restore the Diva-state of the new content.
   ;; NB: we have to test if the previous edit and the new are not false because they can be so.
   ;;     for instance, when DrScheme starts, the canvas is made before the text, so the first value is false for the current edit.
-
- 
+  
   (define (diva-panel:frame-mixin super%)
     (class super%
       (inherit ;get-canvas
-	       ;caret-hidden? 
-	       ;blink-caret
+        ;caret-hidden? 
+        ;blink-caret
         get-diva-central
         get-area-container)
       
       (super-instantiate ())
-
-
-
       
       (define area (get-area-container))
       
@@ -65,13 +60,13 @@
       (define (diva-displayed?)
         (member diva-container-panel (send area get-children)))
       
-      (define (diva-show)
+      (define/public (diva-panel-show)
         (diva-label "DivaScheme: command mode")
         (diva-message "")
         (unless (diva-displayed?)
           (send area change-children (lambda (children) `(,@children ,diva-container-panel)))))
       
-      (define (diva-hide)
+      (define/public (diva-panel-hide)
         (when (diva-displayed?)
           (send area change-children (lambda (children) (remq diva-container-panel children)))))
             
@@ -80,25 +75,11 @@
       (define diva-label/message/question-panel
         (make-object voice-label/message/question-panel% diva-container-panel))
       
-      (define (diva-label label)
+      (define/public (diva-label label)
         (send diva-label/message/question-panel voice-label label))
       
       (define/public (diva-message message . args)
         (send/apply diva-label/message/question-panel voice-message message args))
       
       (define/public (diva-question question default cancel answer)
-        (send diva-label/message/question-panel voice-question question default cancel answer))
-      
-      
-      (define (diva-central-handler evt)
-        (match evt
-          [(struct diva-switch-on-evt ())
-           (diva-show)]
-          [(struct diva-switch-off-evt ())
-           (diva-hide)]
-          [(struct diva-label-evt (label))
-           (diva-label label)]
-          [else (void)]))
-      (send (get-diva-central) add-listener diva-central-handler)
-      (when (send (get-diva-central) diva-on?)
-        (diva-show)))))
+        (send diva-label/message/question-panel voice-question question default cancel answer)))))

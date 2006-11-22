@@ -15,6 +15,7 @@
            "utilities.ss"
            "diva-central.ss")
   
+  (provide diva-link:frame-mixin)
   (provide diva-link:canvas-mixin)
   (provide diva-link:text-mixin)
   
@@ -23,6 +24,45 @@
   ;;  - the different ways of input
   ;;  - the interpreter
   ;;  - and MrEd
+  
+  
+  
+  ;; This is the central location where we handle turning on and off DivaScheme
+  ;; for an individual frame.
+  (define (diva-link:frame-mixin super%)
+    (class super%
+      (inherit get-diva-central get-definitions-text)
+      (define started? #f)
+      (super-new)
+      
+      (define (initialize)
+        (send (get-diva-central) add-listener handle-diva-central-evt)
+        (queue-callback
+         (lambda ()
+           (when (and (send (get-diva-central) diva-on?)
+                      (not started?))
+             (startup)))))
+      
+      (define (startup)
+        (send this diva-panel-show)
+        (send (get-definitions-text) to-command-mode)
+        (set! started? #t))
+      
+      (define (shutdown)
+        (send this diva-panel-hide)
+        (send (get-definitions-text) to-normal-mode)
+        (set! started? #f))
+      
+      (define (handle-diva-central-evt evt)
+        (match evt
+          [(struct diva-switch-on-evt ()) (startup)]
+          [(struct diva-switch-off-evt ()) (shutdown)]
+          [else (void)]))
+      
+      (initialize)
+      (printf "diva-link:frame-mixin instantiated~n")))
+  
+  
   
   
   ;;
@@ -36,7 +76,9 @@
       (define/override (on-focus on?)
         (super on-focus on?)
         (unless on?
-          (send (get-editor) diva:-on-loss-focus)))))
+          (send (get-editor) diva:-on-loss-focus)))
+      
+      (printf "diva-link:canvas-mixin instantiated~n")))
   
   
   ;;
@@ -78,11 +120,15 @@
               (send command-keymap call-keyname (second m))
               (super do-paste start time))))
       
-      (define (diva-label label) (send (get-diva-central) diva-label label))
+      (define (diva-label label) 
+        (when (get-top-level-window)
+          (send (get-top-level-window) diva-label label)))
+      
       (define (diva-message msg)
         (when (get-top-level-window)
           (send (get-top-level-window) diva-message msg)))
-      (define (diva-question question default cancel answer) 
+      
+      (define (diva-question question default cancel answer)
         (send (get-top-level-window) diva-question question default cancel answer))
       
       
@@ -292,10 +338,9 @@
       
       (define/public (to-normal-mode)
         (keymap:remove-chained-keymap this command-keymap)
-        #;(send (get-top-level-window) diva-hide)
-	(diva-label false))
+        (diva-label false))
       
-            
+      
       ;; Insertion Mod
       (define to-insert-mode
         (case-lambda 
@@ -326,7 +371,7 @@
       
       
       ;; Command Mode
-      (define command-keymap 
+      (define command-keymap
         (make-command-keymap this
                              (lambda (edit?)
                                (to-insert-mode edit?
@@ -340,16 +385,13 @@
                              (lambda () (send (get-diva-central) switch-off))
                              (lambda (ast) (diva-ast-put/wait ast))))
       
-      (define (to-command-mode)
+      (define/public (to-command-mode)
         (send (get-keymap) chain-to-keymap command-keymap #t)
         (with-divascheme-handlers
          #f
          (lambda ()
            ; checking if the text has a good Scheme syntax
-           (parse-syntax/dot (diva:-get-text))))
-        (when (get-top-level-window)
-          (void)
-          #;(send (get-top-level-window) diva-show))) 
+           (parse-syntax/dot (diva:-get-text)))))
       
       
       
@@ -367,17 +409,5 @@
         (set-keymap dummy-head-keymap))
       
       
-      (define (handle-diva-central-event evt)
-        (match evt
-          [(struct diva-switch-on-evt ())
-           (to-command-mode)]
-          [(struct diva-switch-off-evt ())
-           (to-normal-mode)]
-          [else (void)]))
       
-      (send (get-diva-central) add-listener handle-diva-central-event)
-      
-      (when (send (get-diva-central) diva-on?)
-        (to-command-mode))
-      
-      )))
+      (printf "diva-link:text-mixin instantiated~n"))))

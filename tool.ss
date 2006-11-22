@@ -45,6 +45,13 @@
       (define (phase1)
         (let ([diva-central-mixin (make-diva-central-mixin shared-diva-central)])
           
+          (define (diva-frame-mixin super%)
+            (diva-link:frame-mixin
+             (diva-panel:frame-mixin
+              (tag-gui-unit:frame-mixin
+               (diva:menu-option-frame-mixin
+                (diva-central-mixin super%))))))
+          
           (define (diva-definitions-canvas-mixin super%)
             (diva-link:canvas-mixin
              (diva-central-mixin super%)))
@@ -53,12 +60,6 @@
             (diva-link:text-mixin
              (voice-mred-text-callback-mixin
               (marker:marker-mixin
-               (diva-central-mixin super%)))))
-          
-          (define (diva-frame-mixin super%)
-            (diva-panel:frame-mixin
-             (tag-gui-unit:frame-mixin
-              (diva:menu-option-frame-mixin
                (diva-central-mixin super%)))))
           
           (drscheme:get/extend:extend-unit-frame diva-frame-mixin)
