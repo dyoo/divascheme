@@ -54,7 +54,7 @@
       (define (shutdown)
         (send this diva-panel-hide)
         (send (get-definitions-text) to-normal-mode)
-        (send (get-interactions-text) to-normal-mode) 
+        (send (get-interactions-text) to-normal-mode)
         (set! started? #f))
       
       (define/augment (on-tab-change from-tab to-tab)
@@ -410,9 +410,12 @@
               (send (get-diva-central) switch-toggle)))
       (send f4-keymap map-function "f4" "diva:toggle")
       
-      
-      (let ([dummy-head-keymap (new keymap:aug-keymap%)]
-            [original-keymap (get-keymap)])
-        (send dummy-head-keymap chain-to-keymap original-keymap #t)
-        (send dummy-head-keymap chain-to-keymap f4-keymap #t)
-        (set-keymap dummy-head-keymap)))))
+      ;; We muck around with the keymap within queue-callback to avoid weird interactions
+      ;; with other tools.  Can we do better?
+      (queue-callback
+       (lambda ()
+         (let ([dummy-head-keymap (new keymap:aug-keymap%)]
+               [original-keymap (get-keymap)])
+           (send dummy-head-keymap chain-to-keymap original-keymap #t)
+           (send dummy-head-keymap chain-to-keymap f4-keymap #t)
+           (set-keymap dummy-head-keymap)))))))
