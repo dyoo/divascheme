@@ -31,7 +31,9 @@
   ;; for an individual frame.
   (define (diva-link:frame-mixin super%)
     (class super%
-      (inherit get-diva-central get-definitions-text)
+      (inherit get-diva-central
+               get-definitions-text
+               get-interactions-text)
       (define started? #f)
       (super-new)
       
@@ -46,18 +48,22 @@
       (define (startup)
         (send this diva-panel-show)
         (send (get-definitions-text) to-command-mode)
+        (send (get-interactions-text) to-command-mode)
         (set! started? #t))
       
       (define (shutdown)
         (send this diva-panel-hide)
         (send (get-definitions-text) to-normal-mode)
+        (send (get-interactions-text) to-normal-mode) 
         (set! started? #f))
       
       (define/augment (on-tab-change from-tab to-tab)
         (inner (void) on-tab-change from-tab to-tab)
         (when started?
           (send (send from-tab get-defs) to-normal-mode)
-          (send (send to-tab get-defs) to-command-mode)))
+          (send (send from-tab get-ints) to-normal-mode)
+          (send (send to-tab get-defs) to-command-mode)
+          (send (send to-tab get-ints) to-command-mode)))
       
       (define (handle-diva-central-evt evt)
         (match evt

@@ -62,9 +62,16 @@
               (marker:marker-mixin
                (diva-central-mixin super%)))))
           
+          (define (diva-interactions-text-mixin super%)
+            (diva-link:text-mixin
+             (voice-mred-text-callback-mixin
+              (marker:marker-mixin
+               (diva-central-mixin super%)))))
+          
           (drscheme:get/extend:extend-unit-frame diva-frame-mixin)
           (drscheme:get/extend:extend-definitions-canvas diva-definitions-canvas-mixin)
           (drscheme:get/extend:extend-definitions-text diva-definitions-text-mixin)
+          (drscheme:get/extend:extend-interactions-text diva-interactions-text-mixin)
           
           (preferences:install-diva-central-handler shared-diva-central)))
       
