@@ -340,15 +340,10 @@
         (inner void after-delete start end))
       
       
-      
-      
       ;;
       ;; MODE STUFFS
       ;;
       
-      (define/public (to-normal-mode)
-        (keymap:remove-chained-keymap this command-keymap)
-        (diva-label false))
       
       
       ;; Insertion Mod
@@ -395,6 +390,7 @@
                              (lambda () (send (get-diva-central) switch-off))
                              (lambda (ast) (diva-ast-put/wait ast))))
       
+      
       (define/public (to-command-mode)
         (send (get-keymap) chain-to-keymap command-keymap #t)
         (with-divascheme-handlers
@@ -402,6 +398,11 @@
          (lambda ()
            ; checking if the text has a good Scheme syntax
            (parse-syntax/dot (diva:-get-text)))))
+      
+      
+      (define/public (to-normal-mode)
+        (send (get-keymap) remove-chained-keymap command-keymap)
+        (diva-label false))
       
       
       (define f4-keymap (new keymap:aug-keymap%))
