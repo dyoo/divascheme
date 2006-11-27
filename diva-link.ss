@@ -407,21 +407,12 @@
         (diva-label false))
       
       
-      (define f4-keymap (new keymap:aug-keymap%))
+      (define f4-keymap (new keymap%))
       (send f4-keymap add-function "diva:toggle" 
             (lambda (any event)
               (send (get-diva-central) switch-toggle)))
       (send f4-keymap map-function "f4" "diva:toggle")
-      
-      ;; We muck around with the keymap within queue-callback to avoid weird interactions
-      ;; with other tools.  Can we do better?
-      (queue-callback
-       (lambda ()
-         (let ([dummy-head-keymap (new keymap:aug-keymap%)]
-               [original-keymap (get-keymap)])
-           (send dummy-head-keymap chain-to-keymap original-keymap #t)
-           (send dummy-head-keymap chain-to-keymap f4-keymap #t)
-           (set-keymap dummy-head-keymap))))))
+      (send (get-keymap) chain-to-keymap f4-keymap #t)))
   
   
   (define (diva-link:interactions-text-mixin super%)
