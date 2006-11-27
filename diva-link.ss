@@ -231,18 +231,20 @@
                          (lambda (exn) (send current-mred error-message (voice-exn-message exn)))]
                         [(lambda args true)
                          (lambda (exn) (send current-mred critical-error exn))])
-          (begin-edit-sequence)
-          (send current-mred update-mred world)
-          (let ([new-world (foldl (lambda (fn world)
-                                    (with-divascheme-handlers
+          (dynamic-wind
+           (lambda () (begin-edit-sequence))
+           (lambda ()
+             (send current-mred update-mred world)
+             (let ([new-world (foldl (lambda (fn world)
+                                       (with-divascheme-handlers
+                                        world
+                                        (lambda () (fn world this))))
                                      world
-                                     (lambda () (fn world this))))
-                                  world
-                                  (reverse (World-imperative-actions world)))])
-            (set! current-world
-                  (copy-struct World (send current-mred update-world new-world)
-                               [World-imperative-actions empty]))
-            (end-edit-sequence))))
+                                     (reverse (World-imperative-actions world)))])
+               (set! current-world
+                     (copy-struct World (send current-mred update-world new-world)
+                                  [World-imperative-actions empty]))))
+           (lambda () (end-edit-sequence)))))
       
       (define (with-divascheme-handlers default-world-on-exn thunk)
         (dynamic-wind
@@ -426,7 +428,11 @@
     (class super%
       (super-new)
       (inherit get-start-position get-end-position submit-to-port?)
-
+      
+      (define/augment (on-submit)
+        (printf "on-submit~n")
+        (inner (void) on-submit))
+      
       ;; The following is extremely ugly, but has to be done: whenever
       ;; the user presses enter, framework/private/text.ss will call
       ;; on-local-char and interpose an on-submit if we're sending

@@ -112,12 +112,21 @@
                  [(to-end)
                   (- (string-length to-text) end-length)]
                  [(insert-text) (substring to-text start-length to-end)])
-              (if (can-insert? start-length from-end)
-                  (begin
-                    (begin-edit-sequence)
-                    (insert insert-text start-length from-end false)
-                    (end-edit-sequence))
-                  (raise (make-voice-exn "I cannot edit the text. Text is read-only.")))))))
+              (cond
+                [(string=? (substring from-text start-length from-end)
+                           insert-text)
+                 (void)]
+                [(can-insert? start-length from-end)
+                 (begin-edit-sequence)
+                 (insert insert-text start-length from-end false)
+                 (end-edit-sequence)]
+                [else
+                 (printf "~s~n~s~n" from-text to-text)
+                 (printf "update-text breaks: ~s~n"
+                         (list insert-text start-length from-end
+                               from-text
+                               (substring from-text start-length from-end)))
+                 (raise (make-voice-exn "I cannot edit the text. Text is read-only."))])))))
       
       
       (define/public (diva:-update-text text)
@@ -130,12 +139,12 @@
       ;;
       ;; MARK STUFFS
       ;;
-
+      
       ;; We are supplying the same API as for the selection:
       ;;  * start and end position, no length
       ;;  * the same style of name
       ;;  * etc.
-
+      
       (define mark-start-position 0)
       (define mark-end-position 0)
 
