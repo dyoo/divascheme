@@ -265,10 +265,10 @@
                         (World-cursor-position world)
                         (World-selection-length world)))
       
-      
       ;; cleanup-text/pos : World pos -> World
       ;; This function eats all the extra white-space on the line of pos
       ;; and reindents it.
+      
       (define (cleanup-text/pos world pos)
         (let* ([start-index (pos->index (line-pos (World-text world) pos))]
                [line        (line-text/pos (World-text world) pos)]

@@ -94,7 +94,7 @@
 
       (inherit get-text can-insert? can-delete? delete insert freeze-colorer thaw-colorer
                begin-edit-sequence end-edit-sequence)
-
+      
       (define/public (diva:-get-text)
         (get-text))
 
@@ -121,11 +121,6 @@
                  (insert insert-text start-length from-end false)
                  (end-edit-sequence)]
                 [else
-                 (printf "~s~n~s~n" from-text to-text)
-                 (printf "update-text breaks: ~s~n"
-                         (list insert-text start-length from-end
-                               from-text
-                               (substring from-text start-length from-end)))
                  (raise (make-voice-exn "I cannot edit the text. Text is read-only."))])))))
       
       
@@ -186,7 +181,7 @@
       (super-instantiate ())
 
       (inherit get-text)
-
+      
       (define annotations-length 3)
       
       (define (get-annotations-length)
@@ -195,7 +190,14 @@
       (define/override (initialize-console)
         (super initialize-console)
         (set! annotations-length (string-length (get-text))))
-
+      
+      (define/override (diva:-update-text text)
+        ;; rehydrate-prompts-in-text: cleanup-text munges the following space
+        ;; after a prompt symbol.  We have to kludge those spaces back in.  Ugh.
+        (define (rehydrate-prompts-in-text text)
+          (regexp-replace* "(^|\n)>\n" text "\\1> \n"))
+        (super diva:-update-text (rehydrate-prompts-in-text text)))
+      
       (define/override (diva:-get-text)
         (let ([text (get-text)]
               [annotations-length (get-annotations-length)])

@@ -49,10 +49,10 @@
   (define (common-prefix&suffix-lengths seq1 seq2 len-f ref-f =?)
     (let* ([suffix-length (common-suffix-length seq1 seq2 len-f ref-f =?)]
            [prefix-length (common-prefix-length seq1 seq2 len-f ref-f =?)]
-           [real-prefix-length (min prefix-length
-                                    (- (len-f seq1) suffix-length)
-                                    (- (len-f seq2) suffix-length))])
-      (values real-prefix-length suffix-length)))
+           [real-suffix-length (min suffix-length
+                                    (- (len-f seq1) prefix-length)
+                                    (- (len-f seq2) prefix-length))])
+      (values prefix-length real-suffix-length)))
   
   
   

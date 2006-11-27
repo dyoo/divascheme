@@ -430,7 +430,6 @@
       (inherit get-start-position get-end-position submit-to-port?)
       
       (define/augment (on-submit)
-        (printf "on-submit~n")
         (inner (void) on-submit))
       
       ;; The following is extremely ugly, but has to be done: whenever
