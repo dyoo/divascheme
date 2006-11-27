@@ -127,6 +127,23 @@
                )
       
       (super-instantiate ())
+      
+      
+      ;; When the user changes editor modes (such as from Scheme to text mode),
+      ;; we have to reinstall our keymap, because that editor mode has its own
+      ;; keymap.  Concretely, switching between text and editor modes screws
+      ;; with the binding for '['.
+      (define/override (set-surrogate surrogate)
+        (cond
+          [(send (get-diva-central) diva-on?)
+           (on-loss-focus)
+           (uninstall-command-keymap)
+           (super set-surrogate surrogate)
+           (install-command-keymap)]
+          [else
+           (super set-surrogate surrogate)]))
+      
+      
       (define/override (do-paste start time)
         (let* ([c (get-clipboard-content)]
                [m (regexp-match #rx"^~(.*)~$" c)])
@@ -397,8 +414,14 @@
                              (lambda (ast) (diva-ast-put/wait ast))))
       
       
+      (define (install-command-keymap)
+        (send (get-keymap) chain-to-keymap command-keymap #t))
+      
+      (define (uninstall-command-keymap)
+        (send (get-keymap) remove-chained-keymap command-keymap))
+      
       (define/public (to-command-mode)
-        (send (get-keymap) chain-to-keymap command-keymap #t)
+        (install-command-keymap)
         (with-divascheme-handlers
          #f
          (lambda ()
@@ -407,7 +430,7 @@
       
       
       (define/public (to-normal-mode)
-        (send (get-keymap) remove-chained-keymap command-keymap)
+        (uninstall-command-keymap)
         (diva-label false))
       
       
