@@ -72,6 +72,10 @@
           [(struct diva-switch-off-evt ()) (shutdown)]
           [else (void)]))
       
+      (define/augment (on-close)
+        (inner (void) on-close)
+        (send (get-diva-central) remove-listener handle-diva-central-evt))
+      
       (initialize)))
   
   
