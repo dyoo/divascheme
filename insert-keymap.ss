@@ -5,6 +5,7 @@
            (lib "mred.ss" "mred")
            (lib "pregexp.ss")
            (only (lib "1.ss" "srfi") circular-list)
+           (lib "framework.ss" "framework")
            "traversal.ss"
            "long-prefix.ss"
            "utilities.ss"
@@ -441,7 +442,7 @@
               (eval-text&cmd 'Pass-Wrap)
               (magic-expand-insertion-text)))
 
-        (define insert-keymap (make-object keymap%))
+        (define insert-keymap (make-object keymap:aug-keymap%))
         
         ;; setting up callbacks
         (make-rigid-keymap insert-keymap void)

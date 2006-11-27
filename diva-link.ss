@@ -411,7 +411,7 @@
         (diva-label false))
       
       
-      (define f4-keymap (new keymap%))
+      (define f4-keymap (new keymap:aug-keymap%))
       (send f4-keymap add-function "diva:toggle" 
             (lambda (any event)
               (send (get-diva-central) switch-toggle)))
