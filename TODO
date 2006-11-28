@@ -1,3 +1,24 @@
+dyoo 2006/11/28: bug
+
+DivaScheme Error: #(struct:exn:fail:contract length: expects argument of type
+<proper list>; given #f #<continuation-mark-set>)
+length: expects argument of type <proper list>; given #f
+ === context ===
+/Users/dyoo/Library/PLT Scheme/360.1/collects/divascheme/templates.ss:458:2:
+lookup-template
+/Users/dyoo/Library/PLT Scheme/360.1/collects/divascheme/actions.ss:426:6: value
+/Users/dyoo/Library/PLT Scheme/360.1/collects/divascheme/interpreter.ss:355:2:
+eval-Open
+/Users/dyoo/Library/PLT Scheme/360.1/collects/divascheme/diva-link.ss:279:6: value
+/Users/dyoo/Library/PLT Scheme/360.1/collects/divascheme/diva-link.ss:275:6: value
+/Users/dyoo/Library/PLT Scheme/360.1/collects/divascheme/insert-keymap.ss:439:8:
+magic-or-pass
+call-with-break-parameterization
+/Users/dyoo/local/plt/collects/mred/private/lock.ss:40:2: as-entry
+
+
+
+
 dyoo 2006/10/26: I need to put all acccumlated bugs in a real bug
 tracker.  I'll list the ones that I've accumulated from others:
 
