@@ -2,15 +2,16 @@
   (require (lib "etc.ss")
            (lib "class.ss")
            (lib "framework.ss" "framework")
+           (lib "mred.ss" "mred")
 	   "structures.ss")
-
+  
   (provide make-command-keymap)
   
-
+  
   (define make-command-keymap
     (lambda (window-text to-insert-mode to-insert-mode/cmd diva-message diva-question f4-callback interpreter)
       (let ([command-keymap (make-object keymap:aug-keymap%)])
-
+        
         (define (make-command-to-argument-mode command title)
           (let ([default ""])
             (lambda ()
@@ -49,7 +50,9 @@
           (let ([command/default (make-command-to-argument-mode command title)])
             (lambda (any event)
               (command/default))))
-
+        
+        (add-text-keymap-functions command-keymap)
+        
         (send command-keymap add-function "diva:f4-callback" (lambda (any event) (f4-callback)))
         
         (send command-keymap map-function "f4"                "diva:f4-callback")
@@ -154,5 +157,34 @@
         (send command-keymap map-function "e" "diva:older")
         (send command-keymap map-function "space" "diva:extend-selection")
         (send command-keymap map-function "w" "diva:edit-symbol")
-
+        
+        #|
+        (send command-keymap map-function "insert" "diva:backward")
+        (send command-keymap map-function "f3" "diva:before-this")
+        (send command-keymap map-function "f5" "diva:up")
+        (send command-keymap map-function "f7" "diva:after-this")
+        (send command-keymap map-function "f9" "diva:forward")
+        (send command-keymap map-function "=" "diva:down")
+        
+        (send command-keymap map-function "8" "diva:out")
+        (send command-keymap map-function "0" "previous-page")
+        (send command-keymap map-function "6" "next-page")
+        (send command-keymap map-function "7" "forward-character")
+        (send command-keymap map-function "9" "backward-character")
+        |#
+        
+        ;; Keyboard shortcuts for use with the orbiTouch keyboard
+        (send command-keymap map-function "0" "diva:backward")
+        (send command-keymap map-function "9" "diva:before-this")
+        (send command-keymap map-function "8" "diva:up")
+        (send command-keymap map-function "7" "diva:after-this")
+        (send command-keymap map-function "6" "diva:forward")
+        (send command-keymap map-function "=" "diva:down")
+        
+        (send command-keymap map-function "3" "diva:out")
+        (send command-keymap map-function "5" "previous-page")
+        (send command-keymap map-function "1" "next-page")
+        (send command-keymap map-function "2" "forward-character")
+        (send command-keymap map-function "4" "backward-character")
+        
         command-keymap))))

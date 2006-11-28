@@ -83,7 +83,7 @@ how to do it.
 
 Guillaume Marceau:
 
-sources on a public svn
+sources on readable public svn
 add an link to the high-res movie on the web page
 
 release via planet
@@ -96,15 +96,18 @@ auto-completes the previous token.
 
 the "backspace on empty token" idea is good
 
+clicking should work in insert mode. it should exit insert then move
+losing focus to go read the help desk, for example, should not leave insert mode
+w with a length-zero cursor should not move the cursor to the end of the word
 
-
+undo is wrong around calls to transpose
 
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 
 
 Mon Mar 27 03:50:11 2006  --- Guillaume
 
-- mark should disapear after edits (?)
+- the mark should disapear after edits, pressing shift-M after each bring is annoying
 - previous should stay available
 
         - _search_ should take multiple arguments ("search define bind")
