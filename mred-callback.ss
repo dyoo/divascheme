@@ -195,16 +195,26 @@
         ;; rehydrate-prompts-in-text: cleanup-text munges the following space
         ;; after a prompt symbol.  We have to kludge those spaces back in.  Ugh.
         (define (rehydrate-prompts-in-text text)
-          (regexp-replace* "(^|\n)>\n" text "\\1> \n"))
+          (regexp-replace* "(^|\n)>($|\n)" text "\\1> \\2"))
         (super diva:-update-text (rehydrate-prompts-in-text text)))
       
+      
       (define/override (diva:-get-text)
-        (let ([text (get-text)]
-              [annotations-length (get-annotations-length)])
-          
+        (define hide-character #\X)
+        (define (hide-annotations text)
+          (let ([annotations-length (get-annotations-length)])
+            (format "~a~n~n~n~a"
+                    (make-string (- annotations-length 3) hide-character)
+                    (substring text annotations-length (string-length text)))))
+        ;; hide-structures: string -> string
+        ;; obscure what look like structures from being badly read.
+        ;; FIXME: This is a kludge: we really should be paying attention to snips, and not
+        ;; assume that everything is a string.
+        (define (hide-structures text)
+          (regexp-replace* "#<([^>]*)>" text "<<\\1>"))
+        (let ([text (get-text)])
           (cond
             [(= 0 (string-length text)) text]
             [else
-             (format "~a~n~n~n~a"
-                     (make-string (- annotations-length 3) #\space)
-                     (substring text annotations-length (string-length text)))]))))))
+             (hide-structures
+              (hide-annotations text))]))))))
