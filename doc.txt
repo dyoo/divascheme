@@ -1,4 +1,6 @@
+DivaScheme: semi-structured programming editing for DrScheme
 
+(http://www.cs.brown.edu/research/plt/software/divascheme/)
 
 ============================================================
 
@@ -28,6 +30,9 @@ window. DivaScheme key bindings override the normal DrScheme key
 bindings; at the times you need to use the normal key bindings of
 DrScheme, strike F4 to disable DivaScheme momentarily, then strike F4
 to bring DivaScheme back.
+
+
+
 
 
  ,--------------------------------------------------------------------------------.
