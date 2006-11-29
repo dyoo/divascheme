@@ -460,14 +460,13 @@
       (and symbol
            (hash-table-get (current-templates) symbol (lambda () #f))))
     
-    (define number-in-list 
-      (if wrap?
-          (modulo template-number (length templates))
-          template-number))
-    
-    (if templates 
+    (if templates
         
-        (let* ([t (list-ref/safe templates number-in-list)]
+        (let* ([number-in-list
+                (if wrap?
+                    (modulo template-number (length templates))
+                    template-number)]
+               [t (list-ref/safe templates number-in-list)]
                [l (length templates)]
                [p (template-has-parentheses? t)])
           (if (and open? (not p))

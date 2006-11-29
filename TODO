@@ -102,6 +102,11 @@ w with a length-zero cursor should not move the cursor to the end of the word
 
 undo is wrong around calls to transpose
 
+"The parenthesis of the definitions text are not correctly balanced." brings up the stdout window
+under Windows.
+
+Did you know that DrScheme has emacs-style macros? exciting! but divascheme breaks them. 
+
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 
 
