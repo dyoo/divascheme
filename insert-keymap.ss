@@ -74,16 +74,22 @@
     
     (send keymap set-grab-key-function
 	  (lambda (str km editor event)
-	    (diva-printf "GRAB KEY FUNCTION WAS CALLED for TEXT: str:~a km: editor: event:%~a%'~n" str (send event get-key-code))
+            (define whitespace
+              (list #\nul #\rubout #\backspace #\tab #\return #\space
+                    #\linefeed #\newline #\null #\page #\vtab))
+            (diva-printf "GRAB KEY FUNCTION WAS CALLED for TEXT: str:~a km: editor: event:%~a%'~n" str (send event get-key-code))
             (if str
                 (if ((prefix/string? "diva:") str) false true)
                 (let ([key-code (send event get-key-code)])
-                  ;;(when (member str (list "forward-character" "backward-character" "next-line" "previous-line" "beginning-of-line" "end-of-line")) (void))
-                  (if (and (char? key-code) (not (member key-code (list #\nul #\rubout #\backspace #\tab #\return #\space #\linefeed #\newline #\null #\page #\vtab))))
-                      false
-                      true))))))
+                  (cond
+                    [(and (char? key-code)
+                          (not (member key-code whitespace)))
+                     (send editor insert key-code)
+                     true]
+                    [else
+                     false]))))))
   
-
+  
   
   (define (blank-string? text)
     (pregexp-match "^\\s*$" text))
@@ -95,7 +101,7 @@
   (define-struct Pending (world symbol))
   
   (define make-insert-mode
-    (lambda (window actions diva-message f4-callback get-world set-world set-on-focus-lost
+    (lambda (window actions diva-message get-world set-world set-on-focus-lost
                     set-after-insert-callback set-after-delete-callback
                     interpreter post-exit-hook cmd edit?)
       
@@ -396,11 +402,9 @@
                 (exit))))
         
         
-        (define previous-keymap (send window get-keymap))
-        
         (define this-insert-mode-exited? false)
         (define (exit)
-          (send window set-keymap previous-keymap)
+          (send (send window get-keymap) remove-chained-keymap insert-keymap)
           (clear-highlight)
           (set-on-focus-lost (lambda () (void)))
           (unset-insert&delete-callbacks)
@@ -450,7 +454,7 @@
         
         (send insert-keymap add-function "diva:exit"        (wrap-up (consume&exit)))
         (send insert-keymap add-function "diva:cancel"      (wrap-up (revert&exit)))
-        (send insert-keymap add-function "diva:f4-callback" (wrap-up (consume&exit) (f4-callback)))
+        (send insert-keymap add-function "diva:f4-callback" (wrap-up (consume&exit)))
         
         (send insert-keymap add-function "diva:delete-backward" (wrap-up (delete-backward)))
         (send insert-keymap add-function "diva:delete-forward" (wrap-up (delete-forward)))
@@ -493,6 +497,7 @@
         
         (unset-insert&delete-callbacks)
         
-        (send window set-keymap insert-keymap)
+        (send (send window get-keymap) chain-to-keymap insert-keymap #t)
+        
         (if edit? (begin-symbol-edit) (begin-symbol-insertion))
         (when cmd (eval-cmd cmd))))))

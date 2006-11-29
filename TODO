@@ -46,8 +46,12 @@ produce
       [else 0])
 With DivaScheme, I have to use { to get the '['.
 CTRL+C does not seem to work on Windows.
+
 The F5 key does not work in insert mode. I think that it should exit
 insert mode and run the definitions.
+
+    -- should be fixed now: ask Chris to test it out.
+
 
 
 David Cabana:

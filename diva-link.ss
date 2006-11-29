@@ -125,7 +125,6 @@
       (inherit get-top-level-window
                get-keymap
                get-canvas
-               set-keymap
                begin-edit-sequence
                end-edit-sequence
 	       diva:-get-text       ;;  from mred-callback mixin
@@ -391,7 +390,6 @@
               (make-insert-mode this                                     ;; window
                                 (current-actions)                        ;; actions
                                 (lambda args (apply diva-message args))  ;; diva-message
-                                (lambda () (send (get-diva-central) switch-off))             ;; f4-callback
                                 (lambda () (send this get-mred))         ;; get-world
                                 (lambda (world) (send this set-mred world)) ;; set-world
                                 set-on-loss-focus                        ;; set-on-loss-focus
@@ -436,6 +434,7 @@
            (parse-syntax/dot (diva:-get-text)))))
       
       (define/public (to-normal-mode)
+        (on-loss-focus)
         (uninstall-command-keymap)
         (diva-label false))
       
