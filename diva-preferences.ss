@@ -7,7 +7,8 @@
            "diva-central.ss")
   (provide install-diva-central-handler
            enable-on-startup?
-           command-mode-bindings)
+           command-mode-bindings
+           add-preference-panel)
   
   ;; install-diva-central-handler: diva-central% -> void
   ;; Adds a diva-central listener that watches when
@@ -28,11 +29,11 @@
   ;; Should return true if we should turn Divascheme on.
   (define (enable-on-startup?)
     (preferences:get 'divascheme:on?))
-
+  
   (preferences:set-default 'divascheme:on? #f boolean?)
   
   
-
+  
   ;; command-mode-bindings: -> (listof (cons string (cons string empty)))
   ;; Returns the key-to-function-name bindings as a list of string pairs.
   (define (command-mode-bindings)
@@ -112,53 +113,55 @@
                            default-command-mode-bindings
                            list?)
   
-  
-  ;; DivaScheme preference panel for user-editable preferences.
-  (preferences:add-panel
-   "DivaScheme"
-   (lambda (p-frame)
-     (let* ([parent (new vertical-panel% [parent p-frame])]
-            [command-keybindings-frame (new horizontal-panel% [parent parent])]
-            [sexp->string
-             (lambda (sexp)
-               (let ([op (open-output-string)])
-                 (pretty-print sexp op)
-                 (get-output-string op)))]
-            [current-command-keybindings-text
-             (lambda ()
-               (sexp->string (preferences:get 'divascheme:command-mode-bindings)))]
-            [command-keybindings-text
-             (new text-field%
-                  [label "Command Keybindings"]
-                  [parent command-keybindings-frame]
-                  [style '(multiple)])]
-            [update-keybindings-text
-             (lambda (text)
-               (send command-keybindings-text set-value text)
-               (send (send command-keybindings-text get-editor) set-position 0))]
-            [default-command-keybindings-panel
-              (new horizontal-panel% [parent parent])]
-            [command-keybindings-reset-to-default-button
-             (new button%
-                  [label "Reset to default command keybindings"]
-                  [parent default-command-keybindings-panel]
-                  [callback
-                   (lambda (button event)
-                     (preferences:set
-                      'divascheme:command-mode-bindings
-                      default-command-mode-bindings))])])
-       (preferences:add-callback
-        'divascheme:command-mode-bindings
-        (lambda (p f)
-          (update-keybindings-text (sexp->string f))))
-       
-       (preferences:add-on-close-dialog-callback
-        (lambda ()
-          (when (not (string=? (current-command-keybindings-text)
-                               (sexp->string (send command-keybindings-text get-value))))
-            (let ([ip (open-input-string (send command-keybindings-text get-value))])
-              (preferences:set 'divascheme:command-mode-bindings (read ip))))))
-       
-       (update-keybindings-text (current-command-keybindings-text))
-       
-       parent))))
+  ;; add-preference-panel: diva-central% -> void
+  ;; Attaches a DivaScheme preference panel for user-editable preferences.
+  (define (add-preference-panel diva-central)
+    (preferences:add-panel
+     "DivaScheme"
+     (lambda (p-frame)
+       (let* ([parent (new vertical-panel% [parent p-frame])]
+              [command-keybindings-frame (new horizontal-panel% [parent parent])]
+              [sexp->string
+               (lambda (sexp)
+                 (let ([op (open-output-string)])
+                   (pretty-print sexp op)
+                   (get-output-string op)))]
+              [current-command-keybindings-text
+               (lambda ()
+                 (sexp->string (preferences:get 'divascheme:command-mode-bindings)))]
+              [command-keybindings-text
+               (new text-field%
+                    [label "Command Keybindings"]
+                    [parent command-keybindings-frame]
+                    [style '(multiple)])]
+              [update-keybindings-text
+               (lambda (text)
+                 (send command-keybindings-text set-value text)
+                 (send (send command-keybindings-text get-editor) set-position 0))]
+              [default-command-keybindings-panel
+                (new horizontal-panel% [parent parent])]
+              [command-keybindings-reset-to-default-button
+               (new button%
+                    [label "Reset to default command keybindings"]
+                    [parent default-command-keybindings-panel]
+                    [callback
+                     (lambda (button event)
+                       (preferences:set
+                        'divascheme:command-mode-bindings
+                        default-command-mode-bindings))])])
+         (preferences:add-callback
+          'divascheme:command-mode-bindings
+          (lambda (p f)
+            (update-keybindings-text (sexp->string f))
+            (send diva-central keymap-changed)))
+         
+         (preferences:add-on-close-dialog-callback
+          (lambda ()
+            (when (not (string=? (current-command-keybindings-text)
+                                 (sexp->string (send command-keybindings-text get-value))))
+              (let ([ip (open-input-string (send command-keybindings-text get-value))])
+                (preferences:set 'divascheme:command-mode-bindings (read ip))))))
+         
+         (update-keybindings-text (current-command-keybindings-text))
+         
+         parent)))))
