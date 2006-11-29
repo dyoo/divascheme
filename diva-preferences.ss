@@ -5,23 +5,30 @@
            (lib "mred.ss" "mred")
            (lib "pretty.ss")
            (lib "list.ss")
+           (lib "plt-match.ss")
            "diva-central.ss")
   (provide install-diva-central-handler
            enable-on-startup?
            
            ;; keymap stuff
-           install-command-mode-bindings
            install-toggle-bindings
+           install-command-mode-bindings
+           install-insert-mode-bindings
            
            add-preference-panel)
   
+  
+  ;; Sets up all the preferences to default values if they do not exist yet.
   (define (set-preferences)
     (preferences:set-default 'divascheme:on? #f boolean?)
+    (preferences:set-default 'divascheme:toggle-bindings
+                             default-toggle-bindings
+                             list?)
     (preferences:set-default 'divascheme:command-mode-bindings
                              default-command-mode-bindings
                              list?)
-    (preferences:set-default 'divascheme:toggle-bindings
-                             default-toggle-bindings
+    (preferences:set-default 'divascheme:insert-mode-bindings
+                             default-insert-mode-bindings
                              list?))
   
   
@@ -48,23 +55,37 @@
   
   
   (define (install-keybindings keymap bindings)
+    (define (alt/meta-prefix str)
+      (format "~a~a" (case (system-type)
+                       [(macosx macos) "d:"]
+                       [(windows) "m:"]
+                       [(unix) "m:"]
+                       [else "m:"]) str))
+    
+    (define (key->decorated-key key)
+      (match key
+        [(list 'alt/meta-prefix key)
+         (alt/meta-prefix key)]
+        [else key]))
+    
     (for-each (lambda (key&function-name)
-                (send keymap map-function (first key&function-name)
+                (send keymap map-function
+                      (key->decorated-key (first key&function-name))
                       (second key&function-name)))
               bindings))
   
   
-  (define (install-command-mode-bindings keymap)
-    (install-keybindings keymap (preferences:get 'divascheme:command-mode-bindings)))
-  
-  
   (define (install-toggle-bindings keymap)
-    (install-keybindings keymap (preferences:get 'divascheme:toggle-bindings)))
+    (install-keybindings keymap
+                         (preferences:get 'divascheme:toggle-bindings)))
   
+  (define (install-command-mode-bindings keymap)
+    (install-keybindings keymap
+                         (preferences:get 'divascheme:command-mode-bindings)))
   
-  
-  
-  
+  (define (install-insert-mode-bindings keymap)
+    (install-keybindings keymap
+                         (preferences:get 'divascheme:insert-mode-bindings)))
   
   
   
@@ -137,7 +158,49 @@
       ("2" "forward-character")
       ("4" "backward-character")))
   
-  (define default-toggle-bindings '(("f4" "diva:toggle")))
+  (define default-toggle-bindings
+    '(("f4" "diva:toggle")))
+  
+  (define default-insert-mode-bindings
+    '(("esc" "diva:exit")
+      ("c:g" "diva:cancel")
+      ("c:c" "diva:cancel")
+      ("f4" "diva:f4-callback")
+      
+      ("space" "diva:space")
+      
+      ("(" "diva:open")
+      (")" "diva:close")
+      ("[" "diva:open")
+      ("]" "diva:close-square")
+      ("{" "diva:open-curly")
+      ("}" "diva:close-curly")
+      
+      ("enter" "diva:enter")
+      ("numpadenter" "diva:enter")
+      
+      ("backspace" "diva:delete-backward")
+      ("delete" "diva:delete-forward")
+      ("c:d" "diva:delete-forward")
+      
+      ("m:d" "diva:kill-word-forward")
+      ("m:backspace" "diva:kill-word-backward")
+      
+      ("m:b" "diva:bring")
+      ("tab" "diva:pass")
+      ((alt/meta-prefix "/") "diva:magic")
+      
+      ("left" "diva:left")
+      ("right" "diva:right")
+      ("c:b" "diva:left")
+      ("c:f" "diva:right")
+      
+      ("c:left" "diva:left*")
+      ("c:right" "diva:right*")
+      ("c:a" "diva:left*")
+      ("c:e" "diva:right*")
+      ("home" "diva:left*")
+      ("end" "diva:right*")))
   
   
   
@@ -177,7 +240,6 @@
                                     (update-keybindings-text (sexp->string f))))
         (preferences:add-on-close-dialog-callback
          (lambda ()
-           (printf "~s~n~n~s~n" (current-text) (send text-field get-value))
            (when (not (string=? (current-text)
                                 (send text-field get-value)))
              (let ([ip (open-input-string (send text-field get-value))])
@@ -190,18 +252,26 @@
      "DivaScheme"
      (lambda (p-frame)
        (let* ([parent (new vertical-panel% [parent p-frame])]
+              ;; TODO: add radio button to choose which keyboard is being 
+              ;; used here.
               [toggle-keybindings-panel
                (make-keymap-subpanel "Toggle Keybindings"
                                      'divascheme:toggle-bindings
                                      parent
-                                     "Reset to default toggle keybindings"
+                                     "Reset to default Toggle keybindings"
                                      default-toggle-bindings)]
               [command-keybindings-panel
-               (make-keymap-subpanel "Command Keybindings"
+               (make-keymap-subpanel "Command Mode Keybindings"
                                      'divascheme:command-mode-bindings
                                      parent
-                                     "Reset to default command keybindings"
-                                     default-command-mode-bindings)])
+                                     "Reset to default Command mode keybindings"
+                                     default-command-mode-bindings)]
+              [insert-keybindings-panel
+               (make-keymap-subpanel "Insert Mode Keybindings"
+                                     'divascheme:insert-mode-bindings
+                                     parent
+                                     "Reset to default Insert Mode keybindings"
+                                     default-insert-mode-bindings)])
          parent))))
   
   

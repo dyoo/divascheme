@@ -9,7 +9,8 @@
            "traversal.ss"
            "long-prefix.ss"
            "utilities.ss"
-           "structures.ss")
+           "structures.ss"
+           (prefix preferences: "diva-preferences.ss"))
   
   
   (provide make-insert-mode)
@@ -482,53 +483,14 @@
         (send insert-keymap add-function "diva:left*"        (wrap-up (move-left*)))
         (send insert-keymap add-function "diva:right*"        (wrap-up (move-right*)))
         
-        (send insert-keymap map-function "esc"     "diva:exit")
-        (send insert-keymap map-function "c:g"     "diva:cancel")
-        (send insert-keymap map-function "c:c"     "diva:cancel")
-        (send insert-keymap map-function "f4"      "diva:f4-callback")
-        
-        (send insert-keymap map-function "space"   "diva:space")
-        
-        (send insert-keymap map-function "("       "diva:open")
-        (send insert-keymap map-function ")"       "diva:close")
-        (send insert-keymap map-function "["       "diva:open")
-        (send insert-keymap map-function "]"       "diva:close-square")
-        (send insert-keymap map-function "{"       "diva:open-curly")
-        (send insert-keymap map-function "}"       "diva:close-curly")
-        
-        (send insert-keymap map-function "enter"       "diva:enter")
-        (send insert-keymap map-function "numpadenter" "diva:enter")
-        
-        (send insert-keymap map-function "backspace" "diva:delete-backward")
-        (send insert-keymap map-function "delete" "diva:delete-forward")
-        (send insert-keymap map-function "c:d" "diva:delete-forward")
-
-        (send insert-keymap map-function "m:d" "diva:kill-word-forward")
-        (send insert-keymap map-function "m:backspace" "diva:kill-word-backward")
-        
-        (send insert-keymap map-function "m:b" "diva:bring")
-        (send insert-keymap map-function "tab"     "diva:pass")
-        (send insert-keymap map-function (alt/meta-prefix "/") "diva:magic")
-
-        
-        (send insert-keymap map-function "left" "diva:left")
-        (send insert-keymap map-function "right" "diva:right")
-        (send insert-keymap map-function "c:b" "diva:left")
-        (send insert-keymap map-function "c:f" "diva:right")
-        
-        (send insert-keymap map-function "c:left" "diva:left*")
-        (send insert-keymap map-function "c:right" "diva:right*")
-        (send insert-keymap map-function "c:a" "diva:left*")
-        (send insert-keymap map-function "c:e" "diva:right*")
-        (send insert-keymap map-function "home" "diva:left*")
-        (send insert-keymap map-function "end" "diva:right*")
+        (preferences:install-insert-mode-bindings insert-keymap)
         
         (when this-insert-mode-exited?
           (error 'insert-keymap "Insert keymap used after it exited."))
         
         
         (set-on-focus-lost consume&exit)
-
+        
         (unset-insert&delete-callbacks)
         
         (send window set-keymap insert-keymap)
