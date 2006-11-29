@@ -160,7 +160,10 @@
                  [stx/false (find-pos-near (World-cursor-position world)
                                            (World-syntax-list world))]
                  [stx/false (and stx/false
-                                 (first (find-all atomic/stx? (list stx/false))))])
+                                 (first (append
+                                         (find-all atomic/stx?
+                                                   (list stx/false))
+                                         (list #f))))])
             (cond
               [stx/false
                (set-world (send actions select/stx world stx/false))
