@@ -460,7 +460,6 @@
       
       
       (define/public (refresh-keymaps)
-        (printf "refreshing keymaps~n")
         (uninstall-f4-keymap)
         (set! f4-keymap (new-f4-keymap))
         (install-f4-keymap)

@@ -171,16 +171,18 @@
                    [callback
                     (lambda (button event)
                       (update-keybindings-text (sexp->string default-bindings)))])])
+        
         (preferences:add-callback property
                                   (lambda (p f)
-                                    (update-keybindings-text (sexp->string f))
-                                    (send diva-central keymap-changed)))
+                                    (update-keybindings-text (sexp->string f))))
         (preferences:add-on-close-dialog-callback
          (lambda ()
+           (printf "~s~n~n~s~n" (current-text) (send text-field get-value))
            (when (not (string=? (current-text)
-                                (sexp->string (send text-field get-value))))
+                                (send text-field get-value)))
              (let ([ip (open-input-string (send text-field get-value))])
-               (preferences:set property (read ip))))))
+               (preferences:set property (read ip))
+               (send diva-central keymap-changed)))))
         (update-keybindings-text (current-text))
         panel))
     
