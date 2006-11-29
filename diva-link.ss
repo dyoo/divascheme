@@ -58,6 +58,10 @@
         (send (get-interactions-text) to-normal-mode)
         (set! started? #f))
       
+      (define (refresh-keymaps)
+        (printf "I should refresh the keymapping~n")
+        (void))
+      
       (define/augment (on-tab-change from-tab to-tab)
         (inner (void) on-tab-change from-tab to-tab)
         (when started?
@@ -70,6 +74,7 @@
         (match evt
           [(struct diva-switch-on-evt ()) (startup)]
           [(struct diva-switch-off-evt ()) (shutdown)]
+          [(struct diva-keymap-changed-evt ()) (refresh-keymaps)]
           [else (void)]))
       
       (define/augment (on-close)
