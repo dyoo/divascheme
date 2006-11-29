@@ -110,7 +110,7 @@
                "!" "@" "#" "$" "%" "^" "&" "*"
                "_" "-" "=" "+"
                "backspace" "delete" "|"
-               "`" "\"" "," "'" "<" ">" "/" "?"
+               "`" "\"" "," "'" "<" ">" "/" "\\"  "?"
                "esc" "insert" "colon"
                ,@(map (lambda (ch) (format "s:~a" ch))
                       (string->list "ABCDEFGHIJKLMNOPQRSTUVWXYZ"))
