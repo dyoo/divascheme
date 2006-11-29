@@ -11,7 +11,7 @@
   
   
   (define make-command-keymap
-    (lambda (window-text to-insert-mode to-insert-mode/cmd diva-message diva-question f4-callback interpreter)
+    (lambda (window-text to-insert-mode to-insert-mode/cmd diva-message diva-question interpreter)
       (let ([command-keymap (make-object keymap:aug-keymap%)])
         
         (define (make-command-to-argument-mode command title)
@@ -55,7 +55,6 @@
         
         (add-text-keymap-functions command-keymap)
         
-        (send command-keymap add-function "diva:f4-callback" (lambda (any event) (f4-callback)))
         (send command-keymap add-function "diva:enter" (command 'Enter))
         (send command-keymap add-function "diva:indent"    (command 'Indent))
         (send command-keymap add-function "diva:before-this" (insert insert-before-ast false))

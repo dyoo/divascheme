@@ -13,7 +13,8 @@
 	   "insert-keymap.ss"
 	   "structures.ss"
            "utilities.ss"
-           "diva-central.ss")
+           "diva-central.ss"
+           (prefix preferences: "diva-preferences.ss"))
   
   (provide diva-link:frame-mixin)
   (provide diva-link:canvas-mixin)
@@ -59,8 +60,7 @@
         (set! started? #f))
       
       (define (refresh-keymaps)
-        (printf "I should refresh the keymapping~n")
-        (void))
+        (send (get-definitions-text) refresh-keymaps))
       
       (define/augment (on-tab-change from-tab to-tab)
         (inner (void) on-tab-change from-tab to-tab)
@@ -404,7 +404,7 @@
       
       
       ;; Command Mode
-      (define command-keymap
+      (define (new-command-keymap)
         (make-command-keymap this
                              (lambda (edit?)
                                (to-insert-mode edit?
@@ -415,8 +415,9 @@
                                                command))
                              diva-message
                              diva-question
-                             (lambda () (send (get-diva-central) switch-off))
                              (lambda (ast) (diva-ast-put/wait ast))))
+      
+      (define command-keymap (new-command-keymap))
       
       
       (define (install-command-keymap)
@@ -433,18 +434,45 @@
            ; checking if the text has a good Scheme syntax
            (parse-syntax/dot (diva:-get-text)))))
       
-      
       (define/public (to-normal-mode)
         (uninstall-command-keymap)
         (diva-label false))
       
       
-      (define f4-keymap (new keymap:aug-keymap%))
-      (send f4-keymap add-function "diva:toggle" 
-            (lambda (any event)
-              (send (get-diva-central) switch-toggle)))
-      (send f4-keymap map-function "f4" "diva:toggle")
-      (send (get-keymap) chain-to-keymap f4-keymap #t)))
+      (define (new-f4-keymap)
+        (define f4-keymap (new keymap:aug-keymap%))
+        (send f4-keymap add-function "diva:toggle"
+              (lambda (any event)
+                (send (get-diva-central) switch-toggle)))
+        (preferences:add-keymap-command-toggle f4-keymap (get-diva-central))
+        f4-keymap)
+      
+      
+      (define (uninstall-f4-keymap)
+        (when f4-keymap
+          (send (get-keymap) remove-chained-keymap f4-keymap)))
+      
+      (define (install-f4-keymap)
+        (when f4-keymap
+          (send (get-keymap) chain-to-keymap f4-keymap #t)))
+      
+      (define f4-keymap (new-f4-keymap))
+      (install-f4-keymap)
+      
+      
+      (define/public (refresh-keymaps)
+        (printf "refreshing keymaps~n")
+        (uninstall-f4-keymap)
+        (set! f4-keymap (new-f4-keymap))
+        (install-f4-keymap)
+        (cond
+          [(send (get-diva-central) diva-on?)
+           (on-loss-focus)
+           (uninstall-command-keymap)
+           (set! command-keymap (new-command-keymap))
+           (install-command-keymap)]
+          [else
+           (void)]))))
   
   
   (define (diva-link:interactions-text-mixin super%)

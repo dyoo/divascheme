@@ -75,5 +75,4 @@
         (set! divascheme-is-on? #f))
       
       (define/public (keymap-changed)
-        (notify (make-diva-keymap-changed-evt)))
-      )))
+        (notify (make-diva-keymap-changed-evt))))))
