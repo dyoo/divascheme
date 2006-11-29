@@ -4,12 +4,27 @@
            (lib "framework.ss" "framework")
            (lib "mred.ss" "mred")
            (lib "pretty.ss")
+           (lib "list.ss")
            "diva-central.ss")
   (provide install-diva-central-handler
            enable-on-startup?
-           command-mode-bindings
-           add-keymap-command-toggle
+           
+           ;; keymap stuff
+           install-command-mode-bindings
+           install-toggle-bindings
+           
            add-preference-panel)
+  
+  (define (set-preferences)
+    (preferences:set-default 'divascheme:on? #f boolean?)
+    (preferences:set-default 'divascheme:command-mode-bindings
+                             default-command-mode-bindings
+                             list?)
+    (preferences:set-default 'divascheme:toggle-bindings
+                             default-toggle-bindings
+                             list?))
+  
+  
   
   ;; install-diva-central-handler: diva-central% -> void
   ;; Adds a diva-central listener that watches when
@@ -31,14 +46,27 @@
   (define (enable-on-startup?)
     (preferences:get 'divascheme:on?))
   
-  (preferences:set-default 'divascheme:on? #f boolean?)
+  
+  (define (install-keybindings keymap bindings)
+    (for-each (lambda (key&function-name)
+                (send keymap map-function (first key&function-name)
+                      (second key&function-name)))
+              bindings))
+  
+  
+  (define (install-command-mode-bindings keymap)
+    (install-keybindings keymap (preferences:get 'divascheme:command-mode-bindings)))
+  
+  
+  (define (install-toggle-bindings keymap)
+    (install-keybindings keymap (preferences:get 'divascheme:toggle-bindings)))
   
   
   
-  ;; command-mode-bindings: -> (listof (cons string (cons string empty)))
-  ;; Returns the key-to-function-name bindings as a list of string pairs.
-  (define (command-mode-bindings)
-    (preferences:get 'divascheme:command-mode-bindings))
+  
+  
+  
+  
   
   (define default-command-mode-bindings
     '(("return" "diva:enter")
@@ -109,13 +137,8 @@
       ("2" "forward-character")
       ("4" "backward-character")))
   
-  (preferences:set-default 'divascheme:command-mode-bindings
-                           default-command-mode-bindings
-                           list?)
+  (define default-toggle-bindings '(("f4" "diva:toggle")))
   
-  
-  (define (add-keymap-command-toggle keymap diva-central)
-    (send keymap map-function "f4" "diva:toggle"))
   
   
   ;; add-preference-panel: diva-central% -> void
@@ -157,19 +180,29 @@
            (when (not (string=? (current-text)
                                 (sexp->string (send text-field get-value))))
              (let ([ip (open-input-string (send text-field get-value))])
-               (preferences:set 'divascheme:command-mode-bindings (read ip))))))
+               (preferences:set property (read ip))))))
         (update-keybindings-text (current-text))
         panel))
-    
     
     (preferences:add-panel
      "DivaScheme"
      (lambda (p-frame)
        (let* ([parent (new vertical-panel% [parent p-frame])]
+              [toggle-keybindings-panel
+               (make-keymap-subpanel "Toggle Keybindings"
+                                     'divascheme:toggle-bindings
+                                     parent
+                                     "Reset to default toggle keybindings"
+                                     default-toggle-bindings)]
               [command-keybindings-panel
                (make-keymap-subpanel "Command Keybindings"
                                      'divascheme:command-mode-bindings
                                      parent
                                      "Reset to default command keybindings"
                                      default-command-mode-bindings)])
-         parent)))))
+         parent))))
+  
+  
+  
+  ;; Should be called at the end, after all our definitions are in.
+  (set-preferences))

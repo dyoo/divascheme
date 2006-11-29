@@ -101,9 +101,7 @@
         (send command-keymap add-function "diva:extend-selection" (command 'Extend-Selection))
         (send command-keymap add-function "diva:edit-symbol" (insert false true))
         (send command-keymap add-function "diva:disabled" void)
-        
-
-        (for-each 
+        (for-each
          (lambda (key) (send command-keymap map-function key "diva:disabled"))
          `("1" "2" "3" "4" "5" "6" "7" "8" "9" "0"
                "!" "@" "#" "$" "%" "^" "&" "*"
@@ -116,10 +114,7 @@
                ,@(map string
                       (string->list "abcdefghijklmnopqrstuvwxyz"))))
         
+        (preferences:install-command-mode-bindings command-keymap)
         
-        (for-each (lambda (key&function-name)
-                    (send command-keymap map-function (first key&function-name)
-                          (second key&function-name)))
-                  (preferences:command-mode-bindings))
         
         command-keymap))))

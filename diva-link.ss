@@ -60,7 +60,8 @@
         (set! started? #f))
       
       (define (refresh-keymaps)
-        (send (get-definitions-text) refresh-keymaps))
+        (send (get-definitions-text) refresh-keymaps)
+        (send (get-interactions-text) refresh-keymaps))
       
       (define/augment (on-tab-change from-tab to-tab)
         (inner (void) on-tab-change from-tab to-tab)
@@ -444,17 +445,15 @@
         (send f4-keymap add-function "diva:toggle"
               (lambda (any event)
                 (send (get-diva-central) switch-toggle)))
-        (preferences:add-keymap-command-toggle f4-keymap (get-diva-central))
+        (preferences:install-toggle-bindings f4-keymap)
         f4-keymap)
       
       
       (define (uninstall-f4-keymap)
-        (when f4-keymap
-          (send (get-keymap) remove-chained-keymap f4-keymap)))
+        (send (get-keymap) remove-chained-keymap f4-keymap))
       
       (define (install-f4-keymap)
-        (when f4-keymap
-          (send (get-keymap) chain-to-keymap f4-keymap #t)))
+        (send (get-keymap) chain-to-keymap f4-keymap #t))
       
       (define f4-keymap (new-f4-keymap))
       (install-f4-keymap)
@@ -472,7 +471,7 @@
            (set! command-keymap (new-command-keymap))
            (install-command-keymap)]
           [else
-           (void)]))))
+           (set! command-keymap (new-command-keymap))]))))
   
   
   (define (diva-link:interactions-text-mixin super%)
