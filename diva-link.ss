@@ -475,7 +475,10 @@
   (define (diva-link:interactions-text-mixin super%)
     (class super%
       (super-new)
-      (inherit get-start-position get-end-position submit-to-port?)
+      (inherit get-start-position
+               get-end-position
+               submit-to-port?
+               diva:-on-loss-focus)
       
       (define/augment (on-submit)
         (inner (void) on-submit))
@@ -496,7 +499,7 @@
              (super on-local-char key)]
             [(and (= start end)
                   (submit-to-port? key))
-             (send this diva:-on-loss-focus)
+             (diva:-on-loss-focus)
              (super on-local-char key)]
             [else
              (super on-local-char key)]))))))

@@ -457,11 +457,10 @@
         
         (send insert-keymap add-function "diva:exit"        (wrap-up (consume&exit)))
         (send insert-keymap add-function "diva:cancel"      (wrap-up (revert&exit)))
-        (send insert-keymap add-function "diva:f4-callback" (wrap-up (consume&exit)))
         
         (send insert-keymap add-function "diva:delete-backward" (wrap-up (delete-backward)))
         (send insert-keymap add-function "diva:delete-forward" (wrap-up (delete-forward)))
-
+        
         (send insert-keymap add-function "diva:kill-word-forward" (wrap-up (kill-word-forward)))
         (send insert-keymap add-function "diva:kill-word-backward" (wrap-up (kill-word-backward)))
         

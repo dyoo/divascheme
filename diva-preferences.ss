@@ -165,7 +165,6 @@
     '(("esc" "diva:exit")
       ("c:g" "diva:cancel")
       ("c:c" "diva:cancel")
-      ("f4" "diva:f4-callback")
       
       ("space" "diva:space")
       
@@ -272,7 +271,7 @@
                (make-keymap-subpanel "Insert Mode Keybindings"
                                      'divascheme:insert-mode-bindings
                                      parent
-                                     "Reset insert mode keybindings to default"
+                                     "Reset insert mode keybindings to defaults"
                                      default-insert-mode-bindings)])
          parent))))
   
