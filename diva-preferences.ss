@@ -11,7 +11,7 @@
            enable-on-startup?
            
            ;; keymap stuff
-           install-toggle-bindings
+           install-global-bindings
            install-command-mode-bindings
            install-insert-mode-bindings
            
@@ -21,8 +21,8 @@
   ;; Sets up all the preferences to default values if they do not exist yet.
   (define (set-preferences)
     (preferences:set-default 'divascheme:on? #f boolean?)
-    (preferences:set-default 'divascheme:toggle-bindings
-                             default-toggle-bindings
+    (preferences:set-default 'divascheme:global-bindings
+                             default-global-bindings
                              list?)
     (preferences:set-default 'divascheme:command-mode-bindings
                              default-command-mode-bindings
@@ -75,9 +75,9 @@
               bindings))
   
   
-  (define (install-toggle-bindings keymap)
+  (define (install-global-bindings keymap)
     (install-keybindings keymap
-                         (preferences:get 'divascheme:toggle-bindings)))
+                         (preferences:get 'divascheme:global-bindings)))
   
   (define (install-command-mode-bindings keymap)
     (install-keybindings keymap
@@ -158,7 +158,7 @@
       ("2" "forward-character")
       ("4" "backward-character")))
   
-  (define default-toggle-bindings
+  (define default-global-bindings
     '(("f4" "diva:toggle")))
   
   (define default-insert-mode-bindings
@@ -216,7 +216,8 @@
     (define (make-keymap-subpanel title property parent default-title default-bindings)
       (let* ([panel (new group-box-panel%
                          [parent parent]
-                         [label title])]
+                         [label title]
+                         [border 10])]
              [current-text
               (lambda () (sexp->string (preferences:get property)))]
              [text-field
@@ -226,7 +227,7 @@
                 (send text-field set-value text)
                 (send (send text-field get-editor) set-position 0))]
              [default-command-keybindings-panel
-               (new horizontal-panel% [parent panel])]
+               (new horizontal-panel% [parent panel] [stretchable-height #f])]
              [reset-to-default-button
               (new button%
                    [label default-title]
@@ -243,6 +244,7 @@
            (when (not (string=? (current-text)
                                 (send text-field get-value)))
              (let ([ip (open-input-string (send text-field get-value))])
+               ;; TODO: this read can crash. Check it in preferences:add-on-close-dialog-callback.
                (preferences:set property (read ip))
                (send diva-central keymap-changed)))))
         (update-keybindings-text (current-text))
@@ -251,26 +253,26 @@
     (preferences:add-panel
      "DivaScheme"
      (lambda (p-frame)
-       (let* ([parent (new vertical-panel% [parent p-frame])]
+       (let* ([parent (new vertical-panel% [parent p-frame] [border 10])]
               ;; TODO: add radio button to choose which keyboard is being 
               ;; used here.
-              [toggle-keybindings-panel
-               (make-keymap-subpanel "Toggle Keybindings"
-                                     'divascheme:toggle-bindings
+              [global-keybindings-panel
+               (make-keymap-subpanel "Global Keybindings"
+                                     'divascheme:global-bindings
                                      parent
-                                     "Reset to default Toggle keybindings"
-                                     default-toggle-bindings)]
+                                     "Reset global keybindings to defaults"
+                                     default-global-bindings)]
               [command-keybindings-panel
                (make-keymap-subpanel "Command Mode Keybindings"
                                      'divascheme:command-mode-bindings
                                      parent
-                                     "Reset to default Command mode keybindings"
+                                     "Reset command mode keybindings to defaults"
                                      default-command-mode-bindings)]
               [insert-keybindings-panel
                (make-keymap-subpanel "Insert Mode Keybindings"
                                      'divascheme:insert-mode-bindings
                                      parent
-                                     "Reset to default Insert Mode keybindings"
+                                     "Reset insert mode keybindings to default"
                                      default-insert-mode-bindings)])
          parent))))
   

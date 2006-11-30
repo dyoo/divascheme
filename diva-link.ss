@@ -444,7 +444,7 @@
         (send f4-keymap add-function "diva:toggle"
               (lambda (any event)
                 (send (get-diva-central) switch-toggle)))
-        (preferences:install-toggle-bindings f4-keymap)
+        (preferences:install-global-bindings f4-keymap)
         f4-keymap)
       
       
