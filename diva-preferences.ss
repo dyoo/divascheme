@@ -20,16 +20,16 @@
   
   ;; Sets up all the preferences to default values if they do not exist yet.
   (define (set-preferences)
-    (preferences:set-default 'divascheme:on? #f boolean?)
+    (preferences:set-default 'divascheme:on?
+                             #f boolean?)
+    (preferences:set-default 'divascheme:preferred-keyboard-layout
+                             'querty symbol?)
     (preferences:set-default 'divascheme:global-bindings
-                             default-global-bindings
-                             list?)
+                             (default-global-bindings) list?)
     (preferences:set-default 'divascheme:command-mode-bindings
-                             default-command-mode-bindings
-                             list?)
+                             (default-command-mode-bindings) list?)
     (preferences:set-default 'divascheme:insert-mode-bindings
-                             default-insert-mode-bindings
-                             list?))
+                             (default-insert-mode-bindings) list?))
   
   
   
@@ -89,7 +89,14 @@
   
   
   
-  (define default-command-mode-bindings
+  (define (default-command-mode-bindings)
+    (case (preferences:get 'divascheme:preferred-keyboard-layout)
+      [(querty) default-command-mode-bindings/querty]
+      [(dvorak) default-command-mode-bindings/dvorak]
+      [else default-command-mode-bindings/querty]))
+  
+  
+  (define default-command-mode-bindings/querty
     '(("return" "diva:enter")
       ("numpadenter" "diva:enter")
       ("tab" "diva:indent")
@@ -158,10 +165,60 @@
       ("2" "forward-character")
       ("4" "backward-character")))
   
-  (define default-global-bindings
+  ;; These keybindings were contributed by David Cabana.
+  (define default-command-mode-bindings/dvorak
+    '(("return" "diva:enter")
+      ("numpadenter" "diva:enter")
+      ("tab" "diva:indent")
+      ("semicolon" "diva:after-this")
+      ("r" "diva:insert")
+      ;;--------- begin drc mods
+      ("c" "diva:up");;
+      ("h" "diva:down");;
+      ("t" "diva:backward");;
+      ("n" "diva:forward");;
+      
+      ("i" "diva:copy");;
+      ("l" "diva:transpose");;
+      ("k" "diva:before-this");;
+      ("j" "diva:next");;
+      
+      ("v" "diva:previous");;
+      ("p" "diva:paste");;
+      ;;-------- end drc mods
+      ("s:k" "diva:out") 
+      ("s" "diva:select")
+      ("x" "diva:cut")
+      ("u" "diva:undo")
+      ("z" "diva:cancel")
+      ("y" "diva:redo")
+      ("d" "diva:delete")
+      ("b" "diva:bring")
+      ("s:b" "diva:push")
+      ("s:x" "diva:exchange")
+      ("m" "diva:mark")
+      ("s:m" "diva:unmark")
+      ("s:h" "diva:holder")
+      ("." "diva:find-tag")
+      ("o" "diva:join")
+      ("[" "diva:open")
+      ("(" "diva:open")
+      ("{" "diva:open-square")
+      ("]" "diva:close")
+      (")" "diva:close")
+      ("a" "diva:younger")
+      ("e" "diva:older")
+      ("space" "diva:extend-selection")
+      ("w" "diva:edit-symbol")))
+  
+  
+  
+  
+  
+  (define (default-global-bindings)
     '(("f4" "diva:toggle")))
   
-  (define default-insert-mode-bindings
+  (define (default-insert-mode-bindings)
     '(("esc" "diva:exit")
       ("c:g" "diva:cancel")
       ("c:c" "diva:cancel")
@@ -212,42 +269,51 @@
         (pretty-print sexp op)
         (get-output-string op)))
     
-    (define (make-keymap-subpanel title property parent default-title default-bindings)
-      (let* ([panel (new group-box-panel%
-                         [parent parent]
-                         [label title]
-                         [border 10])]
-             [current-text
-              (lambda () (sexp->string (preferences:get property)))]
-             [text-field
-              (new text-field% [label ""] [parent panel] [style '(multiple)])]
-             [update-keybindings-text
-              (lambda (text)
-                (send text-field set-value text)
-                (send (send text-field get-editor) set-position 0))]
-             [default-command-keybindings-panel
-               (new horizontal-panel% [parent panel] [stretchable-height #f])]
-             [reset-to-default-button
-              (new button%
-                   [label default-title]
-                   [parent default-command-keybindings-panel]
-                   [callback
-                    (lambda (button event)
-                      (update-keybindings-text (sexp->string default-bindings)))])])
-        
-        (preferences:add-callback property
-                                  (lambda (p f)
-                                    (update-keybindings-text (sexp->string f))))
-        (preferences:add-on-close-dialog-callback
-         (lambda ()
-           (when (not (string=? (current-text)
-                                (send text-field get-value)))
-             (let ([ip (open-input-string (send text-field get-value))])
-               ;; TODO: this read can crash. Check it in preferences:add-on-close-dialog-callback.
-               (preferences:set property (read ip))
-               (send diva-central keymap-changed)))))
-        (update-keybindings-text (current-text))
-        panel))
+    ;; make-keymap-subpanel: string symbol panel% string (-> (listof (list string string)))
+    (define (make-keymap-subpanel title property parent default-title default-bindings-f)
+      (define keymap-panel%
+        (class group-box-panel%
+          (super-new)
+          
+          (define (current-text) (sexp->string (preferences:get property)))
+          
+          (define text-field (new text-field% [label ""] [parent this] [style '(multiple)]))
+          
+          (define (update-keybindings-text text)
+            (send text-field set-value text)
+            (send (send text-field get-editor) set-position 0))
+          
+          (define default-command-keybindings-panel
+            (new horizontal-panel% [parent this] [stretchable-height #f]))
+          
+          (define reset-to-default-button
+            (new button%
+                 [label default-title]
+                 [parent default-command-keybindings-panel]
+                 [callback
+                  (lambda (button event)
+                    (update-keybindings-text (sexp->string (default-bindings-f))))]
+                 [stretchable-width #t]))
+          
+          ;; When the keyboard layout changes, we should show some interface change to
+          ;; highlight what happens when they press the "set to default" button.
+          (define/public (keyboard-layout-default-changed)
+            (send reset-to-default-button set-label 
+                  (format "~a*" default-title)))
+          
+          (preferences:add-callback property
+                                    (lambda (p f)
+                                      (update-keybindings-text (sexp->string f))))
+          (preferences:add-on-close-dialog-callback
+           (lambda ()
+             (when (not (string=? (current-text)
+                                  (send text-field get-value)))
+               (let ([ip (open-input-string (send text-field get-value))])
+                 ;; TODO: this read can crash. Check it in preferences:add-on-close-dialog-callback.
+                 (preferences:set property (read ip))
+                 (send diva-central keymap-changed)))))
+          (update-keybindings-text (current-text))))
+      (new keymap-panel% [parent parent] [label title] [border 10]))
     
     (preferences:add-panel
      "DivaScheme"
@@ -261,18 +327,30 @@
                                      parent
                                      "Reset global keybindings to defaults"
                                      default-global-bindings)]
+              
+              [command-hpanel (new horizontal-panel% [parent parent])]
               [command-keybindings-panel
                (make-keymap-subpanel "Command Mode Keybindings"
                                      'divascheme:command-mode-bindings
-                                     parent
+                                     command-hpanel
                                      "Reset command mode keybindings to defaults"
                                      default-command-mode-bindings)]
+              [keyboard-selector (new radio-box%
+                                      [label "Preferred keyboard layout"]
+                                      [parent command-hpanel]
+                                      [choices (list "querty" "dvorak")]
+                                      [callback (lambda (rb e)
+                                                  (preferences:set 'divascheme:preferred-keyboard-layout
+                                                                   (list-ref '(querty dvorak) (send rb get-selection)))
+                                                  (send command-keybindings-panel keyboard-layout-default-changed))])]
+              
               [insert-keybindings-panel
                (make-keymap-subpanel "Insert Mode Keybindings"
                                      'divascheme:insert-mode-bindings
                                      parent
                                      "Reset insert mode keybindings to defaults"
                                      default-insert-mode-bindings)])
+         
          parent))))
   
   
