@@ -204,7 +204,7 @@ matches the first symbol in the sexp. To select the first symbol
 itself, execute the search then use the _forward_ command by pressing the
 "l" key.
 
-DivaScheme can also compute and jump to the difinition point of an 
+DivaScheme can also compute and jump to the definition point of an 
 identifier. In the DivaScheme directory, you will find an
 executable "stags", short for Scheme Tags. This executable consumes
 the name of all the Scheme source files composing your project, as 
