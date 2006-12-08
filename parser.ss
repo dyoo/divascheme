@@ -1,6 +1,5 @@
 (module parser mzscheme
-  (require (lib "unitsig.ss")
-	   (prefix lex: (lib "lex.ss" "parser-tools"))
+  (require (prefix lex: (lib "lex.ss" "parser-tools"))
 	   (prefix yacc: (lib "yacc.ss" "parser-tools"))
            (lib "class.ss")
            (lib "etc.ss")

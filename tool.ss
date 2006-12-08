@@ -5,13 +5,14 @@
            (lib "tool.ss" "drscheme")
            (lib "framework.ss" "framework")
            (lib "mred.ss" "mred")
-           "language.ss" (lib "unitsig.ss")
-	   (lib "class.ss")
+           (lib "unitsig.ss")
+           (lib "class.ss")
            "diva-panel.ss"
            "diva-link.ss"
            "mred-callback.ss"
            "diva-central.ss"
            "diva-file-menu.ss"
+           (prefix language: "language.ss")
            (prefix preferences: "diva-preferences.ss")
            (prefix marker: "marker.ss")
            "tag-gui.ss")
@@ -21,7 +22,7 @@
   (provide tool@)
   
   
-  (define voice@
+  (define tool@
     (unit/sig drscheme:tool-exports^
       (import drscheme:tool^)
       
@@ -43,6 +44,10 @@
       (define shared-diva-central (new diva-central%))
       
       (define (phase1)
+        (language:initialize-get-language
+         drscheme:language-configuration:get-settings-preferences-symbol
+         drscheme:language-configuration:language-settings-language)
+        
         (let ([diva-central-mixin (make-diva-central-mixin shared-diva-central)])
           
           (define (diva-frame-mixin super%)
@@ -86,12 +91,4 @@
          (lambda ()
            (when (preferences:enable-on-startup?)
              (send shared-diva-central switch-on)))
-         #f))))
-  
-  
-  (define tool@
-    (compound-unit/sig 
-      (import (DRSCHEME-TOOL : drscheme:tool^))
-      (link (LANGUAGE : language^ (language@ DRSCHEME-TOOL))
-	    (VOICE : drscheme:tool-exports^ (voice@ DRSCHEME-TOOL)))
-      (export (open VOICE)))))
+         #f)))))
