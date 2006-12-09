@@ -24,20 +24,46 @@
       (define voice-container-panel parent)
       
       (define voice-label/message/question-panel
-        (make-object horizontal-panel% voice-container-panel))
+        (new horizontal-panel%
+             [parent voice-container-panel]
+             [stretchable-height false]
+             [stretchable-width true]
+             [alignment '(left center)]
+             [horiz-margin 10]))
       
       ;; The panel showing the current mode.
       (define voice-label-panel
-        (make-object message% "" voice-label/message/question-panel))
-
+        (new message%
+             [label ""]
+             [parent voice-label/message/question-panel]
+             [stretchable-width false]
+             [stretchable-height false]
+             [min-width 200]))
+      
       ;; The feedback panel.
       (define voice-message-panel
-        (make-object message% "" voice-label/message/question-panel))
-
+        (new message% 
+             [label ""]
+             [parent voice-label/message/question-panel]
+             [stretchable-height false]
+             [stretchable-width false]
+             [min-width 100]))
+      
       ;; The panel to answer questions need an object where the user can type.
       (define voice-question-text
-        (make-object text%))
-
+        (new text%))
+      
+      ;; The answering panel.
+      (define voice-question-panel
+        (new editor-canvas%
+             [parent voice-label/message/question-panel]
+             [editor voice-question-text]
+             [style '(no-hscroll no-vscroll)]
+             [stretchable-width false]
+             [stretchable-height false]
+             [min-width 0]
+             [line-count 1]))
+      
       (define make-voice-question-text-keymap
         (lambda (cancel answer)
           (let ([question-text-keymap (make-object keymap:aug-keymap%)])
@@ -54,26 +80,10 @@
             (send question-text-keymap map-function "esc"   "voice-question-text:cancel")
             (send question-text-keymap map-function "c:g"   "voice-question-text:cancel")
             question-text-keymap)))
-
-      ;; The answering panel.
-      (define voice-question-panel
-        (make-object editor-canvas% voice-label/message/question-panel voice-question-text '(no-hscroll no-vscroll)))
-
+      
       ;; Configuration of these panels.
-      (send voice-label/message/question-panel stretchable-height false)
-      (send voice-label/message/question-panel stretchable-width  true)
-      (send voice-label-panel stretchable-height false)
-      (send voice-label-panel stretchable-width true)
-      (send voice-label-panel min-width 0)
       (send voice-label-panel show false)
-      (send voice-message-panel stretchable-height false)
-      (send voice-message-panel stretchable-width  true)
-      (send voice-message-panel min-width 100)
-      (send voice-question-panel stretchable-height false)
-      (send voice-question-panel stretchable-width  false)
-      (send voice-question-panel min-width 0)
       (send voice-question-panel show false)
-      (send voice-question-panel set-line-count 1)
       (send voice-label/message/question-panel min-height (+ 8 (send voice-question-panel min-height)))
       
       (define (voice-label-hide)

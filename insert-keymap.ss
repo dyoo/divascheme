@@ -128,12 +128,14 @@
         (define left-edge-of-insert (send window get-start-position))
         (define right-edge-of-insert (send window get-start-position))
         
-        (define insert-color (make-object color% "PINK"))
+        (define (insert-color)
+          (preferences:get ' framework:paren-match-color))
+        
         (define clear-highlight (lambda () (void)))
         
         (define (get-text)
           (send window get-text left-edge-of-insert right-edge-of-insert))
-
+        
         (define (get-text-to-cursor)
           (send window get-text left-edge-of-insert (send window get-start-position)))
         
@@ -304,7 +306,7 @@
                 (send window highlight-range 
                       (crop (sub1 left-edge-of-insert))
                       (crop (add1 right-edge-of-insert))
-                      insert-color)))
+                      (insert-color))))
         
         
         ;; on-insert: number number -> void

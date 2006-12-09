@@ -6,6 +6,7 @@
            (lib "pretty.ss")
            (lib "list.ss")
            (lib "plt-match.ss")
+           (lib "contract.ss")
            "diva-central.ss")
   
   (provide install-diva-central-handler
@@ -61,7 +62,6 @@
   
   (define default-command-mode-bindings/orbitouch
     (append
-     default-command-mode-bindings/qwerty
      '(("0" "diva:backward")
        ("9" "diva:before-this")
        ("8" "diva:up")
@@ -72,7 +72,8 @@
        ("5" "previous-page")
        ("1" "next-page")
        ("2" "forward-character")
-       ("4" "backward-character"))))
+       ("4" "backward-character"))
+     default-command-mode-bindings/qwerty))
   
   ;; These keybindings were contributed by David Cabana.
   (define default-command-mode-bindings/dvorak
@@ -237,14 +238,21 @@
   ;; Attaches a DivaScheme preference panel for user-editable preferences.
   (define (add-preference-panel diva-central)
     
+    (define (read-string str)
+      (let ([ip (open-input-string (format "(~a)" str))])
+        (first (read ip))))
+    
     (define (sexp->string sexp)
-      (let ([op (open-output-string)])
+      (let ([op (open-output-string)]
+            [sexp
+             (map (match-lambda [(list a b) (list a (string->symbol b))])
+                  sexp)])
         (pretty-print sexp op)
         (get-output-string op)))
-
+    
     (define (string->sexp text)
-      (let ([ip (open-input-string (format "(~a)" text))])
-        (first (read ip))))
+      (map (match-lambda [(list a b) (list a (symbol->string b))])
+           (read-string text)))
     
     (define (id->keyboard-symbol id)
       (case id
@@ -265,7 +273,11 @@
         [(orbiTouch) 2]
 	[else 0]))
     
-    
+    (define keybindings/c
+      (listof (list/c (or/c
+                       string?
+                       (list/c (symbols ' alt/meta-prefix) string?))
+                      symbol?)))
     
     (preferences:add-panel
      "DivaScheme"
@@ -275,27 +287,29 @@
          (with-handlers
              ([void
                (lambda (exn)
-                 (message-box "Custom keybindings"
-                              (format "Cannot understand the keybindings specified for the ~a" title))
+                 (message-box "Custom key bindings"
+                              (format "Cannot understand the key bindings specified for the ~a.~n~a" title
+                                      (exn-message exn)))
                  #f)])
-           (string->sexp text)
+           (contract keybindings/c (read-string text) '|the text| '|the key bindings|)
            #t))
        
        
        
        (letrec ([parent (new vertical-panel% [parent p-frame] [border 10])]
                 
-                [display-choice (new choice% [label "View keybindings for "]
+                [display-choice (new choice% [label "View key bindings for "]
                                      [choices '("Command Mode" "Insert Mode" "Globals")]
                                      [parent parent]
                                      [callback
                                       (lambda (c e)
-                                        (set! preferred-keyboard-layout (send display-choice get-selection))
-                                        (send command-keybindings-text show (= 0 (send display-choice get-selection)))
-                                        (send insert-keybindings-text show (= 1 (send display-choice get-selection)))
-                                        (send global-keybindings-text show (= 2 (send display-choice get-selection))))])]
+                                        (send text-pane active-child
+                                              (case (send display-choice get-selection)
+                                                [(0) command-keybindings-text]
+                                                [(1) insert-keybindings-text]
+                                                [(2) global-keybindings-text])))])]
                 
-                [text-pane (new pane% (parent parent))]
+                [text-pane (new panel:single% (parent parent))]
                 
                 [command-keybindings-text
                  (new text-field% [label ""] [parent text-pane] [style '(multiple)]
@@ -313,13 +327,14 @@
                 
                 [preferred-keyboard-layout (keyboard-symbol->id (preferences:get 'divascheme:preferred-keyboard-layout))]
                 
-                [choice (new choice% [label "Set keybinding to built-in layout "]
+                [choice (new choice% [label "Set key binding to built-in layout "]
                              [choices '("Qwerty" "Dvorak" "orbiTouch")]
                              [selection preferred-keyboard-layout]
                              [parent reset-panel])]
                 
                 [set-to-default-keybindings
                  (lambda ()
+                   (set! preferred-keyboard-layout (send choice get-selection))
                    (send command-keybindings-text set-value (sexp->string (id->keymap (send choice get-selection))))
                    (send insert-keybindings-text set-value (sexp->string default-insert-mode-bindings))
                    (send global-keybindings-text set-value (sexp->string default-global-bindings))
@@ -329,11 +344,12 @@
                 
                 [choices-button
                  (new button%
-                      [label "Set keybindings"]
+                      [label "Set key bindings"]
                       [parent reset-panel]
                       [callback (lambda (c e)
-                                  (set-to-default-keybindings))])]
-                )
+                                  (set-to-default-keybindings))])])
+         
+         (send text-pane active-child command-keybindings-text)
          (send (send command-keybindings-text get-editor) set-position 0)
          (send (send insert-keybindings-text get-editor) set-position 0)
          (send (send global-keybindings-text get-editor) set-position 0)
