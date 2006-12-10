@@ -1,41 +1,20 @@
-
-dyoo 2006/10/26: I need to put all acccumlated bugs in a real bug
-tracker.  I'll list the ones that I've accumulated from others:
-
-
 Jon Rafkind:
 
 * it would be nice if shift-t would transpose the current sexp with the
 next sexp, as t transposes it with the previous one
+
+    - Address using keyboard macros.  Need to look at DrScheme to allow
+      ESC as part of macro sequence.
+
 * hitting backspace when the current token is empty should go back to
 the last token and edit that instead. If I type "fo bar" and realize I
 meant "foo" I have to go back to command mode, move to 'fo' and edit it.
 It would be easier to hit backspace 3 times, erasing 'bar' and edit 'fo'
 directly.
-* pressing space on whitespace and then moving breaks divascheme with
-the error
-DivaScheme Error: #(struct:exn:fail:contract first: expected argument of
-type <non-empty list>; given #f #<continuation-mark-set>)
-first: expected argument of type <non-empty list>; given #f
 
+    - yes, agreed.
 
-
-Matthias Felleisen:
-
-Did you read all the articles on structured editing from the 1980s?
-Also try to find some documentation on how to edit in Franz Lisp.
-P.S. Why don't you make it into a PLANET tool?
-
-
-
-
-Mark Haniford:
-
-I have a different problem with DivaScheme.  Sometimes after I've
-typed in a function and hit run, I'll get a "colorizer exception" and
-the editor is unusable so I have to restart Dr. Scheme
-
-
+    
 
 Chris Warrington:
 
@@ -45,69 +24,72 @@ produce
 (cond [(zero? n) 1]
       [else 0])
 With DivaScheme, I have to use { to get the '['.
+
+    - in the future
+
+
 CTRL+C does not seem to work on Windows.
 
-The F5 key does not work in insert mode. I think that it should exit
-insert mode and run the definitions.
-
-    -- should be fixed now: ask Chris to test it out.
-
-
-
-David Cabana:
-
-I want to thank you and your team for DivaScheme. It is a very nice
-addition to an already outstanding product.  I have a question (of
-course). I use the Dvorak keyboard layout, so the i,j,k,l keys do not
-form an inverted T for me. Is there an easy way to remap these?  I
-looked at the code, but I am just a novice schemer. I could not see
-how to do it.
+    - keep this disabled
 
 
 
 Guillaume Marceau:
 
 sources on readable public svn
+
+    - write a script that updates the plt web site with latest sources.
+    - maybe add mirrored svn on hashcollision.org
+    
 add an link to the high-res movie on the web page
 
-release via planet
+    - dyoo: do this
+
 
 space-extend is broken
+
+    - still broken, needs fixing
 
 I think ctrl-space should auto-complete too. Also, Eclipse
 auto-completes on space+space. Aka, space on an empty token
 auto-completes the previous token.
 
-the "backspace on empty token" idea is good
+    - still broken, needs fixing
+
 
 clicking should work in insert mode. it should exit insert then move
 losing focus to go read the help desk, for example, should not leave insert mode
 w with a length-zero cursor should not move the cursor to the end of the word
 
+     - yeah, this would be good.  next release
+
 undo is wrong around calls to transpose
 
-"The parenthesis of the definitions text are not correctly balanced." brings up the stdout window
-under Windows.
+     - not fixed yet
 
+
+We should accomodate both emacs and bash style auto-completion.
+     
 Did you know that DrScheme has emacs-style macros? exciting! but divascheme breaks them. 
-
-;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 
 
 Mon Mar 27 03:50:11 2006  --- Guillaume
 
 - the mark should disapear after edits, pressing shift-M after each bring is annoying
+
+    - bring is broken at the moment
+
+
 - previous should stay available
 
         - _search_ should take multiple arguments ("search define bind")
           Probably many functions in traversal.ss are doing the same thing. mred-state.ss has dead code. 
 	- magic should look for completion in the other open tabs and the repl
-	- an algorithm for "symbol equal huh"
+
 	- cleanup-whitespace breaks on multilines string, or pipe, or any atomic multinlines ---> solution: before calling cleanup-whitespace, we should ask which object in under the cursor, and if it is an atomic, then returns the end position of this atom to cleanup-whitespace
-	- improving every error messages
 	- cleanup-whitespace should insert missing space
+
 	- make keyboard searches interactive and colored (like Emacs)
-	- next and previous should cycle after giving a warning
 	- previous/next are backward for search-backward and search-bottom
 	- a command "go to line"
 	- a command to center the text in the window
