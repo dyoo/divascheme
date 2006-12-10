@@ -96,3 +96,6 @@ Mon Mar 27 03:50:11 2006  --- Guillaume
 
         
 Preference box should have options for templates.
+
+
+DivaScheme should be aware of editor modes and pause if we're editing in text.
