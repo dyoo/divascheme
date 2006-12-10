@@ -307,7 +307,7 @@ Here is the summary of the rearranging command:
 |                  (let ([foo (lambda (x y) (+ x y))])
 |                    (foo 1 2))
 |
-|            m                  marks the placeholder $name$
+|            m                  marks the placeholder $expr$
 |            s f o o enter      selects "[foo (lambda (x y) (+ x y))]"
 |            l                  selects "foo"
 |            shift-B            moves the name "foo" to the define
