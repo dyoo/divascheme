@@ -3,23 +3,47 @@ Subject: Announcing DivaScheme: semi-structured program editing
                               DivaScheme
          ...for times when you wish your doctor would listen
 
-
+         
 DivaScheme is an alternative set of key bindings for DrScheme.  When
 DivaScheme is on, the most important functions of DrScheme are
 available through unchorded keystrokes, and the motion commands
-operate on sexps by default.  DivaScheme also automatically manages
-whitespace and balances parentheses.
+operate on sexps by default.
 
-DivaScheme can be downloaded from:
+To install, evaluate:
 
-http://www.cs.brown.edu/research/plt/software/divascheme/
+    (require (planet "install.ss" ("divascheme" "divascheme.plt" 2)))
 
-DivaScheme was designed and implemented by Romain Legendre, Guillaume
-Marceau, Danny Yoo, Kathi Fisler and Shriram Krishnamurthi.  We thank
-Jay McCarthy for his help. Send comments and bug reports to
-dyoo@wpi.edu.
+at the DrScheme REPL.  After restarting DrScheme, DivaScheme can then
+be toggled on or off by pressing F4.  More information about DivaScheme,
+including demo screencasts, can be found on its web site:
 
-Changes in this release:
+    http://www.cs.brown.edu/research/plt/software/divascheme/
+
+
+Changes
+=======
+
+Release 2.1:
+
+* Now distributed through PLaneT.
+* Added DivaScheme toggle menu option in the File menu.
+* Added configurable keyboard bindings preference pane.  Included default
+  bindings for QUERTY, Dvorak, and Orbitouch keyboard layouts.
+* Added compatibility code to work across the transition to Scott Owens's
+  new unit system.
+* Bug fix: corrections to keymap now allow F5, F6, and other
+  special commands to work in insert mode.
+* Bug fix: added dynamic-wind across call to update-text, to avoid
+  hanging the buffer even if exceptions happen.
+* Bug fix: Removed superfluous printf statement in debug code.
+* Bug fix: inappropriate call to FREEZE-COLORER removed.
+* Bug fix: DivaScheme has single global enabled/disabled state
+  across all windows and tabs.
+* Bug fix: internal error on calling LENGTH or FIRST on a boolean value.
+* Bug fix: Spelling typos corrected in doc.txt
+
+
+Release 2.0:
 
 * Stripped out most template support in preparation for redesign
 * Stripped out Diva Box functionality in preparation for redesign
@@ -29,8 +53,18 @@ Changes in this release:
 * Improved performance and reduced garbage
 * Fixed miscellaneous bugs
 
-DivaScheme was designed and implemented by Guillaume Marceau, Danny
-Yoo, Romain Legendre, Kathi Fisler and Shriram Krishnamurthi.  We
-thank Jay McCarthy for his help.
+
+
+Thanks
+======
+
+DivaScheme was designed and implemented by Romain Legendre, Guillaume
+Marceau, Danny Yoo, Kathi Fisler and Shriram Krishnamurthi.  We thank
+Jay McCarthy for his help as well as the other members of PLT for their
+support.
+
+Thanks also to Aleks Bromfield, Jon Rafkind, Matthias Felleisen, Mark Haniford,
+Chris Warrington, David Cabana, Kyle Smith, Geoffrey Knauth, for their feedback
+and bug reports.
 
 Send comments and bug reports to dyoo@wpi.edu.
