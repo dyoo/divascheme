@@ -93,3 +93,6 @@ Mon Mar 27 03:50:11 2006  --- Guillaume
 	- previous/next are backward for search-backward and search-bottom
 	- a command "go to line"
 	- a command to center the text in the window
+
+        
+Preference box should have options for templates.
