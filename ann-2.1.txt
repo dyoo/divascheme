@@ -11,7 +11,7 @@ operate on sexps by default.
 
 To install, evaluate:
 
-    (require (planet "install.ss" ("divascheme" "divascheme.plt" 2)))
+    (require (planet "install.ss" ("divascheme" "divascheme.plt")))
 
 at the DrScheme REPL.  After restarting DrScheme, DivaScheme can then
 be toggled on or off by pressing F4.  More information about DivaScheme,
