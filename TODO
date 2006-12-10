@@ -68,6 +68,8 @@ undo is wrong around calls to transpose
      - not fixed yet
 
 
+We should have a menu item to invoke STAGS
+     
 We should accomodate both emacs and bash style auto-completion.
      
 Did you know that DrScheme has emacs-style macros? exciting! but divascheme breaks them. 
@@ -77,25 +79,30 @@ Mon Mar 27 03:50:11 2006  --- Guillaume
 
 - the mark should disapear after edits, pressing shift-M after each bring is annoying
 
-    - bring is broken at the moment
-
+- bring is broken at the moment
 
 - previous should stay available
 
-        - _search_ should take multiple arguments ("search define bind")
-          Probably many functions in traversal.ss are doing the same thing. mred-state.ss has dead code. 
-	- magic should look for completion in the other open tabs and the repl
+- _search_ should take multiple arguments ("search define bind")
 
-	- cleanup-whitespace breaks on multilines string, or pipe, or any atomic multinlines ---> solution: before calling cleanup-whitespace, we should ask which object in under the cursor, and if it is an atomic, then returns the end position of this atom to cleanup-whitespace
-	- cleanup-whitespace should insert missing space
+- Probably many functions in traversal.ss are doing the same thing. mred-state.ss has dead code. 
 
-	- make keyboard searches interactive and colored (like Emacs)
-	- previous/next are backward for search-backward and search-bottom
-	- a command "go to line"
-	- a command to center the text in the window
+- magic should look for completion in the other open tabs and the repl
+
+- cleanup-whitespace breaks on multilines string, or pipe, or any atomic multilines 
+    ---> solution: before calling cleanup-whitespace, we should ask which object in under the cursor, 
+    and if it is an atomic, then returns the end position of this atom to cleanup-whitespace
+
+- cleanup-whitespace should insert missing space
+- make keyboard searches interactive and colored (like Emacs)
+- previous/next are backward for search-backward and search-bottom
+- a command "go to line"
+- a command to center the text in the window
 
         
 Preference box should have options for templates.
 
 
 DivaScheme should be aware of editor modes and pause if we're editing in text.
+
+Misspelling a function name when editing key bindings fails silently, it should indicate that there is a program.

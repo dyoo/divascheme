@@ -19,18 +19,13 @@
            
            add-preference-panel)
   
-  (define default-command-mode-bindings/qwerty
+  (define default-command-mode-bindings/common
     '(("return" "diva:enter")
       ("numpadenter" "diva:enter")
       ("tab" "diva:indent")
       ("h" "diva:before-this")
       ("semicolon" "diva:after-this")
       ("r" "diva:insert")
-      ("k" "diva:down")
-      ("i" "diva:up")
-      ("s:k" "diva:out")
-      ("j" "diva:backward")
-      ("l" "diva:forward")
       ("n" "diva:next")
       ("p" "diva:previous")
       ("s" "diva:select")
@@ -55,10 +50,19 @@
       ("{" "diva:open-square")
       ("]" "diva:close")
       (")" "diva:close")
-      ("a" "diva:younger")
-      ("e" "diva:older")
       ("space" "diva:extend-selection")
       ("w" "diva:edit-symbol")))
+  
+  (define default-command-mode-bindings/qwerty
+    (append
+     '(("k" "diva:down")
+       ("i" "diva:up")
+       ("s:k" "diva:out")
+       ("j" "diva:backward")
+       ("l" "diva:forward")
+       ("a" "diva:younger")
+       ("e" "diva:older"))
+     default-command-mode-bindings/common))
   
   (define default-command-mode-bindings/orbitouch
     (append
@@ -77,46 +81,15 @@
   
   ;; These keybindings were contributed by David Cabana.
   (define default-command-mode-bindings/dvorak
-    '(("j" "diva:down")
-      ("e" "diva:up")
-      ("s:e" "diva:out")
-      ("q" "diva:backward")
-      ("k" "diva:forward")
-      ("," "diva:younger")
-      ("." "diva:older")
-      
-      ("return" "diva:enter")
-      ("numpadenter" "diva:enter")
-      ("tab" "diva:indent")
-      ("h" "diva:before-this")
-      ("semicolon" "diva:after-this")
-      ("r" "diva:insert")
-      ("n" "diva:next")
-      ("p" "diva:previous")
-      ("s" "diva:select")
-      ("c" "diva:copy")
-      ("x" "diva:cut")
-      ("v" "diva:paste")
-      ("u" "diva:undo")
-      ("z" "diva:cancel")
-      ("y" "diva:redo")
-      ("d" "diva:delete")
-      ("b" "diva:bring")
-      ("s:b" "diva:push")
-      ("s:x" "diva:exchange")
-      ("m" "diva:mark")
-      ("s:m" "diva:unmark")
-      ("s:h" "diva:holder")
-      ("t" "diva:transpose")
-      ("." "diva:find-tag")
-      ("o" "diva:join")
-      ("[" "diva:open")
-      ("(" "diva:open")
-      ("{" "diva:open-square")
-      ("]" "diva:close")
-      (")" "diva:close")
-      ("space" "diva:extend-selection")
-      ("w" "diva:edit-symbol")))
+    (append
+     '(("j" "diva:down")
+       ("e" "diva:up")
+       ("s:e" "diva:out")
+       ("q" "diva:backward")
+       ("k" "diva:forward")
+       ("`" "diva:younger")
+       ("," "diva:older"))
+     default-command-mode-bindings/common))
   
   (define default-global-bindings
     '(("f4" "diva:toggle")))

@@ -19,9 +19,6 @@ of layout concerns. It automatically maintains the white spaces, the
 indentation, and the balance of the parentheses.
 
 Once installed, you can toggle DivaScheme on and off by pressing F4.
-Enabling DivaScheme sets the key bindings in the DrScheme
-editor window to DivaScheme's command mode.  We will discuss how to
-use DivaScheme's commands via key bindings.
 
 Like Vi, DivaScheme has a command mode and an insert mode. The command
 mode contains code-editing key bindings, and almost all of them are
@@ -72,7 +69,7 @@ the next closing parenthesis (as opposed to inserting an
 out-of-balance close parenthesis character).
 
 The _replace_, _edit_, _insert_, and _open_ commands switch to insert
-mode.  While in insert mode, keyboard keys insert characters instead
+mode.  While in insert mode, key strokes insert characters instead
 of triggering commands, allowing the programmer to write the name of
 Scheme identifiers. The ESC key leaves insert mode and returns to the
 command mode. The CTRL-c key cancels the insert mode: it returns to
@@ -105,7 +102,7 @@ the command mode undoing any inserts done.
 |
 |  Using the command above, we can type a short Scheme expression:
 |
-|        In an empty DivaScheme command window, press the following keys:
+|        In an empty file, with DivaScheme on, press the following keys:
 |
 |          [ * [ + space 1 space 2 ] esc a c shift-H v e ]
 |
@@ -116,10 +113,10 @@ the command mode undoing any inserts done.
 |  Let's go over this key by key.
 |
 |  Pressing "[" at the beginning of this sequence of keys builds
-|  a pair of parentheses, and enters the insert mode. We then type
+|  a pair of parentheses and enters the insert mode. We then type
 |  the multiplication and the first subexpression, and type ESC to
 |  exit the insert mode. We use the navigation commands and the 
-|  copy-paste commands of the command mode to copy the first
+|  copy and paste commands of the command mode to copy the first
 |  subexpression. At this point the window contains this expression:
 |
 |          (* (+ 1 2) $expr$ ---)
@@ -201,17 +198,18 @@ only match prefixes of identifiers. They will not match characters in
 the middle of an identifier, and will not match words inside of
 comments. Searching selects the entire sexp whenever the search
 matches the first symbol in the sexp. To select the first symbol
-itself, execute the search then use the _forward_ command by pressing the
-"l" key.
+itself, execute the search then go to the next sexp to the right
+by pressing the "l" key.
 
 DivaScheme can also compute and jump to the definition point of an 
 identifier. In the DivaScheme directory, you will find an
-executable "stags", short for Scheme Tags. This executable consumes
+executable called "stags", short for "Scheme Tags". This executable consumes
 the name of all the Scheme source files composing your project, as 
 a command line arguments. It will produce a file called STAGS in the current
 directory. Load this file by selecting "File/Load Navigation Tags" in the
 menus of the main window of DrScheme. Note that DivaScheme automatically 
-load the STAGS file in the current directory when DrScheme starts, if any.
+load the STAGS file in the current directory when DrScheme starts, if 
+one is present.
 
 Once a tag file is loaded, use the "." key to jump to the definition
 point of an identifier. Also, the names mentioned in the tag file will be 
@@ -345,6 +343,64 @@ Here is the summary of the rearranging command:
 |          as we wanted.
 |
 `===========================================================
+
+
+
+The key bindings of DivaScheme are customizable.  In the DivaScheme
+tab of the preferences dialog box you will find a list of all the
+active key bindings.  This list is editable, as long as it remains an
+association list mapping keystrokes to function names.  In addition to
+the DivaScheme functions (with the "diva:" prefix), the right hand
+side of each pair can refer to any text editing function listed in the
+entry for _add-text-keymap-functions_, in the Help Desk.
+
+DivaScheme has an alternative set of key bindings for people using a
+Dvorak keyboard.  On a Dvorak, the movement key "i, ,j, k, l" no
+longer form an inverted T, so DivaScheme uses "e, q, j, k" instead.
+Similarly, DivaScheme has a set of key bindings for people using the
+orbiTouch key-less keyboard, so that the movement keys form a sensible
+mnemonic. You can enable these alternative key bindings via the
+preference dialog box.
+
+
+ ,---------------------------------------------------------.
+ |                                                         |
+ |    Table 6 : _DivaScheme on a Dvorak keyboard_          |
+ |                                                         |
+ |        key           command                            |
+ |                                                         |
+ |         e            up                                 |
+ |         j            down                               |
+ |         q            left                               |
+ |         k            right                              |
+ |         `            previous sexp                      |
+ |         ,            next sexp                          |
+ |                                                         |
+ |       shift-E        out                                |
+ |                                                         |
+ `---------------------------------------------------------'
+
+
+ ,-------------------------------------------------------------.
+ |                                                             |
+ |    Table 7 : _DivaScheme on an orbiTouch keyboard_          |
+ |                                                             |
+ |        key           command                    motion      |
+ |                                                             |
+ |         8            up                        up + down    |
+ |         =            down               down-left + down    |
+ |         0            left                    left + down    |
+ |         6            right                  right + down    |
+ |         9            insert before        up-left + down    |
+ |         7            insert after        up-right + down    |
+ |                                                             |
+ |         5            previous page       left + down-left   |
+ |         1            next page          right + down-left   |
+ |         2            forward char    up-right + down-left   |
+ |         4            backward char    up-left + down-left   |
+ |         3            out                   up + down-left   |
+ |                                                             |
+ `-------------------------------------------------------------'
 
 
 
