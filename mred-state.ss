@@ -80,7 +80,6 @@
       
       (define/public (critical-error exn)
         (let ([err-msg (format "DivaScheme Error: ~a" exn)])
-          (fprintf (current-error-port) "~a~n" err-msg)
           (print-error-trace (current-error-port) exn)
           (diva-message err-msg))
         (raise exn))
@@ -91,15 +90,15 @@
       
       (define/public (message str)
         (diva-message str))
-
+      
       
       ;;
       ;; TEXT & SYNTAX STUFFS
       ;;
-
+      
       (define/public (get-text)
         (send window-text diva:-get-text))
-
+      
       (define/public (get-syntax-list)
         (parse-syntax/dot (get-text)))
       
