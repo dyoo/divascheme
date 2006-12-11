@@ -1,13 +1,15 @@
-Subject: Announcing DivaScheme: semi-structured program editing
+Subject: DivaScheme 2.1 released
 
                               DivaScheme
          ...for times when you wish your doctor would listen
 
-         
-DivaScheme is an alternative set of key bindings for DrScheme.  When
-DivaScheme is on, the most important functions of DrScheme are
-available through unchorded keystrokes, and the motion commands
-operate on sexps by default.
+We are happy to release a new version of DivaScheme.  This is mostly a
+bug fix release. Notably, DivaScheme is also now fully compatible with
+DrScheme v360.
+
+If you have previously installed DivaScheme, before installing this
+new release, you must remove the previous installation's collection
+directory.
 
 To install, evaluate:
 
@@ -15,7 +17,7 @@ To install, evaluate:
 
 at the DrScheme REPL.  After restarting DrScheme, DivaScheme can then
 be toggled on or off by pressing F4.  More information about
-DivaScheme, including demo screencasts, can be found on its web site:
+DivaScheme, including a demo screencast, can be found on its web site:
 
     http://www.cs.brown.edu/research/plt/software/divascheme/
 
@@ -27,16 +29,20 @@ Release 2.1:
 
 Features:
 
+    * Key bindings now fully customizable through the preference
+      dialog box.  Included alternative sets of key bindings for Dvorak
+      and orbiTouch keyboards.
+
+    * DivaScheme is now active in the interaction window.
+
     * Now distributed through PLaneT.
 
     * Added DivaScheme toggle menu option in the File menu.
 
-    * Added configurable keyboard bindings preference pane.  Included
-      default bindings for QUERTY, Dvorak, and Orbitouch keyboard
-      layouts.
-
     * Added compatibility code to work across the transition to Scott
       Owens's new unit system.
+
+    * Compatibility with DrScheme 360.
 
 Bug fixes:
 
@@ -50,25 +56,12 @@ Bug fixes:
 
     * Removed inappropriate call to FREEZE-COLORER.
 
-    * Added single global enabled/disabled state across all windows
+    * Corrected bugs involving enabled/disabled state across windows
       and tabs.
 
-    * Removed erroneous calls to LENGTH or FIRST on a boolean value.
+    * Corrected miscellaneous bugs.
 
     * Corrected typos in doc.txt.
-
-
-
-Release 2.0:
-
-* Stripped out most template support in preparation for redesign.
-* Stripped out Diva Box functionality in preparation for redesign.
-* Added jump-to-def'n based on precomputed locations (a la ETAGS).
-* Reworked the motion keymap to use an inverted-T layout.
-* Added a syntax flash on s-expression close.
-* Improved performance and reduced garbage.
-* Fixed miscellaneous bugs.
-
 
 
 Thanks
