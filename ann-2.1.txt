@@ -14,8 +14,8 @@ To install, evaluate:
     (require (planet "install.ss" ("divascheme" "divascheme.plt")))
 
 at the DrScheme REPL.  After restarting DrScheme, DivaScheme can then
-be toggled on or off by pressing F4.  More information about DivaScheme,
-including demo screencasts, can be found on its web site:
+be toggled on or off by pressing F4.  More information about
+DivaScheme, including demo screencasts, can be found on its web site:
 
     http://www.cs.brown.edu/research/plt/software/divascheme/
 
@@ -25,35 +25,49 @@ Changes
 
 Release 2.1:
 
-* Feature: now distributed through PLaneT.
-* Feature: added DivaScheme toggle menu option in the File menu.
-* Feature: added configurable keyboard bindings preference pane.
-  Included default bindings for QUERTY, Dvorak, and Orbitouch keyboard
-  layouts.
-* Feature: added compatibility code to work across the transition to Scott
-  Owens's new unit system.
-* Bug fix: corrected keymap code to allow F5, F6, and other
-  special commands to work in insert mode.
-* Bug fix: added dynamic-wind across call to update-text, to avoid
-  hanging the buffer even if exceptions happen.
-* Bug fix: removed superfluous printf statement in debug code.
-* Bug fix: removed inappropriate call to FREEZE-COLORER.
-* Bug fix: added single global enabled/disabled state   
-  across all windows and tabs.
-* Bug fix: removed erroneous calls to LENGTH or FIRST on a
-  boolean value.
-* Bug fix: corrected typos in doc.txt.
+Features:
+
+    * Now distributed through PLaneT.
+
+    * Added DivaScheme toggle menu option in the File menu.
+
+    * Added configurable keyboard bindings preference pane.  Included
+      default bindings for QUERTY, Dvorak, and Orbitouch keyboard
+      layouts.
+
+    * Added compatibility code to work across the transition to Scott
+      Owens's new unit system.
+
+Bug fixes:
+
+    * Corrected keymap code to allow F5, F6, and other special
+      commands to work in insert mode.
+
+    * Added DYNAMIC-WIND across call to update-text, to avoid hanging
+      the buffer even if exceptions happen.
+
+    * Removed superfluous printf statement in debug code.
+
+    * Removed inappropriate call to FREEZE-COLORER.
+
+    * Added single global enabled/disabled state across all windows
+      and tabs.
+
+    * Removed erroneous calls to LENGTH or FIRST on a boolean value.
+
+    * Corrected typos in doc.txt.
+
 
 
 Release 2.0:
 
-* Stripped out most template support in preparation for redesign
-* Stripped out Diva Box functionality in preparation for redesign
-* Added jump-to-def'n based on precomputed locations (a la ETAGS)
-* Reworked the motion keymap to use an inverted-T layout
-* Added a syntax flash on s-expression close
-* Improved performance and reduced garbage
-* Fixed miscellaneous bugs
+* Stripped out most template support in preparation for redesign.
+* Stripped out Diva Box functionality in preparation for redesign.
+* Added jump-to-def'n based on precomputed locations (a la ETAGS).
+* Reworked the motion keymap to use an inverted-T layout.
+* Added a syntax flash on s-expression close.
+* Improved performance and reduced garbage.
+* Fixed miscellaneous bugs.
 
 
 
@@ -62,11 +76,11 @@ Thanks
 
 DivaScheme was designed and implemented by Romain Legendre, Guillaume
 Marceau, Danny Yoo, Kathi Fisler and Shriram Krishnamurthi.  We thank
-Jay McCarthy for his help as well as the other members of PLT for their
-support.
+Jay McCarthy for his help as well as the other members of PLT for
+their support.
 
-Thanks also to Aleks Bromfield, Jon Rafkind, Matthias Felleisen, Mark Haniford,
-Chris Warrington, David Cabana, Kyle Smith, Geoffrey Knauth, for their feedback
-and bug reports.
+Thanks also to Aleks Bromfield, Jon Rafkind, Matthias Felleisen, Mark
+Haniford, Chris Warrington, David Cabana, Kyle Smith, and Geoffrey
+Knauth for their feedback and bug reports.
 
 Send comments and bug reports to dyoo@wpi.edu.
