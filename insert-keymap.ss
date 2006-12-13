@@ -168,11 +168,15 @@
                                          (list #f))))])
             (cond
               [stx/false
-               (set-world (send actions select/stx world stx/false))
-               (begin-symbol (send window get-start-position)
-                             (send window get-end-position))
-               (send window set-position (send window get-end-position))
-               (set-insert&delete-callbacks)]
+               (let ([original-pos (send window get-end-position)])
+                 (set-world (send actions select/stx world stx/false))
+                 (begin-symbol (send window get-start-position)
+                               (send window get-end-position))
+                 (send window set-position
+                       (clamp original-pos
+                              (send window get-start-position)
+                              (send window get-end-position)))
+                 (set-insert&delete-callbacks))]
               [else
                (begin-symbol-insertion)])))
         
@@ -181,12 +185,12 @@
         
         (define (begin-symbol-insertion)
           (define left-point (send window get-start-position))
-
+          
           (define need-space-before
             (and (not (= 0 left-point))
                  (not (eq? #\space
                            (send window get-character (sub1 left-point))))))
-
+          
           (define need-space-after
             (or (= (string-length (send window get-text))
                    left-point)

@@ -59,7 +59,6 @@ auto-completes the previous token.
 
 clicking should work in insert mode. it should exit insert then move
 losing focus to go read the help desk, for example, should not leave insert mode
-w with a length-zero cursor should not move the cursor to the end of the word
 
      - yeah, this would be good.  next release
 
