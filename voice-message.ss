@@ -133,7 +133,7 @@
         (apply set-message-text voice-message-msg message args))
       
       
-      (define/public (voice-question-prompt message . args)
+      (define (voice-question-prompt message . args)
         (apply set-message-text voice-question-msg message args))
       
       
