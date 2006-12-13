@@ -19,13 +19,13 @@
   (define voice-label/message/question-panel%
     (class object%
       (init parent)
-      (super-instantiate ())
-
-      (define voice-container-panel parent)
+      (super-new)
+      
+      (define voice-label-width 200)
       
       (define voice-label/message/question-panel
         (new horizontal-panel%
-             [parent voice-container-panel]
+             [parent parent]
              [stretchable-height false]
              [stretchable-width true]
              [alignment '(left center)]
@@ -38,7 +38,7 @@
              [parent voice-label/message/question-panel]
              [stretchable-width false]
              [stretchable-height false]
-             [min-width 200]))
+             [min-width voice-label-width]))
       
       ;; The feedback panel.
       (define voice-message-panel
@@ -91,7 +91,7 @@
         (send voice-label-panel show false))
       
       (define (voice-label-show)
-        (send voice-label-panel min-width 180)
+        (send voice-label-panel min-width voice-label-width)
         (send voice-label-panel show true))
 
       (define (voice-label-shown?)
@@ -101,7 +101,7 @@
       (define/public (voice-label label)
         (if label
             (begin
-              (send voice-label-panel set-label (substring label 0 (min 200 (string-length label))))
+              (send voice-label-panel set-label (substring label 0 (min voice-label-width (string-length label))))
               (voice-label-show))
             (begin
               (voice-label-hide))))
