@@ -110,7 +110,7 @@
       (define/public (voice-message message . args)
         (let* ([message (apply format message args)]
                [text (substring message 0 (min 200 (string-length message)))])
-          (print-current-stack-trace)
+          #; (print-current-stack-trace)
           (send voice-message-panel set-label text)))
 
 
