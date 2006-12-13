@@ -119,25 +119,28 @@
               (voice-label-show))
             (begin
               (voice-label-hide))))
-
+      
+      
+      
+      (define (set-message-text text message . args)
+        (let* ([message (apply format message args)]
+               [short-message (substring message 0 (min 200 (string-length message)))])
+          (send text min-width (string-length short-message))
+          (send text set-label short-message)))
+      
       ;; The function to show a message.
       (define/public (voice-message message . args)
-        (let* ([message (apply format message args)]
-               [text (substring message 0 (min 200 (string-length message)))])
-          (send voice-message-msg min-width (string-length text))
-          (send voice-message-msg set-label text)))
+        (apply set-message-text voice-message-msg message args))
       
       
       (define/public (voice-question-prompt message . args)
-        (let* ([message (apply format message args)]
-               [text (substring message 0 (min 200 (string-length message)))])
-          (send voice-question-msg min-width (string-length text))
-          (send voice-question-msg set-label text)))
+        (apply set-message-text voice-question-msg message args))
       
       
       ;; The function to show the question panel.
       (define voice-question-panel-show
         (lambda ()
+          (send voice-question-panel show #t)
           (send voice-question-canvas min-width 180)
           (send voice-question-canvas show true)
           (send voice-question-canvas focus)))
@@ -145,6 +148,7 @@
       ;; The function to hide the question panel.
       (define voice-question-panel-hide
         (lambda ()
+          (send voice-question-panel show #f)
           (send voice-question-canvas min-width 0)
           (send voice-question-canvas show false)))
       
@@ -171,7 +175,7 @@
                [keymap (make-voice-question-text-keymap cancel answer)])
           (when (voice-label-shown?)
             (voice-label-hide))
-          (voice-message "")
+          (voice-message "") ;; TODO: should we really clear voice-message here?
           (voice-question-prompt (format "~a: " question))
           (send voice-question-text set-keymap keymap)
           (send voice-question-text erase)
