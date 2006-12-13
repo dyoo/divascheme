@@ -32,34 +32,48 @@
              [horiz-margin 10]))
       
       ;; The panel showing the current mode.
-      (define voice-label-panel
+      (define voice-label-msg
         (new message%
              [label ""]
              [parent voice-label/message/question-panel]
-             [stretchable-width false]
-             [stretchable-height false]
-             [min-width voice-label-width]))
+             [stretchable-width true]
+             [stretchable-height false]))
       
       ;; The feedback panel.
-      (define voice-message-panel
+      (define voice-message-msg
         (new message% 
              [label ""]
              [parent voice-label/message/question-panel]
+             [stretchable-width true]
+             [stretchable-height false]))
+      
+      
+      (define voice-question-panel
+        (new horizontal-panel%
+             [parent voice-label/message/question-panel]
              [stretchable-height false]
-             [stretchable-width false]
-             [min-width 100]))
+             [stretchable-width true]
+             [alignment '(right center)]
+             [horiz-margin 10]))
+      
+      (define voice-question-msg
+        (new message%
+             [label ""]
+             [parent voice-question-panel]
+             [stretchable-width true]
+             [stretchable-height false]))
       
       ;; The panel to answer questions need an object where the user can type.
       (define voice-question-text
         (new text%))
       
       ;; The answering panel.
-      (define voice-question-panel
+      (define voice-question-canvas
         (new editor-canvas%
-             [parent voice-label/message/question-panel]
+             [parent voice-question-panel]
              [editor voice-question-text]
              [style '(no-hscroll no-vscroll)]
-             [stretchable-width false]
+             [stretchable-width true]
              [stretchable-height false]
              [min-width 0]
              [line-count 1]))
@@ -82,26 +96,26 @@
             question-text-keymap)))
       
       ;; Configuration of these panels.
-      (send voice-label-panel show false)
-      (send voice-question-panel show false)
-      (send voice-label/message/question-panel min-height (+ 8 (send voice-question-panel min-height)))
+      (send voice-label-msg show false)
+      (send voice-question-canvas show false)
+      (send voice-label/message/question-panel min-height (+ 8 (send voice-question-canvas min-height)))
       
       (define (voice-label-hide)
-        (send voice-label-panel min-width 0)
-        (send voice-label-panel show false))
+        (send voice-label-msg min-width 0)
+        (send voice-label-msg show false))
       
       (define (voice-label-show)
-        (send voice-label-panel min-width voice-label-width)
-        (send voice-label-panel show true))
+        (send voice-label-msg min-width voice-label-width)
+        (send voice-label-msg show true))
 
       (define (voice-label-shown?)
-        (send voice-label-panel is-shown?))
+        (send voice-label-msg is-shown?))
 
       
       (define/public (voice-label label)
         (if label
             (begin
-              (send voice-label-panel set-label (substring label 0 (min voice-label-width (string-length label))))
+              (send voice-label-msg set-label (substring label 0 (min voice-label-width (string-length label))))
               (voice-label-show))
             (begin
               (voice-label-hide))))
@@ -110,22 +124,29 @@
       (define/public (voice-message message . args)
         (let* ([message (apply format message args)]
                [text (substring message 0 (min 200 (string-length message)))])
-          #; (print-current-stack-trace)
-          (send voice-message-panel set-label text)))
-
-
+          (send voice-message-msg min-width (string-length text))
+          (send voice-message-msg set-label text)))
+      
+      
+      (define/public (voice-question-prompt message . args)
+        (let* ([message (apply format message args)]
+               [text (substring message 0 (min 200 (string-length message)))])
+          (send voice-question-msg min-width (string-length text))
+          (send voice-question-msg set-label text)))
+      
+      
       ;; The function to show the question panel.
       (define voice-question-panel-show
         (lambda ()
-          (send voice-question-panel min-width 180)
-          (send voice-question-panel show true)
-          (send voice-question-panel focus)))
+          (send voice-question-canvas min-width 180)
+          (send voice-question-canvas show true)
+          (send voice-question-canvas focus)))
       
       ;; The function to hide the question panel.
       (define voice-question-panel-hide
         (lambda ()
-          (send voice-question-panel min-width 0)
-          (send voice-question-panel show false)))
+          (send voice-question-canvas min-width 0)
+          (send voice-question-canvas show false)))
       
       ;; The function to ask a question.
       ;; This is a callback function,
@@ -140,20 +161,18 @@
                [answer (lambda ()
                          (handle-voice-label)
                          (voice-question-panel-hide)
-                         (voice-message "")
-                         (send voice-message-panel stretchable-width true)
+                         (voice-question-prompt "")
                          (answer (send voice-question-text get-text)))]
                [cancel (lambda ()
                          (handle-voice-label)
                          (voice-question-panel-hide)
-                         (voice-message "")
-                         (send voice-message-panel stretchable-width true)
+                         (voice-question-prompt "")
                          (cancel))]
                [keymap (make-voice-question-text-keymap cancel answer)])
           (when (voice-label-shown?)
             (voice-label-hide))
-          (voice-message (format "~a: " question))
-          (send voice-message-panel stretchable-width false)
+          (voice-message "")
+          (voice-question-prompt (format "~a: " question))
           (send voice-question-text set-keymap keymap)
           (send voice-question-text erase)
           (send voice-question-text insert default)
