@@ -531,11 +531,14 @@
       
       ;; bring : World -> World
       (define (bring world)
-        (let* ([world (if (= 0 (World-mark-length world))
-                          (match (find-pos-fill-forward (World-selection-end-position world) (World-syntax-list world))
-                            [#f  (raise (make-voice-exn "No mark, so nothing to fill with."))]
-                            [stx (mark/stx world stx)])
-                          world)]
+        (define (originally-unmarked?)
+          (= 0 (World-mark-length world)))
+        (define (mark-default world)
+          (match (find-pos-fill-forward (World-selection-end-position world) (World-syntax-list world))
+            [#f (raise (make-voice-exn "No mark, so nothing to fill with."))]
+            [stx (mark/stx world stx)]))
+        
+        (let* ([world (if (originally-unmarked?) (mark-default world) world)]
                [world (extend-mark-to-newline world)]
                [fill-text (format " ~a " (World-mark world))]
                [world (id (replace/selection (dedouble-ellipsis (delete/mark world)) fill-text))]
@@ -544,10 +547,11 @@
                           (set-mark-position world (World-selection-end-position world))
                           world)]
                [stx/false (find-pos-mark-forward (World-mark-position world) (World-syntax-list world))]
-               [world (if stx/false
+               [world (if (and (not (originally-unmarked?))
+                               stx/false)
                           (mark/stx world stx/false)
                           world)])
-            (holder/end world)))
+          (holder/end world)))
       
       ;; push : World -> World
       (define (push world)
