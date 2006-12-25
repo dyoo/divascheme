@@ -151,21 +151,22 @@
 	mark-end-position)
 
       (define/public (diva:-set-mark start-pos end-pos)
-	(hide-mark)
+        (printf "diva:-set-mark ~a ~a~n" start-pos end-pos)
+        (hide-mark)
 	(set! mark-start-position start-pos)
 	(set! mark-end-position   end-pos)
 	(show-mark))
-
+      
       (inherit highlight-range)
-
+      
       (define mark-color (send the-color-database find-color "Orange"))
-
+      
       (define (show-mark)
 	(unless (= mark-start-position mark-end-position)
-	   (set! hide-mark (highlight-range mark-start-position mark-end-position mark-color false false 'low))))
+          (set! hide-mark (highlight-range mark-start-position mark-end-position mark-color false false 'low))))
       
       (define hide-mark (lambda () ()))
-
+      
       (define (reset-mark)
 	(hide-mark)
 	(set! mark-end-position mark-start-position))))

@@ -163,45 +163,8 @@
 	    (set-mark (+ pos len) (- len))))
 
 
-      ;; TODO: transparency for the background when it cancels - DONE
-      ;; TODO: When inserting text, coloration of the new text is bad !!!!!!
-      ;; TODO: problem when selection and mark are the same (inclusion ==> bigger mark makes smaller selection disappear)
-      ;; TODO: when text-backing on is true, but not when false; problem (exclusion ==> smaller mark does not appear in bigger selection)
-      ;; TODO: coloration problem with the mark...
-      ;; (send a-color-database find-color color-name) 
-      (define selection-color (send the-color-database find-color "Light Blue"))
-      (define mark-color (send the-color-database find-color "Orange"))
-
-      ;; To handle the colorization color problem
-      ;; ===> the selected element is not colorized
-      ;;  ==> deselect it
-      ;;   => colorize
-      ;;    > reselect it
-      ;; In fact, the transparent-text-baking says if we keep what was behind before
-      ;; If sthg was selected, the two are kept, and so...
-      ;; So, transparent text backing is on only for uncolorizing.
-      (define (colorize/pos+len+color+priority pos len color priority)
-        (let* ([start  (syntax-position->mred-position pos)]
-               [end    (+ start len)])
-          (send window-text highlight-range start end color false false priority)))
-
-      (define uncolorize/selection (lambda () ()))
       
-      (define (colorize/selection pos len)
-	(let ([off (colorize/pos+len+color+priority pos len selection-color 'high)])
-	  (set! uncolorize/selection (lambda ()
-				       (off)
-				       (set! uncolorize/selection void)))))
-
-      (define uncolorize/mark (lambda () ()))
       
-      (define (colorize/mark pos len)
-	(let ([off (colorize/pos+len+color+priority pos len mark-color 'low)])
-	  (set! uncolorize/mark (lambda () 
-				  (off) 
-				  (set! uncolorize/mark void)))))
-
-
       ;;
       ;; TEXT 2 WORLD STUFFS
       ;;
@@ -210,17 +173,18 @@
       ;; update-world-text should be first so that if the content of the buffer
       ;; is not parsable, nothing is changed.
       (define/public (update-world world)
-       (update-world-path
-        (update-world-mark 
-         (update-world-select 
-          (update-world-text world)))))
-
-
+        (printf "update-world~n")
+        (update-world-path
+         (update-world-mark 
+          (update-world-select 
+           (update-world-text world)))))
+      
+      
       ;; update-world-path: World -> World
       (define (update-world-path world)
         (copy-struct World world
                      [World-path (send window-text get-filename)]))
-
+      
       ;; update-world-text : World -> World
       (define/public (update-world-text world)
         (cond
@@ -251,14 +215,15 @@
       ;; update-mred : World -> World
       ;; We are updating the mark before the selection so that the selection is not hidden by the mark.
       (define/public (update-mred world)
+        (printf "update-mred~n")
 	(select-mred (mark-mred (update-mred-text world))))
-
+      
       ;; update-mred-text : World -> World
       (define (update-mred-text world)
         (unless (string=? (World-text world) (get-text))
-	     (update-text (World-text world)))
+          (update-text (World-text world)))
 	world)
-
+      
       ;; select-mred : World -> World
       (define (select-mred world)
         (set-selection (World-cursor-position world) (World-selection-length world))
