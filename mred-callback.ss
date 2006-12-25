@@ -2,16 +2,17 @@
   (require (lib "etc.ss")
            (lib "class.ss")
            (lib "mred.ss" "mred")
-	   "utilities.ss"
+           (lib "pregexp.ss")
+           "utilities.ss"
            "long-prefix.ss")
-
+  
   ;; Here we are defining mixins for text% and canvas% classes
   ;; whose instanciations would be handled by a mred-state%.
   ;; These mixins are setting callbacks and variables.
-
+  
   ;; There is a special one for the interaction because it is a special text:
   ;; there is some text to be removed, and some part to be read-only, etc..
-
+  
   (provide voice-mred-text-callback-mixin
            voice-mred-interactions-text-callback-mixin)
   
@@ -175,21 +176,16 @@
   ;;      Bienvenue dans DrScheme, version 299.405-svn9nov2005.
   ;;      Langage: Textuel (MzScheme).
   ;;      > 
-  ;; NB: work only for interactions window because elsewhere the function initialize-console does not exist.
+  ;;
+  ;; We do so by focusing diva:-get-text to text stuff after the unread-start-point; everything
+  ;; before it will be hidden from DivaScheme.  At the moment, we do so by making the previous
+  ;; characters into 'X's.  Not perfect, but it sorta works.
   (define (voice-mred-interactions-text-callback-mixin super%)
     (class (voice-mred-text-callback-mixin super%)
       (super-instantiate ())
-
-      (inherit get-text)
       
-      (define annotations-length 3)
-      
-      (define (get-annotations-length)
-        annotations-length)
-
-      (define/override (initialize-console)
-        (super initialize-console)
-        (set! annotations-length (string-length (get-text))))
+      (inherit get-text
+               get-unread-start-point)
       
       (define/override (diva:-update-text text)
         ;; rehydrate-prompts-in-text: cleanup-text munges the following space
@@ -200,21 +196,25 @@
       
       
       (define/override (diva:-get-text)
-        (define hide-character #\X)
-        (define (hide-annotations text)
-          (let ([annotations-length (get-annotations-length)])
-            (format "~a~n~n~n~a"
-                    (make-string (- annotations-length 3) hide-character)
-                    (substring text annotations-length (string-length text)))))
-        ;; hide-structures: string -> string
-        ;; obscure what look like structures from being badly read.
-        ;; FIXME: This is a kludge: we really should be paying attention to snips, and not
-        ;; assume that everything is a string.
-        (define (hide-structures text)
-          (regexp-replace* "#<([^>]*)>" text "<<\\1>"))
-        (let ([text (get-text)])
+        (define hide-character "X")
+        (define non-control (pregexp "[^[:cntrl:]]"))
+        
+        (define (last-char text)
+          (string-ref text (sub1 (string-length text))))
+        
+        (define (hide-annotations annotated-text)
           (cond
-            [(= 0 (string-length text)) text]
+            [(and (> (string-length annotated-text) 0)
+                  (char-whitespace? (last-char annotated-text)))
+             (string-append
+              (pregexp-replace* non-control
+                                (substring annotated-text 0 (sub1 (string-length annotated-text)))
+                                hide-character)
+              (substring annotated-text (sub1 (string-length annotated-text))))]
             [else
-             (hide-structures
-              (hide-annotations text))]))))))
+             (pregexp-replace* non-control annotated-text hide-character)]))
+        
+        (let ([text (get-text)])
+          (string-append
+           (hide-annotations (substring text 0 (get-unread-start-point)))
+           (substring text (get-unread-start-point))))))))
