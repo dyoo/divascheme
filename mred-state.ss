@@ -149,7 +149,7 @@
       ;; MARK STUFFS
       ;;
       
-      (define/public (get-mark-position)
+      (define/public (get-mark-position)  
 	(index->pos (send window-text diva:-get-mark-start-position)))
 
       (define/public (get-mark-length)
@@ -173,7 +173,6 @@
       ;; update-world-text should be first so that if the content of the buffer
       ;; is not parsable, nothing is changed.
       (define/public (update-world world)
-        (printf "update-world~n")
         (update-world-path
          (update-world-mark 
           (update-world-select 
@@ -215,8 +214,7 @@
       ;; update-mred : World -> World
       ;; We are updating the mark before the selection so that the selection is not hidden by the mark.
       (define/public (update-mred world)
-        (printf "update-mred~n")
-	(select-mred (mark-mred (update-mred-text world))))
+        (select-mred (mark-mred (update-mred-text world))))
       
       ;; update-mred-text : World -> World
       (define (update-mred-text world)

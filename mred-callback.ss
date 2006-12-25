@@ -80,13 +80,13 @@
       (define/augment (after-insert start len) 
         (diva-printf "AFTER INSERT called with start: ~a len: ~a~n" start len)
         (inner void after-insert start len)
-	(reset-mark))
-
+        (preserve-mark start len))
+      
       (define/augment (after-delete start len)
         (diva-printf "AFTER DELETE called with start: ~a len: ~a~n" start len)
         (inner void after-delete start len)
-	(reset-mark))
-
+        (preserve-mark start (- len)))
+      
       
 
       ;;
@@ -151,7 +151,6 @@
 	mark-end-position)
 
       (define/public (diva:-set-mark start-pos end-pos)
-        (printf "diva:-set-mark ~a ~a~n" start-pos end-pos)
         (hide-mark)
 	(set! mark-start-position start-pos)
 	(set! mark-end-position   end-pos)
@@ -167,11 +166,22 @@
       
       (define hide-mark (lambda () ()))
       
-      (define (reset-mark)
-	(hide-mark)
-	(set! mark-end-position mark-start-position))))
-
-
+      (define (preserve-mark start delta)
+        (hide-mark)
+        (when (<= start mark-start-position)
+          (set! mark-start-position (+ mark-start-position delta))
+          (set! mark-end-position (+ mark-end-position delta)))
+        (unless (and (legal-mark-pos? mark-start-position)
+                     (legal-mark-pos? mark-end-position))
+          (set! mark-start-position 0)
+          (set! mark-end-position 0))
+        (show-mark))
+      
+      (define (legal-mark-pos? pos)
+        (<= 0 pos (string-length (get-text))))))
+  
+  
+  
   ;; All the stuffs here is for removing the "annotations" at the beginning of the interactions window
   ;; which makes read-syntax unhappy: 
   ;;      Bienvenue dans DrScheme, version 299.405-svn9nov2005.
