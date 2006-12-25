@@ -199,6 +199,9 @@
         (define hide-character "X")
         (define non-control (pregexp "[^[:cntrl:]]"))
         
+        (define (all-but-last text)
+          (substring text 0 (sub1 (string-length text))))
+        
         (define (last-char text)
           (string-ref text (sub1 (string-length text))))
         
@@ -207,10 +210,8 @@
             [(and (> (string-length annotated-text) 0)
                   (char-whitespace? (last-char annotated-text)))
              (string-append
-              (pregexp-replace* non-control
-                                (substring annotated-text 0 (sub1 (string-length annotated-text)))
-                                hide-character)
-              (substring annotated-text (sub1 (string-length annotated-text))))]
+              (pregexp-replace* non-control (all-but-last annotated-text) hide-character)
+              (string (last-char annotated-text)))]
             [else
              (pregexp-replace* non-control annotated-text hide-character)]))
         
