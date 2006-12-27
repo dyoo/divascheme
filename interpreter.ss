@@ -890,12 +890,14 @@
   
   
   ;; eval-Transpose : World -> World
-  (define (eval-Transpose world)
+  (define (eval-Transpose original-world)
     (queue-imperative-action
-     (world-clear world)
+     (world-clear original-world)
      (lambda (world window)
        (send window transpose-sexp (pos->index (World-cursor-position world)))
-       world)))
+       (copy-struct World world
+                    [World-cancel original-world]
+                    [World-undo original-world]))))
   
   (define (eval-Extend-Selection world)
     (world-clear/extend
