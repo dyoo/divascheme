@@ -50,6 +50,7 @@
       ("{" "diva:open-square")
       ("]" "diva:close")
       (")" "diva:close")
+      ("}" "diva:close")
       ("space" "diva:extend-selection")
       ("w" "diva:edit-symbol")))
   
@@ -103,7 +104,7 @@
       
       ("(" "diva:open")
       (")" "diva:close")
-      ("[" "diva:open")
+      ("[" "diva:open-square")
       ("]" "diva:close-square")
       ("{" "diva:open-curly")
       ("}" "diva:close-curly")

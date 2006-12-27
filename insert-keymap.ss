@@ -33,7 +33,10 @@
 		     [(windows)      "m:"]
 		     [(unix)         "m:"]
 		     [else           "m:"]) str))
-
+  
+  ;; Returns a true value if the str appears to be part of an imcomplete literal.
+  ;;
+  ;; (in-something "\"hello") should return \#".
   (define (in-something? str)
     (let loop ([i 0]
                [in false])
@@ -48,9 +51,9 @@
         [(is? #\") (consume #\")]
         [(is? #\|)  (consume #\|)]
         [else (loop (add1 i) in)])))
-
   
-
+  
+  
   
   ;; even it was forgotten in the documentation, key identifiers "back" and "backspace" are the same for map-function.
   ;; 
@@ -455,7 +458,7 @@
           (if (= (string-length (get-text)) 0)
               (eval-text&cmd 'Pass-Wrap)
               (magic-expand-insertion-text)))
-
+        
         (define insert-keymap (make-object keymap:aug-keymap%))
         
         ;; setting up callbacks
