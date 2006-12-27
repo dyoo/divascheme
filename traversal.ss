@@ -121,6 +121,9 @@
                stx)))
     (ormap aux stx-list))
   
+  
+  ;; find-pos-spline: position (listof syntax) -> (listof syntax)
+  ;; Returns the list of parent syntaxes.
   (define (find-pos-spine pos stx-list)
     (define (aux stx)
       (and (in-syntax? pos stx)
@@ -128,7 +131,7 @@
              (if sub
                  (cons stx sub)
                  (list stx)))))
-    (ormap aux stx-list))
+    (or (ormap aux stx-list) '()))
   
   (define (greatest-distinct-parents pos1 pos2 stx-list)
     (let ([spine1 (find-pos-spine pos1 stx-list)]
@@ -138,9 +141,9 @@
         (cond [(and (empty? s1) (empty? s2))
                (values #f #f)]
               [(empty? s1)
-               (values #f (last spine1))]
+               (values #f (last spine2))]
               [(empty? s2)
-               (values (last spine2) #f)]
+               (values (last spine1) #f)]
               [(eq? (first s1) (first s2))
                (loop (rest s1) (rest s2))]
               [else (values (first s1) (first s2))]))))
