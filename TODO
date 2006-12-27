@@ -1,23 +1,4 @@
 
-BUG:
-
-first: expected argument of type <non-empty list>; given #f
- === context ===
-/Users/dyoo/local/plt/collects/mzlib/list.ss:274:2: first
-/Users/dyoo/work/divascheme/traversal.ss:133:2: greatest-distinct-parents
-/Users/dyoo/work/divascheme/interpreter.ss:774:2: motion-extension
-/Users/dyoo/work/divascheme/diva-link.ss:305:6: value
-/Users/dyoo/work/divascheme/diva-link.ss:296:6: value
-call-with-break-parameterization
-/Users/dyoo/local/plt/collects/mred/private/lock.ss:40:2: as-entry
-
-reproduce by pressing at command mode:
-
-   open close escape space j
-
-
-
-
 
 Jon Rafkind:
 
