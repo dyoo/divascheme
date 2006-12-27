@@ -44,6 +44,7 @@ sources on readable public svn
 add an link to the high-res movie on the web page
 
     - dyoo: do this
+    - done, on test site under new/.  Ready to deploy as soon as release is ready.
 
 
 space-extend is broken
@@ -62,10 +63,6 @@ losing focus to go read the help desk, for example, should not leave insert mode
 
      - yeah, this would be good.  next release
 
-undo is wrong around calls to transpose
-
-     - not fixed yet
-
 
 We should have a menu item to invoke STAGS
      
@@ -79,6 +76,9 @@ Mon Mar 27 03:50:11 2006  --- Guillaume
 - the mark should disapear after edits, pressing shift-M after each bring is annoying
 
 - bring is broken at the moment
+
+   bring's functionality is sorta fixed
+
 
 - previous should stay available
 
@@ -95,7 +95,11 @@ Mon Mar 27 03:50:11 2006  --- Guillaume
 - cleanup-whitespace should insert missing space
 - make keyboard searches interactive and colored (like Emacs)
 - previous/next are backward for search-backward and search-bottom
+
 - a command "go to line"
+
+   already exists in DrScheme under meta-p for "go to position".
+
 - a command to center the text in the window
 
         
