@@ -1,3 +1,22 @@
+BUG:
+
+Unreproducable at the moment, but when I start stags search for
+"command", the following error can appear:
+
+send: target is not an object: #f for method: focus
+
+;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+ === context ===
+/Users/dyoo/local/plt/collects/mzlib/private/class-internal.ss:3435:2: obj-error
+/Users/dyoo/local/plt/collects/mzlib/private/class-internal.ss:2693:2: find-method/who
+/Users/dyoo/work/divascheme/command-keymap.ss:31:8: argument-to-command-mode
+call-with-break-parameterization
+/Users/dyoo/local/plt/collects/mred/private/lock.ss:40:2: as-entry
+
+;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+
+Not sure where this is coming from yet.
+
 
 
 Jon Rafkind:
