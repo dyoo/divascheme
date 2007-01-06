@@ -22,16 +22,19 @@
                              argument-to-command-mode
                              (lambda (text)
                                (set! default text)
-                               (interpreter (make-Verb (make-Command command) false (make-WhatN (make-Symbol-Noun (string->symbol text)))))
+                               (interpreter (make-Verb (make-Command command)
+                                                       false
+                                                       (make-WhatN (make-Symbol-Noun
+                                                                    (string->symbol text)))))
                                (argument-to-command-mode))))))
-
+        
         (define (argument-to-command-mode)
           (send (send window-text get-canvas) focus))
         
         (define (command command)
           (lambda (any event)
 	    (interpreter (make-Verb (make-Command command) false false))))
-       
+        
         (define insert-before-ast 
           (make-Verb (make-Command 'Insert) (make-Loc (make-Before) false) false))
         (define insert-after-ast  

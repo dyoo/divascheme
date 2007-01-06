@@ -1,50 +1,29 @@
-#! /bin/sh
-#|
-exec mzscheme -qu "$0" ${1+"$@"}
-|#
-
-#|
-Generates an TAGS.scm file suitable for divascheme tags support.
-
-   cd plt/collects; find . -name \*.ss | xargs stags
-
-This will create a file called 'STAGS', which can then be used by
-divascheme.  While in divascheme's command mode, hit '.'  It will
-prompt for an identifier's name, and then jump to the file and the
-line where that name is defined.
-
-
-Sun Apr 17 2005
-    Ported to MzScheme 299, based on a patch by Danny Yoo
-
-Sun Nov 2 2003
-    Written by Guillaume Marceau (gmarceau@cs.brown.edu)  
-
-|#
-(module stags mzscheme
+(module stags-lib mzscheme
   (require (lib "list.ss")
            (lib "etc.ss")
            (lib "file.ss")
            (lib "stx.ss" "syntax")
-           (only (lib "misc.ss" "swindle") mappend))
+           (only (lib "misc.ss" "swindle") mappend)) 
   
-  ;; Main entry point.
-  ;; he last expression in this module should call main with (current-command-lin-earguments.
-  (define (main argv)
-    (with-handlers
-        ([exn:break? (lambda (exn) (void))])
-      (let ([target-tag-file (open-output-file "STAGS" 'replace)]
-            [done-stdin false])
-        (fprintf target-tag-file "(~n")
-        (for-each 
-         (lambda (f) 
-           (if (and (equal? f "-") (not done-stdin))
-               (begin (process-stdin target-tag-file)
-                      (set! done-stdin true))
-               (process-file f target-tag-file)))
-         (vector->list argv))
-        (fprintf target-tag-file ")~n")
-        (close-output-port target-tag-file))))
+  (provide generate-stags-file)
+  
+  
+  
+  ;; generate-stags-file: (listof filename) filename -> void
+  ;; Writes out an stags file of the given files to the output-file-path.
+  (define (generate-stags-file files output-file-path)
+    (let ([target-tag-file (open-output-file output-file-path 'replace)]
+          [done-stdin false])
+      (fprintf target-tag-file "(~n")
+      (for-each
+       (lambda (f)
+         (if (and (equal? f "-") (not done-stdin))
+             (begin (process-stdin target-tag-file)
+                    (set! done-stdin true))
+             (process-file f target-tag-file)))
+       files)
+      (fprintf target-tag-file ")~n")
+      (close-output-port target-tag-file)))
   
   
   
@@ -169,7 +148,4 @@ Sun Nov 2 2003
     (let loop ([line (read-line)])
       (unless (eof-object? line)
         (process-file line target-tag-file)
-        (loop (read-line)))))
-  
-  
-  (main (current-command-line-arguments)))
+        (loop (read-line))))))

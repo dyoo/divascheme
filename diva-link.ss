@@ -316,16 +316,30 @@
       
       
       (define/public (diva-ast-put ast)
-        (push-callback (lambda () (get&set-mred/handlers (lambda (world) (interpreter/imperative ast world))))))
+        (push-callback
+         (lambda ()
+           (get&set-mred/handlers
+            (lambda (world)
+              (interpreter/imperative ast world))))))
       
       (define/private (diva-ast-put/wait ast)
-        (get&set-mred/handlers (lambda (world) (interpreter/imperative ast world))))
+        (get&set-mred/handlers
+         (lambda (world)
+           (interpreter/imperative ast world))))
       
       (define/private (diva-ast-put/world world ast)
-        (push-callback (lambda () (set-mred/handlers world (lambda () (interpreter/imperative ast world))))))
+        (push-callback
+         (lambda ()
+           (set-mred/handlers
+            world
+            (lambda ()
+              (interpreter/imperative ast world))))))
       
       (define/private (diva-ast-put/wait+world world ast)
-        (set-mred/handlers world (lambda () (interpreter/imperative ast world))))
+        (set-mred/handlers
+         world
+         (lambda ()
+           (interpreter/imperative ast world))))
       
       
       

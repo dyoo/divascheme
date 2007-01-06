@@ -12,4 +12,8 @@
   ;; The icon of the project.
   (define tool-names (list "DivaScheme"))
   ;; the url of the plugin.
-  (define tool-urls (list #f)))
+  (define tool-urls (list #f))
+  
+  (define mzscheme-launcher-names '("generate-stags"))
+  (define mzscheme-launcher-libraries '("generate-stags.ss"))
+  )

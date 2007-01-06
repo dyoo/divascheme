@@ -43,6 +43,9 @@ Features:
       Owens's new unit system.
 
     * Compatibility with DrScheme 360.
+    
+    * 'stags' tag-generator renamed to generate-stags and installed as a
+      mzscheme-launcher binary in "plt" or "plt/bin".
 
 Bug fixes:
 

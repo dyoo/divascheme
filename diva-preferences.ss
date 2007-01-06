@@ -171,6 +171,7 @@
     (preferences:get 'divascheme:on?))
   
   
+  ;; install-keybindings: keymap (listof (list key function-name))
   (define (install-keybindings keymap bindings)
     (define (alt/meta-prefix str)
       (format "~a~a" (case (system-type)
@@ -191,14 +192,17 @@
                       (second key&function-name)))
               bindings))
   
+  ;; install-global-keybindings: keymap% -> void
   (define (install-global-bindings keymap)
     (install-keybindings keymap
                          (preferences:get 'divascheme:global-bindings)))
   
+  ;; install-command-mode-keybindings: keymap% -> void
   (define (install-command-mode-bindings keymap)
     (install-keybindings keymap
                          (preferences:get 'divascheme:command-mode-bindings)))
   
+  ;; install-insert-mode-keybindings: keymap% -> void
   (define (install-insert-mode-bindings keymap)
     (install-keybindings keymap
                          (preferences:get 'divascheme:insert-mode-bindings)))
@@ -211,11 +215,12 @@
   ;; add-preference-panel: diva-central% -> void
   ;; Attaches a DivaScheme preference panel for user-editable preferences.
   (define (add-preference-panel diva-central)
-    
+    ;; read-string: string -> sexpr
     (define (read-string str)
       (let ([ip (open-input-string (format "(~a)" str))])
         (first (read ip))))
     
+    ;; sexp->string: sexpr -> string
     (define (sexp->string sexp)
       (let ([op (open-output-string)]
             [sexp
@@ -224,6 +229,7 @@
         (pretty-print sexp op)
         (get-output-string op)))
     
+    ;; string->sexp: string -> sexpr
     (define (string->sexp text)
       (map (match-lambda [(list a b) (list a (symbol->string b))])
            (read-string text)))

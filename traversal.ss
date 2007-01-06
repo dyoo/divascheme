@@ -122,7 +122,7 @@
     (ormap aux stx-list))
   
   
-  ;; find-pos-spline: position (listof syntax) -> (listof syntax)
+  ;; find-pos-spline: pos (listof syntax) -> (listof syntax)
   ;; Returns the list of parent syntaxes.
   (define (find-pos-spine pos stx-list)
     (define (aux stx)
@@ -133,6 +133,8 @@
                  (list stx)))))
     (or (ormap aux stx-list) '()))
   
+  
+  ;; greatest-distinct-parents: pos pos (listof syntax) -> (values syntax/false syntax/false)
   (define (greatest-distinct-parents pos1 pos2 stx-list)
     (let ([spine1 (find-pos-spine pos1 stx-list)]
           [spine2 (find-pos-spine pos2 stx-list)])

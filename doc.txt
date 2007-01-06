@@ -203,7 +203,7 @@ by pressing the "l" key.
 
 DivaScheme can also compute and jump to the definition point of an 
 identifier. In the DivaScheme directory, you will find an
-executable called "stags", short for "Scheme Tags". This executable consumes
+executable called "generate-stags", short for "Scheme Tags". This executable consumes
 the name of all the Scheme source files composing your project, as 
 a command line arguments. It will produce a file called STAGS in the current
 directory. Load this file by selecting "File/Load Navigation Tags" in the
