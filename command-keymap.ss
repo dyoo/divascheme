@@ -29,7 +29,9 @@
                                (argument-to-command-mode))))))
         
         (define (argument-to-command-mode)
-          (send (send window-text get-canvas) focus))
+          (let [(canvas (send window-text get-canvas))]
+            (when canvas
+              (send canvas focus))))
         
         (define (command command)
           (lambda (any event)
@@ -39,8 +41,8 @@
           (make-Verb (make-Command 'Insert) (make-Loc (make-Before) false) false))
         (define insert-after-ast  
           (make-Verb (make-Command 'Insert) (make-Loc (make-After) false) false))
-
-
+        
+        
         (define (insert ast/false edit?)
           (lambda (any event)
             (when ast/false
