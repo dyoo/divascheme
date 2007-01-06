@@ -1,7 +1,8 @@
 BUG:
 
-Unreproducable at the moment, but when I start stags search for
-"command", the following error can appear:
+Reproducable.  Create STAGS for divascheme.  From new window, open up
+actions.ss.  Then do an stags search for "command".  The following
+error message appears:
 
 send: target is not an object: #f for method: focus
 
