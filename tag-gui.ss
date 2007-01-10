@@ -44,6 +44,7 @@
              (dynamic-wind
               (lambda () (void))
               (lambda ()
+                ;; TODO: better error trapping?
                 (generate-stags-file/project dir "STAGS")
                 (load-tag-library (build-path dir "STAGS")))
               (lambda ()

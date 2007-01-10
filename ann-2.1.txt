@@ -45,7 +45,9 @@ Features:
     * Compatibility with DrScheme 360.
     
     * 'stags' tag-generator renamed to generate-stags and installed as a
-      mzscheme-launcher binary in "plt" or "plt/bin".
+      mzscheme-launcher binary in "plt" or "plt/bin".  There is now a
+      menu item under the File menu "Generate Navigation Tags..." which
+      will build STAGS from a selected project directory.
 
 Bug fixes:
 

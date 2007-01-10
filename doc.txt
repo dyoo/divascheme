@@ -201,15 +201,23 @@ matches the first symbol in the sexp. To select the first symbol
 itself, execute the search then go to the next sexp to the right
 by pressing the "l" key.
 
+
 DivaScheme can also compute and jump to the definition point of an 
-identifier. In the DivaScheme directory, you will find an
-executable called "generate-stags", short for "Scheme Tags". This executable consumes
-the name of all the Scheme source files composing your project, as 
-a command line arguments. It will produce a file called STAGS in the current
-directory. Load this file by selecting "File/Load Navigation Tags" in the
+identifier.  Scheme Navigation Tags (_stags_) can be generated project-wide by selecting
+"File/Generate Navigation Tags...".  Select your project directory, and an STAGS
+file will be generated there will an index of keywords for all .SS and .SCM files.
+
+Alternatively, the command line utility $PLTHOME/bin/generate-stags can be used to
+generate an STAGS file.  It consumes the name of all the Scheme source files
+composing your project, as command line arguments, and will produce a file called
+STAGS in the current directory.
+
+Load this file by selecting "File/Load Navigation Tags..." in the
 menus of the main window of DrScheme. Note that DivaScheme automatically 
 load the STAGS file in the current directory when DrScheme starts, if 
 one is present.
+                                                                                  
+
 
 Once a tag file is loaded, use the "." key to jump to the definition
 point of an identifier. Also, the names mentioned in the tag file will be 
