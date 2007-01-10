@@ -2,12 +2,14 @@
   (require (lib "class.ss")
            (lib "plt-match.ss")
            (lib "mred.ss" "mred")
-           "diva-central.ss")
+           "diva-central.ss"
+           (prefix stags-gui: "tag-gui.ss"))
   
   (provide diva:menu-option-frame-mixin)
   
   (define enable-divascheme-msg "Enable DivaScheme")
   (define disable-divascheme-msg "Disable DivaScheme")
+  (define generate-stags-msg "Generate Navigation Tags")
   
   ;; We add a small menu option here for people who can't press F4.
   (define (diva:menu-option-frame-mixin super%)
@@ -30,7 +32,13 @@
                    [parent menu]
                    [callback
                     (lambda (menu-item control-event)
-                      (send (get-diva-central) switch-toggle))])))
+                      (send (get-diva-central) switch-toggle))]))
+        (new menu-item%
+             [label generate-stags-msg]
+             [parent menu]
+             [callback
+              (lambda (menu-item control-event)
+                (stags-gui:generate-navigation-tags-dialog))]))
       
       
       (define (handle-diva-central-evt evt)

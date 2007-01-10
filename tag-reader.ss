@@ -1,15 +1,16 @@
 (module tag-reader mzscheme
   (require (lib "file.ss")
            (lib "list.ss")
-           (lib "string.ss")
+           
            (lib "plt-match.ss")
            (lib "pregexp.ss")
            (lib "contract.ss")
-           (lib "struct.ss"))
-
+           (lib "struct.ss")
+           (lib "serialize.ss"))
+  
   
   ;; A tag is a (make-tag n f l p)
-  ;; where n and f are strings, and l and p are positive numbers.
+  ;; where n is a string, f is a path, and l and p are positive numbers.
   ;; Tags give us location information for names that we're interested in.
   (define-struct tag (name path line position) #f)
   (provide (struct tag (name path line position)))
@@ -36,9 +37,10 @@
     (let* ([all-tags
             (foldl 
              (lambda (index-exp acc)
-               (cond
-                 [(= (length index-exp) 4)
-                  (cons (apply make-tag index-exp) acc)]
+               (match index-exp
+                 [(list id serialized-path line position)
+                  (cons (make-tag id (deserialize serialized-path) line position)
+                        acc)]
                  [else
                   (error "Malformed index sexp at: ~a" index-exp)]))
              empty

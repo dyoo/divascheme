@@ -3,10 +3,33 @@
            (lib "etc.ss")
            (lib "file.ss")
            (lib "stx.ss" "syntax")
+           (lib "serialize.ss")
            (only (lib "misc.ss" "swindle") mappend)) 
   
-  (provide generate-stags-file)
+  ;; TODO: merge the work here with tag-reader.ss: it shouldn't be spread out between the 
+  ;; two files.
   
+  (provide generate-stags-file
+           generate-stags-file/project)
+  
+  
+  ;; scheme-extension?: path-string -> boolean
+  ;; Returns true if the filename looks like a PLT Scheme file, either ending
+  ;; with .ss or .scm.
+  (define (scheme-extension? filename)
+    (let ([ext (filename-extension filename)])
+      (and ext
+           (or (bytes=? #"ss" ext)
+               (bytes=? #"scm" ext)))))
+  
+  
+  ;; generate-stags-file/project: path-string path-string -> void
+  ;; builds a stags file with the output-filename for all the Scheme
+  ;; files within the project directory.
+  (define (generate-stags-file/project project-directory output-filename)
+    (parameterize ([current-directory project-directory])
+      (let ([sources (find-files scheme-extension?)])
+        (generate-stags-file sources output-filename))))
   
   
   ;; generate-stags-file: (listof filename) filename -> void
@@ -37,8 +60,8 @@
             (not (syntax-position id)))
         #f
         (list (symbol->string (syntax-e id)) 
-              (syntax-source id) 
-              (syntax-line id) 
+              (serialize (syntax-source id))
+              (syntax-line id)
               (syntax-position id))))
   
   
