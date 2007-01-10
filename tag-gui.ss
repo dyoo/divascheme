@@ -22,21 +22,34 @@
   ;; Brings up a dialog window to select a project directory.  If a directory
   ;; is selected, creates an STAGS in that directory whose contents index
   ;; all the Scheme files within that directory.
+  ;;
+  ;; This might take a while, so we allow this to run in a thread while we wait.
   (define (generate-navigation-tags-dialog)
-    (define title "Generate Navigation Tags")
+    (define title "Generate Navigation Tags...")
     (define instructions-msg
-      "Select the project directory.  An STAGS file will be generated in that directory for all .ss and .scm files within the project directory.")
+      "Select project directory.")
     
     (let ([dir (get-directory instructions-msg #f #f '(enter-packages))])
       (when (and dir (directory-exists? dir))
-        (message-box
-         title
-         "Generating navigation tags; please wait while I process.")
-        (generate-stags-file/project dir "STAGS")
-        (message-box
-         title
-         "Navigation tags have been generated.  We will load these now.")
-        (load-tag-library (build-path dir "STAGS")))))
+        (let [(sema (make-semaphore 0))]
+          (thread
+           (lambda ()
+             (message-box
+              title
+              "Generating navigation tags; this may take a while.")
+             (semaphore-wait sema)
+             (message-box
+              title
+              "Navigation tags have been generated and loaded.")))
+          (thread
+           (lambda ()
+             (dynamic-wind
+              (lambda () (void))
+              (lambda ()
+                (generate-stags-file/project dir "STAGS")
+                (load-tag-library (build-path dir "STAGS")))
+              (lambda ()
+                (semaphore-post sema)))))))))
   
   
   ;; Adds the support necessary to load new tag files.
@@ -65,9 +78,9 @@
                          parent
                          #f
                          #f
-                         "ss"
+                         #f
                          empty
-                         '(("Any" "STAGS")))])
+                         '(("STAGS" "STAGS")))])
           (when filename
             (load-tag-library filename)
             #;(message-box "tags" (format "~a loaded" filename)))))))

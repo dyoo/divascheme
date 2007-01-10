@@ -1,23 +1,9 @@
-BUG:
+Should centralize all string constants in a single file.
 
-Reproducable.  Create STAGS for divascheme.  From new window, open up
-actions.ss.  Then do an stags search for "command".  The following
-error message appears:
+Should consolidate related behavior that's currently sprinkled
+in many files.
 
-send: target is not an object: #f for method: focus
-
-;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
- === context ===
-/Users/dyoo/local/plt/collects/mzlib/private/class-internal.ss:3435:2: obj-error
-/Users/dyoo/local/plt/collects/mzlib/private/class-internal.ss:2693:2: find-method/who
-/Users/dyoo/work/divascheme/command-keymap.ss:31:8: argument-to-command-mode
-call-with-break-parameterization
-/Users/dyoo/local/plt/collects/mred/private/lock.ss:40:2: as-entry
-
-;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
-
-Not sure where this is coming from yet.
-
+    stags-lib.ss and tag-reader.ss
 
 
 Jon Rafkind:
@@ -87,6 +73,8 @@ losing focus to go read the help desk, for example, should not leave insert mode
 
 
 We should have a menu item to invoke STAGS
+
+     - done
      
 We should accomodate both emacs and bash style auto-completion.
      

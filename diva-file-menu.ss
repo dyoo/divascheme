@@ -9,7 +9,7 @@
   
   (define enable-divascheme-msg "Enable DivaScheme")
   (define disable-divascheme-msg "Disable DivaScheme")
-  (define generate-stags-msg "Generate Navigation Tags")
+  (define generate-stags-msg "Generate Navigation Tags...")
   
   ;; We add a small menu option here for people who can't press F4.
   (define (diva:menu-option-frame-mixin super%)
