@@ -123,7 +123,7 @@
   
   
   ;; find-pos-spline: pos (listof syntax) -> (listof syntax)
-  ;; Returns the list of parent syntaxes.
+  ;; Returns the list of parent syntaxes, starting with the root.
   (define (find-pos-spine pos stx-list)
     (define (aux stx)
       (and (in-syntax? pos stx)
@@ -140,16 +140,12 @@
           [spine2 (find-pos-spine pos2 stx-list)])
       (let loop ([s1 spine1]
                  [s2 spine2])
-        (cond [(and (empty? s1) (empty? s2))
+        (cond [(or (empty? s1) (empty? s2))
                (values #f #f)]
-              [(empty? s1)
-               (values #f (last spine2))]
-              [(empty? s2)
-               (values (last spine1) #f)]
               [(eq? (first s1) (first s2))
                (loop (rest s1) (rest s2))]
               [else (values (first s1) (first s2))]))))
-
+  
   
   (define (find-pos-on-line line stx-list)
     (define (aux stx)
@@ -160,7 +156,7 @@
                 (cons stx sub)
                 sub))))
     (apply append! (map aux stx-list)))
-    
+  
   
   (define (find-pos-updown line column stx-list is-up?)
     (print-mem

@@ -52,7 +52,9 @@
       (")" "diva:close")
       ("}" "diva:close")
       ("space" "diva:extend-selection")
-      ("w" "diva:edit-symbol")))
+      ("w" "diva:edit-symbol")
+      ("home" "diva:first")
+      ("end" "dive:end")))
   
   (define default-command-mode-bindings/qwerty
     (append

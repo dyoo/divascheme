@@ -118,4 +118,6 @@ Preference box should have options for templates.
 
 DivaScheme should be aware of editor modes and pause if we're editing in text.
 
-Misspelling a function name when editing key bindings fails silently, it should indicate that there is a program.
+Misspelling a function name when editing key bindings fails silently, it should indicate that there is a problem.
+
+The transpose in the DrScheme does not let you chain
