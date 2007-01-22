@@ -68,6 +68,7 @@ produce
 With DivaScheme, I have to use { to get the '['.
 
     - in the future
+    - (01-22-2007: (dyoo) fixed.)
 
 
 CTRL+C does not seem to work on Windows.
