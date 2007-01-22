@@ -45,7 +45,7 @@
       ("t" "diva:transpose")
       ("." "diva:find-tag")
       ("o" "diva:join")
-      ("[" "diva:open")
+      ("[" "diva:open-square/contextual")
       ("(" "diva:open")
       ("{" "diva:open-square")
       ("]" "diva:close")
@@ -106,7 +106,8 @@
       
       ("(" "diva:open")
       (")" "diva:close")
-      ("[" "diva:open-square")
+      ;("[" "diva:open-square")
+      ("[" "diva:open-square/contextual")
       ("]" "diva:close-square")
       ("{" "diva:open-curly")
       ("}" "diva:close-curly")

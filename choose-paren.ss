@@ -7,7 +7,27 @@
   ;; I don't like copy-and-paste, but I'm not seeing a good way at reusing
   ;; the existing functionality without doing worse entangling things.
   
-  (provide choose-paren)
+  (provide choose-paren
+           get-contextual-open-cmd)
+  
+  ;; get-contextual-open-cmd: scheme-text% symbol -> symbol
+  ;; Given a scheme-text% and a default-cmd, returns DrScheme's
+  ;; choice for paren opening as either 'Open or 'Open-Square.
+  ;; Otherwise, returns the default command.
+  (define (get-contextual-open-cmd editor default-cmd)
+    (cond
+      [(preferences:get 'framework:fixup-open-parens)
+       (case (choose-paren editor)
+         [(#\()
+          'Open]
+         [(#\[)
+          'Open-Square]
+         [(#\{)
+          ;; Fixme: interpreter.ss has no provision for
+          ;; curly open at the moment!
+          'Open-Square])]
+      [else default-cmd]))
+  
   
   ;; choose-paren: scheme-text% -> char
   ;; Returns the right square paren to use at the context where the cursor is. 

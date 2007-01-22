@@ -483,6 +483,7 @@
         
         (send insert-keymap add-function "diva:open" (wrap-up (maybe-literal #\( (eval-text&cmd 'Open))))
         (send insert-keymap add-function "diva:open-square" (wrap-up (maybe-literal #\[ (eval-text&cmd 'Open))))
+        (send insert-keymap add-function "diva:open-square/contextual" (wrap-up (maybe-literal #\[ (eval-text&cmd 'Open))))
         (send insert-keymap add-function "diva:open-curly" (wrap-up (maybe-literal #\{ (eval-text&cmd 'Open-Square))))
         
         (send insert-keymap add-function "diva:enter" (wrap-up (maybe-literal #\newline (eval-text&cmd 'Enter))))

@@ -55,22 +55,9 @@
             (to-insert-mode/cmd edit? cmd)))
         
         
-        (define (insert-open/cmd cmd edit?)
+        (define (insert-contextual-open/cmd cmd edit?)
           (lambda (editor event)
-            (cond
-              [(preferences:get 'framework:fixup-open-parens)
-               (let ([cmd
-                      (case (choose-paren editor)
-                        [(#\()
-                         'Open]
-                        [(#\[)
-                         'Open-Square]
-                        [(#\{)
-                         ;; Fixme: interpreter.ss has no provision for
-                         ;; curly open at the moment!
-                         'Open-Square])])
-                 (to-insert-mode/cmd #f cmd))]
-              [else (to-insert-mode/cmd edit? cmd)])))
+            (to-insert-mode/cmd edit? (get-contextual-open-cmd editor cmd))))
         
         
         (define (argument command title)
@@ -112,8 +99,11 @@
         (send command-keymap add-function "diva:magic"     (command 'Magic))
         (send command-keymap add-function "diva:join"      (command 'Join))
         (send command-keymap add-function "diva:unmark"    (command 'UnMark))
-        (send command-keymap add-function "diva:open" (insert-open/cmd 'Open false))
-        (send command-keymap add-function "diva:open-square" (insert-open/cmd 'Open-Square false))
+        
+        (send command-keymap add-function "diva:open" (insert/cmd 'Open false))
+        (send command-keymap add-function "diva:open-square/contextual" (insert-contextual-open/cmd 'Open-Square false))
+        (send command-keymap add-function "diva:open-square" (insert/cmd 'Open-Square false))
+        
         (send command-keymap add-function "diva:close"     (command 'Close))
         (send command-keymap add-function "diva:search-top" (argument 'Search-Top "search top" ))
         (send command-keymap add-function "diva:search-bottom" (argument 'Search-Bottom "search bottom"))
