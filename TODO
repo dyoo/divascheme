@@ -1,3 +1,8 @@
+Add simple command in install.ss to upgrade the keybindings of a user
+to contextual parens if they ask for it.
+
+
+
 BUG:
 
 When trying to extend across comment:
@@ -14,6 +19,15 @@ call-with-break-parameterization
 /Users/dyoo/local/plt/collects/mred/private/lock.ss:40:2: as-entry
 
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+
+I'm going to have to review motion-extention anyway...
+
+
+
+BUG:
+
+inserting characters like \#[ or \#( isn't working properly.
+
 
 
 
