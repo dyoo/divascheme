@@ -10,6 +10,7 @@
            "long-prefix.ss"
            "utilities.ss"
            "structures.ss"
+           "choose-paren.ss"
            (prefix preferences: "diva-preferences.ss"))
   
   
@@ -448,6 +449,16 @@
               (send window insert c)
               (for-each (lambda (t) (t)) thunks)))
         
+        
+        ;; Slightly special command here, since we need to communicate with
+        ;; the editor.
+        (define ((open-paren/contextual literal default-cmd) editor evt)
+          ((wrap-up (maybe-literal
+                     literal
+                     (eval-text&cmd (get-contextual-open-cmd editor default-cmd))))
+           editor evt))
+        
+        
         (define-syntax (maybe-literal stx)
           (syntax-case stx ()
             [(_ c e ...)
@@ -483,7 +494,7 @@
         
         (send insert-keymap add-function "diva:open" (wrap-up (maybe-literal #\( (eval-text&cmd 'Open))))
         (send insert-keymap add-function "diva:open-square" (wrap-up (maybe-literal #\[ (eval-text&cmd 'Open))))
-        (send insert-keymap add-function "diva:open-square/contextual" (wrap-up (maybe-literal #\[ (eval-text&cmd 'Open))))
+        (send insert-keymap add-function "diva:open-square/contextual" (open-paren/contextual #\[ 'Open)) 
         (send insert-keymap add-function "diva:open-curly" (wrap-up (maybe-literal #\{ (eval-text&cmd 'Open-Square))))
         
         (send insert-keymap add-function "diva:enter" (wrap-up (maybe-literal #\newline (eval-text&cmd 'Enter))))
