@@ -13,6 +13,13 @@
   ;;
   ;; This is to make it possible to reprint syntaxes exactly as they appeared
   ;; from a file.
+  ;;
+  ;;
+  ;; Notes: reusing scheme-lexer from the syntax-color collection might not be
+  ;; the Right Thing to do here.  In particular, we're losing line and column
+  ;; location.  And since scheme-lexer's primary job is to do colorization,
+  ;; some tokens are classified weirdly (i.e. quote is a constant?)
+  ;;
   
   (provide read-scheme-syntax)
   
