@@ -11,6 +11,36 @@
   (provide make-command-keymap)
   
   
+  
+  (define (ignores-caps-lock-grab-key-function str km editor event)
+    (if (and (not str)
+             (is-a? event key-event%)
+             (char? (send event get-key-code))
+             (char-upper-case? (send event get-key-code))
+             (not (send event get-shift-down)))
+        (let ([key-event
+               (new key-event%
+                    [key-code (char-downcase (send event get-key-code))]
+                    [shift-down #f]
+                    [control-down (send event get-control-down)]
+                    [meta-down (send event get-meta-down)]
+                    [alt-down (send event get-alt-down)]
+                    [x (send event get-x)]
+                    [y (send event get-y)]
+                    [time-stamp (send event get-time-stamp)])])
+          (send key-event set-other-altgr-key-code
+                (send key-event get-other-altgr-key-code))
+          (send key-event set-other-shift-altgr-key-code
+                (send key-event get-other-shift-altgr-key-code))
+          (send key-event set-other-shift-key-code
+                (send key-event get-other-shift-key-code))
+          
+          (send km handle-key-event editor
+                key-event))
+        #f))
+  
+  
+  
   (define make-command-keymap
     (lambda (window-text to-insert-mode to-insert-mode/cmd diva-message diva-question interpreter)
       (let ([command-keymap (make-object keymap:aug-keymap%)])
@@ -133,32 +163,8 @@
         ;; When caps lock is on, it appears that something screwy happens with 
         ;; key lookup.  I may want to refactor this out or ask on the PLT list
         ;; what the right thing to do here is.
-        (send command-keymap set-grab-key-function
-              (lambda (str km editor event)
-                (if (and (not str)
-                         (is-a? event key-event%)
-                         (not (send event get-shift-down))
-                         (member (send event get-key-code) (string->list "ABCDEFGHIJKLMNOPQRSTUVWXYZ")))
-                    (let ([key-event
-                           (new key-event%
-                                [key-code (send event get-key-code)]
-                                [shift-down #t]
-                                [control-down (send event get-control-down)]
-                                [meta-down (send event get-meta-down)]
-                                [alt-down (send event get-alt-down)]
-                                [x (send event get-x)]
-                                [y (send event get-y)]
-                                [time-stamp (send event get-time-stamp)])])
-                      (send key-event set-other-altgr-key-code
-                            (send key-event get-other-altgr-key-code))
-                      (send key-event set-other-shift-altgr-key-code
-                            (send key-event get-other-shift-altgr-key-code))
-                      (send key-event set-other-shift-key-code
-                            (send key-event get-other-shift-key-code))
-                      
-                      (send km handle-key-event editor
-                            key-event))
-                    #f)))
+        ;; The following tries to ignore caps lock.
+        (send command-keymap set-grab-key-function ignores-caps-lock-grab-key-function)
         
         
         (preferences:install-command-mode-bindings command-keymap)
