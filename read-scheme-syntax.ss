@@ -32,6 +32,7 @@
   
   (define-tokens data (COMMENT NO-COLOR
                                DATUM
+                               QUOTE
                                OPEN-PAREN CLOSE-PAREN
                                OTHER SYMBOL EOF))
   
@@ -49,6 +50,8 @@
   
   
   (define (input-port->token-function inp)
+    (define current-line 1)
+    (define current-column 0)
     (define f
       (lambda ()
         (let-values ([(matching-text type paren-shape start-pos end-pos) (scheme-lexer inp)])
