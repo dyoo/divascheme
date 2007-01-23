@@ -125,9 +125,41 @@
                "`" "\"" "," "'" "<" ">" "/" "\\"  "?"
                "insert" "colon"
                ,@(map (lambda (ch) (format "s:~a" ch))
-                      (string->list "ABCDEFGHIJKLMNOPQRSTUVWXYZ"))
+                      (string->list "abcdefghijklmnopqrstuvwxyz"))
                ,@(map string
                       (string->list "abcdefghijklmnopqrstuvwxyz"))))
+        
+        
+        ;; When caps lock is on, it appears that something screwy happens with 
+        ;; key lookup.  I may want to refactor this out or ask on the PLT list
+        ;; what the right thing to do here is.
+        (send command-keymap set-grab-key-function
+              (lambda (str km editor event)
+                (if (and (not str)
+                         (is-a? event key-event%)
+                         (not (send event get-shift-down))
+                         (member (send event get-key-code) (string->list "ABCDEFGHIJKLMNOPQRSTUVWXYZ")))
+                    (let ([key-event
+                           (new key-event%
+                                [key-code (send event get-key-code)]
+                                [shift-down #t]
+                                [control-down (send event get-control-down)]
+                                [meta-down (send event get-meta-down)]
+                                [alt-down (send event get-alt-down)]
+                                [x (send event get-x)]
+                                [y (send event get-y)]
+                                [time-stamp (send event get-time-stamp)])])
+                      (send key-event set-other-altgr-key-code
+                            (send key-event get-other-altgr-key-code))
+                      (send key-event set-other-shift-altgr-key-code
+                            (send key-event get-other-shift-altgr-key-code))
+                      (send key-event set-other-shift-key-code
+                            (send key-event get-other-shift-key-code))
+                      
+                      (send km handle-key-event editor
+                            key-event))
+                    #f)))
+        
         
         (preferences:install-command-mode-bindings command-keymap)
         
