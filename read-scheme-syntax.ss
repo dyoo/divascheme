@@ -23,7 +23,7 @@
   
   (provide read-scheme-syntax)
   
-  (require (lib "scheme-lexer" "syntax-color")
+  (require (lib "scheme-lexer.ss" "syntax-color")
            (lib "etc.ss")
            (lib "lex.ss" "parser-tools")
            (lib "yacc.ss" "parser-tools")
