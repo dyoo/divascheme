@@ -11,32 +11,36 @@
   (provide make-command-keymap)
   
   
-  
+  ;; A grab-key-function that looks at unmapped keys that look like
+  ;; capslock is on, and tries to remap to keys that aren't caps-locked.
   (define (ignores-caps-lock-grab-key-function str km editor event)
-    (if (and (not str)
-             (is-a? event key-event%)
-             (char? (send event get-key-code))
-             (char-upper-case? (send event get-key-code))
-             (not (send event get-shift-down)))
-        (let ([key-event
-               (new key-event%
-                    [key-code (char-downcase (send event get-key-code))]
-                    [shift-down #f]
-                    [control-down (send event get-control-down)]
-                    [meta-down (send event get-meta-down)]
-                    [alt-down (send event get-alt-down)]
-                    [x (send event get-x)]
-                    [y (send event get-y)]
-                    [time-stamp (send event get-time-stamp)])])
-          (send key-event set-other-altgr-key-code
-                (send key-event get-other-altgr-key-code))
-          (send key-event set-other-shift-altgr-key-code
-                (send key-event get-other-shift-altgr-key-code))
-          (send key-event set-other-shift-key-code
-                (send key-event get-other-shift-key-code))
-          
-          (send km handle-key-event editor
-                key-event))
+    (define (caps-lock-on?)
+      (and (not str)
+           (is-a? event key-event%)
+           (char? (send event get-key-code))
+           (char-upper-case? (send event get-key-code))
+           (not (send event get-shift-down))))
+    (define (copy-key/downcase)
+      (let ([key-event
+             (new key-event%
+                  [key-code (char-downcase (send event get-key-code))]
+                  [shift-down #f]
+                  [control-down (send event get-control-down)]
+                  [meta-down (send event get-meta-down)]
+                  [alt-down (send event get-alt-down)]
+                  [x (send event get-x)]
+                  [y (send event get-y)]
+                  [time-stamp (send event get-time-stamp)])])
+        (send key-event set-other-altgr-key-code
+              (send key-event get-other-altgr-key-code))
+        (send key-event set-other-shift-altgr-key-code
+              (send key-event get-other-shift-altgr-key-code))
+        (send key-event set-other-shift-key-code
+              (send key-event get-other-shift-key-code))
+        key-event))
+    (if (caps-lock-on?)
+        (send km handle-key-event editor
+              (copy-key/downcase))
         #f))
   
   
