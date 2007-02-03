@@ -12,6 +12,16 @@
   (provide install-diva-central-handler
            enable-on-startup?
            
+           forcefully-reset-to-defaults
+           
+           get-global-bindings
+           get-command-mode-bindings
+           get-insert-mode-bindings
+           
+           set-global-bindings
+           set-command-mode-bindings
+           set-insert-mode-bindings
+           
            ;; keymap stuff
            install-global-bindings
            install-command-mode-bindings
@@ -139,8 +149,9 @@
       ("home" "diva:left*")
       ("end" "diva:right*")))
   
+  
   ;; Sets up all the preferences to default values if they do not exist yet.
-  (define (set-preferences)
+  (define (set-default-preferences)
     (preferences:set-default 'divascheme:on?
                              #f boolean?)
     (preferences:set-default 'divascheme:preferred-keyboard-layout
@@ -151,6 +162,39 @@
                              default-command-mode-bindings/qwerty list?)
     (preferences:set-default 'divascheme:insert-mode-bindings
                              default-insert-mode-bindings list?))
+  
+  
+  ;; forcefully-reset-to-defaults: -> void
+  ;; This should only be called in emergencies.  I'll keep this undocumented,
+  ;; and leave it as a reserve.
+  (define (forcefully-reset-to-defaults)
+    (preferences:set 'divascheme:on? #f)
+    (preferences:set 'divascheme:preferred-keyboard-layout 'qwerty)
+    (preferences:set 'divascheme:global-bindings default-global-bindings)
+    (preferences:set
+     'divascheme:command-mode-bindings default-command-mode-bindings/qwerty)
+    (preferences:set
+     'divascheme:insert-mode-bindings default-insert-mode-bindings))
+  
+  
+  (define (get-global-bindings)
+    (preferences:get 'divascheme:global-bindings))
+  
+  (define (get-command-mode-bindings)
+    (preferences:get 'divascheme:command-mode-bindings))
+  
+  (define (get-insert-mode-bindings)
+    (preferences:get 'divascheme:insert-mode-bindings))
+  
+  
+  (define (set-global-bindings bindings)
+    (preferences:set 'divascheme:global-bindings bindings))
+  
+  (define (set-command-mode-bindings bindings)
+    (preferences:set 'divascheme:command-mode-bindings bindings))
+  
+  (define (set-insert-mode-bindings bindings)
+    (preferences:set 'divascheme:insert-mode-bindings bindings))
   
   
   
@@ -359,6 +403,4 @@
          parent))))
   
   
-  
-  ;; Should be called at the end, after all our definitions are in.
-  (set-preferences))
+  (set-default-preferences))

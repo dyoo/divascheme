@@ -113,7 +113,6 @@
         (drscheme:get/extend:extend-definitions-text diva-definitions-text-mixin)
         (drscheme:get/extend:extend-interactions-text diva-interactions-text-mixin)
         
-        
         (preferences:install-diva-central-handler shared-diva-central)
         (preferences:add-preference-panel shared-diva-central)))
     

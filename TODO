@@ -1,9 +1,18 @@
+BUG: in insert mode, user should not be allowed to type a semicolon unless they are in a context that allows it, like strings or in an escape sequence.  Otherwise, it can break structure.
+     
+
 Add simple command in install.ss to upgrade the keybindings of a user
 to contextual parens if they ask for it.
+
+BUG: trying to enter in a vector with the keys #() causes
+erroneous output #(()).  Why?
 
 
 BUG: if caps lock is on, funky things happen.  See why it interacts with
 the keymap.
+
+  -- fixed: we manually capture capslocked-keys in command mode and
+     downcase them.
 
 
 BUG:
