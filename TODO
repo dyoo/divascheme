@@ -1,3 +1,7 @@
+BUG: control-[ inserts a literal [ in command mode, as well as meta-[.
+We have to block these or handle them in a nice way.
+
+
 BUG: in insert mode, user should not be allowed to type a semicolon unless they are in a context that allows it, like strings or in an escape sequence.  Otherwise, it can break structure.
      
 

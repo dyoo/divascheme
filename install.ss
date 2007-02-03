@@ -25,6 +25,10 @@
     (printf "DivaScheme should now be installed.~n~nTo finish the installation, please restart DrScheme.~nOnce restarted, F4 will toggle DivaScheme on and off."))
   
   
+  (define (print-open-square/contextual-upgraded)
+    (printf "We've automatically updated your DivaScheme's keymap~nto assign '[' to diva:open-square/contextual.~nSee http://list.cs.brown.edu/pipermail/plt-scheme/2006-April/012537.html~nfor details.~n~n"))
+  
+  
   ;; get-planet-package-installed-versions: -> (listof (list major
   ;;                                                         (listof minor)))
   ;; looking at the installed cache, we pull out all the major/minor installs.
@@ -112,6 +116,7 @@
   
   
   (when (eligible-for-contextual-square-keybinding-update?)
-    (upgrade-preferences-with-magic-square-keybinding))
+    (upgrade-preferences-with-magic-square-keybinding)
+    (print-open-square/contextual-upgraded))
   
   (print-installation-finished-msg))
