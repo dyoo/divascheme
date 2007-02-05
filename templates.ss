@@ -41,7 +41,11 @@
       (|`| "`$expr$")
       (|,| ",$expr$")
       (|,@| ",@$expr$")
+      
+      ;; This one is not right, but there's little we can do until we write
+      ;; our own reader to handle weird cases like this.
       (|#| "#($expr$)")
+
       (|#'| "#'$expr$")
       (|#`| "#`$expr$")
       (|#,| "#,$expr$")

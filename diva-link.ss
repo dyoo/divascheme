@@ -144,7 +144,12 @@
            (on-loss-focus)
            (uninstall-command-keymap)
            (super set-surrogate surrogate)
-           (install-command-keymap)]
+           (cond
+             [(is-a? surrogate scheme:text-mode%)
+              (diva-message "")
+              (install-command-keymap)]
+             [else
+              (diva-message "Disabled: not in scheme mode")])]
           [else
            (super set-surrogate surrogate)]))
       

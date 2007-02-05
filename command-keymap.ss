@@ -168,7 +168,8 @@
         ;; key lookup.  I may want to refactor this out or ask on the PLT list
         ;; what the right thing to do here is.
         ;; The following tries to ignore caps lock.
-        (send command-keymap set-grab-key-function ignores-caps-lock-grab-key-function)
+        (send command-keymap set-grab-key-function
+              ignores-caps-lock-grab-key-function)
         
         
         (preferences:install-command-mode-bindings command-keymap)
