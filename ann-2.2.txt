@@ -1,0 +1,50 @@
+Subject: DivaScheme 2.2 released
+
+                              DivaScheme
+         ...for times when you wish your doctor would listen
+
+This is a minor point release of DivaScheme; it includes a few bug
+fixes, but it also includes the much requested feature of using '['
+for the context-sensitive open-paren feature in DrScheme.
+
+To install, evaluate:
+
+    (require (planet "install.ss" ("divascheme" "divascheme.plt" 1 1)))
+
+at the DrScheme REPL.  If you've previously installed DivaScheme, the
+install.ss invocation above should also automatically update your
+preferences to support the new keybindings for contextual open-paren.
+
+
+After restarting DrScheme, DivaScheme can then be toggled on or off by
+pressing F4.  More information about DivaScheme, including a demo
+screencast, can be found on its web site:
+
+    http://www.cs.brown.edu/research/plt/software/divascheme/
+
+
+Changes
+=======
+
+Release 2.2:
+
+Features:
+
+* Contextual open-paren keybinding.
+* Bug fix for CAPS LOCK during command mode.
+* Miscellaneous bug fixes.
+
+
+Thanks
+======
+
+DivaScheme was designed and implemented by Romain Legendre, Guillaume
+Marceau, Danny Yoo, Kathi Fisler and Shriram Krishnamurthi.  We thank
+Jay McCarthy for his help as well as the other members of PLT for
+their support.
+
+Thanks also to Aleks Bromfield, Jon Rafkind, Matthias Felleisen, Mark
+Haniford, Chris Warrington, David Cabana, Kyle Smith, and Geoffrey
+Knauth for their feedback and bug reports.
+
+Send comments and bug reports to dyoo@wpi.edu.
