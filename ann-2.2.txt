@@ -47,4 +47,4 @@ Thanks also to Aleks Bromfield, Jon Rafkind, Matthias Felleisen, Mark
 Haniford, Chris Warrington, David Cabana, Kyle Smith, and Geoffrey
 Knauth for their feedback and bug reports.
 
-Send comments and bug reports to dyoo@wpi.edu.
+Send comments and bug reports to dyoo@cs.wpi.edu.
