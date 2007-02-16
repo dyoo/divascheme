@@ -3,17 +3,17 @@ Subject: DivaScheme 2.2 released
                               DivaScheme
          ...for times when you wish your doctor would listen
 
-This is a minor point release of DivaScheme; it includes a few bug
-fixes, but it also includes the much requested feature of using '['
-for the context-sensitive open-paren feature in DrScheme.
+This is a minor point release of DivaScheme; it includes a few bug fixes,
+as well as the much requested feature of '[' for the context-sensitive
+open-paren feature in DrScheme.
 
 To install, evaluate:
 
     (require (planet "install.ss" ("divascheme" "divascheme.plt" 1 1)))
 
 at the DrScheme REPL.  If you've previously installed DivaScheme, the
-install.ss invocation above should also automatically update your
-preferences to support the new keybindings for contextual open-paren.
+install.ss invocation above should automatically update your preferences
+to support the new keybindings for contextual open-paren.
 
 
 After restarting DrScheme, DivaScheme can then be toggled on or off by
