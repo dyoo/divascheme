@@ -1,3 +1,7 @@
+BUG: if selection is larger than one s-expression, insert-after
+inserts between the first and second s-expressions.
+
+
 BUG: control-[ inserts a literal [ in command mode, as well as meta-[.
 We have to block these or handle them in a nice way.
 
