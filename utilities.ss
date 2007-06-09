@@ -5,7 +5,7 @@
            (lib "class.ss")
            (prefix fw: (lib "framework.ss" "framework"))
            (lib "mred.ss" "mred")
-           (lib "errortrace.ss" "errortrace"))
+           (lib "errortrace-lib.ss" "errortrace"))
 
   (define voice-debug false)
   (define (voice-printf . args)

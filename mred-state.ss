@@ -3,7 +3,7 @@
            (lib "etc.ss")
            (lib "struct.ss")
            (lib "mred.ss" "mred")
-           (lib "errortrace.ss" "errortrace")
+           (lib "errortrace-lib.ss" "errortrace")
            "dot-processing.ss"
            "utilities.ss"
            "structures.ss")
