@@ -12,8 +12,9 @@
            "utilities.ss"
            "actions.ss"
            "tag-state.ss"
-           "tag-reader.ss")
-
+           "tag-reader.ss"
+           "dot-processing.ss")
+  
   ;; This file provides an interpreter for the DivaLanguage,
   ;; that is this is a pure function, without any state, completely stateless,
   ;; which takes an ast (Abstract Syntax Tree) of the DivaLanguage and returns
@@ -226,18 +227,20 @@
                           [(not (World-undo world)) world]
                           [(= undo-count 0)
                            (copy-struct World world
+                                        [World-syntax-list false]
                                         [World-cancel false]
                                         [World-undo false])]
                           [else
                            (let ([sub-undo (loop (World-undo world) (sub1 undo-count))]
                                  [sub-cancel (loop (World-cancel world) (sub1 undo-count))])
-                                 (copy-struct World world
-                                              [World-undo sub-undo] 
-                                              [World-cancel sub-cancel]))])])
+                             (copy-struct World world
+                                          [World-syntax-list false]
+                                          [World-undo sub-undo]
+                                          [World-cancel sub-cancel]))])])
             (hash-table-put! dealt-with world result)
             result))))))
-    
-
+  
+  
   ;; eval-Loc : World (pos -> metric) pos (union Loc false) -> pos
   ;; Returns the location described by the location syntax tree.
   (define (eval-Loc world make-metric-f base loc/false)
@@ -571,28 +574,31 @@
   (define (eval-Undo world)
     (if (World-undo world)
         (copy-struct World (World-undo world)
+                     [World-syntax-list (parse-syntax/dot (World-text (World-undo world)))]
                      [World-redo world])
         (raise (make-voice-exn "Nothing to undo"))))
-    
+  
   ;; eval-Redo : World -> World
   (define (eval-Redo world)
-    (or (World-redo world)
+    (if (World-redo world)
+        (copy-struct World (World-redo world)
+                     [World-syntax-list (parse-syntax/dot (World-text (World-redo world)))])
         (raise (make-voice-exn "Nothing to redo"))))
-
+  
   ;; eval-Magic : World boolean -> World
   (define (eval-Magic world magic-wrap?)
     ((World-Magic-f world) world magic-wrap?))
-
+  
   ;; eval-Pass : World boolean -> World
   (define (eval-Pass world template-wrap?)
     ((World-Pass-f world) world template-wrap?))
-
+  
   ;; eval-Again : World -> World
   (define (eval-Again world)
     (unless (World-again world)
       (raise (make-voice-exn "Nothing to reexecute")))
     (eval-Protocol-Syntax-Tree world (World-again world)))
-
+  
   ;; eval-Magic-Bash : World What -> World
   (define (eval-Magic-Bash world what)
     (let ([symbol (eval-What/bash what)])
