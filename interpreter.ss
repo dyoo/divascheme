@@ -215,30 +215,32 @@
 
   (define (trim-undos world undo-count)
     (define dealt-with (make-hash-table))
-    (let loop ([world world]
-               [undo-count undo-count])
-      (and 
-       world
-       (hash-table-get
-        dealt-with
-        world
-        (lambda ()
-          (let ([result (cond
-                          [(not (World-undo world)) world]
-                          [(= undo-count 0)
-                           (copy-struct World world
-                                        [World-syntax-list false]
-                                        [World-cancel false]
-                                        [World-undo false])]
-                          [else
-                           (let ([sub-undo (loop (World-undo world) (sub1 undo-count))]
-                                 [sub-cancel (loop (World-cancel world) (sub1 undo-count))])
-                             (copy-struct World world
-                                          [World-syntax-list false]
-                                          [World-undo sub-undo]
-                                          [World-cancel sub-cancel]))])])
-            (hash-table-put! dealt-with world result)
-            result))))))
+    (copy-struct World
+                 (let loop ([world world]
+                            [undo-count undo-count])
+                   (and 
+                    world
+                    (hash-table-get
+                     dealt-with
+                     world
+                     (lambda ()
+                       (let ([result (cond
+                                       [(not (World-undo world)) world]
+                                       [(= undo-count 0)
+                                        (copy-struct World world
+                                                     [World-syntax-list false]
+                                                     [World-cancel false]
+                                                     [World-undo false])]
+                                       [else
+                                        (let ([sub-undo (loop (World-undo world) (sub1 undo-count))]
+                                              [sub-cancel (loop (World-cancel world) (sub1 undo-count))])
+                                          (copy-struct World world
+                                                       [World-syntax-list false]
+                                                       [World-undo sub-undo]
+                                                       [World-cancel sub-cancel]))])])
+                         (hash-table-put! dealt-with world result)
+                         result)))))
+                 [World-syntax-list (World-syntax-list world)]))
   
   
   ;; eval-Loc : World (pos -> metric) pos (union Loc false) -> pos
