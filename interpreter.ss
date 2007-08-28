@@ -214,33 +214,36 @@
                                             (World-success-message world))]))
 
   (define (trim-undos world undo-count)
-    (define dealt-with (make-hash-table))
-    (copy-struct World
-                 (let loop ([world world]
-                            [undo-count undo-count])
-                   (and 
-                    world
-                    (hash-table-get
-                     dealt-with
+    (print-mem*
+     'trim-undos
+     (define dealt-with (make-hash-table))
+     (copy-struct World
+                  (let loop ([world world]
+                             [undo-count undo-count])
+                    (and
                      world
-                     (lambda ()
-                       (let ([result (cond
-                                       [(not (World-undo world)) world]
-                                       [(= undo-count 0)
-                                        (copy-struct World world
-                                                     [World-syntax-list false]
-                                                     [World-cancel false]
-                                                     [World-undo false])]
-                                       [else
-                                        (let ([sub-undo (loop (World-undo world) (sub1 undo-count))]
-                                              [sub-cancel (loop (World-cancel world) (sub1 undo-count))])
-                                          (copy-struct World world
-                                                       [World-syntax-list false]
-                                                       [World-undo sub-undo]
-                                                       [World-cancel sub-cancel]))])])
-                         (hash-table-put! dealt-with world result)
-                         result)))))
-                 [World-syntax-list (World-syntax-list world)]))
+                     (hash-table-get
+                      dealt-with
+                      world
+                      (lambda ()
+                        (let ([result (cond
+                                        [(not (World-undo world)) world]
+                                        [(= undo-count 0)
+                                         (copy-struct World world
+                                                      [World-syntax-list false]
+                                                      [World-cancel false]
+                                                      [World-undo false])]
+                                        [else
+                                         (let ([sub-undo (loop (World-undo world) (sub1 undo-count))]
+                                               [sub-cancel (loop (World-cancel world) (sub1 undo-count))])
+                                           (copy-struct World world
+                                                        [World-syntax-list false]
+                                                        [World-undo sub-undo]
+                                                        [World-cancel sub-cancel]))])])
+                          (hash-table-put! dealt-with world result)
+                          result)))))
+                  [World-syntax-list (World-syntax-list world)]))
+    )
   
   
   ;; eval-Loc : World (pos -> metric) pos (union Loc false) -> pos
@@ -254,7 +257,7 @@
       [#f base]
       [(struct Loc ((? Before?) what)) (e-w what syntax-position)]
       [(struct Loc ((? After?) what)) (e-w what syntax-end-position)]))
-
+  
   ;; eval-What : World (pos -> metric) pos What -> syntax
   ;; In fact, this function should be called eval-What/search,
   ;; but as it is the default behavior, it is just named eval-What.

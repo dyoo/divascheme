@@ -305,20 +305,23 @@
   
   (provide print-mem)
   (define (print-mem label thunk)
-    (thunk)
-    #;(let* ([a (current-memory-use)]
+    #;(thunk)
+    (let* ([a (current-memory-use)]
              [_1 (collect-garbage)]
              [b (current-memory-use)]
+             [t1 (current-inexact-milliseconds)]
              [result (call-with-values thunk (lambda args args))]
+             [t2 (current-inexact-milliseconds)]
              [c (current-memory-use)]
              [_2 (collect-garbage)]
              [d (current-memory-use)])
-        (printf "print-mem ~a: ~a ~a~n" 
-                label 
-                (round (/ (- a b) 1000))
-                (round (/ (- c d) 1000)))
-        (apply values result)))
-
+      (printf "print-mem ~a: before ~a,  after ~a, time ~a~n"
+              label 
+              (round (/ (- a b) 1000))
+              (round (/ (- c d) 1000))
+              (- t2 t1))
+      (apply values result)))
+  
   
   (provide print-mem*)
   (define-syntax (print-mem* stx)

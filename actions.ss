@@ -333,22 +333,25 @@
       (define (delete/mark world)
         (delete/pos+len world (World-mark-position world) (World-mark-length world)))
       
+      
       ;; replace/selection : World string -> World
+      ;; FIXME: bad performance on large files.
       (define (replace/selection world text)
-        (let ([len (string-length text)]
-              [new-world (world-replace-text world
-                                             (World-cursor-index world)
-                                             text
-                                             (World-selection-length world))])
-          (cleanup-text/selection (recompute-mark/replace
-                                   (select/len new-world len)
-                                   (World-cursor-position world)
-                                   (World-selection-length world)
-                                   len))))
+        (print-mem*
+         'replace/selection
+         (let ([len (string-length text)]
+               [new-world (world-replace-text world
+                                              (World-cursor-index world)
+                                              text
+                                              (World-selection-length world))])
+           (cleanup-text/selection (recompute-mark/replace
+                                    (select/len new-world len)
+                                    (World-cursor-position world)
+                                    (World-selection-length world)
+                                    len)))))
       
       ;; close : World -> World
       (define (close world)
-
         ;; flash-last-sexp!: world text% -> world
         ;; 
         (define (flash-last-sexp! world window)
@@ -425,7 +428,7 @@
       ;; command : World symbol/false pos/false boolean boolean non-negative-integer non-negative-integer boolean -> World
       (define (command world symbol/false pos/false open?
                        square? template-number magic-number template/magic-wrap?)
-        (let* ([world 
+        (let* ([world
                 (if pos/false
                     (set-cursor-position world pos/false)
                     world)] ; thus we keep the current selection
@@ -447,8 +450,9 @@
                            [(and (<= 0
                                      (sub1 (World-cursor-index world))
                                      (sub1 (string-length (World-text world))))
-                                 (quoting-char? (string-ref (World-text world)
-                                                            (sub1 (World-cursor-index world)))))
+                                 (quoting-char?
+                                  (string-ref (World-text world)
+                                              (sub1 (World-cursor-index world)))))
                             (substring text 1)]
                            [else text])]
                    [world (if (<= number-of-templates 1)
@@ -468,6 +472,7 @@
               (if template
                   (holder world)
                   (step-to-the-right world))))))
+      
       
       (define (step-to-the-right world)
         (let ([stx (find-pos-sibling-forward (World-selection-end-position world)
