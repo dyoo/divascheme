@@ -550,11 +550,13 @@
 
   ;; replace-text : string index string int -> string
   (define (replace-text txt index tyt len)
-    (if (< len 0)
-        (replace-text txt (+ index len) tyt (- len))
-        (format "~a~a~a" (substring txt 0 index)
-                tyt
-                (substring txt (+ index len) (string-length txt)))))
+    (print-mem*
+     'replace-text
+     (if (< len 0)
+         (replace-text txt (+ index len) tyt (- len))
+         (format "~a~a~a" (substring txt 0 index)
+                 tyt
+                 (substring txt (+ index len) (string-length txt))))))
   
   ;; get-subtext/stx : string syntax -> string
   (define (get-subtext/stx text stx)
@@ -567,8 +569,8 @@
                    (syntax-pos->index pos)
                    (syntax-pos->index (+ pos len)))
         (get-subtext/pos+len text (+ pos len) (- len))))
-
-
+  
+  
   ;; Functions on exception.
   (provide make-voice-exn
            voice-exn?

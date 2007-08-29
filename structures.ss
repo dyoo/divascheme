@@ -295,10 +295,12 @@
   
   ;; update-marks/replace: World index number number -> World
   (define (update-markers/replace world index length replacing-length)
-    (update-markers/insert
-     (update-markers/delete world index length)
-     index
-     replacing-length))
+    (print-mem*
+     'update-markers/replace
+     (update-markers/insert
+      (update-markers/delete world index length)
+      index
+      replacing-length)))
   
   
   (provide world-insert-text)
