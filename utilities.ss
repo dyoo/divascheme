@@ -313,11 +313,11 @@
            [c (current-memory-use)]
            [_2 (collect-garbage)]
            [d (current-memory-use)])
-      (printf "PM ~a: before ~a,  after ~a, time ~a~n"
-              print-mem-labels
+      (printf "PM ~a ms | ~a: GC pre ~a kb | GC post ~a kb~n"
+              (- t2 t1)
+              (reverse print-mem-labels)
               (round (/ (- a b) 1000))
-              (round (/ (- c d) 1000))
-              (- t2 t1))
+              (round (/ (- c d) 1000)))
       (set! print-mem-labels (rest print-mem-labels))
       (apply values result)))
   
@@ -535,9 +535,9 @@
   
   ;; insert-text : string index string -> string
   (define (insert-text txt index tyt)
-    (format "~a~a~a" (substring txt 0 index)
-                      tyt
-                     (substring txt index (string-length txt))))
+    (string-append (substring txt 0 index)
+                   tyt
+                   (substring txt index (string-length txt))))
   
   ;; delete-text : string index int -> string
   (define (delete-text txt index len)
@@ -545,7 +545,7 @@
      [( = len 0) txt]
      [(< len 0) (delete-text txt (- index len) (- len))]
      [else 
-      (format "~a~a" (substring txt 0 index)
+      (string-append (substring txt 0 index)
                      (substring txt (+ index len) (string-length txt)))]))
 
   ;; replace-text : string index string int -> string
@@ -554,9 +554,9 @@
      'replace-text
      (if (< len 0)
          (replace-text txt (+ index len) tyt (- len))
-         (format "~a~a~a" (substring txt 0 index)
-                 tyt
-                 (substring txt (+ index len) (string-length txt))))))
+         (string-append (substring txt 0 index)
+                        tyt
+                        (substring txt (+ index len) (string-length txt))))))
   
   ;; get-subtext/stx : string syntax -> string
   (define (get-subtext/stx text stx)
