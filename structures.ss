@@ -329,15 +329,17 @@
   (provide world-replace-text)
   ;; world-replace-text : world index string int -> string
   (define (world-replace-text world index tyt len)
-    (let ([new-text (replace-text (World-text world) index tyt len)])
-      ;; FIXME: update marks
-      (update-markers/replace
-       (copy-struct World world
-                    [World-text new-text]
-                    [World-syntax-list (parse-syntax/dot new-text)])
-       index
-       len
-       (string-length tyt))))
+    (print-mem*
+     'world-replace-text
+     (let ([new-text (replace-text (World-text world) index tyt len)])
+       ;; FIXME: update marks
+       (update-markers/replace
+        (copy-struct World world
+                     [World-text new-text]
+                     [World-syntax-list (parse-syntax/dot new-text)])
+        index
+        len
+        (string-length tyt)))))
   
   
   (provide success-message)

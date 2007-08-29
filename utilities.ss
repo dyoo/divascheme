@@ -3,22 +3,21 @@
            (lib "list.ss")
            (lib "plt-match.ss")
            (lib "class.ss")
-           (prefix fw: (lib "framework.ss" "framework"))
            (lib "mred.ss" "mred")
            (lib "errortrace-lib.ss" "errortrace"))
-
+  
   (define voice-debug false)
   (define (voice-printf . args)
     (when voice-debug
       (apply printf args)))
-
+  
   (provide print-current-stack-trace)
   (define (print-current-stack-trace)
     (with-handlers ([exn:fail? 
                      (lambda (exn)
                        (print-error-trace (current-output-port) exn))])
       (error 'print-current-stack-trace)))
-
+  
   (provide trim-whitespace-prefix)
   (define (trim-whitespace-prefix text)
     (let ([m (regexp-match " *(.*)" text)])
@@ -301,25 +300,25 @@
   
   
   
-
-  
+  (define print-mem-labels '())
   (provide print-mem)
   (define (print-mem label thunk)
-    #;(thunk)
+    (set! print-mem-labels (cons label print-mem-labels))
     (let* ([a (current-memory-use)]
-             [_1 (collect-garbage)]
-             [b (current-memory-use)]
-             [t1 (current-inexact-milliseconds)]
-             [result (call-with-values thunk (lambda args args))]
-             [t2 (current-inexact-milliseconds)]
-             [c (current-memory-use)]
-             [_2 (collect-garbage)]
-             [d (current-memory-use)])
-      (printf "print-mem ~a: before ~a,  after ~a, time ~a~n"
-              label 
+           [_1 (collect-garbage)]
+           [b (current-memory-use)]
+           [t1 (current-inexact-milliseconds)]
+           [result (call-with-values thunk (lambda args args))]
+           [t2 (current-inexact-milliseconds)]
+           [c (current-memory-use)]
+           [_2 (collect-garbage)]
+           [d (current-memory-use)])
+      (printf "PM ~a: before ~a,  after ~a, time ~a~n"
+              print-mem-labels
               (round (/ (- a b) 1000))
               (round (/ (- c d) 1000))
               (- t2 t1))
+      (set! print-mem-labels (rest print-mem-labels))
       (apply values result)))
   
   

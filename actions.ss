@@ -270,21 +270,24 @@
       ;; and reindents it.
       
       (define (cleanup-text/pos world pos)
-        (let* ([start-index (pos->index (line-pos (World-text world) pos))]
-               [line        (line-text/pos (World-text world) pos)]
-               [len (string-length line)])
-          (let-values ([(clean-line lst)
-                        (cleanup-whitespace start-index line
-                                            (list (World-selection-index world)
-                                                  (World-selection-end-index world)
-                                                  (World-mark-index     world)
-                                                  (World-mark-end-index world)))])
-            (let ([new-world (world-replace-text world start-index clean-line len)])
-              (mark/pos+len (select/pos+len new-world
-                                            (index->pos (first lst))
-                                            (- (second lst) (first lst)))
-                            (index->pos (third lst))
-                            (- (fourth lst) (third lst)))))))
+        (print-mem*
+         'cleanup-text/pos
+         (let* ([start-index (pos->index (line-pos (World-text world) pos))]
+                [line (line-text/pos (World-text world) pos)]
+                [len (string-length line)])
+           (let-values ([(clean-line lst)
+                         (cleanup-whitespace start-index line
+                                             (list (World-selection-index world)
+                                                   (World-selection-end-index world)
+                                                   (World-mark-index world)
+                                                   (World-mark-end-index world)))])
+             (let ([new-world (world-replace-text world start-index clean-line len)])
+               (mark/pos+len (select/pos+len new-world
+                                             (index->pos (first lst))
+                                             (- (second lst) (first lst)))
+                             (index->pos (third lst))
+                             (- (fourth lst) (third lst))))))))
+      
       
       ;; cleanup-text/pos+len
       (define (cleanup-text/pos+len world pos len)
