@@ -303,23 +303,25 @@
   (define print-mem-labels '())
   (provide print-mem)
   (define (print-mem label thunk)
-    (set! print-mem-labels (cons label print-mem-labels))
-    (let* ([a (current-memory-use)]
-           [_1 (collect-garbage)]
-           [b (current-memory-use)]
-           [t1 (current-inexact-milliseconds)]
-           [result (call-with-values thunk (lambda args args))]
-           [t2 (current-inexact-milliseconds)]
-           [c (current-memory-use)]
-           [_2 (collect-garbage)]
-           [d (current-memory-use)])
-      (printf "PM ~a ms | ~a: GC pre ~a kb | GC post ~a kb~n"
-              (- t2 t1)
-              (reverse print-mem-labels)
-              (round (/ (- a b) 1000))
-              (round (/ (- c d) 1000)))
-      (set! print-mem-labels (rest print-mem-labels))
-      (apply values result)))
+    (thunk)
+    #;(begin
+        (set! print-mem-labels (cons label print-mem-labels))
+        (let* ([a (current-memory-use)]
+               [_1 (collect-garbage)]
+               [b (current-memory-use)]
+               [t1 (current-inexact-milliseconds)]
+               [result (call-with-values thunk (lambda args args))]
+               [t2 (current-inexact-milliseconds)]
+               [c (current-memory-use)]
+               [_2 (collect-garbage)]
+               [d (current-memory-use)])
+          (printf "PM ~a ms | ~a: GC pre ~a kb | GC post ~a kb~n"
+                  (- t2 t1)
+                  (reverse print-mem-labels)
+                  (round (/ (- a b) 1000))
+                  (round (/ (- c d) 1000)))
+          (set! print-mem-labels (rest print-mem-labels))
+          (apply values result))))
   
   
   (provide print-mem*)
