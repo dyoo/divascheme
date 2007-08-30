@@ -2,7 +2,7 @@
   (define name "DivaScheme")
   (define blurb '("semi-structured programming editing for DrScheme"))
   (define homepage "http://www.cs.brown.edu/research/plt/software/divascheme/")
-  (define version "2.2")
+  (define version "2.3")
   (define doc.txt "doc.txt")
   
   (define primary-file "install.ss")
