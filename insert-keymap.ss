@@ -292,11 +292,20 @@
         
         (define (fill-highlight!)
           (clear-highlight)
-          (set! clear-highlight
-                (send window highlight-range 
-                      (crop (sub1 left-edge-of-insert))
-                      (crop (add1 right-edge-of-insert))
-                      (insert-color))))
+          (local ((define left-
+                    (cond
+                      [(= (send window
+                                position-line left-edge-of-insert)
+                          (send window
+                                position-line (crop (sub1 left-edge-of-insert))))
+                       (crop (sub1 left-edge-of-insert))]
+                      [else
+                       left-edge-of-insert])))
+            (set! clear-highlight
+                  (send window highlight-range
+                        left-
+                        (crop (add1 right-edge-of-insert))
+                        (insert-color)))))
         
         
         ;; on-insert: number number -> void
