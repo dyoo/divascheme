@@ -4,6 +4,7 @@
            (lib "contract.ss")
            (lib "list.ss")
            (lib "42.ss" "srfi")
+           (lib "port.ss")
            (only (lib "1.ss" "srfi") take)
            (only (lib "13.ss" "srfi") string-prefix?)
            "lexer.ss")
@@ -14,7 +15,8 @@
   (define (semi-read-syntax-list source ip)
     (local
         [(define (make-counting-pipe)
-           (let-values ([(ip op) (make-pipe #f source source)])
+           (let-values ([(ip op)
+                         (make-pipe-with-specials #f source source)])
              (port-count-lines! ip)
              (values ip op)))
          (define-values (pipe-ip pipe-op) (make-counting-pipe))
@@ -33,8 +35,15 @@
               (and (hash-table-get translation-table (syntax-position stx) #f) #t))
             
             (define (untranslate stx translation-table)
-              (remake-stx
-               (string->symbol (hash-table-get translation-table (syntax-position stx)))))
+              (local ((define real-value (hash-table-get translation-table (syntax-position stx))))
+                (cond
+                  [(string? real-value)
+                   (remake-stx
+                    (string->symbol real-value))]
+                  [(syntax? real-value)
+                   (remake-stx (syntax-object->datum real-value))]
+                  [else
+                   stx])))
             
             (define (remake-stx datum)
               (datum->syntax-object stx datum stx stx))
@@ -117,14 +126,20 @@
                    (display val to-op)]
                   
                   [(special-atom)
-                   (display val to-op)]
+                   (hash-table-put! ht (position-offset (position-token-start-pos pos-token)) val)
+                   (display "X" to-op)]
                   
                   [(prefix quoter-prefix)
                    (cond
                      [(string-prefix? "#;" val)
                       (hash-table-put! ht (position-offset (position-token-start-pos pos-token)) val)
                       (display "''" to-op)
-                      (display (substring val 2) to-op)]
+                      ;; The condition below is redundant,
+                      ;; but a workaround a bug in the ports produced by
+                      ;; make-pipe-with-specials: it can't accept
+                      ;; empty strings.
+                      (when (> (string-length val) 2)
+                        (display (substring val 2) to-op))]
                      [else
                       (display val to-op)])]
                   

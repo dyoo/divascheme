@@ -18,3 +18,15 @@ Nested comment #| |# don't work.
 Changing tabs in insert mode breaks something.
 
    - fixed
+
+
+
+Cursor motion:
+map: expects type <proper list> as 2nd argument, given: #f; other arguments were: #<procedure:aux>
+
+ === context ===
+/home/dyoo/work/divascheme/traversal.ss:164:5
+/home/dyoo/work/divascheme/interpreter.ss:655:2: eval-column-motion
+/home/dyoo/work/divascheme/diva-link.ss:315:6: interpreter/imperative
+/home/dyoo/work/divascheme/diva-link.ss:306:6: get&set-mred/handlers
+call-with-break-parameterization

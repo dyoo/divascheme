@@ -199,6 +199,9 @@
                ("#|"
                 (token-atom (get-nested-comment input-port)))
                
+               ((special-comment)
+                (begin
+                  (token-special-atom lexeme)))
                ((special)
                 (token-special-atom lexeme))
                
