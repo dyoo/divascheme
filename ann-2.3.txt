@@ -45,7 +45,7 @@ Jay McCarthy for his help as well as the other members of PLT for
 their support.
 
 Thanks also to Aleks Bromfield, Jon Rafkind, Matthias Felleisen, Mark
-Haniford, Chris Warrington, David Cabana, Kyle Smith, and Geoffrey
-Knauth for their feedback and bug reports.
+Haniford, Chris Warrington, David Cabana, Kyle Smith, Geoffrey
+Knauth, and Will Farr for their feedback and bug reports.
 
 Send comments and bug reports to dyoo@cs.wpi.edu.
