@@ -119,7 +119,7 @@
         (index->pos (send window-text get-start-position)))
       
       (define/public (set-cursor-position pos)
-        (send window-text set-position (pos->index pos)))
+        (send window-text diva:set-selection-position (pos->index pos)))
 
       
       ;;

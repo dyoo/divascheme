@@ -568,6 +568,7 @@
                           world)])
           (holder/end world)))
       
+      
       ;; push : World -> World
       (define (push world)
         (exchange (bring (exchange world))))
@@ -590,19 +591,28 @@
       
       ;; copy : World -> World
       (define (copy world)
-        (when (World-selection world)
-          (set-clipboard-content (World-selection world)))
-        world)
+        (queue-imperative-action
+         world
+         (lambda (world window)
+           (send window copy #f)
+           world)))
+      
       
       ;; cut : World -> World
       (define (cut world)
-        (delete/selection (dedouble-ellipsis (copy world))))
+        (queue-imperative-action
+         world
+         (lambda (world window)
+           (send window cut #f)
+           world)))
       
       ;; paste : World -> World
       (define (paste world)
-        (if (get-clipboard-content)
-            (replace/selection (dedouble-ellipsis world) (format " ~a " (get-clipboard-content)))
-            world))
+        (queue-imperative-action
+         world
+         (lambda (world window)
+           (send window paste)
+           world)))
       
       (define *indentation-overhang* 500)
       
@@ -649,7 +659,10 @@
       (define (transpose world)
         (let ([text (make-object scheme:text%)])
           (send text insert (World-text world))
-          (send text set-position (sub1 (World-cursor-position world)))
+          
+          (send text diva:set-selection-position
+                (sub1 (World-cursor-position world)))
+          
           (send text transpose-sexp (sub1 (World-cursor-position world)))
           (copy-struct World (unmark world)
                        [World-cursor-position (add1 (send text get-start-position))]

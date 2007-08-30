@@ -39,7 +39,7 @@
                                     [World-selection-length selection-length]
                                     [World-mark-position (index->syntax-pos mark-index)]
                                     [World-mark-length mark-length])]
-             [_        (set-clipboard-content clipboard-content)]
+             #;[_        (set-clipboard-content clipboard-content)]
              [eval-PST (lambda (world ast)
                          (with-handlers ([voice-exn? (lambda args world)]
                                          [voice-exn/world? (lambda (exn) (voice-exn/world-world exn))])

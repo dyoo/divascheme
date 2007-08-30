@@ -158,7 +158,7 @@
                  (set-world (send actions select/stx world stx/false))
                  (begin-symbol (send window get-start-position)
                                (send window get-end-position))
-                 (send window set-position
+                 (send window diva:set-selection-position
                        (clamp original-pos
                               (send window get-start-position)
                               (send window get-end-position)))
@@ -194,7 +194,7 @@
               (send window insert " "))
             (when need-space-after
               (send window insert " ")
-              (send window set-position
+              (send window diva:set-selection-position
                     (sub1 (send window get-end-position))))
             (set-insert&delete-callbacks))
           
@@ -236,7 +236,7 @@
                  (clamp (send window get-start-position)
                         left-edge-of-insert right-edge-of-insert)])
             (unless (= snapped-pos (send window get-start-position))
-              (send window set-position snapped-pos))))
+              (send window diva:set-selection-position snapped-pos))))
         
         (define (move-up)
           (send window move-position 'up)
@@ -255,10 +255,10 @@
           (snap-to-edges))
         
         (define (move-left*)
-          (send window set-position left-edge-of-insert))
+          (send window diva:set-selection-position left-edge-of-insert))
         
         (define (move-right*)
-          (send window set-position right-edge-of-insert))
+          (send window diva:set-selection-position right-edge-of-insert))
         
         
         (define (delete-backward)

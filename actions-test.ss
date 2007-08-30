@@ -284,7 +284,7 @@
         (test/cmd-select+mark make-cmd cursor-index selection-length mark-index mark-length text expected)))      
     
     ; test/clipboard : (World -> datum) index non-negative-integer string string expected -> void
-    (define (test/clipboard make-cmd/clip cursor-index selection-length text clipboard-content expected)
+    #; (define (test/clipboard make-cmd/clip cursor-index selection-length text clipboard-content expected)
       (let* ([world (copy-struct World empty-world
                                  [World-text text]
                                  [World-syntax-list (string->syntax-list text)]
@@ -300,7 +300,7 @@
     
     ; copy : World -> World
     ; test/copy : index non-negative-integer string string expected -> void
-    (define (test/copy cursor-index selection-length text clipboard-content expected)
+    #; (define (test/copy cursor-index selection-length text clipboard-content expected)
       (let ([make-cmd (lambda (world) `(copy ,world))])
         (test/clipboard make-cmd cursor-index selection-length text clipboard-content (list cursor-index
                                                                                             selection-length
@@ -309,13 +309,13 @@
 
     ; cut : World -> World
     ; test/cut : index non-negative-integer string string expected -> void
-    (define (test/cut cursor-index selection-length text clipboard-content . expected)
+    #; (define (test/cut cursor-index selection-length text clipboard-content . expected)
       (let ([make-cmd (lambda (world) `(cut ,world))])
         (test/clipboard make-cmd cursor-index selection-length text clipboard-content (cons cursor-index (cons 0 expected)))))
     
     ; paste : World -> World
     ; test/paste : index non-negative-integer string string expected -> void
-    (define (test/paste cursor-index selection-length text clipboard-content . expected)
+    #; (define (test/paste cursor-index selection-length text clipboard-content . expected)
       (let ([make-cmd (lambda (world) `(paste ,world))])
         (test/clipboard make-cmd cursor-index selection-length text clipboard-content (append expected (list clipboard-content)))))
     
@@ -596,6 +596,7 @@
     (test/push 7 3  0 0 " thing pop" 9 0 3 0 "pop thing")
     (test/push 0 3 10 0 "pop thing " 0 5 9 0 "thing pop")
     
+    #|
     ; test/copy : index non-negative-integer string string expected -> void
     (test/copy 0 0 "" "" "")
     (test/copy 1 0 "(define (foo bar) (bar foo))" "CLIPBOARD-CONTENT" "CLIPBOARD-CONTENT")
@@ -613,7 +614,9 @@
     (test/paste 0 0 "" "(foo bar)" 0 9 "(foo bar)")
     (test/paste 18 9 "(define (foo bar) (bar foo))" "" 17 0 "(define (foo bar))")
     (test/paste 18 9 "(define (foo bar) (bar foo))" "(foo bar)" 18 9 "(define (foo bar) (foo bar))")
-
+    |#
+    
+    
     ; test/enter : index non-negative-integer index non-negative-integer string index expected -> void
     (test/enter 0 0 0 0 "" 0 0 1 0 1 0 "\n")
     (test/enter 1 6 0 0 "($expr$ ---)" 1 0 3 6 0 0 "(\n $expr$ ---)")

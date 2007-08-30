@@ -134,7 +134,7 @@
                end-edit-sequence
 	       diva:-get-text       ;;  from mred-callback mixin
                get-diva-central
-               )
+               set-position)
       
       (super-instantiate ())
       
@@ -159,12 +159,17 @@
            (super set-surrogate surrogate)]))
       
       
+      ;; TODO: dyoo should ask Guillaume what's going on with the call-keyname stuff here.
+      ;; I think it had something to do with hacking the clipboard to do
+      ;; voice commands.  This seems like an overloaded use of the clipboard.
       (define/override (do-paste start time)
         (let* ([c (get-clipboard-content)]
                [m (regexp-match #rx"^~(.*)~$" c)])
           (if m
               (send command-keymap call-keyname (second m))
               (super do-paste start time))))
+      
+      
       
       (define (diva-label label) 
         (when (get-top-level-window)
@@ -493,7 +498,18 @@
            (set! command-keymap (new-command-keymap))
            (install-command-keymap)]
           [else
-           (set! command-keymap (new-command-keymap))]))))
+           (set! command-keymap (new-command-keymap))]))
+      
+      
+      ;; diva:set-selection-position: number number -> void
+      ;; Does most of the ugly details on setting the selection.
+      ;; In particular, we don't want to munge the clipboard.
+      (define/public diva:set-selection-position
+        (case-lambda
+          [(start end)
+           (set-position start end #f #t 'local)]
+          [(start)
+           (set-position start 'same #f #t 'local)]))))
   
   
   (define (diva-link:interactions-text-mixin super%)

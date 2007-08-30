@@ -29,7 +29,7 @@
       (test (get-clipboard-content) text))
     ; set-clipbord-content : (union string false) -> void
     ; test/set-clipboard-content : string -> void
-    (define (test/set-clipboard-content text/false)
+    #; (define (test/set-clipboard-content text/false)
       (set-clipboard-content text/false)
       (test (send the-clipboard get-clipboard-string 0) (or text/false
                                                             (send the-clipboard get-clipboard-string 0))))
@@ -230,10 +230,12 @@
     (test/get-clipboard-content "(define (foo bar) (bar foo))")
     
     ; test/set-clipboard-content : string -> void
+    #|
     (test/set-clipboard-content false)
     (test/set-clipboard-content "What's up?")
     (test/set-clipboard-content "")
     (test/set-clipboard-content "(define (foo bar) (bar foo))")
+    |#
     
     ; identifier-match? : symbol symbol -> boolean
     (test true  (identifier-match? 'x 'x))
