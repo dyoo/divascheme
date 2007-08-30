@@ -1,0 +1,9 @@
+Bugs:
+
+String literals with escapes \\ in them don't clean up correctly.
+
+Here strings don't work.
+
+Nested comment #| |# don't work.
+
+Changing tabs in insert mode breaks something.
