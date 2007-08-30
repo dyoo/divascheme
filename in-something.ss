@@ -10,6 +10,9 @@
   ;;
   ;; (in-something "\"hello") should return "\""
   ;;
+  
+  ;; TODO: "here" string support
+  
   (define (in-something? str)
     (let loop ([i 0]
                [in #f]
