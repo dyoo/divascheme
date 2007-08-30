@@ -231,33 +231,35 @@
           (min (max x low) high))
         
         
+        (define (snap-to-edges)
+          (let ([snapped-pos
+                 (clamp (send window get-start-position)
+                        left-edge-of-insert right-edge-of-insert)])
+            (unless (= snapped-pos (send window get-start-position))
+              (send window set-position snapped-pos))))
+        
         (define (move-up)
           (send window move-position 'up)
-          (send window set-position
-                (clamp (send window get-start-position)
-                       left-edge-of-insert right-edge-of-insert)))
+          (snap-to-edges))
         
         (define (move-down)
           (send window move-position 'down)
-          (send window set-position
-                (clamp (send window get-start-position)
-                       left-edge-of-insert right-edge-of-insert)))
+          (snap-to-edges))
         
-        (define (move-cursor delta)
-          (send window set-position 
-                (clamp (+ delta (send window get-start-position))
-                       left-edge-of-insert right-edge-of-insert)))
+        (define (move-left)
+          (send window move-position 'left)
+          (snap-to-edges))
         
-        (define (move-left) (move-cursor -1))
-        
-        (define (move-right) (move-cursor +1))
+        (define (move-right)
+          (send window move-position 'right)
+          (snap-to-edges))
         
         (define (move-left*)
           (send window set-position left-edge-of-insert))
         
         (define (move-right*)
           (send window set-position right-edge-of-insert))
-
+        
         
         (define (delete-backward)
           (cond
@@ -265,7 +267,7 @@
              (void)
              ;; not quite working yet
              #;(eval-text&cmd 'Younger)
-               ]
+             ]
             [(< left-edge-of-insert
                 (send window get-start-position))
              (send window delete)]))
