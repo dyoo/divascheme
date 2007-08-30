@@ -33,6 +33,9 @@ Features:
 
 * Fixed bug involving switching tabs while in insert mode.
 
+* Up and down can be used in insert mode.  install.ss will try to
+  automatically upgrade your keybindings appropriately.
+
 * Reduced memory footprint.
 
 
