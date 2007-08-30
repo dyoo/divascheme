@@ -265,38 +265,38 @@
                         (World-cursor-position world)
                         (World-selection-length world)))
       
-      ;; cleanup-text/pos : World pos -> World
-      ;; This function eats all the extra white-space on the line of pos
-      ;; and reindents it.
-      
-      (define (cleanup-text/pos world pos)
-        (print-mem*
-         'cleanup-text/pos
-         (let* ([start-index (pos->index (line-pos (World-text world) pos))]
-                [line (line-text/pos (World-text world) pos)]
-                [len (string-length line)])
-           (let-values ([(clean-line lst)
-                         (cleanup-whitespace start-index line
-                                             (list (World-selection-index world)
-                                                   (World-selection-end-index world)
-                                                   (World-mark-index world)
-                                                   (World-mark-end-index world)))])
-             (let ([new-world (world-replace-text world start-index clean-line len)])
-               (mark/pos+len (select/pos+len new-world
-                                             (index->pos (first lst))
-                                             (- (second lst) (first lst)))
-                             (index->pos (third lst))
-                             (- (fourth lst) (third lst))))))))
-      
       
       ;; cleanup-text/pos+len
       (define (cleanup-text/pos+len world pos len)
-        (let* ([start-pos (line-pos (World-text world) pos)]
-               [new-world ((line-map (lambda (world pos) (cleanup-text/pos world pos))) 
-                           world pos len)])
-          (indent/pos+len new-world
-                          start-pos
-                          (+ len (- pos start-pos)))))
+        (local
+            (;; cleanup-text/pos : World pos -> World
+             ;; This function eats all the extra white-space on the line of pos
+             ;; and reindents it.
+             (define (cleanup-text/pos world pos)
+               (print-mem*
+                'cleanup-text/pos
+                (let* ([start-index (pos->index (line-pos (World-text world) pos))]
+                       [line (line-text/pos (World-text world) pos)]
+                       [len (string-length line)])
+                  (let-values ([(clean-line lst)
+                                (cleanup-whitespace start-index line
+                                                    (list (World-selection-index world)
+                                                          (World-selection-end-index world)
+                                                          (World-mark-index world)
+                                                          (World-mark-end-index world)))])
+                    (let ([new-world (world-replace-text world start-index clean-line len)])
+                      (mark/pos+len (select/pos+len new-world
+                                                    (index->pos (first lst))
+                                                    (- (second lst) (first lst)))
+                                    (index->pos (third lst))
+                                    (- (fourth lst) (third lst)))))))))
+          (let* ([start-pos (line-pos (World-text world) pos)]
+                 [new-world ((line-map (lambda (world pos) (cleanup-text/pos world pos)))
+                             world pos len)])
+            (indent/pos+len new-world
+                            start-pos
+                            (+ len (- pos start-pos))))))
+      
       
       ;; cleanup-text/selection : World -> World
       ;; This function eats all the extra white-space on the line of the cursor-position,
@@ -307,7 +307,7 @@
       
       ;; insert : World pos string -> World
       (define (insert world pos text)
-        (let ([len  (string-length text)]
+        (let ([len (string-length text)]
               [new-world (world-insert-text world (pos->index pos) text)])
           (cleanup-text/pos+len
            (recompute-mark/insert
