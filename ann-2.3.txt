@@ -31,6 +31,8 @@ Features:
 * Fixed bug concerning parsing of comments.  Comments can be edited
   just like strings now.
 
+* Fixed bug involving switching tabs while in insert mode.
+
 * Reduced memory footprint.
 
 
