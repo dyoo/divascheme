@@ -66,6 +66,11 @@
       (define/augment (on-tab-change from-tab to-tab)
         (inner (void) on-tab-change from-tab to-tab)
         (when started?
+          (send (send from-tab get-defs) diva:-on-loss-focus)
+          (send (send from-tab get-ints) diva:-on-loss-focus)
+          (send (send to-tab get-defs) diva:-on-loss-focus)
+          (send (send to-tab get-ints) diva:-on-loss-focus)
+          
           (send (send from-tab get-defs) to-normal-mode)
           (send (send from-tab get-ints) to-normal-mode)
           (send (send to-tab get-defs) to-command-mode)
