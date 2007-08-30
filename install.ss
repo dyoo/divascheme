@@ -11,6 +11,7 @@
   (require (lib "util.ss" "planet")
            (lib "list.ss")
            (lib "plt-match.ss")
+           (lib "etc.ss")
            
            
            ;; NOTE: diva-preferences.ss must be invoked, even if we
@@ -83,6 +84,24 @@
         [else (cons (first lst)
                     (loop (rest lst)))])))
   
+  (define (update-2.2->2.3)
+    (local ((define (has-no-up-down/insert?)
+              (and (not (member '("up" "diva:up")
+                                (preferences:get-insert-mode-bindings)))
+                   (not (member '("down" "diva:down")
+                                (preferences:get-insert-mode-bindings)))))
+            (define (eligible?)
+              (and
+               (no-newer-package-version? "divascheme" "divascheme.plt" 1 3)
+               (has-no-up-down/insert?)))
+            
+            (define (update!)
+              (preferences:set-insert-mode-bindings
+               (cons '("up" "diva:up")
+                     (cons '("down" "diva:down")
+                           (preferences:get-insert-mode-bindings))))))
+      (when (eligible?)
+        (update!))))
   
   
   (define (update-2.1->2.2)
@@ -140,4 +159,5 @@
   
   
   (update-2.1->2.2)
+  (update-2.2->2.3)
   (print-installation-finished-msg))

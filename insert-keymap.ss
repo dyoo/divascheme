@@ -231,15 +231,27 @@
           (min (max x low) high))
         
         
+        (define (move-up)
+          (send window move-position 'up)
+          (send window set-position
+                (clamp (send window get-start-position)
+                       left-edge-of-insert right-edge-of-insert)))
+        
+        (define (move-down)
+          (send window move-position 'down)
+          (send window set-position
+                (clamp (send window get-start-position)
+                       left-edge-of-insert right-edge-of-insert)))
+        
         (define (move-cursor delta)
           (send window set-position 
                 (clamp (+ delta (send window get-start-position))
                        left-edge-of-insert right-edge-of-insert)))
         
         (define (move-left) (move-cursor -1))
-
+        
         (define (move-right) (move-cursor +1))
-
+        
         (define (move-left*)
           (send window set-position left-edge-of-insert))
         
@@ -495,9 +507,11 @@
         (send insert-keymap add-function "diva:pass" (wrap-up (magic-or-pass)))
         (send insert-keymap add-function "diva:bring" (wrap-up (eval-text&cmd 'Bring)))
         
-        (send insert-keymap add-function "diva:left"        (wrap-up (move-left)))
+        (send insert-keymap add-function "diva:up" (wrap-up (move-up)))
+        (send insert-keymap add-function "diva:down" (wrap-up (move-down)))
+        (send insert-keymap add-function "diva:left" (wrap-up (move-left)))
         (send insert-keymap add-function "diva:right"        (wrap-up (move-right)))
-
+        
         (send insert-keymap add-function "diva:left*"        (wrap-up (move-left*)))
         (send insert-keymap add-function "diva:right*"        (wrap-up (move-right*)))
         

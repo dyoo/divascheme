@@ -141,6 +141,8 @@
       
       ("left" "diva:left")
       ("right" "diva:right")
+      ("up" "diva:up")
+      ("down" "diva:down")
       ("c:b" "diva:left")
       ("c:f" "diva:right")
       
