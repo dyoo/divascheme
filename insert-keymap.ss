@@ -58,8 +58,12 @@
       (cond
         [(>= i (string-length str)) (form-output)]
         [escaped-char? (loop (add1 i) in #f)]
+        [(is? #\;) (loop (add1 i) "" #f)]
+        [(and (is? #\newline) (equal? in ""))
+         (loop (add1 i) #f #f)]
         [(is? #\\) (loop (+ 1 i) in #t)]
-        [(is? #\") (consume #\")] [(is? #\|) (consume #\|)]
+        [(is? #\") (consume #\")]
+        [(is? #\|) (consume #\|)]
         [else (loop (add1 i) in #f)])))
   
   
