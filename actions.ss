@@ -292,17 +292,17 @@
                                                     (- (second lst) (first lst)))
                                     (index->pos (third lst))
                                     (- (fourth lst) (third lst)))))))))
-          #; (indent/pos+len
+          (indent/pos+len
            world
            (line-pos (World-text world) pos)
            (+ len (- pos (line-pos (World-text world) pos))))
-          (let* ([start-pos (line-pos (World-text world) pos)]
-                 [new-world ((line-map (lambda (world pos) (cleanup-text/pos world pos)))
-                             world pos len)])
-            (indent/pos+len
-             new-world
-             start-pos
-             (+ len (- pos start-pos))))))
+          #; (let* ([start-pos (line-pos (World-text world) pos)]
+                    [new-world ((line-map (lambda (world pos) (cleanup-text/pos world pos)))
+                                world pos len)])
+               (indent/pos+len
+                new-world
+                start-pos
+                (+ len (- pos start-pos))))))
       
       
       ;; cleanup-text/selection : World -> World
