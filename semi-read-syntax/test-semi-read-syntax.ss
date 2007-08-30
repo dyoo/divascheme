@@ -61,7 +61,12 @@
      (test-case
       "hash comments on nested structures"
       (check-equal? (parse "#;(foobar)")
-                    '((foobar))))))
+                    '((foobar))))
+     
+     (test-case
+      "multi-line strings"
+      (check-equal? (parse "#<<EOF\nhello\nEOF\n")
+                    "hello"))))
   
   
   (test/text-ui semi-read/syntax-tests))
