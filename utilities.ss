@@ -5,7 +5,7 @@
            (lib "class.ss")
            (lib "mred.ss" "mred")
            (lib "errortrace-lib.ss" "errortrace")
-           (planet "rope.ss" ("dyoo" "rope.plt" 2 2)))
+           "rope.ss")
   
   (define voice-debug false)
   (define (voice-printf . args)

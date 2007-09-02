@@ -7,7 +7,7 @@
            "datatype/datatype.ss"
            "dot-processing.ss"
            "utilities.ss"
-           (planet "rope.ss" ("dyoo" "rope.plt" 2 2)))
+           "rope.ss")
   
   
   ;; for debugging:
@@ -27,7 +27,7 @@
   
   
   ;; World
-  ;; text : text : the current content of the buffer
+  ;; rope : rope : the current content of the buffer
   ;; syntax-list : list of syntax : the current content of the buffer
   
   ;; The selection cannot be a syntax because when we say Insert, there is no selection after, so no syntax object.
@@ -176,7 +176,7 @@
   
   
   
-  ;; A Marker represents a position in the world text that should be
+  ;; A Marker represents a position in the world rope that should be
   ;; robust under insertion, deletion, and replacement.
   (define-struct Marker (name index) #f)
   
@@ -251,42 +251,42 @@
   
   
   (provide world-insert-rope)
-  ;; world-insert-text: World index rope -> World
+  ;; world-insert-rope: World index rope -> World
   (define (world-insert-rope world index a-rope)
-    (let ([new-text (insert-rope (World-rope world) index a-rope)])
+    (let ([new-rope (insert-rope (World-rope world) index a-rope)])
       (update-markers/insert
        (copy-struct World world
-                    [World-rope new-text]
-                    [World-syntax-list (parse-syntax (open-input-rope new-text))])
+                    [World-rope new-rope]
+                    [World-syntax-list (parse-syntax (open-input-rope new-rope))])
        index
        (string-length a-rope))))
   
   
   
   (provide world-delete-rope)
-  ;; world-delete-text: World index text -> World
+  ;; world-delete-rope: World index rope -> World
   (define (world-delete-rope world index length)
-    (let ([new-text (delete-rope (World-rope world) index length)])
+    (let ([new-rope (delete-rope (World-rope world) index length)])
       (update-markers/delete
        (copy-struct World world
-                    [World-rope new-text]
-                    [World-syntax-list (parse-syntax (open-input-rope new-text))])
+                    [World-rope new-rope]
+                    [World-syntax-list (parse-syntax (open-input-rope new-rope))])
        index
        length)))
   
   
   
   (provide world-replace-rope)
-  ;; world-replace-text : world index string int -> string
+  ;; world-replace-rope : world index string int -> string
   (define (world-replace-rope world index tyt len)
     (print-mem*
-     'world-replace-text
-     (let ([new-text (replace-rope (World-rope world) index tyt len)])
+     'world-replace-rope
+     (let ([new-rope (replace-rope (World-rope world) index tyt len)])
        ;; FIXME: update marks
        (update-markers/replace
         (copy-struct World world
-                     [World-rope new-text]
-                     [World-syntax-list (parse-syntax (open-input-rope new-text))])
+                     [World-rope new-rope]
+                     [World-syntax-list (parse-syntax (open-input-rope new-rope))])
         index
         len
         (string-length tyt)))))
