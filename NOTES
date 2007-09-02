@@ -2,22 +2,20 @@ Bugs:
 
 String literals with escapes \\ in them don't clean up correctly.
 
-
 Cleanup kills whitespace in strings.  i.e: "hello\n world" will get
 collapsed into "hello\nworld"
 
-
-Editing a symbol aligned on the left column highlights across the newline on the previous line.
-
-   - fixed
+Copy-and-paste does not use the cleanup functions at the moment.
+Also cut and paste are not dedotting anymore.
 
 Here strings don't work.
 
 Nested comment #| |# don't work.
 
-Changing tabs in insert mode breaks something.
+Closing a "---" that doesn't have an $expr$ holder kills an sexpr that
+probably shouldn't die.
 
-   - fixed
+
 
 
 

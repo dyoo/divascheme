@@ -5,7 +5,24 @@
            (lib "struct.ss")
            "utilities.ss"
            "structures.ss")
-
+  
+  
+  ;; sexp-string : string
+  ;; Where the string can be (read) and has its parens in the first and last position
+  ;; sexp-string? : string -> bool
+  ;; Checks if the string is an sexp-string
+  ;; ie. try to read and then check first and last characters
+  (define (sexp-string? str)
+    (with-handlers ([(lambda args true) (lambda args false)])
+      (let ([stx-list (string->syntax-list str)]
+            [lst (string->list str)])
+        (and (not (empty? stx-list))
+             (empty? (rest stx-list))
+             (eq? #\( (first lst))
+             (eq? #\) (first (reverse lst)))))))
+  
+  
+  
   (define (tests)
     ; empty-world : World
     (define empty-world (make-World ""

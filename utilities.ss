@@ -286,11 +286,17 @@
              
   
   
-  (provide get-clipboard-content)
+  (provide get-clipboard-content set-clipboard-content)
   
   ;; get-clipboard-content : void -> (union string false)
   (define (get-clipboard-content)
     (send the-clipboard get-clipboard-string 0))
+  
+  ;; set-clipboard-content : (union string false) -> void
+  (define (set-clipboard-content text)
+    (when text
+      (send the-clipboard set-clipboard-string text 0)))
+
   
   
   (define print-mem-labels '())

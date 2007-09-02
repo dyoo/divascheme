@@ -9,60 +9,26 @@
            "utilities.ss")
   
   
-  (define previous-inspector (current-inspector))
-  (current-inspector (make-inspector))
-  
-  ;;(require (planet "datatype.ss" ("dherman" "struct.plt" 1 4)))
-  ;;(require (path->string (build-path "datatype" "struct.ss")))
-  ;;(require  "datatype/datatype.ss")
+  ;; for debugging:
+  #; (define previous-inspector (current-inspector))
+  #; (current-inspector (make-inspector))
   
   
-  ;; Insert-World
-  ;; Type to contain information for the stateful insertion mode.
-  ;; start-index : index : index of the cursor
-  ;; end-index : index : index of the end of the selection ; start-index <= end-index
-  ;; text : string : content of the buffer
-  (define-struct Previous-State (previous-world previous-command))
-  (define-struct Insert-World (start-index end-index text previous-state))
-  (provide (struct Previous-State (previous-world previous-command)))
-  (provide (struct Insert-World (start-index end-index text previous-state)))
-  #;
-  (provide/contract (struct Previous-State ([previous-world Insert-World?]
-                                            [previous-command string?])))
-  #;
-  (provide/contract (struct Insert-World ([start-index  natural-number/c]
-                                          [end-index    natural-number/c]
-                                          [text         string?]
-					  [previous-state (union false/c Previous-State?)])))
   
-  ;; sexp-string : string
-  ;; Where the string can be (read) and has its parens in the first and last position
   
-  ;; sexp-string? : string -> bool
-  ;; Checks if the string is an sexp-string
-  ;; ie. try to read and then check first and last characters
-  (define (sexp-string? str)
-    (with-handlers ([(lambda args true) (lambda args false)])
-      (let ([stx-list (string->syntax-list str)]
-            [lst (string->list str)])
-        (and (not (empty? stx-list))
-               (empty? (rest stx-list))
-               (eq? #\( (first lst))
-               (eq? #\) (first (reverse lst)))))))
-
   
-  (provide sexp-string?)
-
   ;; if macro? is true then we do not need to say open first
   ;; Template : symbol boolean string
   (define-struct Template (id macro? content))
   (provide/contract (struct Template ([id       symbol?]
                                       [macro?   boolean?]
                                       [content (listof string?)])))
+  
+  
   ;; World
   ;; text : text : the current content of the buffer
   ;; syntax-list : list of syntax : the current content of the buffer
-
+  
   ;; The selection cannot be a syntax because when we say Insert, there is no selection after, so no syntax object.
   ;; Furthermore, somebody can select something in the definition window which is not a subtree...
   ;; cursor-position : syntax position (subset of integer) : the current cursor location
@@ -129,28 +95,7 @@
                           imperative-actions
                           markers
                           path)))
-  ;; Not working.......
-  #;
-  (provide/contract (struct World ([text string?]
-                                   [syntax-list (listof syntax?)]
-                                   [cursor-position positive?]
-                                   [target-column positive?]
-                                   [selection-length natural-number/c]
-                                   [mark-position positive?]
-                                   [mark-length natural-number/c]
-                                   [Next-f (-> World? World?)]
-                                   [Previous-f (-> World? World?)]
-                                   [cancel (union false/c World?)]
-                                   [undo (union false/c World?)]
-                                   [redo (union false/c World?)]
-                                   [Magic-f (-> World? World?)]
-                                   [Pass-f (-> World? World?)]
-                                   [again (union false/c Protocol-Syntax-Tree?)]
-                                   [success-message string?]
-                                   [extension-length (union false/c integer?)]
-                                   [extension-base (union false/c integer?)]
-                                   [imperative-actions (listof (is-a?/c text% . -> . any))]
-                                   [path path?])))
+  
 
   (provide World-selection-position
            World-cursor-index
@@ -217,6 +162,7 @@
                               (World-mark-position world)
                               (World-mark-length world))))
     
+  
   
   (provide queue-imperative-action)
   ;; queue-imperative-action: World (world window -> world) -> World
@@ -326,6 +272,7 @@
                     [World-syntax-list (parse-syntax/dot new-text)])
        index
        length)))
+  
   
   
   (provide world-replace-text)
@@ -485,4 +432,4 @@
   (provide/contract (struct ChangeWorld ([path path?])))
 
 
-  (current-inspector previous-inspector))
+  #; (current-inspector previous-inspector))
