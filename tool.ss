@@ -9,6 +9,7 @@
            "mred-callback.ss"
            "diva-central.ss"
            "diva-file-menu.ss"
+           "text-rope-mixin.ss"
            (prefix language: "language.ss")
            (prefix preferences: "diva-preferences.ss")
            (prefix marker: "marker.ss")
@@ -97,15 +98,16 @@
           (diva-link:text-mixin
            (voice-mred-text-callback-mixin
             (marker:marker-mixin
-             (diva-central-mixin super%)))))
+             (diva-central-mixin
+              (text-rope-mixin super%))))))
         
         (define (diva-interactions-text-mixin super%)
           (diva-link:interactions-text-mixin
            (diva-link:text-mixin
             (voice-mred-interactions-text-callback-mixin
              (marker:marker-mixin
-              (diva-central-mixin super%))))))
-        
+              (diva-central-mixin
+               (text-rope-mixin super%)))))))
         
         
         (drscheme:get/extend:extend-unit-frame diva-frame-mixin)
