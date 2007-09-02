@@ -13,7 +13,8 @@
            "actions.ss"
            "tag-state.ss"
            "tag-reader.ss"
-           "dot-processing.ss")
+           "dot-processing.ss"
+           "rope.ss")
   
   ;; This file provides an interpreter for the DivaLanguage,
   ;; that is this is a pure function, without any state, completely stateless,
@@ -457,8 +458,8 @@
 ;; eval-Close : World -> World
   (define (eval-Close world)
     (let ([new-w (world-clear (send (current-actions) close world))])
-      (if (equal? (World-text world)
-                  (World-text new-w))
+      (if (rope=? (World-rope world)
+                  (World-rope new-w))
           (copy-struct World new-w
                        [World-cancel     world])
           (copy-struct World new-w
@@ -582,7 +583,7 @@
   (define (eval-Undo world)
     (if (World-undo world)
         (copy-struct World (World-undo world)
-                     [World-syntax-list (parse-syntax/dot (World-text (World-undo world)))]
+                     [World-syntax-list (parse-syntax (open-input-rope (World-rope (World-undo world))))]
                      [World-redo world])
         (raise (make-voice-exn "Nothing to undo"))))
   
@@ -590,7 +591,7 @@
   (define (eval-Redo world)
     (if (World-redo world)
         (copy-struct World (World-redo world)
-                     [World-syntax-list (parse-syntax/dot (World-text (World-redo world)))])
+                     [World-syntax-list (parse-syntax (open-input-rope (World-rope (World-redo world))))])
         (raise (make-voice-exn "Nothing to redo"))))
   
   ;; eval-Magic : World boolean -> World
@@ -653,10 +654,10 @@
 
   ;; eval-column-motion: World boolean -> World
   (define (eval-column-motion world is-up?)
-    (let* ([line (line-number (World-text world) (World-cursor-position world))]
+    (let* ([line (line-number (World-rope world) (World-cursor-position world))]
            [target-column (or (World-target-column world)
                               (- (World-cursor-position world)
-                                 (line-pos (World-text world)
+                                 (line-pos (World-rope world)
                                            (World-cursor-position world))))]
            [stx/false (find-pos-updown line target-column
                                        (World-syntax-list world) is-up?)])

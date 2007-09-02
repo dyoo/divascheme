@@ -251,12 +251,10 @@
         (print-mem
          'get-mred
          (lambda ()
-           
            (let ([new-world (success-message (send current-mred update-world current-world) "")])
              (cond
-               [(equal? (World-text new-world)
-                        (World-text current-world))
-                new-world]
+               [(World-rope-equal? new-world current-world)
+                current-world]
                [last-action-load?
                 (set! last-action-load? false)
                 (copy-struct World new-world
@@ -265,7 +263,7 @@
                 (copy-struct World new-world
                              [World-undo current-world])])))))
       
-
+      
       ;; set-mred: world -> void
       (define/public (set-mred world)
         (with-handlers ([voice-exn?

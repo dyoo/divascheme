@@ -6,10 +6,11 @@
            (lib "errortrace-lib.ss" "errortrace")
            "dot-processing.ss"
            "utilities.ss"
-           "structures.ss")
-
+           "structures.ss"
+           "rope.ss")
+  
   (provide MrEd-state%)
-
+  
   ;; Here is defined the class of a MrEd-state object.
   ;; Such an object is an interface between DivaScheme and DrScheme.
   ;; More precisely, one DivaScheme instance works on one text instance.
@@ -96,14 +97,14 @@
       ;; TEXT & SYNTAX STUFFS
       ;;
       
-      (define/public (get-text)
-        (send window-text diva:-get-text))
+      (define/public (get-rope)
+        (send window-text diva:-get-rope))
       
       (define/public (get-syntax-list)
-        (parse-syntax/dot (get-text)))
+        (parse-syntax (open-input-rope (get-rope))))
       
-      (define/public (update-text text)
-        (send window-text diva:-update-text text))
+      (define/public (update-rope rope)
+        (send window-text diva:-update-rope rope))
       
       
       ;; STOP COLORING:          (send window-text freeze-colorer)
@@ -170,12 +171,14 @@
       ;;
 
       ;; update-world : World -> World
-      ;; update-world-text should be first so that if the content of the buffer
-      ;; is not parsable, nothing is changed.
+      ;; Takes the state on screen on our text% and constructs a World that reflects
+      ;; it.
       (define/public (update-world world)
         (update-world-path
          (update-world-mark 
           (update-world-select 
+           ;; update-world-text should be first so that if the content of the buffer
+           ;; is not parsable, nothing is changed.
            (update-world-text world)))))
       
       
@@ -185,49 +188,56 @@
                      [World-path (send window-text get-filename)]))
       
       ;; update-world-text : World -> World
+      ;; Takes the rope state in the mred, and returns a new world reflecting
+      ;; what's on screen.
       (define/public (update-world-text world)
         (cond
-          [(string=? (World-text world) (get-text))
-           world]
-          [else
-           (copy-struct World world
-                        [World-text (get-text)]
-                        [World-syntax-list (get-syntax-list)])]))
+             [(rope=? (World-rope world) (get-rope))
+              world]
+             [else
+              (copy-struct World world
+                           [World-rope (get-rope)]
+                           [World-syntax-list (get-syntax-list)])]))
+      
       
       ;; update-world-select : World -> World
       (define (update-world-select world)
-	(copy-struct World world
-		     [World-cursor-position   (get-cursor-position)]
-		     [World-selection-length  (get-selection-len)]))
+        (copy-struct World world
+                     [World-cursor-position   (get-cursor-position)]
+                     [World-selection-length  (get-selection-len)]))
       
       ;; update-world-mark : World -> World
       (define (update-world-mark world)
-	(copy-struct World world
-		     [World-mark-position     (get-mark-position)]
-		     [World-mark-length       (get-mark-length)]))
+        (copy-struct World world
+                     [World-mark-position     (get-mark-position)]
+                     [World-mark-length       (get-mark-length)]))
+      
       
       
       ;;
       ;; WORLD 2 TEXT STUFFS
       ;;
-
+      ;; Pushes changes from the world back into the stateful text%.
+      
       ;; update-mred : World -> World
       ;; We are updating the mark before the selection so that the selection is not hidden by the mark.
       (define/public (update-mred world)
-        (select-mred (mark-mred (update-mred-text world))))
-      
-      ;; update-mred-text : World -> World
-      (define (update-mred-text world)
-        (unless (string=? (World-text world) (get-text))
-          (update-text (World-text world)))
-	world)
-      
-      ;; select-mred : World -> World
-      (define (select-mred world)
-        (set-selection (World-cursor-position world) (World-selection-length world))
-        world)
-      
-      ;; mark-mred : World -> World
-      (define (mark-mred world)
-	(set-mark (World-mark-position world) (World-mark-length world))
-        world))))
+        (local
+            (;; update-mred-text : World -> World
+             (define (update-mred-text world)
+               (unless (rope=? (World-rope world) (get-rope))
+                 (update-rope (World-rope world)))
+               world)
+             
+             ;; select-mred : World -> World
+             (define (select-mred world)
+               (set-selection (World-cursor-position world) (World-selection-length world))
+               world)
+             
+             ;; mark-mred : World -> World
+             (define (mark-mred world)
+               (set-mark (World-mark-position world) (World-mark-length world))
+               world))
+          (select-mred
+           (mark-mred
+            (update-mred-text world))))))))

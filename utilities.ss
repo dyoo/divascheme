@@ -83,76 +83,7 @@
         (raise (make-voice-exn (format "there are only ~a matches" (length lst))))))
   
   
-  (provide line-index line-pos
-           line-end-index line-end-pos
-           line-text/index line-text/pos
-           line-number)
-
-
-  ;; line-index: string index -> index
-  ;; Returns the index of the beginning of the line
-  ;; that contains the input index.
-  (define (line-index text index)
-    (let loop ([i 0]
-               [result 0])
-      (cond [(= i (string-length text))
-             result]
-            [(= i index)
-             result]
-            [(char=? #\newline (string-ref text i))
-             (loop (add1 i) (add1 i))]
-            [else
-             (loop (add1 i) result)])))
   
-  
-  ;; line-pos : string pos -> pos
-  ;; Returns the position at the beginning of the line containing pos.
-  (define (line-pos text pos)
-    (index->pos (line-index text (pos->index pos))))
-
-  
-  
-  ;; line-end-index : string index -> index
-  (define (line-end-index text index)
-    (let loop ([i index])
-      (cond
-        [(= i (string-length text)) i]
-        [(char=? (string-ref text i) #\newline) i]
-        [else
-         (loop (add1 i))])))
-  
-  
-  ;; line-end-pos : string pos -> pos
-  (define (line-end-pos text pos)
-    (index->pos (line-end-index text (pos->index pos))))
-
-  
-  ;; line-text/index : string index -> string
-  ;; returns the line of text that contains index.
-  (define (line-text/index text index)
-    (substring text 
-               (line-index text index)
-               (line-end-index text index)))
-
-    
-  ;; line-text/pos : string pos -> string
-  (define (line-text/pos text pos)
-    (line-text/index text (pos->index pos)))
-  
-  
-  
-  
-  ;; line-number: string number -> number
-  ;; computes current line number, starting at line one.
-  (define (line-number text pos)
-    (let loop ([i 0]
-               [count 1])
-      (cond [(= i (pos->index pos))
-             count]
-            [(char=? (string-ref text i) #\newline)
-             (loop (add1 i) (add1 count))]
-            [else
-             (loop (add1 i) count)])))
           
                  
   

@@ -292,6 +292,12 @@
         (string-length tyt)))))
   
   
+  (provide/contract [World-rope-equal? (World? World? . -> . boolean?)])
+  (define (World-rope-equal? world-1 world-2)
+    (equal? (rope->vector world-1)
+            (rope->vector world-2)))
+  
+  
   (provide success-message)
   ;; success-message : World string -> World
   (define (success-message world message)
