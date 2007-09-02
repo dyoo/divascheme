@@ -15,7 +15,8 @@ Nested comment #| |# don't work.
 Closing a "---" that doesn't have an $expr$ holder kills an sexpr that
 probably shouldn't die.
 
-
+Check syntax in insert mode does not defocus as it should.  All of the
+button presses should get us out of insert mode.
 
 
 

@@ -6,7 +6,8 @@
            (only (lib "1.ss" "srfi") find)
            "datatype/datatype.ss"
            "dot-processing.ss"
-           "utilities.ss")
+           "utilities.ss"
+           (planet "rope.ss" ("dyoo" "rope.plt" 2 2)))
   
   
   ;; for debugging:
@@ -51,30 +52,30 @@
   ;; Pass-f : World -> World : print the next template
 
   ;; again : (union ast false) : reexecute the previous ast.
-  (define-struct   World (text
-                          syntax-list
-                          cursor-position
-                          target-column
-                          selection-length
-                          mark-position
-                          mark-length
-                          Next-f
-                          Previous-f
-                          cancel
-                          undo
-                          redo
-                          Magic-f
-                          Pass-f
-                          again
-                          success-message
-                          extension-length
-                          extension-base
-                          imperative-actions
-                          markers
-                          path))      ;; read-only
+  (define-struct World (rope
+                        syntax-list
+                        cursor-position
+                        target-column
+                        selection-length
+                        mark-position
+                        mark-length
+                        Next-f
+                        Previous-f
+                        cancel
+                        undo
+                        redo
+                        Magic-f
+                        Pass-f
+                        again
+                        success-message
+                        extension-length
+                        extension-base
+                        imperative-actions
+                        markers
+                        path) ;; read-only
+    )
   
-  
-  (provide (struct World (text
+  (provide (struct World (rope
                           syntax-list
                           cursor-position
                           target-column
@@ -96,7 +97,7 @@
                           markers
                           path)))
   
-
+  
   (provide World-selection-position
            World-cursor-index
            World-selection-index
@@ -107,8 +108,8 @@
            World-mark-end-index
            World-selection
            World-mark)
-
-
+  
+  
   ;; SwitchWorld occurs if we need to switch focus from one file to another.
   (define-struct SwitchWorld (path ast))
   
@@ -148,17 +149,17 @@
   (define (World-mark-end-index world)
     (syntax-pos->index (World-mark-end-position world)))
   
-  ;; World-selection : World -> (union string false)
+  ;; World-selection : World -> (union rope false)
   (define (World-selection world)
     (and (not (= (World-selection-length world) 0))
-         (get-subtext/pos+len (World-text world)
+         (get-subrope/pos+len (World-rope world)
                               (World-cursor-position world)
                               (World-selection-length world))))
   
-  ;; World-mark : World -> (union string false)
+  ;; World-mark : World -> (union rope false)
   (define (World-mark world)
     (and (not (= (World-mark-length world) 0))
-         (get-subtext/pos+len (World-text world)
+         (get-subrope/pos+len (World-rope world)
                               (World-mark-position world)
                               (World-mark-length world))))
     
@@ -249,43 +250,43 @@
       replacing-length)))
   
   
-  (provide world-insert-text)
-  ;; world-insert-text: World index text -> World
-  (define (world-insert-text world index text)
-    (let ([new-text (insert-text (World-text world) index text)])
+  (provide world-insert-rope)
+  ;; world-insert-text: World index rope -> World
+  (define (world-insert-rope world index a-rope)
+    (let ([new-text (insert-rope (World-rope world) index a-rope)])
       (update-markers/insert
        (copy-struct World world
-                    [World-text new-text]
-                    [World-syntax-list (parse-syntax/dot new-text)])
+                    [World-rope new-text]
+                    [World-syntax-list (parse-syntax (open-input-rope new-text))])
        index
-       (string-length text))))
+       (string-length a-rope))))
   
   
   
-  (provide world-delete-text)
+  (provide world-delete-rope)
   ;; world-delete-text: World index text -> World
-  (define (world-delete-text world index length)
-    (let ([new-text (delete-text (World-text world) index length)])
+  (define (world-delete-rope world index length)
+    (let ([new-text (delete-rope (World-rope world) index length)])
       (update-markers/delete
        (copy-struct World world
-                    [World-text new-text]
-                    [World-syntax-list (parse-syntax/dot new-text)])
+                    [World-rope new-text]
+                    [World-syntax-list (parse-syntax (open-input-rope new-text))])
        index
        length)))
   
   
   
-  (provide world-replace-text)
+  (provide world-replace-rope)
   ;; world-replace-text : world index string int -> string
-  (define (world-replace-text world index tyt len)
+  (define (world-replace-rope world index tyt len)
     (print-mem*
      'world-replace-text
-     (let ([new-text (replace-text (World-text world) index tyt len)])
+     (let ([new-text (replace-rope (World-rope world) index tyt len)])
        ;; FIXME: update marks
        (update-markers/replace
         (copy-struct World world
-                     [World-text new-text]
-                     [World-syntax-list (parse-syntax/dot new-text)])
+                     [World-rope new-text]
+                     [World-syntax-list (parse-syntax (open-input-rope new-text))])
         index
         len
         (string-length tyt)))))

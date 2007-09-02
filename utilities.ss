@@ -4,7 +4,8 @@
            (lib "plt-match.ss")
            (lib "class.ss")
            (lib "mred.ss" "mred")
-           (lib "errortrace-lib.ss" "errortrace"))
+           (lib "errortrace-lib.ss" "errortrace")
+           (planet "rope.ss" ("dyoo" "rope.plt" 2 2)))
   
   (define voice-debug false)
   (define (voice-printf . args)
@@ -531,45 +532,48 @@
 
   
 
-  ;; Functions manipulating strings.
-  (provide insert-text delete-text replace-text get-subtext/pos+len get-subtext/stx)
+  ;; Functions manipulating ropes.
+  (provide insert-rope delete-rope replace-rope get-subrope/pos+len get-subrope/stx)
   
-  ;; insert-text : string index string -> string
-  (define (insert-text txt index tyt)
-    (string-append (substring txt 0 index)
-                   tyt
-                   (substring txt index (string-length txt))))
+  ;; insert-rope : rope index rope -> rope
+  (define (insert-rope a-rope index tyt)
+    (rope-append (rope-append (subrope a-rope 0 index) tyt)
+                 (subrope a-rope index)))
   
-  ;; delete-text : string index int -> string
-  (define (delete-text txt index len)
+  
+  ;; delete-rope : rope index int -> rope
+  (define (delete-rope a-rope index len)
     (cond
-     [( = len 0) txt]
-     [(< len 0) (delete-text txt (- index len) (- len))]
-     [else 
-      (string-append (substring txt 0 index)
-                     (substring txt (+ index len) (string-length txt)))]))
-
-  ;; replace-text : string index string int -> string
-  (define (replace-text txt index tyt len)
+      [( = len 0) a-rope]
+      [(< len 0) (delete-rope a-rope (- index len) (- len))]
+      [else 
+       (rope-append (subrope a-rope 0 index) (subrope a-rope (+ index len)))]))
+  
+  
+  ;; replace-rope : rope index rope int -> rope
+  (define (replace-rope a-rope index tyt len)
     (print-mem*
      'replace-text
      (if (< len 0)
-         (replace-text txt (+ index len) tyt (- len))
-         (string-append (substring txt 0 index)
-                        tyt
-                        (substring txt (+ index len) (string-length txt))))))
+         (replace-rope a-rope (+ index len) tyt (- len))
+         (rope-append (rope-append (subrope a-rope 0 index) tyt)
+                      (subrope a-rope (+ index len))))))
   
-  ;; get-subtext/stx : string syntax -> string
-  (define (get-subtext/stx text stx)
-    (get-subtext/pos+len text (syntax-position stx) (syntax-span stx)))
   
-  ;; get-subtext/pos+len : string pos integer -> string
-  (define (get-subtext/pos+len text pos len)
+  ;; get-subrope/stx : rope syntax -> rope
+  (define (get-subrope/stx a-rope stx)
+    (get-subrope/pos+len a-rope (syntax-position stx) (syntax-span stx)))
+  
+  
+  ;; get-subrope/pos+len : rope pos integer -> rope
+  (define (get-subrope/pos+len a-rope pos len)
     (if (<= 0 len)
-        (substring text
-                   (syntax-pos->index pos)
-                   (syntax-pos->index (+ pos len)))
-        (get-subtext/pos+len text (+ pos len) (- len))))
+        (subrope a-rope
+                 (syntax-pos->index pos)
+                 (syntax-pos->index (+ pos len)))
+        (get-subrope/pos+len a-rope (+ pos len) (- len))))
+  
+  
   
   
   ;; Functions on exception.
@@ -582,16 +586,16 @@
   
   (define (voice-exn? exn)
     (match exn
-           [(list 'voice-exn (? string? text)) true]
-           [_ false]))
-
+      [(list 'voice-exn (? string? text)) true]
+      [_ false]))
+  
   (define (voice-exn-message exn)
     (match exn
-           [(list 'voice-exn text) text]))
-
+      [(list 'voice-exn text) text]))
+  
   (define (make-voice-exn/world text world)
     (list 'voice-exn/world text world))
-
+  
   (provide make-voice-exn/world
 	   voice-exn/world?
 	   voice-exn/world-message
