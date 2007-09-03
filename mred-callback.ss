@@ -235,4 +235,4 @@
           (rope-append
            (string->rope
             (hide-annotations (substring text 0 (get-unread-start-point))))
-           (substring a-rope (get-unread-start-point))))))))
+           (subrope a-rope (get-unread-start-point))))))))
