@@ -126,15 +126,7 @@
                  (insert-rope-in-text this insert-text)
                  (end-edit-sequence)]
                 [else
-                 (raise (make-voice-exn "I cannot edit the text. Text is read-only."))])))
-          
-          ;; FIXME: debug.
-          ;; at least while I'm testing this, I want to make sure this doesn't fail.
-          (unless (rope=? (send this diva:-get-rope)
-                          to-text)
-            (printf "expected: ~s~n" (rope->vector to-text))
-            (printf "actual: ~s~n" (rope->vector (send this diva:-get-rope)))
-            (error 'update-text "invariant failed"))))
+                 (raise (make-voice-exn "I cannot edit the text. Text is read-only."))])))))
       
       
       (define/public (diva:-update-text text)
