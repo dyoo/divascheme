@@ -122,10 +122,17 @@
                 [(can-insert? start-length from-end)
                  (begin-edit-sequence)
                  (delete start-length from-end #f)
+                 (send this set-position start-length 'same #f #f 'local)
                  (insert-rope-in-text this insert-text)
                  (end-edit-sequence)]
                 [else
-                 (raise (make-voice-exn "I cannot edit the text. Text is read-only."))])))))
+                 (raise (make-voice-exn "I cannot edit the text. Text is read-only."))])))
+          
+          ;; FIXME: debug.
+          ;; at least while I'm testing this, I want to make sure this doesn't fail.
+          (unless (rope=? (send this diva:-get-rope)
+                          to-text)
+            (error 'update-text "invariant failed"))))
       
       
       (define/public (diva:-update-text text)
