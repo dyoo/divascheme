@@ -14,6 +14,7 @@
            "dot-processing.ss"
            "text-rope-mixin.ss"
            "rope.ss"
+           (lib "errortrace-lib.ss" "errortrace")
            (lib "framework.ss" "framework"))
   
   (define voice-debug false)
@@ -254,12 +255,12 @@
       
       ;; cleanup-text/pos+len
       (define (cleanup-text/pos+len world pos len)
-        (indent/pos+len
-         world
-         pos
-         len)
-        #; (local
-               (
+        #; (indent/pos+len
+            world
+            pos
+            len)
+        (local
+            (
              ;; line-map : (World pos -> World) -> World pos len -> World
              (define ((line-map fun/pos) world pos len)
                ;; aux : pos non-negative-integer -> World
@@ -267,11 +268,11 @@
                  (if (> 0 len)
                      world
                      (let* ([old-len (rope-length (World-rope world))]
-                            [world   (fun/pos world pos)]
+                            [world (fun/pos world pos)]
                             [new-len (rope-length (World-rope world))]
-                            [diff    (- new-len old-len)]
+                            [diff (- new-len old-len)]
                             [-pos (add1 (line-end-pos (World-rope world) pos))]
-                            [-len    (- (+ len diff) (- -pos pos))])
+                            [-len (- (+ len diff) (- -pos pos))])
                        (if (<= (pos->index -pos) new-len)
                            (aux world -pos -len)
                            world))))
@@ -295,19 +296,26 @@
                                                           (World-selection-end-index world)
                                                           (World-mark-index world)
                                                           (World-mark-end-index world)))])
+                    (printf "new clean line is ~a~n" (rope->string clean-line))
                     (let ([new-world (world-replace-rope world start-index clean-line len)])
                       (mark/pos+len (select/pos+len new-world
                                                     (index->pos (first lst))
                                                     (- (second lst) (first lst)))
                                     (index->pos (third lst))
                                     (- (fourth lst) (third lst)))))))))
-          (let* ([start-pos (line-pos (World-rope world) pos)]
-                 [new-world ((line-map (lambda (world pos) (cleanup-text/pos world pos)))
-                             world pos len)])
-            (indent/pos+len
-             new-world
-             start-pos
-             (+ len (- pos start-pos))))))
+          (printf "Before: ~a~n" (rope->string (World-rope world)))
+          (with-handlers ((exn:fail? (lambda (exn)
+                                       (printf "exn: ~a~n" exn)
+                                       (print-error-trace (current-output-port) exn)
+                                       (raise exn))))
+            (let* ([start-pos (line-pos (World-rope world) pos)]
+                   [new-world ((line-map (lambda (world pos) (cleanup-text/pos world pos)))
+                               world pos len)])
+              (printf "After: ~a~n" (rope->string (World-rope new-world)))
+              (indent/pos+len
+               new-world
+               start-pos
+               (+ len (- pos start-pos)))))))
       
       
       
@@ -785,4 +793,5 @@
     (if (= (rope-length a-rope) 0)
         (values a-rope markers)
         (let-values ([(c m) (eat-whitespace index (vector->list (rope->vector a-rope)) markers)])
+          (printf "cleanup-whitespace: ~s~n" c)
           (values (vector->rope (list->vector c)) m)))))

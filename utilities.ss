@@ -5,7 +5,10 @@
            (lib "class.ss")
            (lib "mred.ss" "mred")
            (lib "errortrace-lib.ss" "errortrace")
+           "voice-exn.ss"
            "rope.ss")
+  
+  (provide (all-from "voice-exn.ss"))
   
   (define voice-debug false)
   (define (voice-printf . args)
@@ -507,43 +510,6 @@
   
   
   
-  ;; Functions on exception.
-  (provide make-voice-exn
-           voice-exn?
-           voice-exn-message)
-  
-  (define (make-voice-exn text)
-    (list 'voice-exn text))
-  
-  (define (voice-exn? exn)
-    (match exn
-      [(list 'voice-exn (? string? text)) true]
-      [_ false]))
-  
-  (define (voice-exn-message exn)
-    (match exn
-      [(list 'voice-exn text) text]))
-  
-  (define (make-voice-exn/world text world)
-    (list 'voice-exn/world text world))
-  
-  (provide make-voice-exn/world
-	   voice-exn/world?
-	   voice-exn/world-message
-	   voice-exn/world-world)
-
-  (define (voice-exn/world? exn)
-    (match exn
-      [(list 'voice-exn/world text world) true]
-      [_ false]))
-
-  (define (voice-exn/world-message exn)
-    (match exn
-      [(list 'voice-exn/world text world) text]))
-
-  (define (voice-exn/world-world exn)
-    (match exn
-      [(list 'voice-exn/world text world) world]))
   
   (provide timef)
   (define (timef label thunk)
