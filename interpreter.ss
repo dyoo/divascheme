@@ -809,7 +809,6 @@
 
   ;; eval-Delete : World -> World
   (define (eval-Delete world)
-    (printf "eval-Delete~n")
     (copy-struct World (world-clear (send (current-actions) delete world))
                  [World-cancel     world]
                  [World-undo       world]))

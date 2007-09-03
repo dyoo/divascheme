@@ -57,10 +57,11 @@
   ;; rope=?: rope rope -> boolean
   ;; Returns true if the two ropes have the same content.
   (define (rope=? rope-1 rope-2)
-    (and (= (rope-length rope-1)
-            (rope-length rope-2))
-         (equal? (rope->vector rope-1)
-                 (rope->vector rope-2))))
+    (or (eq? rope-1 rope-2)
+        (and (= (rope-length rope-1)
+                (rope-length rope-2))
+             (equal? (rope->vector rope-1)
+                     (rope->vector rope-2)))))
   
   
   
