@@ -55,10 +55,17 @@
   
   
   ;; insert-rope-in-text: text% rope -> void
+  ;; Adds the elements of the ropes (characters and snips) into the text.
+  ;; We must take special care to copy snips, since snips have a one-to-one
+  ;; relationship with an editor.
   (define (insert-rope-in-text a-text a-rope)
     (rope-fold/leaves
      (lambda (snip _)
-       (send a-text insert snip (send a-text get-start-position) 'same #f))
+       (cond
+         [(string? snip)
+          (send a-text insert snip (send a-text get-start-position) 'same #f)]
+         [else
+          (send a-text insert (send snip copy) (send a-text get-start-position) 'same #f)]))
      #f
      a-rope))
   
