@@ -5,9 +5,11 @@
            (lib "mred.ss" "mred")
            (lib "etc.ss")
            (lib "lex.ss" "parser-tools")
+           (lib "contract.ss")
+           (only (lib "13.ss" "srfi") string-fold)
            (planet "rope.ss" ("dyoo" "rope.plt" 2 1)))
   
-  (provide text-rope-mixin read-subrope-in-text insert-rope-in-text)
+  
   
   (define (text-rope-mixin super%)
     (class super%
@@ -98,6 +100,7 @@
                  (mylexer ip))]))))
   
   
+  ;; open-file is just a testing function: ignore
   (define (open-file filename)
     (local ((define f (make-object frame% "test" #f 400 500))
             (define t (make-object (text-rope-mixin text%)))
@@ -105,4 +108,39 @@
       (send t load-file filename)
       (send t auto-wrap #t)
       (send f show #t)
-      t)))
+      t))
+  
+  
+  ;; rope-count-whitespace: rope -> natural-number
+  ;; Returns the number of whitespace characters in a rope.
+  (define (rope-count-whitespace a-rope)
+    (local ((define (f string-or-special current-count)
+              (cond
+                [(string? string-or-special)
+                 (+ current-count
+                    (count-whitespace-in-string string-or-special))]
+                [else
+                 current-count]))
+            
+            (define (count-whitespace-in-string a-str)
+              (string-fold (lambda (ch acc)
+                             (case ch
+                               [(#\space #\tab #\newline #\return)
+                                (add1 acc)]
+                               [else
+                                acc]))
+                           0
+                           a-str)))
+      (rope-fold/leaves f 0 a-rope)))
+  
+  (provide/contract [text-rope-mixin (class? . -> . class?)]
+                    [read-subrope-in-text ((is-a?/c text%)
+                                           natural-number/c
+                                           natural-number/c
+                                           . -> .
+                                           rope?)]
+                    [insert-rope-in-text ((is-a?/c text%)
+                                          rope?
+                                          . -> .
+                                          any)]
+                    [rope-count-whitespace (rope? . -> . natural-number/c)]))

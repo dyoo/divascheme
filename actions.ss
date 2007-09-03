@@ -522,6 +522,8 @@
       ;; holder/end : World -> World
       (define (holder/end world)
         (define maximum-jump-to-holder 30)
+        (define (rope-count-nonwhitespace a-rope)
+          (- (rope-length a-rope) (rope-count-whitespace a-rope)))
         (define (too-far-away? old-w new-w)
           (let* ([a (World-selection-end-index old-w)]
                  [b (World-selection-index new-w)]
@@ -529,8 +531,7 @@
                  [big (max a b)])
             (< 
              maximum-jump-to-holder
-             (string-length 
-              (regexp-replace* "[ \t\n\r]" (rope->string (subrope (World-rope world) small big)) "")))))
+             (rope-count-nonwhitespace (subrope (World-rope world) small big)))))
         
         (define (no-holder)
           (let ([stx (find-pos-parent (World-cursor-position world) (World-syntax-list world))])
