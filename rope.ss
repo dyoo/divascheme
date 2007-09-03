@@ -93,7 +93,7 @@
                [count 1])
       (cond [(= i (pos->index pos))
              count]
-            [(and (char=? (rope-ref text i))
+            [(and (char? (rope-ref text i))
                   (char=? (rope-ref text i) #\newline))
              (loop (add1 i) (add1 count))]
             [else

@@ -643,7 +643,7 @@
       
       ;; enter/pos+len : World pos len -> World
       (define (enter/pos+len world pos len)
-        (indent/pos+len (insert world pos "\n") 
+        (indent/pos+len (insert world pos (string->rope "\n"))
                         (line-pos (World-rope world) pos)
                         (+ len *indentation-overhang*)))
       
