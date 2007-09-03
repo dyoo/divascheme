@@ -14,6 +14,7 @@
            "dot-processing.ss"
            "text-rope-mixin.ss"
            "rope.ss"
+           "cleanup-whitespace.ss"
            (lib "framework.ss" "framework"))
   
   (define voice-debug false)
@@ -252,64 +253,75 @@
       
       
       ;; cleanup-text/pos+len
-      ;; FIXME: As written at the moment,
-      ;; this screws with the contents of some literals.
-      ;; Disabled for the moment.
+      
       (define (cleanup-text/pos+len world pos len)
-        (local
-            (
-             ;; line-map : (World pos -> World) -> World pos len -> World
-             #; (define ((line-map fun/pos) world pos len)
-                  ;; aux : pos non-negative-integer -> World
-                  (define (aux world pos len)
-                    (if (> 0 len)
-                        world
-                        (let* ([old-len (string-length (World-rope world))]
-                               [world   (fun/pos world pos)]
-                               [new-len (string-length (World-rope world))]
-                               [diff    (- new-len old-len)]
-                            [-pos (add1 (line-end-pos (World-rope world) pos))]
-                            [-len    (- (+ len diff) (- -pos pos))])
-                       (if (<= (pos->index -pos) new-len)
-                           (aux world -pos -len)
-                           world))))
-               (let* ([-pos (line-pos (World-rope world) pos)]
-                      [-len (+ len (- pos -pos))])
-                 (aux world -pos -len)))
-             
-             
-             ;; cleanup-text/pos : World pos -> World
-             ;; This function eats all the extra white-space on the line of pos
-             ;; and reindents it.
-             #; (define (cleanup-text/pos world pos)
-                  (print-mem*
-                   'cleanup-text/pos
-                   (let* ([start-index (pos->index (line-pos (World-rope world) pos))]
-                          [line (line-rope/pos (World-rope world) pos)]
-                          [len (string-length line)])
-                     (let-values ([(clean-line lst)
-                                   (cleanup-whitespace start-index line
-                                                       (list (World-selection-index world)
-                                                             (World-selection-end-index world)
-                                                             (World-mark-index world)
-                                                             (World-mark-end-index world)))])
-                       (let ([new-world (world-replace-rope world start-index clean-line len)])
-                         (mark/pos+len (select/pos+len new-world
-                                                       (index->pos (first lst))
-                                                       (- (second lst) (first lst)))
-                                       (index->pos (third lst))
-                                       (- (fourth lst) (third lst)))))))))
+        (local ((define new-world
+                  (world-replace-rope world
+                             pos
+                             (cleanup-whitespace
+                              (subrope (World-rope world) pos (+ pos len)))
+                             len)))
+          ;; fixme: maintain selection and mark
           (indent/pos+len
+           new-world
+           (line-pos (World-rope new-world) pos)
+           (+ len (- pos (line-pos (World-rope new-world) pos)))))
+        
+        #; (local
+               (
+                ;; line-map : (World pos -> World) -> World pos len -> World
+                #; (define ((line-map fun/pos) world pos len)
+                     ;; aux : pos non-negative-integer -> World
+                     (define (aux world pos len)
+                       (if (> 0 len)
+                           world
+                           (let* ([old-len (string-length (World-rope world))]
+                                  [world   (fun/pos world pos)]
+                                  [new-len (string-length (World-rope world))]
+                                  [diff    (- new-len old-len)]
+                                  [-pos (add1 (line-end-pos (World-rope world) pos))]
+                                  [-len    (- (+ len diff) (- -pos pos))])
+                             (if (<= (pos->index -pos) new-len)
+                                 (aux world -pos -len)
+                                 world))))
+                     (let* ([-pos (line-pos (World-rope world) pos)]
+                            [-len (+ len (- pos -pos))])
+                       (aux world -pos -len)))
+                
+                
+                ;; cleanup-text/pos : World pos -> World
+                ;; This function eats all the extra white-space on the line of pos
+                ;; and reindents it.
+                #; (define (cleanup-text/pos world pos)
+                     (print-mem*
+                      'cleanup-text/pos
+                      (let* ([start-index (pos->index (line-pos (World-rope world) pos))]
+                             [line (line-rope/pos (World-rope world) pos)]
+                             [len (string-length line)])
+                        (let-values ([(clean-line lst)
+                                      (cleanup-whitespace start-index line
+                                                          (list (World-selection-index world)
+                                                                (World-selection-end-index world)
+                                                                (World-mark-index world)
+                                                                (World-mark-end-index world)))])
+                          (let ([new-world (world-replace-rope world start-index clean-line len)])
+                            (mark/pos+len (select/pos+len new-world
+                                                          (index->pos (first lst))
+                                                          (- (second lst) (first lst)))
+                                          (index->pos (third lst))
+                                          (- (fourth lst) (third lst)))))))))
+             (indent/pos+len
               world
               (line-pos (World-rope world) pos)
               (+ len (- pos (line-pos (World-rope world) pos))))
-          #; (let* ([start-pos (line-pos (World-rope world) pos)]
-                 [new-world ((line-map (lambda (world pos) (cleanup-text/pos world pos)))
-                             world pos len)])
-            (indent/pos+len
-             new-world
-             start-pos
-             (+ len (- pos start-pos))))))
+             #; (let* ([start-pos (line-pos (World-rope world) pos)]
+                       [new-world ((line-map (lambda (world pos) (cleanup-text/pos world pos)))
+                                   world pos len)])
+                  
+                  (indent/pos+len
+                   new-world
+                   start-pos
+                   (+ len (- pos start-pos))))))
       
       
       ;; cleanup-text/selection : World -> World
@@ -725,7 +737,7 @@
 
   
   ;; cleanup-whitespace : index string (index list) -> str and (index list)
-  (define (cleanup-whitespace index astr markers)
+  #; (define (cleanup-whitespace index astr markers)
     (define (skip-to index chars markers fn)
       (if (empty? (rest chars))
           (values empty (decrease> index markers))
