@@ -103,8 +103,8 @@
       (define/public (get-syntax-list)
         (parse-syntax (open-input-rope (get-rope))))
       
-      (define/public (update-rope rope)
-        (send window-text diva:-update-rope rope))
+      (define/public (update-text rope)
+        (send window-text diva:-update-text rope))
       
       
       ;; STOP COLORING:          (send window-text freeze-colorer)
@@ -226,7 +226,7 @@
             (;; update-mred-text : World -> World
              (define (update-mred-text world)
                (unless (rope=? (World-rope world) (get-rope))
-                 (update-rope (World-rope world)))
+                 (update-text (World-rope world)))
                world)
              
              ;; select-mred : World -> World

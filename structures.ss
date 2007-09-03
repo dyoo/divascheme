@@ -259,7 +259,7 @@
                     [World-rope new-rope]
                     [World-syntax-list (parse-syntax (open-input-rope new-rope))])
        index
-       (string-length a-rope))))
+       (rope-length a-rope))))
   
   
   
@@ -289,7 +289,7 @@
                      [World-syntax-list (parse-syntax (open-input-rope new-rope))])
         index
         len
-        (string-length tyt)))))
+        (rope-length tyt)))))
   
   
   (provide/contract [World-rope-equal? (World? World? . -> . boolean?)])

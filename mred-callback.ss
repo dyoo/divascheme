@@ -121,7 +121,7 @@
                  (void)]
                 [(can-insert? start-length from-end)
                  (begin-edit-sequence)
-                 (delete insert-text start-length from-end #f)
+                 (delete start-length from-end #f)
                  (insert-rope-in-text this insert-text)
                  (end-edit-sequence)]
                 [else

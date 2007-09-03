@@ -246,6 +246,7 @@
       
       ;; indent/selection : World -> World
       (define (indent/selection world)
+        (printf "indent/selection~n")
         (indent/pos+len world
                         (World-cursor-position world)
                         (World-selection-length world)))
@@ -319,10 +320,10 @@
         (cleanup-text/pos+len world (World-cursor-position world) (World-selection-length world)))
       
       
-      ;; insert : World pos string -> World
-      (define (insert world pos text)
-        (let ([len (string-length text)]
-              [new-world (world-insert-rope world (pos->index pos) (string->rope text))])
+      ;; insert : World pos rope -> World
+      (define (insert world pos a-rope)
+        (let ([len (rope-length a-rope)]
+              [new-world (world-insert-rope world (pos->index pos) a-rope)])
           (cleanup-text/pos+len
            (recompute-mark/insert
             (recompute-selection/insert new-world pos len) pos len) pos len)))
@@ -351,16 +352,18 @@
         (delete/pos+len world (World-mark-position world) (World-mark-length world)))
       
       
-      ;; replace/selection : World string -> World
+      ;; replace/selection : World rope -> World
       ;; FIXME: bad performance on large files.
-      (define (replace/selection world text)
+      (define (replace/selection world a-rope)
+        (printf "replace/selection~n")
         (print-mem*
          'replace/selection
-         (let ([len (string-length text)]
+         (let ([len (rope-length a-rope)]
                [new-world (world-replace-rope world
                                               (World-cursor-index world)
-                                              (string->rope text)
+                                              a-rope
                                               (World-selection-length world))])
+           (printf "XXX~n")
            (cleanup-text/selection (recompute-mark/replace
                                     (select/len new-world len)
                                     (World-cursor-position world)
@@ -491,12 +494,12 @@
                                        (add1 (modulo template-number number-of-templates))
                                        number-of-templates)))]
                    [world
-                    (print-mem
-                     'command-indent/selection
-                     (lambda ()
-                       (indent/selection
-                        (replace/selection
-                         (dedouble-ellipsis world) text))))])
+                    (begin (printf "hello~n")
+                           (print-mem*
+                            'command-indent/selection
+                            (indent/selection
+                             (replace/selection
+                              (dedouble-ellipsis world) text))))])
               (if template
                   (holder world)
                   (step-to-the-right world))))))
@@ -531,7 +534,7 @@
             (< 
              maximum-jump-to-holder
              (string-length 
-              (regexp-replace* "[ \t\n\r]" (subrope (World-rope world) small big) "")))))
+              (regexp-replace* "[ \t\n\r]" (rope->string (subrope (World-rope world) small big)) "")))))
         
         (define (no-holder)
           (let ([stx (find-pos-parent (World-cursor-position world) (World-syntax-list world))])
@@ -573,8 +576,11 @@
         
         (let* ([world (if (originally-unmarked?) (mark-default world) world)]
                [world (extend-mark-to-newline world)]
-               [fill-text (format " ~a " (World-mark world))]
-               [world (id (replace/selection (dedouble-ellipsis (delete/mark world)) fill-text))]
+               [fill-rope (rope-append
+                           (string->rope " ")
+                           (rope-append (World-mark world)
+                                        (string->rope " ")))]
+               [world (id (replace/selection (dedouble-ellipsis (delete/mark world)) fill-rope))]
                [world (if (= (World-cursor-position world)
                              (World-mark-position   world))
                           (set-mark-position world (World-selection-end-position world))
@@ -717,8 +723,8 @@
 
       ;; magic-bash : World symbol -> World
       (define (magic-bash world symbol)
-        (let ([text (symbol->string (magic/completion world symbol))])
-          (cursor-at-selection-end (replace/selection world text))))))
+        (let ([a-rope (string->rope (symbol->string (magic/completion world symbol)))])
+          (cursor-at-selection-end (replace/selection world a-rope))))))
 
   
   ;; cleanup-whitespace : index string (index list) -> str and (index list)
