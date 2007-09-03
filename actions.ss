@@ -680,7 +680,7 @@
       (define (transpose world)
         (let ([text (make-object (text-rope-mixin scheme:text%))])
           (send text set-rope (World-rope world))
-          
+          (printf "rope contains specials? ~a~n" (rope-has-special? (World-rope world)))
           (send text diva:set-selection-position
                 (sub1 (World-cursor-position world)))
           

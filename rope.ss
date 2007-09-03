@@ -20,8 +20,15 @@
   (define (rope=? rope-1 rope-2)
     (and (= (rope-length rope-1)
             (rope-length rope-2))
-         (equal? (rope->vector rope-1)
-                 (rope->vector rope-2))))
+         (andmap (lambda (x y)
+                   (cond
+                     [(and (char? x) (char? y))
+                      (char=? x y)]
+                     ;; for the moment, treat snips as equal regardless
+                     [(and (not (char? x)) (not (char? y)))
+                      #t]))
+                 (vector->list (rope->vector rope-1))
+                 (vector->list (rope->vector rope-2)))))
   
   
   

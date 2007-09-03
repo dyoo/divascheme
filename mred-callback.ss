@@ -132,6 +132,8 @@
           ;; at least while I'm testing this, I want to make sure this doesn't fail.
           (unless (rope=? (send this diva:-get-rope)
                           to-text)
+            (printf "expected: ~s~n" (rope->vector to-text))
+            (printf "actual: ~s~n" (rope->vector (send this diva:-get-rope)))
             (error 'update-text "invariant failed"))))
       
       
