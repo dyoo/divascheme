@@ -596,12 +596,6 @@
       
       
       (define (extend-mark-to-newline world)
-        (define (get-leading-whitespace a-rope)
-          (let/ec return
-            (rope-fold (lambda (ch-or-special acc)
-                         (cond [(char? ch-or-special)
-                                ...]
-                               [else (return acc)])))))
         (let ([matched-whitespace
                (regexp-match #rx"^[ \t\n]*\n" 
                              (open-input-rope
