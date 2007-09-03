@@ -296,26 +296,21 @@
                                                           (World-selection-end-index world)
                                                           (World-mark-index world)
                                                           (World-mark-end-index world)))])
-                    (printf "new clean line is ~a~n" (rope->string clean-line))
+                    
                     (let ([new-world (world-replace-rope world start-index clean-line len)])
                       (mark/pos+len (select/pos+len new-world
                                                     (index->pos (first lst))
                                                     (- (second lst) (first lst)))
                                     (index->pos (third lst))
                                     (- (fourth lst) (third lst)))))))))
-          (printf "Before: ~a~n" (rope->string (World-rope world)))
-          (with-handlers ((exn:fail? (lambda (exn)
-                                       (printf "exn: ~a~n" exn)
-                                       (print-error-trace (current-output-port) exn)
-                                       (raise exn))))
-            (let* ([start-pos (line-pos (World-rope world) pos)]
-                   [new-world ((line-map (lambda (world pos) (cleanup-text/pos world pos)))
-                               world pos len)])
-              (printf "After: ~a~n" (rope->string (World-rope new-world)))
-              (indent/pos+len
-               new-world
-               start-pos
-               (+ len (- pos start-pos)))))))
+          
+          (let* ([start-pos (line-pos (World-rope world) pos)]
+                 [new-world ((line-map (lambda (world pos) (cleanup-text/pos world pos)))
+                             world pos len)])
+            (indent/pos+len
+             new-world
+             start-pos
+             (+ len (- pos start-pos))))))
       
       
       
@@ -344,7 +339,6 @@
         (if (= len 0)
             world
             (let ([new-world (world-delete-rope world (pos->index pos) len)])
-              (printf "world rope after deletion: ~a~n" (rope->vector (World-rope new-world)))
               (cleanup-text/pos+len
                (recompute-mark/delete
                 (recompute-selection/delete
@@ -352,9 +346,6 @@
       
       ;; delete/selection : World -> World
       (define (delete/selection world)
-        (printf "delete/selection: ~a ~a~n"
-                (World-cursor-position world)
-                (World-selection-length world))
         (delete/pos+len world
                         (World-cursor-position world)
                         (World-selection-length world)))
@@ -694,7 +685,6 @@
       (define (transpose world)
         (let ([text (make-object (text-rope-mixin scheme:text%))])
           (send text set-rope (World-rope world))
-          (printf "rope contains specials? ~a~n" (rope-has-special? (World-rope world)))
           (send text diva:set-selection-position
                 (sub1 (World-cursor-position world)))
           
@@ -779,7 +769,7 @@
             [else (output-to index chars markers double-quote)]))
     
     (define (textchar index chars markers)
-      (cond [(whitespace? (first chars))
+      (cond [(not (whitespace? (first chars)))
              (output-to index chars markers (next-state chars))]
             [(empty? (rest chars))
              (skip-to index chars markers (next-state chars))]
@@ -793,5 +783,4 @@
     (if (= (rope-length a-rope) 0)
         (values a-rope markers)
         (let-values ([(c m) (eat-whitespace index (vector->list (rope->vector a-rope)) markers)])
-          (printf "cleanup-whitespace: ~s~n" c)
           (values (vector->rope (list->vector c)) m)))))
