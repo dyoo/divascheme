@@ -25,33 +25,20 @@
       (define/public (get-rope)
         rope)
       
-      ;; set-rope: rope -> void
-      ;; Sets the rope and reflects the new rope in the content of the text.
-      (define/public (set-rope a-rope)
-        ;; Really inefficient.
-        ;; Also does not preserve selection.
-        (begin-edit-sequence)
-        (erase)
-        (rope-fold/leaves (lambda (snip _)
-                            (insert snip (get-start-position) 'same #f))
-                          #f
-                          a-rope)
-        (set! rope a-rope)
-        (end-edit-sequence))
-      
-      
       
       ;; On changes to the text, we must repair the rope:
       (define/augment (after-delete start len)
-        (inner #f after-delete start len)
-        (set! rope (rope-append (subrope rope 0 start) (subrope rope (+ start len)))))
+        (set! rope (rope-append (subrope rope 0 start)
+                                (subrope rope (+ start len))))
+        (inner #f after-delete start len))
+      
       
       (define/augment (after-insert start len)
-        (inner #f after-insert start len)
         (set! rope (rope-append
                     (rope-append (subrope rope 0 start)
                                  (read-subrope-in-text this start len))
-                    (subrope rope start))))
+                    (subrope rope start)))
+        (inner #f after-insert start len))
       
       (super-new)))
   

@@ -1,7 +1,26 @@
 (module rope mzscheme
-  (require (planet "rope.ss" ("dyoo" "rope.plt" 2 2))
+  (require (all-except
+            (planet "rope.ss" ("dyoo" "rope.plt" 2 2))
+            open-input-rope)
            (lib "contract.ss")
-           (lib "etc.ss"))
+           (lib "etc.ss")
+           (lib "port.ss"))
+  
+  ;; open-input-rope: rope -> input-port
+  (define (open-input-rope a-rope)
+    (local ((define-values (inp outp)
+              (make-pipe-with-specials)))
+      (rope-fold/leaves (lambda (string/special _)
+                          (cond
+                            [(string? string/special)
+                             (when (> (string-length string/special) 0)
+                               (display string/special outp))]
+                            [else
+                             (write-special string/special outp)]))
+                        #f
+                        a-rope)
+      (close-output-port outp)
+      inp))
   
   
   ;; rope->vector: rope -> (vectorof char-or-special)
@@ -15,20 +34,33 @@
                  a-rope)
       vec))
   
+  
+  ;; vector->rope: (vectorof char special) -> rope
+  ;; Inverts rope->vector.
+  (define (vector->rope a-vec)
+    (let loop ([i 0]
+               [acc (string->rope "")])
+      (cond [(= i (vector-length a-vec))
+             acc]
+            [(char? (vector-ref a-vec i))
+             (loop (add1 i)
+                   (rope-append
+                    acc
+                    (string->rope (string (vector-ref a-vec i)))))]
+            [else
+             (loop (add1 i)
+                   (rope-append
+                    acc
+                    (special->rope (vector-ref a-vec i))))])))
+  
+  
   ;; rope=?: rope rope -> boolean
   ;; Returns true if the two ropes have the same content.
   (define (rope=? rope-1 rope-2)
     (and (= (rope-length rope-1)
             (rope-length rope-2))
-         (andmap (lambda (x y)
-                   (cond
-                     [(and (char? x) (char? y))
-                      (char=? x y)]
-                     ;; for the moment, treat snips as equal regardless
-                     [(and (not (char? x)) (not (char? y)))
-                      #t]))
-                 (vector->list (rope->vector rope-1))
-                 (vector->list (rope->vector rope-2)))))
+         (equal? (rope->vector rope-1)
+                 (rope->vector rope-2))))
   
   
   
@@ -113,7 +145,9 @@
   
   
   (provide/contract
+   [open-input-rope (rope? . -> . input-port?)]
    [rope->vector (rope? . -> . vector?)]
+   [vector->rope (vector? . -> . rope?)]
    [rope=? (rope? rope? . -> . boolean?)]
    
    [line-index (rope? index/c . -> . index/c)]

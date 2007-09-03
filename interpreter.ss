@@ -809,14 +809,15 @@
 
   ;; eval-Delete : World -> World
   (define (eval-Delete world)
+    (printf "eval-Delete~n")
     (copy-struct World (world-clear (send (current-actions) delete world))
                  [World-cancel     world]
                  [World-undo       world]))
-
+  
   ;; eval-Dedouble-Ellipsis : World -> World
   (define (eval-Dedouble-Ellipsis world)
     (success-message (send (current-actions) dedouble-ellipsis world) false))
-                 
+  
   ;; TODO
   ;; eval-Bring : World -> World
   (define (eval-Bring world)

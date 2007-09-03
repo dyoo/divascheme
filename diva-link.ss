@@ -252,10 +252,12 @@
         (print-mem
          'get-mred
          (lambda ()
-           (let ([new-world (success-message (send current-mred update-world current-world) "")])
+           (let ([new-world
+                  (success-message (send current-mred update-world
+                                         current-world) "")])
              (cond
                [(World-rope-equal? new-world current-world)
-                current-world]
+                new-world]
                [last-action-load?
                 (set! last-action-load? false)
                 (copy-struct World new-world
