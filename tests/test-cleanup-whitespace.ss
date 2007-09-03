@@ -14,7 +14,6 @@
       "empty case"
       (check-equal? (cw "") ""))
      
-     
      (test-case
       "simple case"
       (check-equal? (cw "hello") "hello"))
@@ -25,6 +24,16 @@
      
      (test-case
       "spaces around an atom"
-      (check-equal? (cw " hello ") "hello"))))
+      (check-equal? (cw " hello ") "hello"))
+     
+     (test-case
+      "spaces in sexp"
+      (check-equal? (cw "(hello world this is a test )")
+                    "(hello world this is a test)"))
+     
+     (test-case
+      "newlines"
+      (check-equal? (cw "(hello world  \n\n    this is a test )")
+                    "(hello world\n\nthis is a test)"))))
   
   (test/text-ui cleanup-whitespace-tests))

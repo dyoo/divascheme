@@ -23,9 +23,35 @@
                     (loop (plt-lexer ip)
                           kill-leading-whitespace?)))
                  
+                 (define (trim-white-footer a-space)
+                   (cond
+                     [(regexp-match "[\r\n]" a-space)
+                      (regexp-replace "[ ]+$" a-space "")]
+                     [else
+                      (regexp-replace "[ ]+$" a-space " ")]))
+                 
+                 (define (truncate-white-footer a-space)
+                   (regexp-replace "[ ]+$" a-space ""))
+                 
                  (define (handle-space)
-                   (rope-append (string->rope " ")
-                                (loop (plt-lexer ip) #t))))
+                   (local ((define next-pos-tok (plt-lexer ip))
+                           (define next-tok (position-token-token next-pos-tok))
+                           (define whitespace
+                             (regexp-replace* "([ \t]*)([\r\n]+)"
+                                              (token-value tok)
+                                              "\\2")))
+                     ;; FIXME: handle newlines properly
+                     (cond
+                       [(member (token-name next-tok) (list 'end 'suffix))
+                        (loop next-pos-tok #t)]
+                       [kill-leading-whitespace?
+                        (rope-append (string->rope
+                                      (truncate-white-footer whitespace))
+                                     (loop next-pos-tok #t))]
+                       [else
+                        (rope-append (string->rope
+                                      (trim-white-footer whitespace))
+                                     (loop next-pos-tok #t))]))))
            
            (case (token-name tok)
              [(atom)
@@ -36,7 +62,7 @@
               (leave-preserved #t)]
              [(prefix)
               (leave-preserved #t)]
-             [(suffix )
+             [(suffix)
               (leave-preserved #f)]
              [(space)
               (handle-space)]
