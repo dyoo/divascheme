@@ -7,7 +7,7 @@
            (lib "lex.ss" "parser-tools")
            (planet "rope.ss" ("dyoo" "rope.plt" 2 1)))
   
-  (provide text-rope-mixin)
+  (provide text-rope-mixin read-subrope-in-text insert-rope-in-text)
   
   (define (text-rope-mixin super%)
     (class super%
@@ -48,14 +48,24 @@
         (inner #f after-insert start len)
         (set! rope (rope-append
                     (rope-append (subrope rope 0 start)
-                                 (read-subrope this start len))
+                                 (read-subrope-in-text this start len))
                     (subrope rope start))))
       
       (super-new)))
   
   
+  ;; insert-rope-in-text: text% rope -> void
+  (define (insert-rope-in-text a-text a-rope)
+    (rope-fold/leaves
+     (lambda (snip _)
+       (send a-text insert snip (send a-text get-start-position) 'same #f))
+     #f
+     a-rope))
   
-  (define (read-subrope text start len)
+  
+  
+  ;; read-subrope-in-text: text% number number -> rope
+  (define (read-subrope-in-text a-text start len)
     (local
         (
          ;; Simple lexer: pulls ropes from a port. Assumes specials
@@ -68,7 +78,7 @@
              (special->rope (unbox lexeme))]
             [(eof) eof]))
          
-         (define ip (open-input-text-editor text start (+ start len)
+         (define ip (open-input-text-editor a-text start (+ start len)
                                             (lambda (snip) (box snip))
                                             #f #f)))
       (let loop ([inserted-rope (string->rope "")]

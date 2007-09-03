@@ -14,6 +14,7 @@
 	   "structures.ss"
            "utilities.ss"
            "diva-central.ss"
+           "rope.ss"
            (prefix preferences: "diva-preferences.ss"))
   
   (provide diva-link:frame-mixin)
@@ -132,7 +133,7 @@
                get-canvas
                begin-edit-sequence
                end-edit-sequence
-	       diva:-get-text       ;;  from mred-callback mixin
+               diva:-get-rope ;; from mred-callback mixin
                get-diva-central
                set-position)
       
@@ -191,7 +192,7 @@
       (define current-mred (make-object MrEd-state% diva-message this))
       (define current-world 
         (send current-mred update-world 
-              (make-World ""
+              (make-World (string->rope "")
                           empty
                           (index->syntax-pos 0)
                           #f
@@ -409,7 +410,7 @@
            (with-divascheme-handlers
             #f
             (lambda ()
-              (parse-syntax/dot (diva:-get-text)) ; checking if the text has a good Scheme syntax
+              (parse-syntax (open-input-rope (diva:-get-rope))) ; checking if the text has a good Scheme syntax
               #;(send (get-top-level-window) diva-show)
               (diva-label "DivaScheme: insertion mode")
               (diva-message "")
@@ -458,7 +459,7 @@
          #f
          (lambda ()
            ; checking if the text has a good Scheme syntax
-           (parse-syntax/dot (diva:-get-text)))))
+           (parse-syntax (open-input-rope (diva:-get-rope))))))
       
       (define/public (to-normal-mode)
         (on-loss-focus)

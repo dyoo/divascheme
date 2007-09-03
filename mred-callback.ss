@@ -4,7 +4,9 @@
            (lib "mred.ss" "mred")
            (lib "pregexp.ss")
            "utilities.ss"
-           "long-prefix.ss")
+           "long-prefix.ss"
+           "rope.ss"
+           "text-rope-mixin.ss")
   
   ;; Here we are defining mixins for text% and canvas% classes
   ;; whose instanciations would be handled by a mred-state%.
@@ -96,37 +98,38 @@
       (inherit get-text can-insert? can-delete? delete insert freeze-colorer thaw-colorer
                begin-edit-sequence end-edit-sequence)
       
-      (define/public (diva:-get-text)
-        (get-text))
-
-
+      (define/public (diva:-get-rope)
+        (send this get-rope))
+      
+      
       
       (define (update-text to-text)
-        (let ([from-text (send this diva:-get-text)])
-          (unless (string=? to-text from-text)
+        (let ([from-text (send this diva:-get-rope)])
+          (unless (rope=? to-text from-text)
             (let*-values
                 ([(start-length end-length)
                   (common-prefix&suffix-lengths
-                   from-text to-text string-length string-ref char=?)]
+                   from-text to-text rope-length rope-ref equal?)]
                  [(from-end)
-                  (- (string-length from-text) end-length)]
+                  (- (rope-length from-text) end-length)]
                  [(to-end)
-                  (- (string-length to-text) end-length)]
-                 [(insert-text) (substring to-text start-length to-end)])
+                  (- (rope-length to-text) end-length)]
+                 [(insert-text) (subrope to-text start-length to-end)])
               (cond
-                [(string=? (substring from-text start-length from-end)
-                           insert-text)
+                [(rope=? (subrope from-text start-length from-end)
+                         insert-text)
                  (void)]
                 [(can-insert? start-length from-end)
                  (begin-edit-sequence)
-                 (insert insert-text start-length from-end false)
+                 (delete insert-text start-length from-end #f)
+                 (insert-rope-in-text this insert-text)
                  (end-edit-sequence)]
                 [else
                  (raise (make-voice-exn "I cannot edit the text. Text is read-only."))])))))
       
       
       (define/public (diva:-update-text text)
-	(dynamic-wind
+        (dynamic-wind
          (lambda () (begin-edit-sequence))
          (lambda () (update-text text))
          (lambda () (end-edit-sequence))))
@@ -195,7 +198,8 @@
     (class (voice-mred-text-callback-mixin super%)
       (super-instantiate ())
       
-      (inherit get-text
+      (inherit get-rope
+               get-text
                get-unread-start-point)
       
       (define/override (diva:-update-text text)
@@ -206,7 +210,7 @@
         (super diva:-update-text (rehydrate-prompts-in-text text)))
       
       
-      (define/override (diva:-get-text)
+      (define/override (diva:-get-rope)
         (define hide-character "X")
         (define non-control (pregexp "[^[:cntrl:]]"))
         
@@ -226,7 +230,9 @@
             [else
              (pregexp-replace* non-control annotated-text hide-character)]))
         
-        (let ([text (get-text)])
-          (string-append
-           (hide-annotations (substring text 0 (get-unread-start-point)))
-           (substring text (get-unread-start-point))))))))
+        (let ([a-rope (get-rope)]
+              [text (get-text)])
+          (rope-append
+           (string->rope
+            (hide-annotations (substring text 0 (get-unread-start-point))))
+           (substring a-rope (get-unread-start-point))))))))
