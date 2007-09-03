@@ -246,7 +246,6 @@
       
       ;; indent/selection : World -> World
       (define (indent/selection world)
-        (printf "indent/selection~n")
         (indent/pos+len world
                         (World-cursor-position world)
                         (World-selection-length world)))
@@ -355,7 +354,6 @@
       ;; replace/selection : World rope -> World
       ;; FIXME: bad performance on large files.
       (define (replace/selection world a-rope)
-        (printf "replace/selection~n")
         (print-mem*
          'replace/selection
          (let ([len (rope-length a-rope)]
@@ -363,7 +361,6 @@
                                               (World-cursor-index world)
                                               a-rope
                                               (World-selection-length world))])
-           (printf "XXX~n")
            (cleanup-text/selection (recompute-mark/replace
                                     (select/len new-world len)
                                     (World-cursor-position world)
@@ -494,12 +491,11 @@
                                        (add1 (modulo template-number number-of-templates))
                                        number-of-templates)))]
                    [world
-                    (begin (printf "hello~n")
-                           (print-mem*
+                    (print-mem*
                             'command-indent/selection
                             (indent/selection
                              (replace/selection
-                              (dedouble-ellipsis world) text))))])
+                              (dedouble-ellipsis world) text)))])
               (if template
                   (holder world)
                   (step-to-the-right world))))))

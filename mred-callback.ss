@@ -205,9 +205,10 @@
       (define/override (diva:-update-text text)
         ;; rehydrate-prompts-in-text: cleanup-text munges the following space
         ;; after a prompt symbol.  We have to kludge those spaces back in.  Ugh.
-        (define (rehydrate-prompts-in-text text)
-          (regexp-replace* "(^|\n)>($|\n)" text "\\1> \\2"))
-        (super diva:-update-text (rehydrate-prompts-in-text text)))
+        (super diva:-update-text text)
+        #; (define (rehydrate-prompts-in-text text)
+             (regexp-replace* "(^|\n)>($|\n)" text "\\1> \\2"))
+        #; (super diva:-update-text (rehydrate-prompts-in-text text)))
       
       
       (define/override (diva:-get-rope)
