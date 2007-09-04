@@ -91,9 +91,7 @@
                    (not (member '("down" "diva:down")
                                 (preferences:get-insert-mode-bindings)))))
             (define (eligible?)
-              (and
-               (no-newer-package-version? "divascheme" "divascheme.plt" 1 3)
-               (has-no-up-down/insert?)))
+              (has-no-up-down/insert?))
             
             (define (update!)
               (preferences:set-insert-mode-bindings
