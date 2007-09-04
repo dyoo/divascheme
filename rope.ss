@@ -1,11 +1,11 @@
 (module rope mzscheme
-  (require (all-except
-            (planet "rope.ss" ("dyoo" "rope.plt" 2 3))
-            open-input-rope)
-           (only (lib "13.ss" "srfi") string-count)
+  (require (all-except (planet "rope.ss" ("dyoo" "rope.plt" 2 3))
+                       open-input-rope)
+           (only (lib "13.ss" "srfi") string-count string-fold)
            (lib "contract.ss")
            (lib "etc.ss")
-           (lib "port.ss"))
+           (lib "port.ss")
+           (lib "list.ss"))
   
   ;; open-input-rope: rope -> input-port
   (define (open-input-rope a-rope)
@@ -159,6 +159,50 @@
     (rope-fold/leaves f acc a-rope))
   
   
+  ;; rope-count-whitespace: rope -> natural-number
+  ;; Returns the number of whitespace characters in a rope.
+  (define (rope-count-whitespace a-rope)
+    (local ((define (f string-or-special current-count)
+              (cond
+                [(string? string-or-special)
+                 (+ current-count
+                    (count-whitespace-in-string string-or-special))]
+                [else
+                 current-count]))
+            
+            (define (count-whitespace-in-string a-str)
+              (string-fold (lambda (ch acc)
+                             (case ch
+                               [(#\space #\tab #\newline #\return)
+                                (add1 acc)]
+                               [else
+                                acc]))
+                           0
+                           a-str)))
+      (rope-fold/leaves f 0 a-rope)))
+  
+  
+  ;; rope-leading-whitespace: rope -> rope
+  ;; Returns the leading whitespace at the head of a-rope.
+  (define (rope-leading-whitespace a-rope)
+    (let/ec return
+      (rope-fold/leaves
+       (lambda (string/special acc)
+         (cond [(string? string/special)
+                (cond
+                  [(regexp-match #rx"^[ \t\n]*$" string/special)
+                   (rope-append acc (string->rope string/special))]
+                  [(regexp-match #rx"^[ \t\n]*" string/special)
+                   =>
+                   (lambda (result)
+                     (return
+                      (rope-append acc (string->rope (first result)))))])]
+               [else
+                (return acc)]))
+       (string->rope "")
+       a-rope)))
+  
+  
   (define rope-space (string->rope " "))
   (define rope-empty (string->rope ""))
   
@@ -192,6 +236,9 @@
    [line-rope/index (rope? index/c . -> . rope?)]
    [line-rope/pos (rope? pos/c . -> . rope?)]
    [line-number (rope? pos/c . -> . pos/c)]
+   
+   [rope-count-whitespace (rope? . -> . natural-number/c)]
+   [rope-leading-whitespace (rope? . -> . rope?)]
    
    [rope-space rope?]
    [rope-empty rope?]))
