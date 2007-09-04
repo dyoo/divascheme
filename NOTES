@@ -21,9 +21,12 @@ Check syntax in insert mode does not defocus as it should.  All of the
 button presses should get us out of insert mode.
 
 
-Something funny is happening when the very first object in the text is a snip.
-
 Major slowness on large files.
+
+
+Inserting a snip in Insert mode breaks.
+
+
 
 Cursor motion:
 map: expects type <proper list> as 2nd argument, given: #f; other arguments were: #<procedure:aux>
