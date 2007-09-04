@@ -413,7 +413,7 @@
            (with-divascheme-handlers
             #f
             (lambda ()
-              #; (rope-parse-syntax (diva:-get-rope)) ; checking if the text has a good Scheme syntax
+              (rope-parse-syntax (diva:-get-rope)) ; checking if the text has a good Scheme syntax
               
               (diva-label "DivaScheme: insertion mode")
               (diva-message "")
@@ -462,7 +462,7 @@
          #f
          (lambda ()
            ; checking if the text has a good Scheme syntax
-           #; (rope-parse-syntax (diva:-get-rope))
+           (rope-parse-syntax (diva:-get-rope))
            (void))))
       
       (define/public (to-normal-mode)

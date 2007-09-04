@@ -25,6 +25,8 @@
   
   ;; rope-parse-syntax: rope -> (listof syntax)
   ;; Parses a rope.
+  ;; FIXME: this function can be potentially expensive. We may need
+  ;; to do something smarter to make this work fast on larger files.
   (define (rope-parse-syntax a-rope)
     (print-time*
      'rope-parse-syntax
