@@ -18,8 +18,8 @@
                                 (display string/special outp))]
                              [else
                               (write-special string/special outp)]))
-                        #f
-                        a-rope)
+                         #f
+                         a-rope)
       (close-output-port outp)
       inp))
   

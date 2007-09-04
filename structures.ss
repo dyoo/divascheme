@@ -253,26 +253,30 @@
   (provide world-insert-rope)
   ;; world-insert-rope: World index rope -> World
   (define (world-insert-rope world index a-rope)
-    (let ([new-rope (insert-rope (World-rope world) index a-rope)])
-      (update-markers/insert
-       (copy-struct World world
-                    [World-rope new-rope]
-                    [World-syntax-list (parse-syntax (open-input-rope new-rope))])
-       index
-       (rope-length a-rope))))
+    (print-time*
+     'world-insert-rope
+     (let ([new-rope (insert-rope (World-rope world) index a-rope)])
+       (update-markers/insert
+        (copy-struct World world
+                     [World-rope new-rope]
+                     [World-syntax-list (parse-syntax (open-input-rope new-rope))])
+        index
+        (rope-length a-rope)))))
   
   
   
   (provide world-delete-rope)
   ;; world-delete-rope: World index rope -> World
   (define (world-delete-rope world index length)
-    (let ([new-rope (delete-rope (World-rope world) index length)])
-      (update-markers/delete
-       (copy-struct World world
-                    [World-rope new-rope]
-                    [World-syntax-list (parse-syntax (open-input-rope new-rope))])
-       index
-       length)))
+    (print-time*
+     'world-delete-rope
+     (let ([new-rope (delete-rope (World-rope world) index length)])
+       (update-markers/delete
+        (copy-struct World world
+                     [World-rope new-rope]
+                     [World-syntax-list (parse-syntax (open-input-rope new-rope))])
+        index
+        length))))
   
   
   

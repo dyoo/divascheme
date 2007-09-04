@@ -6,7 +6,8 @@
            "utilities.ss"
            "long-prefix.ss"
            "rope.ss"
-           "text-rope-mixin.ss")
+           "text-rope-mixin.ss"
+           "dot-processing.ss")
   
   ;; Here we are defining mixins for text% and canvas% classes
   ;; whose instanciations would be handled by a mred-state%.
@@ -102,17 +103,16 @@
         (send this get-rope))
       
       
-      
       (define (update-text to-text)
         (let ([from-text (send this diva:-get-rope)])
-           (unless (rope=? to-text from-text)
-             (let*-values
-                 ([(start-length end-length)
-                   (common-prefix&suffix-lengths (rope->vector from-text)
-                                                 (rope->vector to-text)
-                                                 vector-length
-                                                 vector-ref
-                                                 equal?)]
+          (unless (rope=? to-text from-text)
+            (let*-values
+                ([(start-length end-length)
+                  (common-prefix&suffix-lengths (rope->vector from-text)
+                                                (rope->vector to-text)
+                                                vector-length
+                                                vector-ref
+                                                equal?)]
                   [(from-end)
                    (- (rope-length from-text) end-length)]
                   [(to-end)

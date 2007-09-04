@@ -413,7 +413,10 @@
            (with-divascheme-handlers
             #f
             (lambda ()
-              (parse-syntax (open-input-rope (diva:-get-rope))) ; checking if the text has a good Scheme syntax
+              (parse-syntax
+               (print-time*
+                'open-input-rope-in-insert-mode-prelude
+                (open-input-rope (diva:-get-rope)))) ; checking if the text has a good Scheme syntax
               #;(send (get-top-level-window) diva-show)
               (diva-label "DivaScheme: insertion mode")
               (diva-message "")
