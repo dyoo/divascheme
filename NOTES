@@ -8,6 +8,8 @@ collapsed into "hello\nworld"
 Copy-and-paste does not use the cleanup functions at the moment.
 Also cut and paste are not dedotting anymore.
 
+   - fixed
+
 Here strings don't work.
 
 Nested comment #| |# don't work.
@@ -21,7 +23,7 @@ button presses should get us out of insert mode.
 
 Something funny is happening when the very first object in the text is a snip.
 
-
+Major slowness on large files.
 
 Cursor motion:
 map: expects type <proper list> as 2nd argument, given: #f; other arguments were: #<procedure:aux>
