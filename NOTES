@@ -26,6 +26,8 @@ Major slowness on large files.
 
 Inserting a snip in Insert mode breaks.
 
+   -- reason: the internals of insert mode and interpreter.ss are still
+   very much about symbols.  Need to fix this in the next release.
 
 
 Cursor motion:
