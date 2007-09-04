@@ -2,6 +2,7 @@
   (require (all-except
             (planet "rope.ss" ("dyoo" "rope.plt" 2 3))
             open-input-rope)
+           (only (lib "13.ss" "srfi") string-count)
            (lib "contract.ss")
            (lib "etc.ss")
            (lib "port.ss"))
@@ -11,12 +12,12 @@
     (local ((define-values (inp outp)
               (make-pipe-with-specials)))
       (-rope-fold/leaves (lambda (string/special _)
-                          (cond
-                            [(string? string/special)
-                             (when (> (string-length string/special) 0)
-                               (display string/special outp))]
-                            [else
-                             (write-special string/special outp)]))
+                           (cond
+                             [(string? string/special)
+                              (when (> (string-length string/special) 0)
+                                (display string/special outp))]
+                             [else
+                              (write-special string/special outp)]))
                         #f
                         a-rope)
       (close-output-port outp)
@@ -129,16 +130,19 @@
   
   ;; line-number: rope number -> number
   ;; computes line number at pos, starting at line one.
-  (define (line-number text pos)
-    (let loop ([i 0]
-               [count 1])
-      (cond [(= i (pos->index pos))
-             count]
-            [(and (char? (rope-ref text i))
-                  (char=? (rope-ref text i) #\newline))
-             (loop (add1 i) (add1 count))]
-            [else
-             (loop (add1 i) count)])))
+  (define (line-number a-rope pos)
+    (time
+     (local ((define (accum-line-count string/special acc)
+               (cond [(string? string/special)
+                      (+ acc
+                         (string-count string/special
+                                       (lambda (x)
+                                         (char=? x #\newline))))]
+                     [else acc])))
+       (rope-fold/leaves accum-line-count
+                         1
+                         (subrope a-rope 0 (pos->index pos))))))
+  
   
   (define -subrope
     (case-lambda

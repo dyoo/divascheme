@@ -155,7 +155,8 @@
             (if (= line (syntax-line stx))
                 (cons stx sub)
                 sub))))
-    (apply append! (map aux stx-list)))
+    (print-time* 'find-pos-on-line
+                 (apply append! (map aux stx-list))))
   
   
   (define (find-pos-updown line column stx-list is-up?)
@@ -173,8 +174,9 @@
         (if (eq? (positive? da) (positive? db))
             (< (abs da) (abs db))
             (< da db))))
-    (and (not (empty? all-stx))
-         (first (mergesort all-stx compare))))
+    (print-time* 'find-line-column
+                 (and (not (empty? all-stx))
+                      (first (mergesort all-stx compare)))))
   
   
   ;; syntax-list-last-position : (syntax list) -> pos
