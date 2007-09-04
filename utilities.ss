@@ -212,8 +212,6 @@
               (cons sub-alpha-str (loop lst))))])))
     
              
-  
-  
   (provide get-clipboard-content set-clipboard-content)
   
   (define last-remembered-clip #f)
