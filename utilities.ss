@@ -219,16 +219,16 @@
   
   ;; get-clipboard-content : void -> (union rope false)
   (define (get-clipboard-content)
-    (local ((define a-rope/false
-              (send the-clipboard get-clipboard-string (current-milliseconds))))
+    (local ((define str/false
+              (send the-clipboard get-clipboard-string 0)))
       (cond
-        [(not a-rope/false)
+        [(not str/false)
          #f]
         [(and last-remembered-clip-id
-              (string=? a-rope/false last-remembered-clip-id))
+              (string=? str/false last-remembered-clip-id))
          last-remembered-clip]
         [else
-         (string->rope a-rope/false)])))
+         (string->rope str/false)])))
   
   ;; set-clipboard-content : (union rope false) -> void
   (define (set-clipboard-content a-rope)
@@ -237,7 +237,7 @@
       (set! last-remembered-clip-id (format "clipboard-id-~a" (random)))
       (send the-clipboard set-clipboard-string
             last-remembered-clip-id
-            (current-milliseconds))))
+            0)))
   
   
   
