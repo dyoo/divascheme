@@ -79,17 +79,17 @@
   ;; Returns the index of the beginning of the line
   ;; that contains the input index.
   (define (line-index text index)
-    (let loop ([i 0]
-               [result 0])
-      (cond [(= i (rope-length text))
-             result]
-            [(= i index)
-             result]
-            [(and (char? (rope-ref text i))
-                  (char=? #\newline (rope-ref text i)))
-             (loop (add1 i) (add1 i))]
-            [else
-             (loop (add1 i) result)])))
+    (let loop ([i (sub1 index)])
+      (cond
+        [(< i 0) 0]
+        [else
+         (local ((define ch/special (rope-ref text i)))
+           (cond
+             [(and (char? ch/special)
+                   (char=? ch/special #\newline))
+              i]
+             [else
+              (loop (sub1 i))]))])))
   
   
   ;; line-pos : rope pos -> pos
@@ -100,14 +100,16 @@
   
   ;; line-end-index : rope index -> index
   (define (line-end-index text index)
-    (let loop ([i index])
-      (cond
-        [(= i (rope-length text)) i]
-        [(and (char? (rope-ref text i))
-              (char=? (rope-ref text i) #\newline))
-         i]
-        [else
-         (loop (add1 i))])))
+    (printf "line-end-index~n")
+    (time
+     (let loop ([i index])
+       (cond
+         [(= i (rope-length text)) i]
+         [(and (char? (rope-ref text i))
+               (char=? (rope-ref text i) #\newline))
+          i]
+         [else
+          (loop (add1 i))]))))
   
   
   ;; line-end-pos : rope pos -> pos
@@ -120,7 +122,7 @@
   (define (line-rope/index text index)
     (-subrope text
               (line-index text index)
-          (line-end-index text index)))
+              (line-end-index text index)))
   
   
   ;; line-rope/pos : rope pos -> rope
@@ -131,17 +133,16 @@
   ;; line-number: rope number -> number
   ;; computes line number at pos, starting at line one.
   (define (line-number a-rope pos)
-    (time
-     (local ((define (accum-line-count string/special acc)
-               (cond [(string? string/special)
-                      (+ acc
-                         (string-count string/special
-                                       (lambda (x)
-                                         (char=? x #\newline))))]
-                     [else acc])))
-       (rope-fold/leaves accum-line-count
-                         1
-                         (subrope a-rope 0 (pos->index pos))))))
+    (local ((define (accum-line-count string/special acc)
+              (cond [(string? string/special)
+                     (+ acc
+                        (string-count string/special
+                                      (lambda (x)
+                                        (char=? x #\newline))))]
+                    [else acc])))
+      (rope-fold/leaves accum-line-count
+                        1
+                        (subrope a-rope 0 (pos->index pos)))))
   
   
   (define -subrope
