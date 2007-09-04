@@ -5,6 +5,13 @@
   (define version "2.3")
   (define doc.txt "doc.txt")
   
+  (define release-notes '((p "Recent changes in 2.3:")
+                          (ul
+                           (li "Comments can now be edited like strings.")
+                           (li "Graphical snips now supported.")
+                           (li "Switching tabs while in Insert mode properly works now.")
+                           (li "Up and down are bound to move around in Insert mode."))))
+  
   (define primary-file "install.ss")
   (define categories '(devtools))
   ;; This is the file which is loaded on the module start.
