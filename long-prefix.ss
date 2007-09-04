@@ -47,11 +47,14 @@
 
   
   (define (common-prefix&suffix-lengths seq1 seq2 len-f ref-f =?)
-    (let* ([suffix-length (common-suffix-length seq1 seq2 len-f ref-f =?)]
+    (let* ([start-time (current-inexact-milliseconds)]
+           [suffix-length (common-suffix-length seq1 seq2 len-f ref-f =?)]
            [prefix-length (common-prefix-length seq1 seq2 len-f ref-f =?)]
            [real-suffix-length (min suffix-length
                                     (- (len-f seq1) prefix-length)
                                     (- (len-f seq2) prefix-length))])
+      (printf "common-prefix&suffix-lengths: time ~a~n" (- (current-inexact-milliseconds)
+                                                           start-time))
       (values prefix-length real-suffix-length)))
   
   

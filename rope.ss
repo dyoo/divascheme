@@ -10,7 +10,7 @@
   (define (open-input-rope a-rope)
     (local ((define-values (inp outp)
               (make-pipe-with-specials)))
-      (rope-fold/leaves (lambda (string/special _)
+      (-rope-fold/leaves (lambda (string/special _)
                           (cond
                             [(string? string/special)
                              (when (> (string-length string/special) 0)
@@ -28,7 +28,7 @@
   (define (rope->vector a-rope)
     (printf "rope->vector called~n")
     (local ((define vec (make-vector (rope-length a-rope))))
-      (rope-fold (lambda (char-or-special index)
+      (-rope-fold (lambda (char-or-special index)
                    (vector-set! vec index char-or-special)
                    (add1 index))
                  0
@@ -39,6 +39,7 @@
   ;; vector->rope: (vectorof char special) -> rope
   ;; Inverts rope->vector.
   (define (vector->rope a-vec)
+    (printf "vector->rope~n")
     (let loop ([i 0]
                [acc rope-empty])
       (cond [(= i (vector-length a-vec))
@@ -124,8 +125,8 @@
   ;; line-rope/index : rope index -> rope
   ;; returns the line of text that contains index.
   (define (line-rope/index text index)
-    (subrope text
-          (line-index text index)
+    (-subrope text
+              (line-index text index)
           (line-end-index text index)))
   
   
@@ -150,20 +151,16 @@
   (define -subrope
     (case-lambda
       [(a-rope start end)
-       (printf "subrope ~a ~a~n" start end)
-       (printf "rope depth ~a~n" (rope-depth a-rope))
-       (time (subrope a-rope start end))]
+       (subrope a-rope start end)]
       [(a-rope start)
-       (printf "subrope ~a~n" start)
-       (printf "rope depth ~a~n" (rope-depth a-rope))
-       (time (subrope a-rope start))]))
+       (subrope a-rope start)]))
   
   (define (-rope-fold f acc a-rope)
     (printf "rope-fold~n")
     (time (rope-fold f acc a-rope)))
   
   (define (-rope-fold/leaves f acc a-rope)
-    (printf "rope-fold/leaves")
+    (printf "rope-fold/leaves~n")
     (time (rope-fold/leaves f acc a-rope)))
   
   

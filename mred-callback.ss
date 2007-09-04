@@ -104,29 +104,36 @@
       
       
       (define (update-text to-text)
-        (let ([from-text (send this diva:-get-rope)])
-          (unless (rope=? to-text from-text)
-            (let*-values
-                ([(start-length end-length)
-                  (common-prefix&suffix-lengths
-                   from-text to-text rope-length rope-ref equal?)]
-                 [(from-end)
-                  (- (rope-length from-text) end-length)]
-                 [(to-end)
-                  (- (rope-length to-text) end-length)]
-                 [(insert-text) (subrope to-text start-length to-end)])
-              (cond
-                [(rope=? (subrope from-text start-length from-end)
-                         insert-text)
-                 (void)]
-                [(can-insert? start-length from-end)
-                 (begin-edit-sequence)
-                 (delete start-length from-end #f)
-                 (send this set-position start-length 'same #f #f 'local)
-                 (insert-rope-in-text this insert-text)
-                 (end-edit-sequence)]
-                [else
-                 (raise (make-voice-exn "I cannot edit the text. Text is read-only."))])))))
+        (printf "update-text~n")
+        (time
+         (let ([from-text (send this diva:-get-rope)])
+           (unless (rope=? to-text from-text)
+             (let*-values
+                 ([(start-length end-length)
+                   (common-prefix&suffix-lengths (rope->vector from-text)
+                                                 (rope->vector to-text)
+                                                 vector-length
+                                                 vector-ref
+                                                 equal?)]
+                  [(from-end)
+                   (- (rope-length from-text) end-length)]
+                  [(to-end)
+                   (- (rope-length to-text) end-length)]
+                  [(insert-text) (subrope to-text start-length to-end)])
+               (cond
+                 [(rope=? (subrope from-text start-length from-end)
+                          insert-text)
+                  (void)]
+                 [(can-insert? start-length from-end)
+                  (begin-edit-sequence)
+                  (delete start-length from-end #f)
+                  (send this set-position start-length 'same #f #f 'local)
+                  (insert-rope-in-text this insert-text)
+                  (end-edit-sequence)]
+                 [else
+                  (raise (make-voice-exn
+                          "I cannot edit the text. Text is read-only."))]))))
+         (printf "update-text finished~n")))
       
       
       (define/public (diva:-update-text text)
