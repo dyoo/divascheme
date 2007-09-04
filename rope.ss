@@ -152,11 +152,19 @@
       [(a-rope start end)
        (printf "subrope ~a ~a~n" start end)
        (printf "rope depth ~a~n" (rope-depth a-rope))
-       (subrope a-rope start end)]
+       (time (subrope a-rope start end))]
       [(a-rope start)
-       (printf "subrope ~a" start)
+       (printf "subrope ~a~n" start)
        (printf "rope depth ~a~n" (rope-depth a-rope))
-       (subrope a-rope start)]))
+       (time (subrope a-rope start))]))
+  
+  (define (-rope-fold f acc a-rope)
+    (printf "rope-fold~n")
+    (time (rope-fold f acc a-rope)))
+  
+  (define (-rope-fold/leaves f acc a-rope)
+    (printf "rope-fold/leaves")
+    (time (rope-fold/leaves f acc a-rope)))
   
   
   (define rope-space (string->rope " "))
@@ -164,15 +172,23 @@
   
   
   (provide (all-from-except (planet "rope.ss" ("dyoo" "rope.plt" 2 3))
-                            subrope))
+                            subrope
+                            rope-fold
+                            rope-fold/leaves))
   
   
   (provide/contract
    [open-input-rope (rope? . -> . input-port?)]
+   
    [rename -subrope subrope
            (case->
             (rope? natural-number/c natural-number/c . -> . rope?)
             (rope? natural-number/c . -> . rope?))]
+   [rename -rope-fold rope-fold
+           (any/c any/c rope? . -> . any)]
+   [rename -rope-fold/leaves rope-fold/leaves
+           (any/c any/c rope? . -> . any)]
+   
    [rope->vector (rope? . -> . vector?)]
    [vector->rope (vector? . -> . rope?)]
    [rope=? (rope? rope? . -> . boolean?)]
