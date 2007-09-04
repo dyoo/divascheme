@@ -1,6 +1,6 @@
 (module rope mzscheme
   (require (all-except
-            (planet "rope.ss" ("dyoo" "rope.plt" 2 2))
+            (planet "rope.ss" ("dyoo" "rope.plt" 2 3))
             open-input-rope)
            (lib "contract.ss")
            (lib "etc.ss")
