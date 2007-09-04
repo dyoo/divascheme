@@ -26,6 +26,8 @@
       (define/public (get-rope)
         rope)
       
+      ;; Arbitrary constant for rebalancing the rope.
+      (define threshold-for-rebalancing 100)
       
       ;; On changes to the text, we must repair the rope:
       (define/augment (after-delete start len)
@@ -39,6 +41,9 @@
                     (rope-append (subrope rope 0 start)
                                  (read-subrope-in-text this start len))
                     (subrope rope start)))
+        (when (> (rope-depth rope)
+                 threshold-for-rebalancing)
+          (set! rope (rope-balance rope)))
         (inner #f after-insert start len))
       
       (super-new)))

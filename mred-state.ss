@@ -192,12 +192,14 @@
       ;; what's on screen.
       (define/public (update-world-text world)
         (cond
-             [(rope=? (World-rope world) (get-rope))
-              world]
-             [else
-              (copy-struct World world
-                           [World-rope (get-rope)]
-                           [World-syntax-list (get-syntax-list)])]))
+          [(rope=? (World-rope world) (get-rope))
+           ;; we save the new rope for faster eq? checking next time.
+           (copy-struct World world
+                        [World-rope (get-rope)])]
+          [else
+           (copy-struct World world
+                        [World-rope (get-rope)]
+                        [World-syntax-list (get-syntax-list)])]))
       
       
       ;; update-world-select : World -> World

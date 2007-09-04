@@ -256,7 +256,8 @@
                   (success-message (send current-mred update-world
                                          current-world) "")])
              (cond
-               [(World-rope-equal? new-world current-world)
+               [(rope=? (World-rope new-world)
+                        (World-rope current-world))
                 new-world]
                [last-action-load?
                 (set! last-action-load? false)

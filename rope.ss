@@ -26,6 +26,7 @@
   ;; rope->vector: rope -> (vectorof char-or-special)
   ;; Given a rope, returns a vector containing all of its items.
   (define (rope->vector a-rope)
+    (printf "rope->vector called~n")
     (local ((define vec (make-vector (rope-length a-rope))))
       (rope-fold (lambda (char-or-special index)
                    (vector-set! vec index char-or-special)
@@ -39,7 +40,7 @@
   ;; Inverts rope->vector.
   (define (vector->rope a-vec)
     (let loop ([i 0]
-               [acc (string->rope "")])
+               [acc rope-empty])
       (cond [(= i (vector-length a-vec))
              acc]
             [(char? (vector-ref a-vec i))
@@ -57,11 +58,18 @@
   ;; rope=?: rope rope -> boolean
   ;; Returns true if the two ropes have the same content.
   (define (rope=? rope-1 rope-2)
+    (printf "rope=? ~a ~a ~a~n"
+            (eq-hash-code rope-1)
+            (eq-hash-code rope-2)
+            (eq? rope-1 rope-2))
     (or (eq? rope-1 rope-2)
         (and (= (rope-length rope-1)
                 (rope-length rope-2))
-             (equal? (rope->vector rope-1)
-                     (rope->vector rope-2)))))
+             (begin
+               (printf "slow comparison for length=~a~n"
+                       (rope-length rope-1))
+               (equal? (rope->vector rope-1)
+                       (rope->vector rope-2))))))
   
   
   
@@ -139,14 +147,32 @@
             [else
              (loop (add1 i) count)])))
   
+  (define -subrope
+    (case-lambda
+      [(a-rope start end)
+       (printf "subrope ~a ~a~n" start end)
+       (printf "rope depth ~a~n" (rope-depth a-rope))
+       (subrope a-rope start end)]
+      [(a-rope start)
+       (printf "subrope ~a" start)
+       (printf "rope depth ~a~n" (rope-depth a-rope))
+       (subrope a-rope start)]))
   
   
+  (define rope-space (string->rope " "))
+  (define rope-empty (string->rope ""))
   
-  (provide (all-from (planet "rope.ss" ("dyoo" "rope.plt" 2 3))))
+  
+  (provide (all-from-except (planet "rope.ss" ("dyoo" "rope.plt" 2 3))
+                            subrope))
   
   
   (provide/contract
    [open-input-rope (rope? . -> . input-port?)]
+   [rename -subrope subrope
+           (case->
+            (rope? natural-number/c natural-number/c . -> . rope?)
+            (rope? natural-number/c . -> . rope?))]
    [rope->vector (rope? . -> . vector?)]
    [vector->rope (vector? . -> . rope?)]
    [rope=? (rope? rope? . -> . boolean?)]
@@ -157,4 +183,7 @@
    [line-end-pos (rope? pos/c . -> . pos/c)]
    [line-rope/index (rope? index/c . -> . rope?)]
    [line-rope/pos (rope? pos/c . -> . rope?)]
-   [line-number (rope? pos/c . -> . pos/c)]))
+   [line-number (rope? pos/c . -> . pos/c)]
+   
+   [rope-space rope?]
+   [rope-empty rope?]))

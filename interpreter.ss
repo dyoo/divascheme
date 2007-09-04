@@ -461,7 +461,7 @@
       (if (rope=? (World-rope world)
                   (World-rope new-w))
           (copy-struct World new-w
-                       [World-cancel     world])
+                       [World-cancel world])
           (copy-struct World new-w
                        [World-cancel     world]
                        [World-undo       world]))))

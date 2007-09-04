@@ -774,7 +774,7 @@
              (skip-to index chars markers textchar)]
             [else (output-to index chars markers eat-whitespace)]))
     
-    
+    (printf "cleanup-whitespace~n")
     (if (= (rope-length a-rope) 0)
         (values a-rope markers)
         (let-values ([(c m) (eat-whitespace index (vector->list (rope->vector a-rope)) markers)])
