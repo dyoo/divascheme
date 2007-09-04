@@ -197,7 +197,7 @@
           [else
            (copy-struct World world
                         [World-rope (get-rope)]
-                        [World-syntax-list (rope-parse-syntax (get-rope))])]))
+                        [World-syntax-list/lazy #f])]))
       
       
       ;; update-world-select : World -> World

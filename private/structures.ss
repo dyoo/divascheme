@@ -4,10 +4,10 @@
            (lib "list.ss")
            (lib "struct.ss")
            (only (lib "1.ss" "srfi") find)
-           "datatype/datatype.ss"
-           "dot-processing.ss"
-           "utilities.ss"
-           "rope.ss")
+           "../datatype/datatype.ss"
+           "../dot-processing.ss"
+           "../utilities.ss"
+           "../rope.ss")
   
   
   ;; for debugging:
@@ -28,7 +28,7 @@
   
   ;; World
   ;; rope : rope : the current content of the buffer
-  ;; syntax-list : list of syntax : the current content of the buffer
+  ;; syntax-list/lazy : (union #f (list of syntax)) : the current content of the buffer, or #f if not computed yet
   
   ;; The selection cannot be a syntax because when we say Insert, there is no selection after, so no syntax object.
   ;; Furthermore, somebody can select something in the definition window which is not a subtree...
@@ -53,7 +53,7 @@
 
   ;; again : (union ast false) : reexecute the previous ast.
   (define-struct World (rope
-                        syntax-list
+                        syntax-list/lazy
                         cursor-position
                         target-column
                         selection-length
@@ -76,7 +76,7 @@
     )
   
   (provide (struct World (rope
-                          syntax-list
+                          syntax-list/lazy
                           cursor-position
                           target-column
                           selection-length
@@ -257,7 +257,7 @@
       (update-markers/insert
        (copy-struct World world
                     [World-rope new-rope]
-                    [World-syntax-list (rope-parse-syntax new-rope)])
+                    [World-syntax-list/lazy #f])
        index
        (rope-length a-rope))))
   
@@ -270,7 +270,7 @@
       (update-markers/delete
        (copy-struct World world
                     [World-rope new-rope]
-                    [World-syntax-list (rope-parse-syntax new-rope)])
+                    [World-syntax-list/lazy #f])
        index
        length)))
   
@@ -284,7 +284,7 @@
       (update-markers/replace
        (copy-struct World world
                     [World-rope new-rope]
-                    [World-syntax-list (rope-parse-syntax new-rope)])
+                    [World-syntax-list/lazy #f])
        index
        len
        (rope-length tyt))))
@@ -410,26 +410,27 @@
 
   (provide-datatype/contract Location
     [Loc (Where? (union false/c What?))])
-
-
+  
+  
+  
   (define-datatype Verb-Content
     [Command (command)]
     [Symbol-Cmd (symbol)])
-
+  
   (provide-datatype/contract Verb-Content
-    [Command (command?)]
-    [Symbol-Cmd (symbol?)])
-
-
+                             [Command (command?)]
+                             [Symbol-Cmd (symbol?)])
+  
+  
   (define-datatype Protocol-Syntax-Tree
     [Verb (content location what)])
-
+  
   (provide-datatype/contract Protocol-Syntax-Tree
-    [Verb (Verb-Content? (union false/c Location?) (union false/c What?))])
-
-
+                             [Verb (Verb-Content? (union false/c Location?) (union false/c What?))])
+  
+  
   (define-struct ChangeWorld (path))
   (provide/contract (struct ChangeWorld ([path path?])))
-
-
+  
+  
   #; (current-inspector previous-inspector))

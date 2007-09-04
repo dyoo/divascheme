@@ -528,9 +528,6 @@
         (get-subrope/pos+len a-rope (+ pos len) (- len))))
   
   
-  
-  
-  
   (provide timef)
   (define (timef label thunk)
     (let-values ([(results cpu real gc)

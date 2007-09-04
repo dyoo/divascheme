@@ -687,7 +687,8 @@
           (copy-struct World (unmark world)
                        [World-cursor-position (add1 (send text get-start-position))]
                        [World-selection-length 0]
-                       [World-rope (send text get-rope)])))
+                       [World-rope (send text get-rope)]
+                       [World-syntax-list/lazy #f])))
       
       ;; magic-options: world number symbol -> (listof string)
       (define (magic-options world pos symbol)
