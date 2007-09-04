@@ -79,7 +79,7 @@
   ;; Returns the index of the beginning of the line
   ;; that contains the input index.
   (define (line-index text index)
-    (let loop ([i (sub1 index)])
+    (let loop ([i (sub1 (min index (rope-length text)))])
       (cond
         [(< i 0) 0]
         [else
@@ -87,7 +87,7 @@
            (cond
              [(and (char? ch/special)
                    (char=? ch/special #\newline))
-              i]
+              (add1 i)]
              [else
               (loop (sub1 i))]))])))
   
