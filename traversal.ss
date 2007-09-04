@@ -159,12 +159,11 @@
   
   
   (define (find-pos-updown line column stx-list is-up?)
-    (print-mem
+    (print-time*
      'find-pos-updown
-     (lambda ()
-       (find-line-column
-        column
-        (find-pos-on-line ((if is-up? sub1 add1) line) stx-list)))))
+     (find-line-column
+      column
+      (find-pos-on-line ((if is-up? sub1 add1) line) stx-list))))
   
   
   (define (find-line-column column all-stx)

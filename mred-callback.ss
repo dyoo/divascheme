@@ -104,9 +104,7 @@
       
       
       (define (update-text to-text)
-        (printf "update-text~n")
-        (time
-         (let ([from-text (send this diva:-get-rope)])
+        (let ([from-text (send this diva:-get-rope)])
            (unless (rope=? to-text from-text)
              (let*-values
                  ([(start-length end-length)
@@ -132,8 +130,7 @@
                   (end-edit-sequence)]
                  [else
                   (raise (make-voice-exn
-                          "I cannot edit the text. Text is read-only."))]))))
-         (printf "update-text finished~n")))
+                          "I cannot edit the text. Text is read-only."))])))))
       
       
       (define/public (diva:-update-text text)

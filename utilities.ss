@@ -264,6 +264,19 @@
         (set! print-mem-labels (rest print-mem-labels))
         (apply values result))))
   
+  (provide print-time*)
+  (define-syntax (print-time* stx)
+    (syntax-case stx ()
+      [(_ label exprs ...)
+       (syntax/loc stx
+         (let* ([start-time (current-inexact-milliseconds)]
+                [result (call-with-values (lambda () exprs ...)
+                                          (lambda args args))])
+           (printf "~a: time ~a~n"
+                   label
+                   (- (current-inexact-milliseconds)
+                      start-time))
+           (apply values result)))]))
   
   (provide print-mem*)
   (define-syntax (print-mem* stx)

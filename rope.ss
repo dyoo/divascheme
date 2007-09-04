@@ -26,20 +26,18 @@
   ;; rope->vector: rope -> (vectorof char-or-special)
   ;; Given a rope, returns a vector containing all of its items.
   (define (rope->vector a-rope)
-    (printf "rope->vector called~n")
     (local ((define vec (make-vector (rope-length a-rope))))
       (-rope-fold (lambda (char-or-special index)
-                   (vector-set! vec index char-or-special)
-                   (add1 index))
-                 0
-                 a-rope)
+                    (vector-set! vec index char-or-special)
+                    (add1 index))
+                  0
+                  a-rope)
       vec))
   
   
   ;; vector->rope: (vectorof char special) -> rope
   ;; Inverts rope->vector.
   (define (vector->rope a-vec)
-    (printf "vector->rope~n")
     (let loop ([i 0]
                [acc rope-empty])
       (cond [(= i (vector-length a-vec))
@@ -59,16 +57,10 @@
   ;; rope=?: rope rope -> boolean
   ;; Returns true if the two ropes have the same content.
   (define (rope=? rope-1 rope-2)
-    (printf "rope=? ~a ~a ~a~n"
-            (eq-hash-code rope-1)
-            (eq-hash-code rope-2)
-            (eq? rope-1 rope-2))
     (or (eq? rope-1 rope-2)
         (and (= (rope-length rope-1)
                 (rope-length rope-2))
              (begin
-               (printf "slow comparison for length=~a~n"
-                       (rope-length rope-1))
                (equal? (rope->vector rope-1)
                        (rope->vector rope-2))))))
   
@@ -156,12 +148,10 @@
        (subrope a-rope start)]))
   
   (define (-rope-fold f acc a-rope)
-    (printf "rope-fold~n")
-    (time (rope-fold f acc a-rope)))
+    (rope-fold f acc a-rope))
   
   (define (-rope-fold/leaves f acc a-rope)
-    (printf "rope-fold/leaves~n")
-    (time (rope-fold/leaves f acc a-rope)))
+    (rope-fold/leaves f acc a-rope))
   
   
   (define rope-space (string->rope " "))

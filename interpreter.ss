@@ -60,7 +60,9 @@
     (print-mem
      'interpreter
      (lambda () (diva-printf "Interpreter was called with tree: ~a~n" ast)
-       (eval-Protocol-Syntax-Tree world ast))))
+       (print-time*
+        'interpreter
+        (eval-Protocol-Syntax-Tree world ast)))))
   
   ;; eval-Protocol-Syntax-Tree : World ast -> (union World ChangeWorld)
   (define (eval-Protocol-Syntax-Tree world ast)
