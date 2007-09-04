@@ -142,7 +142,7 @@
   
   
   
-  (provide (all-from (planet "rope.ss" ("dyoo" "rope.plt" 2 2))))
+  (provide (all-from (planet "rope.ss" ("dyoo" "rope.plt" 2 3))))
   
   
   (provide/contract
