@@ -644,25 +644,23 @@
 
   ;; eval-column-motion: World boolean -> World
   (define (eval-column-motion world is-up?)
-    (print-time*
-     'eval-column-motion
-     (let* ([line (line-number (World-rope world) (World-cursor-position world))]
-            [target-column (or (World-target-column world)
-                               (- (World-cursor-position world)
-                                  (line-pos (World-rope world)
-                                            (World-cursor-position world))))]
-            [stx/false (find-pos-updown line target-column
-                                        (World-syntax-list world) is-up?)])
-       (if stx/false
-           (if (World-extension-base world)
-               (copy-struct World
-                            (motion-extension world (World-extension-base world) stx/false)
-                            [World-target-column target-column])
-               
-               (copy-struct World (world-clear (send (current-actions) select/stx world stx/false))
-                            [World-target-column target-column]
-                            [World-cancel world]))
-           (eval-line-motion world (if is-up? 'up 'down))))))
+    (let* ([line (line-number (World-rope world) (World-cursor-position world))]
+           [target-column (or (World-target-column world)
+                              (- (World-cursor-position world)
+                                 (line-pos (World-rope world)
+                                           (World-cursor-position world))))]
+           [stx/false (find-pos-updown line target-column
+                                       (World-syntax-list world) is-up?)])
+      (if stx/false
+          (if (World-extension-base world)
+              (copy-struct World
+                           (motion-extension world (World-extension-base world) stx/false)
+                           [World-target-column target-column])
+              
+              (copy-struct World (world-clear (send (current-actions) select/stx world stx/false))
+                           [World-target-column target-column]
+                           [World-cancel world]))
+          (eval-line-motion world (if is-up? 'up 'down)))))
   
   
   (define (eval-line-motion world direction)

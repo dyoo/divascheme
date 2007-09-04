@@ -100,8 +100,6 @@
       (define/public (get-rope)
         (send window-text diva:-get-rope))
       
-      (define/public (get-syntax-list)
-        (parse-syntax (open-input-rope (get-rope))))
       
       (define/public (update-text rope)
         (send window-text diva:-update-text rope))
@@ -199,7 +197,7 @@
           [else
            (copy-struct World world
                         [World-rope (get-rope)]
-                        [World-syntax-list (get-syntax-list)])]))
+                        [World-syntax-list (rope-parse-syntax (get-rope))])]))
       
       
       ;; update-world-select : World -> World

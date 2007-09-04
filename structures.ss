@@ -253,47 +253,41 @@
   (provide world-insert-rope)
   ;; world-insert-rope: World index rope -> World
   (define (world-insert-rope world index a-rope)
-    (print-time*
-     'world-insert-rope
-     (let ([new-rope (insert-rope (World-rope world) index a-rope)])
-       (update-markers/insert
-        (copy-struct World world
-                     [World-rope new-rope]
-                     [World-syntax-list (rope-parse-syntax new-rope)])
-        index
-        (rope-length a-rope)))))
+    (let ([new-rope (insert-rope (World-rope world) index a-rope)])
+      (update-markers/insert
+       (copy-struct World world
+                    [World-rope new-rope]
+                    [World-syntax-list (rope-parse-syntax new-rope)])
+       index
+       (rope-length a-rope))))
   
   
   
   (provide world-delete-rope)
   ;; world-delete-rope: World index rope -> World
   (define (world-delete-rope world index length)
-    (print-time*
-     'world-delete-rope
-     (let ([new-rope (delete-rope (World-rope world) index length)])
-       (update-markers/delete
-        (copy-struct World world
-                     [World-rope new-rope]
-                     [World-syntax-list (rope-parse-syntax new-rope)])
-        index
-        length))))
+    (let ([new-rope (delete-rope (World-rope world) index length)])
+      (update-markers/delete
+       (copy-struct World world
+                    [World-rope new-rope]
+                    [World-syntax-list (rope-parse-syntax new-rope)])
+       index
+       length)))
   
   
   
   (provide world-replace-rope)
   ;; world-replace-rope : world index string int -> string
   (define (world-replace-rope world index tyt len)
-    (print-mem*
-     'world-replace-rope
-     (let ([new-rope (replace-rope (World-rope world) index tyt len)])
-       ;; FIXME: update marks
-       (update-markers/replace
-        (copy-struct World world
-                     [World-rope new-rope]
-                     [World-syntax-list (rope-parse-syntax new-rope)])
-        index
-        len
-        (rope-length tyt)))))
+    (let ([new-rope (replace-rope (World-rope world) index tyt len)])
+      ;; FIXME: update marks
+      (update-markers/replace
+       (copy-struct World world
+                    [World-rope new-rope]
+                    [World-syntax-list (rope-parse-syntax new-rope)])
+       index
+       len
+       (rope-length tyt))))
   
   
   

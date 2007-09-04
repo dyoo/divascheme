@@ -9,14 +9,35 @@
            (only (lib "13.ss" "srfi") string-prefix?)
            "lexer.ss")
   
-  (provide/contract [semi-read-syntax-list (any/c input-port? . -> . (listof syntax?))])
+  ;; A parser for DivaScheme that tries to maintain some of the semi-structure
+  ;; based on comments, dots, and other things that read-syntax
+  ;; normally munges.
+  
+  ;; There are two functions here because ports based on make-pipe are twice as
+  ;; fast as those constructed with make-pipe-with-special, according to
+  ;; my measurements.
+  
+  (provide/contract [semi-read-syntax-list
+                     (any/c input-port? . -> . (listof syntax?))]
+                    [semi-read-syntax-list/no-specials
+                     (any/c input-port? . -> . (listof syntax?))])
   
   
   (define (semi-read-syntax-list source ip)
+    (-semi-read-syntax-list
+     source ip make-pipe-with-specials))
+  
+  
+  (define (semi-read-syntax-list/no-specials source ip)
+    (-semi-read-syntax-list
+     source ip make-pipe))
+  
+  
+  (define (-semi-read-syntax-list source ip make-pipe-f)
     (local
         [(define (make-counting-pipe)
            (let-values ([(ip op)
-                         (make-pipe-with-specials #f source source)])
+                         (make-pipe-f #f source source)])
              (port-count-lines! ip)
              (values ip op)))
          (define-values (pipe-ip pipe-op) (make-counting-pipe))
