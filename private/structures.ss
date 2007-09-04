@@ -291,6 +291,18 @@
   
   
   
+  ;; World-syntax-list: World -> (listof syntax)
+  ;; Forces the computation of the syntax list from the rope.
+  (define (World-syntax-list a-world)
+    (cond
+      [(World-syntax-list/lazy a-world) => identity]
+      [else
+       (set-World-syntax-list/lazy! a-world (rope-parse-syntax (World-rope a-world)))
+       (World-syntax-list/lazy a-world)]))
+  
+  (provide/contract [World-syntax-list (World? . -> . (listof syntax?))])
+  
+  
   (provide success-message)
   ;; success-message : World string -> World
   (define (success-message world message)
