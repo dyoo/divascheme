@@ -614,32 +614,26 @@
               world)))
       
       
-      
-      
       ;; copy : World -> World
       (define (copy world)
-        (queue-imperative-action
-         world
-         (lambda (world window)
-           (send window copy #f)
-           world)))
-      
+        (when (World-selection world)
+          (set-clipboard-content (World-selection world)))
+        world)
       
       ;; cut : World -> World
       (define (cut world)
-        (queue-imperative-action
-         world
-         (lambda (world window)
-           (send window cut #f)
-           world)))
+        (delete/selection (dedouble-ellipsis (copy world))))
       
       ;; paste : World -> World
       (define (paste world)
-        (queue-imperative-action
-         world
-         (lambda (world window)
-           (send window paste)
-           world)))
+        (if (get-clipboard-content)
+            (replace/selection (dedouble-ellipsis world)
+                               (rope-append
+                                (string->rope " ")
+                                (rope-append (get-clipboard-content)
+                                             (string->rope " "))))
+            world))
+      
       
       (define *indentation-overhang* 500)
       
