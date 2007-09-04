@@ -7,6 +7,7 @@
            (lib "lex.ss" "parser-tools")
            (lib "contract.ss")
            (only (lib "13.ss" "srfi") string-fold)
+           (lib "list.ss")
            "rope.ss")
   
   
@@ -120,6 +121,28 @@
                            a-str)))
       (rope-fold/leaves f 0 a-rope)))
   
+  
+  ;; rope-leading-whitespace: rope -> rope
+  ;; Returns the leading whitespace at the head of a-rope.
+  (define (rope-leading-whitespace a-rope)
+    (let/ec return
+      (rope-fold/leaves
+       (lambda (string/special acc)
+         (cond [(string? string/special)
+                (cond
+                  [(regexp-match #rx"^[ \t\n]*$" string/special)
+                   (rope-append acc (string->rope string/special))]
+                  [(regexp-match #rx"^[ \t\n]*" string/special)
+                   =>
+                   (lambda (result)
+                     (return
+                      (rope-append acc (string->rope (first result)))))])]
+               [else
+                (return acc)]))
+       (string->rope "")
+       a-rope)))
+  
+  
   (provide/contract [text-rope-mixin (class? . -> . class?)]
                     [read-subrope-in-text ((is-a?/c text%)
                                            natural-number/c
@@ -130,4 +153,5 @@
                                           rope?
                                           . -> .
                                           any)]
-                    [rope-count-whitespace (rope? . -> . natural-number/c)]))
+                    [rope-count-whitespace (rope? . -> . natural-number/c)]
+                    [rope-leading-whitespace (rope? . -> . rope?)]))

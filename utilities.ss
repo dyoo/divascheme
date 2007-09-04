@@ -22,21 +22,14 @@
                        (print-error-trace (current-output-port) exn))])
       (error 'print-current-stack-trace)))
   
-  (provide trim-whitespace-prefix)
-  (define (trim-whitespace-prefix text)
-    (let ([m (regexp-match " *(.*)" text)])
-      (if m
-          (second m)
-          text)))
-
-
+  
   (provide end-cons)
   ;; end-cons : ('a list) 'a -> ('a list)
   (define (end-cons l a)
     (reverse (cons a (reverse l))))
-
+  
   (provide list-gcd)
-
+  
   ;; list-gcd : (('a list) list) -> ('a list)
   (define (list-gcd lst)
     (define ?
@@ -46,7 +39,7 @@
             (let* ([a (first args)]
                    [? (lambda (b) (equal? a b))])
               (andmap ? (rest args))))))
-
+    
     (if (empty? lst)
         empty
         (let loop ([lst lst])

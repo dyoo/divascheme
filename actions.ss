@@ -602,14 +602,15 @@
       (define (extend-mark-to-newline world)
         (let ([matched-whitespace
                (regexp-match #rx"^[ \t\n]*\n" 
-                             (open-input-rope
-                              (subrope (World-rope world)
-                                       (World-mark-end-index world))))])
+                             (rope->string
+                              (rope-leading-whitespace
+                               (subrope (World-rope world)
+                                        (World-mark-end-index world)))))])
           (if matched-whitespace
               (mark/pos+len world
                             (World-mark-position world)
                             (+ (World-mark-length world) 
-                               (bytes-length (first matched-whitespace))))
+                               (string-length (first matched-whitespace))))
               world)))
       
       
