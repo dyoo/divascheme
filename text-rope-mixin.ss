@@ -7,7 +7,7 @@
            (lib "lex.ss" "parser-tools")
            (lib "contract.ss")
            (only (lib "13.ss" "srfi") string-fold)
-           (planet "rope.ss" ("dyoo" "rope.plt" 2 1)))
+           "rope.ss")
   
   
   
