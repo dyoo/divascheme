@@ -259,7 +259,7 @@
        (update-markers/insert
         (copy-struct World world
                      [World-rope new-rope]
-                     [World-syntax-list (parse-syntax (open-input-rope new-rope))])
+                     [World-syntax-list (rope-parse-syntax new-rope)])
         index
         (rope-length a-rope)))))
   
@@ -274,7 +274,7 @@
        (update-markers/delete
         (copy-struct World world
                      [World-rope new-rope]
-                     [World-syntax-list (parse-syntax (open-input-rope new-rope))])
+                     [World-syntax-list (rope-parse-syntax new-rope)])
         index
         length))))
   
@@ -290,7 +290,7 @@
        (update-markers/replace
         (copy-struct World world
                      [World-rope new-rope]
-                     [World-syntax-list (parse-syntax (open-input-rope new-rope))])
+                     [World-syntax-list (rope-parse-syntax new-rope)])
         index
         len
         (rope-length tyt)))))

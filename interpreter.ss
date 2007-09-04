@@ -5,15 +5,12 @@
            (lib "class.ss")
            (lib "struct.ss")
            (only (lib "1.ss" "srfi") last circular-list partition find)
-           (lib "mred.ss" "mred")
            "traversal.ss"
            "structures.ss"
-           "mred-state.ss"
            "utilities.ss"
            "actions.ss"
            "tag-state.ss"
            "tag-reader.ss"
-           "dot-processing.ss"
            "rope.ss")
   
   ;; This file provides an interpreter for the DivaLanguage,

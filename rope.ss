@@ -99,17 +99,16 @@
   
   
   ;; line-end-index : rope index -> index
+  ;; retusn the position at the end of the line containing index.
   (define (line-end-index text index)
-    (printf "line-end-index~n")
-    (time
-     (let loop ([i index])
-       (cond
-         [(= i (rope-length text)) i]
-         [(and (char? (rope-ref text i))
-               (char=? (rope-ref text i) #\newline))
-          i]
-         [else
-          (loop (add1 i))]))))
+    (let loop ([i index])
+      (cond
+        [(= i (rope-length text)) i]
+        [(and (char? (rope-ref text i))
+              (char=? (rope-ref text i) #\newline))
+         i]
+        [else
+         (loop (add1 i))])))
   
   
   ;; line-end-pos : rope pos -> pos
