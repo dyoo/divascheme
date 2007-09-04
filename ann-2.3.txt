@@ -36,9 +36,7 @@ Features:
 * Up and down can be used in insert mode.  install.ss will try to
   automatically upgrade your keybindings appropriately.
 
-* Reduced memory footprint.
-
-
+  
 Thanks
 ======
 
