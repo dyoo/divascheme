@@ -446,16 +446,19 @@
                            syncheck:get-button)]
                     [else #f]))
                 
+                (define was-button-enabled? #t)
+                
                 (define (on-entry)
                   (diva-label "DivaScheme: insertion mode")
                   (diva-message "")
                   (when (get-check-syntax-button)
+                    (set! was-button-enabled? (send (get-check-syntax-button) is-enabled?))
                     (send (get-check-syntax-button) enable #f)))
                 
                 (define (on-exit)
                   (diva-label "DivaScheme: command mode")
-                  (when (send this get-tab)
-                    (send (send this get-tab) enable-evaluation))))
+                  (when (get-check-syntax-button)
+                    (send (get-check-syntax-button) enable was-button-enabled?))))
           (make-command-keymap this
                                (lambda (edit?)
                                  (to-insert-mode edit? on-entry on-exit))
