@@ -433,13 +433,29 @@
       
       ;; Command Mode
       (define (new-command-keymap)
-        (local ((define (on-entry)
+        (local (;; get-check-syntax-button: -> (union button% #f)
+                (define (get-check-syntax-button)
+                  ;; major kludgery: see if there does exist such a button
+                  (cond
+                    [(and (send this get-tab)
+                          (send (send this get-tab) get-frame)
+                          (method-in-interface?
+                           'syncheck:get-button
+                           (object-interface (send (send this get-tab) get-frame))))
+                     (send (send (send this get-tab) get-frame)
+                           syncheck:get-button)]
+                    [else #f]))
+                
+                (define (on-entry)
                   (diva-label "DivaScheme: insertion mode")
                   (diva-message "")
-                  #; (send (send this get-tab) disable-evaluation))
+                  (when (get-check-syntax-button)
+                    (send (get-check-syntax-button) enable #f)))
+                
                 (define (on-exit)
                   (diva-label "DivaScheme: command mode")
-                  #; (send (send this get-tab) disable-evaluation)))
+                  (when (send this get-tab)
+                    (send (send this get-tab) enable-evaluation))))
           (make-command-keymap this
                                (lambda (edit?)
                                  (to-insert-mode edit? on-entry on-exit))

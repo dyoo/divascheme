@@ -195,7 +195,7 @@
             (when need-space-after
               (send window insert " ")
               (send window diva:set-selection-position
-                    (sub1 (send window get-end-position))))
+                    (max (sub1 (send window get-end-position)) 0)))
             (set-insert&delete-callbacks))
           
           (prepare-insertion-point!)
