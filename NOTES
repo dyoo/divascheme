@@ -39,6 +39,10 @@ Inserting a snip in Insert mode breaks.
 
 
 
+Avoid using pregexp for simple string munging.  I traced a computation
+that took about a second using pregexp-replace* --- the equivalent
+hand-rolled code is about a millisecond.
+
 
 Cursor motion:
 map: expects type <proper list> as 2nd argument, given: #f; other arguments were: #<procedure:aux>
