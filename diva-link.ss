@@ -408,16 +408,14 @@
       ;; Insertion Mod
       (define to-insert-mode
         (case-lambda 
-          [(edit? exit) (to-insert-mode edit? exit #f)]
-          [(edit? exit cmd)
+          [(edit? on-entry on-exit)
+           (to-insert-mode edit? on-entry on-exit #f)]
+          [(edit? on-entry on-exit cmd)
            (with-divascheme-handlers
             #f
             (lambda ()
               (rope-parse-syntax (diva:-get-rope)) ; checking if the text has a good Scheme syntax
-              
-              (diva-label "DivaScheme: insertion mode")
-              (diva-message "")
-              
+              (on-entry)
               (make-insert-mode this                                     ;; window
                                 (current-actions)                        ;; actions
                                 (lambda args (apply diva-message args))  ;; diva-message
@@ -427,7 +425,7 @@
                                 set-after-insert-callback                ;; set-after-insert-callback
                                 set-after-delete-callback                ;; set-after-delete-callback
                                 (lambda (world ast) (diva-ast-put/wait+world world ast)) ;; interpreter
-                                exit                                     ;; post-exit-hook
+                                on-exit                                     ;; post-exit-hook
                                 cmd                                      ;; cmd
                                 edit?                                    ;; edit?
                                 )))]))
@@ -435,17 +433,21 @@
       
       ;; Command Mode
       (define (new-command-keymap)
-        (make-command-keymap this
-                             (lambda (edit?)
-                               (to-insert-mode edit?
-                                               (lambda () (diva-label "DivaScheme: command mode"))))
-                             (lambda (edit? command)
-                               (to-insert-mode edit?
-                                               (lambda () (diva-label "DivaScheme: command mode"))
-                                               command))
-                             diva-message
-                             diva-question
-                             (lambda (ast) (diva-ast-put/wait ast))))
+        (local ((define (on-entry)
+                  (diva-label "DivaScheme: insertion mode")
+                  (diva-message "")
+                  #; (send (send this get-tab) disable-evaluation))
+                (define (on-exit)
+                  (diva-label "DivaScheme: command mode")
+                  #; (send (send this get-tab) disable-evaluation)))
+          (make-command-keymap this
+                               (lambda (edit?)
+                                 (to-insert-mode edit? on-entry on-exit))
+                               (lambda (edit? command)
+                                 (to-insert-mode edit? on-entry on-exit command))
+                               diva-message
+                               diva-question
+                               (lambda (ast) (diva-ast-put/wait ast)))))
       
       (define command-keymap (new-command-keymap))
       
