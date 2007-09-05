@@ -12,22 +12,32 @@ Also cut and paste are not dedotting anymore.
 
 Here strings don't work.
 
-Nested comment #| |# don't work.
+Nested comments #| |# don't work.
+
 
 Closing a "---" that doesn't have an $expr$ holder kills an sexpr that
 probably shouldn't die.
 
+
 Check syntax in insert mode does not defocus as it should.  All of the
 button presses should get us out of insert mode.
 
+    - I couldn't get this to work, so as a workaround I disable Check
+    Syntax while in insert mode.  See diva-link.ss's to-command-mode
+    for details.
+
 
 Major slowness on large files.
+
+    - identified as parser.
 
 
 Inserting a snip in Insert mode breaks.
 
    -- reason: the internals of insert mode and interpreter.ss are still
    very much about symbols.  Need to fix this in the next release.
+
+
 
 
 Cursor motion:
@@ -39,3 +49,7 @@ map: expects type <proper list> as 2nd argument, given: #f; other arguments were
 /home/dyoo/work/divascheme/diva-link.ss:315:6: interpreter/imperative
 /home/dyoo/work/divascheme/diva-link.ss:306:6: get&set-mred/handlers
 call-with-break-parameterization
+
+   - not sure how this is happening, or if it still is a problem: I've
+changed the syntax list implemenation to compute lazily now, so it
+should never be visible as #f from traversal.ss.
