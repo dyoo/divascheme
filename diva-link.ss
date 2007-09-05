@@ -394,6 +394,20 @@
       ;; MODE STUFFS
       ;;
       
+      ;; check-good-syntax: -> void
+      ;; Checking to see if we have a good syntax. If we don't, this should
+      ;; raise an exception.
+      (define (check-good-syntax)
+        (cond
+          [(and current-world
+                (rope=? (diva:-get-rope)
+                        (World-rope current-world)))
+           ;; Local optimization: if our rope is equal
+           ;; to the one in the current-world, just reuse that.
+           (World-syntax-list current-world)]
+          [else
+           (rope-parse-syntax (diva:-get-rope))])
+        (void))
       
       
       ;; Insertion Mod
@@ -442,8 +456,7 @@
                   (diva-label "DivaScheme: insertion mode")
                   (diva-message "")
                   
-                  ; checking if the text has a good Scheme syntax
-                  (rope-parse-syntax (diva:-get-rope))
+                  (check-good-syntax)
                   
                   (when (get-check-syntax-button)
                     (set! was-button-enabled? (send (get-check-syntax-button) is-enabled?))
@@ -476,9 +489,7 @@
         (with-divascheme-handlers
          #f
          (lambda ()
-           ; checking if the text has a good Scheme syntax
-           (rope-parse-syntax (diva:-get-rope))
-           (void))))
+           (check-good-syntax))))
       
       (define/public (to-normal-mode)
         (on-loss-focus)
