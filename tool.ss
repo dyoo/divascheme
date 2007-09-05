@@ -91,8 +91,7 @@
               (diva-central-mixin super%))))))
         
         (define (diva-definitions-canvas-mixin super%)
-          (diva-link:canvas-mixin
-           (diva-central-mixin super%)))
+          (diva-central-mixin super%))
         
         (define (diva-definitions-text-mixin super%)
           (diva-link:text-mixin

@@ -18,7 +18,6 @@
            (prefix preferences: "diva-preferences.ss"))
   
   (provide diva-link:frame-mixin)
-  (provide diva-link:canvas-mixin)
   (provide diva-link:text-mixin)
   (provide diva-link:interactions-text-mixin)
   
@@ -94,20 +93,6 @@
   
   
   ;;
-  ;; THE CANVAS
-  ;;
-  
-  (define (diva-link:canvas-mixin super%) 
-    (class super%
-      (super-instantiate ())
-      (inherit get-editor)
-      (define/override (on-focus on?)
-        (super on-focus on?)
-        (unless on?
-          (send (get-editor) diva:-on-loss-focus)))))
-  
-  
-  ;;
   ;; THE TEXT
   ;; 
   
@@ -158,6 +143,12 @@
               (diva-message "Disabled: not in scheme mode")])]
           [else
            (super set-surrogate surrogate)]))
+      
+      
+      (define/override (on-focus on?)
+        (super on-focus on?)
+        (unless on?
+          (diva:-on-loss-focus)))
       
       
       ;; TODO: dyoo should ask Guillaume what's going on with the call-keyname stuff here.
