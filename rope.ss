@@ -5,7 +5,8 @@
            (lib "contract.ss")
            (lib "etc.ss")
            (lib "port.ss")
-           (lib "list.ss"))
+           (lib "list.ss")
+           (lib "plt-match.ss"))
   
   ;; open-input-rope: rope -> input-port
   (define (open-input-rope a-rope)
@@ -65,15 +66,73 @@
                     (special->rope (vector-ref a-vec i))))])))
   
   
+  
   ;; rope=?: rope rope -> boolean
   ;; Returns true if the two ropes have the same content.
   (define (rope=? rope-1 rope-2)
-    (or (eq? rope-1 rope-2)
-        (and (= (rope-length rope-1)
-                (rope-length rope-2))
-             (begin
-               (equal? (rope->vector rope-1)
-                       (rope->vector rope-2))))))
+    (cond
+      [(eq? rope-1 rope-2)
+       #t]
+      [(not (= (rope-length rope-1)
+               (rope-length rope-2)))
+       #f]
+      [else
+       ;; Ugly case analysis ahead: we've got
+       ;; to cover all the cases if we want to avoid
+       ;; the default that uses rope->vector.
+       (match (list rope-1 rope-2)
+         [(list (struct rope:string (s1))
+                (struct rope:string (s2)))
+          (string=? s1 s2)]
+         
+         [(list (struct rope:string (s1))
+                (struct rope:special (s2)))
+          #f]
+         
+         [(list (struct rope:string (s1))
+                (struct rope:concat (l2 r2 len2)))
+          (let/ec return
+            (= len2
+               (rope-fold (lambda (ch/special i)
+                            (cond
+                              [(and (char? ch/special)
+                                    (char=? ch/special
+                                            (string-ref s1 i)))
+                               (add1 i)]
+                              [else
+                               (return #f)]))
+                          0
+                          rope-2)))]
+         
+         [(list (struct rope:special (s1))
+                (struct rope:string (s2)))
+          #f]
+         
+         [(list (struct rope:special (s1))
+                (struct rope:special (s2)))
+          (eq? s1 s2)]
+         
+         [(list (struct rope:special (s1))
+                (struct rope:concat (l2 r2 len2)))
+          (or (rope=? rope-1 l2)
+              (rope=? rope-1 r2))]
+         
+         [(list (struct rope:concat (l1 r1 len1))
+                (struct rope:string (s2)))
+          (rope=? rope-2 rope-1)]
+         
+         [(list (struct rope:concat (l1 r1 len1))
+                (struct rope:special (s2)))
+          (rope=? rope-2 rope-1)]
+         
+         [(list (struct rope:concat (l1 r1 len1))
+                (struct rope:concat (l2 r2 len2)))
+          (cond [(= (rope-length l1) (rope-length l2))
+                 (and (rope=? l1 l2)
+                      (rope=? r1 r2))]
+                [else
+                 (equal? (rope->vector rope-1)
+                         (rope->vector rope-2))])])]))
   
   
   
