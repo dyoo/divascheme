@@ -102,7 +102,10 @@
       (define/public (diva:-get-rope)
         (send this get-rope))
       
-      
+      ;; update-text: rope -> void
+      ;; Given the content in to-text, we set the rope in mred-callback so that
+      ;; the post-condition is that (get-rope) should be the same as to-text
+      ;; (rope=? modulo specials).
       (define (update-text to-text)
         (let ([from-text (send this diva:-get-rope)])
           (unless (rope=? to-text from-text)
