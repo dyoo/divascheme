@@ -211,37 +211,44 @@
                get-unread-start-point)
       
       (define/override (diva:-update-text text)
-        ;; rehydrate-prompts-in-text: cleanup-text munges the following space
-        ;; after a prompt symbol.  We have to kludge those spaces back in.  Ugh.
         (super diva:-update-text text)
+        ;; rehydrate-prompts-in-text: cleanup-text munges the following space
+        ;; after a prompt symbol. We have to kludge those spaces back in. Ugh.
         #; (define (rehydrate-prompts-in-text text)
              (regexp-replace* "(^|\n)>($|\n)" text "\\1> \\2"))
         #; (super diva:-update-text (rehydrate-prompts-in-text text)))
       
       
       (define/override (diva:-get-rope)
-        (define hide-character "X")
-        (define non-control (pregexp "[^[:cntrl:]]"))
-        
         (define (all-but-last text)
           (substring text 0 (sub1 (string-length text))))
         
         (define (last-char text)
           (string-ref text (sub1 (string-length text))))
         
+        (define (convert-non-control-to-X a-str)
+          (build-string
+           (string-length a-str)
+           (lambda (i)
+             (let ([ch (string-ref a-str i)])
+               (cond [(< (char->integer ch) 32)
+                      ch]
+                     [else #\X])))))
+        
         (define (hide-annotations annotated-text)
           (cond
             [(and (> (string-length annotated-text) 0)
                   (char-whitespace? (last-char annotated-text)))
              (string-append
-              (pregexp-replace* non-control (all-but-last annotated-text) hide-character)
+              (convert-non-control-to-X (all-but-last annotated-text))
               (string (last-char annotated-text)))]
             [else
-             (pregexp-replace* non-control annotated-text hide-character)]))
-        
+             (convert-non-control-to-X annotated-text)]))
         (let ([a-rope (get-rope)]
               [text (get-text)])
-          (rope-append
-           (string->rope
-            (hide-annotations (substring text 0 (get-unread-start-point))))
-           (subrope a-rope (get-unread-start-point))))))))
+          (time
+           (rope-append
+            (string->rope
+             (time
+              (hide-annotations (substring text 0 (get-unread-start-point)))))
+            (subrope a-rope (get-unread-start-point)))))))))
