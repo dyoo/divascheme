@@ -384,34 +384,33 @@
           'Tag
           'Extend-Selection))
   
-
-
+  
   (define command?
     (lambda (symbol) (member symbol commands)))
-
-
+  
+  
   (define-datatype Noun
     [Symbol-Noun (symbol)]
     [The-Symbol (symbol)])
   
   (provide-datatype/contract Noun
-     [Symbol-Noun (symbol?)]
-     [The-Symbol (symbol?)])
-
-
+                             [Symbol-Noun (symbol?)]
+                             [The-Symbol (symbol?)])
+  
+  
   (define-datatype What
     [WhatN  (noun)]
     [WhatDN (distance noun)])
-
+  
   (provide-datatype/contract What
-     [WhatN  (Noun?)]
-     [WhatDN (integer? Noun?)])
-
-
+                             [WhatN  (Noun?)]
+                             [WhatDN (integer? Noun?)])
+  
+  
   (define-datatype Where
     [After ()]
     [Before ()])
-
+  
   (provide-datatype/contract Where
     [After ()]
     [Before ()])
