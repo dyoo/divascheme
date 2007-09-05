@@ -443,8 +443,7 @@
                   (diva-message "")
                   
                   ; checking if the text has a good Scheme syntax
-                  ;; disabled: superfluous?
-                  #; (rope-parse-syntax (diva:-get-rope))
+                  (rope-parse-syntax (diva:-get-rope))
                   
                   (when (get-check-syntax-button)
                     (set! was-button-enabled? (send (get-check-syntax-button) is-enabled?))
@@ -478,8 +477,7 @@
          #f
          (lambda ()
            ; checking if the text has a good Scheme syntax
-           ;; disabled: superfluous?
-           #; (rope-parse-syntax (diva:-get-rope))
+           (rope-parse-syntax (diva:-get-rope))
            (void))))
       
       (define/public (to-normal-mode)
