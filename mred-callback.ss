@@ -2,12 +2,10 @@
   (require (lib "etc.ss")
            (lib "class.ss")
            (lib "mred.ss" "mred")
-           (lib "pregexp.ss")
            "utilities.ss"
            "long-prefix.ss"
            "rope.ss"
-           "text-rope-mixin.ss"
-           "dot-processing.ss")
+           "text-rope-mixin.ss")
   
   ;; Here we are defining mixins for text% and canvas% classes
   ;; whose instanciations would be handled by a mred-state%.
