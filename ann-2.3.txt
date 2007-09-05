@@ -47,6 +47,6 @@ their support.
 
 Thanks also to Aleks Bromfield, Jon Rafkind, Matthias Felleisen, Mark
 Haniford, Chris Warrington, David Cabana, Kyle Smith, Geoffrey
-Knauth, and Will Farr for their feedback and bug reports.
+Knauth, Will Farr, and Matt Jadud for their feedback and bug reports.
 
 Send comments and bug reports to dyoo@cs.wpi.edu.
