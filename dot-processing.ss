@@ -16,8 +16,8 @@
            (lambda (exn)
              (raise
               (make-voice-exn
-               "The parenthesis of the definitions text are not correctly balanced: ~a"
-               (exn-message exn))))])
+               (format "The parenthesis of the definitions text are not correctly balanced: ~a"
+                       (exn-message exn)))))])
        (port-count-lines! ip)
        (semi-read-syntax-list 'voice:action:get-syntax ip))))
   
@@ -30,8 +30,8 @@
            (lambda (exn)
              (raise
               (make-voice-exn
-               "The parenthesis of the definitions text are not correctly balanced: ~a"
-               (exn-message exn))))])
+               (format "The parenthesis of the definitions text are not correctly balanced: ~a"
+                       (exn-message exn)))))])
        (port-count-lines! ip)
        (semi-read-syntax-list/no-specials 'voice:action:get-syntax ip))))
   
