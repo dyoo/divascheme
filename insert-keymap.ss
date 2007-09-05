@@ -3,7 +3,6 @@
 	   (lib "list.ss")
            (lib "class.ss")
            (lib "mred.ss" "mred")
-           (lib "pregexp.ss")
            (only (lib "1.ss" "srfi") circular-list)
            (lib "framework.ss" "framework")
            "traversal.ss"
@@ -78,7 +77,13 @@
   
   
   (define (blank-string? text)
-    (pregexp-match "^\\s*$" text))
+    (let loop ([i 0])
+      (cond
+        [(= i (string-length text))
+         #t]
+        [(char-whitespace? (string-ref text i))
+         (loop (add1 i))]
+        [else #f])))
   
   
   ;;
