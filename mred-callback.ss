@@ -246,9 +246,8 @@
              (convert-non-control-to-X annotated-text)]))
         (let ([a-rope (get-rope)]
               [text (get-text)])
-          (time
-           (rope-append
-            (string->rope
-             (time
-              (hide-annotations (substring text 0 (get-unread-start-point)))))
-            (subrope a-rope (get-unread-start-point)))))))))
+          (rope-append
+           (string->rope
+            (time
+             (hide-annotations (substring text 0 (get-unread-start-point)))))
+           (subrope a-rope (get-unread-start-point))))))))
