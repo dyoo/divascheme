@@ -405,7 +405,6 @@
            (with-divascheme-handlers
             #f
             (lambda ()
-              (rope-parse-syntax (diva:-get-rope)) ; checking if the text has a good Scheme syntax
               (on-entry)
               (make-insert-mode this                                     ;; window
                                 (current-actions)                        ;; actions
@@ -442,6 +441,11 @@
                 (define (on-entry)
                   (diva-label "DivaScheme: insertion mode")
                   (diva-message "")
+                  
+                  ; checking if the text has a good Scheme syntax
+                  ;; disabled: superfluous?
+                  #; (rope-parse-syntax (diva:-get-rope))
+                  
                   (when (get-check-syntax-button)
                     (set! was-button-enabled? (send (get-check-syntax-button) is-enabled?))
                     (send (get-check-syntax-button) enable #f)))
@@ -474,7 +478,8 @@
          #f
          (lambda ()
            ; checking if the text has a good Scheme syntax
-           (rope-parse-syntax (diva:-get-rope))
+           ;; disabled: superfluous?
+           #; (rope-parse-syntax (diva:-get-rope))
            (void))))
       
       (define/public (to-normal-mode)
