@@ -248,6 +248,5 @@
               [text (get-text)])
           (rope-append
            (string->rope
-            (time
-             (hide-annotations (substring text 0 (get-unread-start-point)))))
+            (hide-annotations (substring text 0 (get-unread-start-point))))
            (subrope a-rope (get-unread-start-point))))))))
