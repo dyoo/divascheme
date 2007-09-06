@@ -18,6 +18,8 @@ Nested comments #| |# don't work.
 Closing a "---" that doesn't have an $expr$ holder kills an sexpr that
 probably shouldn't die.
 
+Copy and paste from the interaction window, before the last unread point,
+runs into our manger.
 
 Check syntax in insert mode does not defocus as it should.  All of the
 button presses should get us out of insert mode.
