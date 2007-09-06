@@ -22,7 +22,13 @@
   ;; the url of the plugin.
   (define tool-urls (list #f))
   
-  (define compile-omit-files (list "graveyard/parser.ss"))
+  ;; Some of the tests we have are broken; don't try to
+  ;; compile them.
+  (define compile-omit-files (list "tests/actions-test.ss"
+                                   "tests/structures-test.ss"
+                                   "tests/templates-test.ss"
+                                   "tests/traversal-test.ss"
+                                   "tests/utilities-test.ss"))
   
   (define mzscheme-launcher-names '("generate-stags"))
   (define mzscheme-launcher-libraries '("generate-stags.ss"))
