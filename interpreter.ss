@@ -73,8 +73,6 @@
           (eval-Open false world loc what 0 0 false 'Normal)]
          [(struct Verb ((struct Command ('Open-Square)) loc what))
           (eval-Open true world loc what 0 0 false 'Normal)]
-         #;[(struct Verb ((struct Symbol-Cmd ((? is-quoting-symbol? symbol))) loc #f))
-            (eval-Quote world symbol loc)]
          [(struct Verb ((struct Symbol-Cmd (symbol)) loc #f))
           (eval-Symbol world symbol loc 0 0 false 'Normal)]
          [(struct Verb ((struct Command ('Close)) #f #f))
@@ -83,13 +81,17 @@
           (eval-Insert world loc)]
          
          [(struct Verb ((struct Command ('Search-Forward)) loc/false what/false))
-          (eval-Search world (make-make-metric world metric-forward) (World-cursor-position world) loc/false what/false)]
+          (eval-Search world (make-make-metric world metric-forward)
+                       (World-cursor-position world) loc/false what/false)]
          [(struct Verb ((struct Command ('Search-Backward)) loc/false what/false))
-          (eval-Search world (make-make-metric world metric-backward) (World-cursor-position world) loc/false what/false)]
+          (eval-Search world (make-make-metric world metric-backward)
+                       (World-cursor-position world) loc/false what/false)]
          [(struct Verb ((struct Command ('Search-Top)) loc what))
-          (eval-Search world (make-make-metric world metric-forward) (index->syntax-pos 0) loc what)]
+          (eval-Search world (make-make-metric world metric-forward)
+                       (index->syntax-pos 0) loc what)]
          [(struct Verb ((struct Command ('Search-Bottom)) loc what))
-          (eval-Search world (make-make-metric world metric-backward) (index->syntax-pos 0) loc what)]
+          (eval-Search world (make-make-metric world metric-backward)
+                       (index->syntax-pos 0) loc what)]
          [(struct Verb ((struct Command ('Select)) loc what))
           (eval-Select world (World-cursor-position world) loc what)]
          
@@ -412,18 +414,41 @@
 
 
   ;; eval-Symbol : World symbol Location/false non-negative-integer non-negative-integer boolean mode -> World
-  (define (eval-Symbol world symbol loc/false template-number magic-number template/magic-wrap? mode)
-    (let* ([loc-base   (World-cursor-position world)]
-           [pos        (eval-Loc world (make-make-metric world metric-forward) loc-base loc/false)]
-           [new-world  (send (current-actions) symbol world symbol (and loc/false pos) template-number magic-number template/magic-wrap?)]
-           [Magic-f          (lambda (new-world template/magic-wrap?)
-                                                 (eval-Symbol world symbol loc/false 0 (add1 magic-number) template/magic-wrap? 'Magic))]
-           [Magic-Next-f     (lambda (new-world) (eval-Symbol world symbol loc/false 0 (add1 magic-number) template/magic-wrap? 'Magic))]
-           [Magic-Previous-f (lambda (new-world) (eval-Symbol world symbol loc/false 0 (sub1 magic-number) template/magic-wrap? 'Magic))]
-           [Pass-f          (lambda (new-world template/magic-wrap?)
-                                                (eval-Symbol world symbol loc/false (add1 template-number) magic-number template/magic-wrap? 'Pass))]
-           [Pass-Next-f     (lambda (new-world) (eval-Symbol world symbol loc/false (add1 template-number) magic-number template/magic-wrap? 'Pass))]
-           [Pass-Previous-f (lambda (new-world) (eval-Symbol world symbol loc/false (sub1 template-number) magic-number template/magic-wrap? 'Pass))]
+  (define (eval-Symbol world symbol loc/false template-number magic-number
+                       template/magic-wrap? mode)
+    (let* ([loc-base
+            (World-cursor-position world)]
+           [pos
+            (eval-Loc world (make-make-metric world metric-forward)
+                      loc-base loc/false)]
+           [new-world
+            (send (current-actions) symbol
+                  world symbol (and loc/false pos)
+                  template-number magic-number template/magic-wrap?)]
+           [Magic-f
+            (lambda (new-world template/magic-wrap?)
+              (eval-Symbol world symbol loc/false 0
+                           (add1 magic-number) template/magic-wrap? 'Magic))]
+           [Magic-Next-f
+            (lambda (new-world)
+              (eval-Symbol world symbol loc/false 0
+                           (add1 magic-number) template/magic-wrap? 'Magic))]
+           [Magic-Previous-f
+            (lambda (new-world)
+              (eval-Symbol world symbol loc/false 0
+                           (sub1 magic-number) template/magic-wrap? 'Magic))]
+           [Pass-f
+            (lambda (new-world template/magic-wrap?)
+              (eval-Symbol world symbol loc/false (add1 template-number)
+                           magic-number template/magic-wrap? 'Pass))]
+           [Pass-Next-f
+            (lambda (new-world)
+              (eval-Symbol world symbol loc/false (add1 template-number)
+                           magic-number template/magic-wrap? 'Pass))]
+           [Pass-Previous-f
+            (lambda (new-world)
+              (eval-Symbol world symbol loc/false (sub1 template-number)
+                           magic-number template/magic-wrap? 'Pass))]
            [Next-f     (match mode
                          ['Normal (default-Next-f)]
                          ['Magic     Magic-Next-f ]
@@ -444,10 +469,8 @@
                    [World-Pass-f     Pass-f])))
 
   
-  (define (eval-Quote world symbol loc)
-    (void))
   
-;; eval-Close : World -> World
+  ;; eval-Close : World -> World
   (define (eval-Close world)
     (let ([new-w (world-clear (send (current-actions) close world))])
       (if (rope=? (World-rope world)
