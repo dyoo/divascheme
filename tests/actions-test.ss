@@ -5,13 +5,13 @@
            (lib "class.ss")
            (lib "struct.ss")
            "test-harness.ss"
-           "utilities.ss"
-           "structures.ss"
-           "templates.ss"
-           "actions.ss")
-
-
-
+           "../utilities.ss"
+           "../structures.ss"
+           "../templates.ss"
+           "../actions.ss")
+  
+  
+  
   (define (tests)
     ; actions : actions%
     (define actions (make-object actions%))
