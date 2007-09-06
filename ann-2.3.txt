@@ -36,6 +36,8 @@ Features:
 * Up and down can be used in insert mode.  install.ss will try to
   automatically upgrade your keybindings appropriately.
 
+* Tab completion includes default symbols from mzscheme.
+
 * General improvements in memory usage and performance.
   
 
