@@ -741,10 +741,10 @@
              (cons
               (symbol->string symbol)
               (cons common-prefix
-                    (sort (filter-double strs) string<?)))]
+                    (filter-double strs)))]
             [else
              (cons (symbol->string symbol)
-                   (sort (filter-double strs) string<?))])))
+                   (filter-double strs))])))
       
       ;; magic/expand : World pos symbol non-negative-integer boolean -> symbol
       (define (magic/expand world pos symbol magic-number wrap?)
