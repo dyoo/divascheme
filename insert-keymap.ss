@@ -10,6 +10,7 @@
            "structures.ss"
            "choose-paren.ss"
            "in-something.ss"
+           "rope.ss"
            "text-rope-mixin.ss"
            (prefix preferences: "diva-preferences.ss"))
   
@@ -96,14 +97,23 @@
                     set-after-insert-callback set-after-delete-callback
                     interpret! post-exit-hook cmd edit?)
       
-      (define (consume-text world pending-open text)
+      
+      ;; consume-text: World Pending rope -> void
+      ;; Send the new text to be filled into the buffer.
+      (define (consume-text world pending-open a-rope)
         (if pending-open
             (interpret! (Pending-world pending-open)
-                         (make-Verb (make-Command (Pending-symbol pending-open))
-                                    false
-                                    (make-WhatN (make-Symbol-Noun (string->symbol text)))))
+                        (make-Verb (make-Command (Pending-symbol pending-open))
+                                   false
+                                   (make-WhatN
+                                    (make-Symbol-Noun
+                                     (string->symbol (rope->string a-rope))))))
             
-            (interpret! world (make-Verb (make-Symbol-Cmd (string->symbol text)) false false))))
+            (interpret! world
+                        (make-Verb (make-Symbol-Cmd
+                                    (string->symbol (rope->string a-rope)))
+                                   false
+                                   false))))
       
       
       (define (consume-cmd world symbol)
@@ -354,16 +364,21 @@
             #f))
         
         (define (eval-text)
-          (let ([txt (get-text)])
+          (local
+              ((define txt (get-text))
+               (define closer (in-something? txt))
+               (define a-rope (get-rope)))
             (unless (blank-string? txt)
-              (let ([txt (if (in-something? txt)
-                             (format "~a~a" txt (in-something? txt))
-                             txt)])
-                (cond
-                  #;[(invalid-insert? txt) => diva-message]
-                    [else
-                     (consume-text world-at-beginning-of-insert pending-open txt)
-                     (begin-symbol-insertion/nothing-pending)])))))
+              (local ((define closed-rope
+                        (cond [closer
+                               (rope-append a-rope (string->rope closer))]
+                              [else a-rope])))
+                (let ([txt (if closer
+                               (format "~a~a" txt closer)
+                               txt)])
+                  (consume-text world-at-beginning-of-insert
+                                pending-open closed-rope)
+                  (begin-symbol-insertion/nothing-pending))))))
         
         
         (define (eval-cmd symbol)
