@@ -212,9 +212,11 @@
               (loop lst)
               (cons sub-alpha-str (loop lst))))])))
     
-             
-  (provide get-clipboard-content set-clipboard-content)
   
+  ;; We do some kludgery here to store snip content in a clipboard.
+  ;; If we try to set-clipboard-content with a snip, we remember
+  ;; it with a few stateful variables.
+  (provide get-clipboard-content set-clipboard-content)
   (define last-remembered-clip #f)
   (define last-remembered-clip-id #f)
   
@@ -235,10 +237,18 @@
   (define (set-clipboard-content a-rope)
     (when a-rope
       (set! last-remembered-clip a-rope)
-      (set! last-remembered-clip-id (format "clipboard-id-~a" (random)))
-      (send the-clipboard set-clipboard-string
-            last-remembered-clip-id
-            0)))
+      (cond [(rope-has-special? a-rope)
+             (set! last-remembered-clip-id
+                   (format "clipboard-id-for-special-content-~a" (random)))
+             (send the-clipboard set-clipboard-string
+                   last-remembered-clip-id
+                   0)]
+            [else
+             (set! last-remembered-clip #f)
+             (set! last-remembered-clip-id #f)
+             (send the-clipboard set-clipboard-string
+                   (rope->string a-rope)
+                   0)])))
   
   
   
