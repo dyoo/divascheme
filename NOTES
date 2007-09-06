@@ -19,7 +19,9 @@ Here strings don't work.
 
 Nested comments #| |# don't work.
 
-    - fixed
+    - fixed, sorta.  They're parsed by semi-parse-syntax finally.  But
+Insert mode doesn't quite work right with nested comments.
+in-something doesn't count how deeply we've nested.
 
 
 
