@@ -29,7 +29,7 @@
       
       (define (form-output)
         (cond [here-marker
-               (string-append "\n" here-marker)]
+               (string-append "\n" here-marker "\n")]
               [(and escaped-char? in)
                (string-append "\\" in)]
               [escaped-char? "\\"]
