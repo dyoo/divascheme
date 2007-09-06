@@ -69,14 +69,18 @@
                                      [World-again ast])])]
             [world (trim-undos world max-undo-count)])
        (match ast
+         
          [(struct Verb ((struct Command ('Open)) loc what))
           (eval-Open false world loc what 0 0 false 'Normal)]
          [(struct Verb ((struct Command ('Open-Square)) loc what))
           (eval-Open true world loc what 0 0 false 'Normal)]
          [(struct Verb ((struct InsertRope-Cmd (rope)) loc #f))
           (eval-InsertRope world rope loc 0 0 false 'Normal)]
+         
          [(struct Verb ((struct Command ('Close)) #f #f))
           (eval-Close world)]
+         
+         
          [(struct Verb ((struct Command ('Insert)) loc #f))
           (eval-Insert world loc)]
          
@@ -360,18 +364,15 @@
   ;; Add Open Command, assume that the identifier is a template identifier, and insert into text, and select first placeholder
   (define (eval-Open square? world loc/false what/false template-number magic-number template/magic-wrap? mode)
     (let*
-        ([symbol/false
-          (print-mem
-           'eval-Open-symbol/false 
-           (lambda () (eval-What/open what/false)))]
-         [pos 
-          (print-mem
-           'eval-Open-pos
-           (lambda ()
-             (eval-Loc world
-                       (make-make-metric world metric-forward)
-                       (World-cursor-position world)
-                       loc/false)))]
+        ([symbol/false (print-mem*
+                        'eval-Open-symbol/false 
+                        (eval-What/open what/false))]
+         [pos (print-mem*
+               'eval-Open-pos
+               (eval-Loc world
+                         (make-make-metric world metric-forward)
+                         (World-cursor-position world)
+                         loc/false))]
          [new-world
           (print-mem
            'eval-Open-new-world
@@ -384,15 +385,30 @@
                    template-number
                    magic-number
                    template/magic-wrap?)))]
-         
-         [Magic-f           (lambda (new-world template/magic-wrap?)
-                              (eval-Open square? world loc/false what/false 0 (add1 magic-number) template/magic-wrap? 'Magic))]
-         [Magic-Next-f      (lambda (new-world) (eval-Open square? world loc/false what/false 0 (add1 magic-number) template/magic-wrap? 'Magic))]
-         [Magic-Previous-f  (lambda (new-world) (eval-Open square? world loc/false what/false 0 (add1 magic-number) template/magic-wrap? 'Magic))]
-         [Pass-f            (lambda (new-world template/magic-wrap?)
-                              (eval-Open square? world loc/false what/false (add1 template-number) magic-number template/magic-wrap? 'Pass))]
-         [Pass-Next-f       (lambda (new-world) (eval-Open square? world loc/false what/false (add1 template-number) magic-number template/magic-wrap? 'Pass))]
-         [Pass-Previous-f   (lambda (new-world) (eval-Open square? world loc/false what/false (sub1 template-number) magic-number template/magic-wrap? 'Pass))]
+         [Magic-f
+          (lambda (new-world template/magic-wrap?)
+            (eval-Open square? world loc/false what/false
+                       0 (add1 magic-number) template/magic-wrap? 'Magic))]
+         [Magic-Next-f
+          (lambda (new-world)
+            (eval-Open square? world loc/false what/false
+                       0 (add1 magic-number) template/magic-wrap? 'Magic))]
+         [Magic-Previous-f
+          (lambda (new-world)
+            (eval-Open square? world loc/false what/false
+                       0 (add1 magic-number) template/magic-wrap? 'Magic))]
+         [Pass-f
+          (lambda (new-world template/magic-wrap?)
+            (eval-Open square? world loc/false what/false
+                       (add1 template-number) magic-number template/magic-wrap? 'Pass))]
+         [Pass-Next-f
+          (lambda (new-world)
+            (eval-Open square? world loc/false what/false
+                       (add1 template-number) magic-number template/magic-wrap? 'Pass))]
+         [Pass-Previous-f
+          (lambda (new-world)
+            (eval-Open square? world loc/false what/false
+                       (sub1 template-number) magic-number template/magic-wrap? 'Pass))]
          [Next-f     (match mode
                        ['Normal (default-Next-f)]
                        ['Magic     Magic-Next-f ]
@@ -492,26 +508,35 @@
                        [World-cancel     world]
                        [World-undo       world]))))
   
+  
   ;; eval-Insert : World Loc -> World
   ;; TODO: and put it in the undo and cancel commands
+  ;; Somewhat badly named: this itself is preparation for
+  ;; an insert, but itself doesn't touch the World otherwise.
+  ;; Positions the cursor left or right of the nearest sexpr,
+  ;; and then gets ready for Insert mode.
   (define (eval-Insert world loc)
-    (let* ([position   (eval-Loc world
-                                 metric-nearest
-                                 (World-cursor-position world)
-                                 loc)]
-           [Next-f     (lambda (new-world)
-                         (eval-Insert
-                          world
-                          (inc-Loc-distance loc 1)))]
+    (let* ([position (eval-Loc world
+                               metric-nearest
+                               (World-cursor-position world)
+                               loc)]
+           [Next-f (lambda (new-world)
+                     (eval-Insert
+                      world
+                      (inc-Loc-distance loc 1)))]
            [Previous-f (lambda (new-world)
                          (eval-Insert
                           world
                           (dec-Loc-distance loc 1)))])
       
-      (copy-struct World (world-clear (send (current-actions) set-cursor-position world position))
-                   [World-Next-f     Next-f]
+      (copy-struct World
+                   (world-clear
+                    (send (current-actions)
+                          set-cursor-position world position))
+                   [World-Next-f Next-f]
                    [World-Previous-f Previous-f]
-                   [World-cancel     world])))
+                   [World-cancel world])))
+  
   
   ;; eval-Search : World (pos -> metric) pos (union Loc false) (union What false) -> World
   ;; TODO: do we really mean to use the same metric for the base and the what?

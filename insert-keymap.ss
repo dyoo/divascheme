@@ -93,6 +93,8 @@
   
   ;; A Pending is a (make-Pending a-world a-sym)
   ;; where a-World is a world, and a-sym is a member of '(Open Open-Square).
+  ;; If the user starts typing "(...)", this is a signal that there might be
+  ;; possible expansion by templates.
   (define-struct Pending (world symbol))
   
   
@@ -107,6 +109,7 @@
       ;; Send the new text to be filled into the buffer.
       (define (consume-text world pending-open a-rope)
         (if pending-open
+            ;; possibly templated
             (interpret! (Pending-world pending-open)
                         (make-Verb (make-Command (Pending-symbol pending-open))
                                    false
@@ -114,6 +117,7 @@
                                     (make-Symbol-Noun
                                      (string->symbol (rope->string a-rope))))))
             
+            ;; just regular rope insertion
             (interpret! world
                         (make-Verb (make-InsertRope-Cmd a-rope)
                                    false
