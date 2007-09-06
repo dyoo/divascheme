@@ -233,13 +233,28 @@
         [else
          (string->rope str/false)])))
   
+  
+  ;; rope-string/erasing-specials:
+  (define (rope->string/erasing-specials a-rope)
+    (rope->string
+     (rope-fold/leaves (lambda (string/special acc)
+                         (cond
+                           [(string? string/special)
+                            (rope-append acc (string->rope string/special))]
+                           [else acc]))
+                       rope-empty
+                       a-rope)))
+  
+  
   ;; set-clipboard-content : (union rope false) -> void
   (define (set-clipboard-content a-rope)
     (when a-rope
       (set! last-remembered-clip a-rope)
       (cond [(rope-has-special? a-rope)
              (set! last-remembered-clip-id
-                   (format "clipboard-id-for-special-content-~a" (random)))
+                   (format "~a~n~nclipboard-id-for-special-content-~a"
+                           (rope->string/erasing-specials a-rope)
+                           (random)))
              (send the-clipboard set-clipboard-string
                    last-remembered-clip-id
                    0)]
