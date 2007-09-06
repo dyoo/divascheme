@@ -437,14 +437,21 @@
                      world
                      (insert world (syntax-end-position stx) text))))))))
       
-      ;; open : boolean World symbol/false pos/false non-negative-integer non-negative-integer boolean -> World
-      (define (open square? world symbol/false pos/false template-number magic-number template/magic-wrap?)
-        (command world symbol/false pos/false true
-                 square? template-number magic-number template/magic-wrap?))
+      
+      ;; open : boolean World rope/false pos/false non-negative-integer non-negative-integer boolean -> World
+      (define (open square? world rope/false pos/false template-number magic-number template/magic-wrap?)
+        (command world
+                 (and rope/false (string->symbol (rope->string rope/false)))
+                 pos/false
+                 true square? template-number
+                 magic-number template/magic-wrap?))
+      
       
       ;; insert-rope : World symbol pos/false non-negative-integer non-negative-integer boolean -> World
       (define (insert-rope world a-rope pos/false template-number magic-number template/magic-wrap?)
-        (command world (string->symbol (rope->string a-rope)) pos/false
+        (command world
+                 (string->symbol (rope->string a-rope))
+                 pos/false
                  false false template-number
                  magic-number template/magic-wrap?))
       

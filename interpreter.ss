@@ -271,14 +271,22 @@
       [(struct WhatN           (noun)) (aux noun              0 )]
       [(struct WhatDN (distance noun)) (aux noun (sub1 distance))]))
 
-  ;; eval-What/open : (union What false) -> (union symbol false)
+  
+  ;; eval-What/open : (union What false) -> (union rope false)
   (define (eval-What/open what/false)
     (match what/false
       [#f false]
-      [(struct WhatN  (  (struct Symbol-Noun (symbol)))) symbol]
-      [(struct WhatDN (1 (struct Symbol-Noun (symbol)))) symbol]
+      [(struct WhatN ((struct Symbol-Noun (symbol))))
+       (string->rope (symbol->string symbol))]
+      [(struct WhatDN (1 (struct Symbol-Noun (symbol))))
+       (string->rope (symbol->string symbol))]
+      [(struct WhatN ((struct Rope-Noun (a-rope))))
+       a-rope]
+      [(struct WhatDN (1 (struct Rope-Noun (a-rope))))
+       a-rope]
       [_ (raise (make-voice-exn "This does not mean anything for me"))]))
-
+  
+  
   ;; eval-What/holder : World metric What -> syntax
   (define (eval-What/holder world metric what)
     (match what
@@ -311,8 +319,8 @@
        (let ([result1 (find-all/not-first (syntax-is-symbol? symbol) (World-syntax-list world))]
              [result2 (find-all (syntax-begins-with? symbol) (World-syntax-list world))])
          (sort/metric (make-metric-f base) (append result1 result2)))]
-      [(struct The-Symbol (symbol))
-       (find-all/metric (syntax-is-symbol? symbol) (make-metric-f base) (World-syntax-list world))]))
+      #; [(struct The-Symbol (symbol))
+          (find-all/metric (syntax-is-symbol? symbol) (make-metric-f base) (World-syntax-list world))]))
   
   ;; eval-Loc+What : World (pos -> metric) (union Loc false) (union What false) -> (union pos syntax)
   (define (eval-Loc+What world make-metric-f loc/false what/false)
@@ -363,7 +371,7 @@
   ;; Add Open Command, assume that the identifier is a template identifier, and insert into text, and select first placeholder
   (define (eval-Open square? world loc/false what/false template-number magic-number template/magic-wrap? mode)
     (let*
-        ([symbol/false (print-mem*
+        ([rope/false (print-mem*
                         'eval-Open-symbol/false 
                         (eval-What/open what/false))]
          [pos (print-mem*
@@ -379,7 +387,7 @@
              (send (current-actions) open
                    square?
                    world
-                   symbol/false
+                   rope/false
                    (and loc/false pos)
                    template-number
                    magic-number

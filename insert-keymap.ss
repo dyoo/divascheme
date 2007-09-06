@@ -117,8 +117,7 @@
                         (make-Verb (make-Command (Pending-symbol pending-open))
                                    false
                                    (make-WhatN
-                                    (make-Symbol-Noun
-                                     (string->symbol (rope->string a-rope))))))
+                                    (make-Rope-Noun a-rope))))
             
             ;; possible templating without open parens
             (interpret! world

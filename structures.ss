@@ -391,11 +391,15 @@
   
   (define-datatype Noun
     [Symbol-Noun (symbol)]
-    [The-Symbol (symbol)])
+    [Rope-Noun (rope)]
+    
+    ;; The-Symbol constructor is disabled: currently used only by parser.ss and might be deprecated.
+    #; [The-Symbol (symbol)])
   
   (provide-datatype/contract Noun
                              [Symbol-Noun (symbol?)]
-                             [The-Symbol (symbol?)])
+                             [Rope-Noun (rope?)]
+                             #; [The-Symbol (symbol?)])
   
   
   (define-datatype What
@@ -412,10 +416,10 @@
     [Before ()])
   
   (provide-datatype/contract Where
-    [After ()]
-    [Before ()])
-
-
+                             [After ()]
+                             [Before ()])
+  
+  
   (define-datatype Location
     [Loc (where what)])
 
