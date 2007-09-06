@@ -1,4 +1,5 @@
 (module info (lib "infotab.ss" "setup")
+  
   (define name "DivaScheme")
   (define blurb '("semi-structured programming editing for DrScheme"))
   (define homepage "http://www.cs.brown.edu/research/plt/software/divascheme/")
@@ -20,6 +21,8 @@
   (define tool-names (list "DivaScheme"))
   ;; the url of the plugin.
   (define tool-urls (list #f))
+  
+  (define compile-omit-files (list "graveyard/parser.ss"))
   
   (define mzscheme-launcher-names '("generate-stags"))
   (define mzscheme-launcher-libraries '("generate-stags.ss"))
