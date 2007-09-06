@@ -35,23 +35,22 @@
            inc-Loc-distance
            dec-Loc-distance
            revert-cursor
-           eval-What/open
            make-make-metric
            make-metric-w/world)
-
+  
   (define diva-debug? false)
   (define (diva-printf text . args)
     (when diva-debug?
       (apply printf text args)))
-    
-
-
+  
+  
+  
   ;; TODO : Today, actions really do not need to be an object. Should we do something about that?
   ;; current-actions : void -> actions%
   (define current-actions (make-parameter (make-object actions%)))
-
+  
   (define max-undo-count 50)
-
+  
   ;; interpreter : ast World -> (union World ChangeWorld)
   (define (interpreter ast world)
     (print-mem
