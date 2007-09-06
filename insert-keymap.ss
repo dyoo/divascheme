@@ -90,8 +90,13 @@
   ;;
   ;; The Insertion Mode
   ;;
+  
+  ;; A Pending is a (make-Pending a-world a-sym)
+  ;; where a-World is a world, and a-sym is a member of '(Open Open-Square).
   (define-struct Pending (world symbol))
   
+  
+  ;; FIXME: if this takes so many parameters, there is a structural problem.
   (define make-insert-mode
     (lambda (window actions diva-message get-world set-world set-on-focus-lost
                     set-after-insert-callback set-after-delete-callback
@@ -427,7 +432,6 @@
                (set! magic-options-lst (rest (make-circular options)))
                (cond 
                  [(empty? (rest options))
-                  (printf "1~n")
                   (diva-message
                    (format "no completion for ~a" (get-magic-text)))]
                  [else
