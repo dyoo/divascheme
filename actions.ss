@@ -76,7 +76,6 @@
               transpose
               indent/selection
               magic-options
-              magic/expand
               magic-bash)
       
       ;; public functions for tests
@@ -438,27 +437,10 @@
                      (insert world (syntax-end-position stx) text))))))))
       
       
-      ;; open : boolean World rope/false pos/false non-negative-integer non-negative-integer boolean -> World
-      (define (open square? world rope/false pos/false template-number magic-number template/magic-wrap?)
-        (command world
-                 (and rope/false (string->symbol (rope->string rope/false)))
-                 pos/false
-                 true square? template-number
-                 magic-number template/magic-wrap?))
-      
-      
-      ;; insert-rope : World symbol pos/false non-negative-integer non-negative-integer boolean -> World
-      (define (insert-rope world a-rope pos/false template-number magic-number template/magic-wrap?)
-        (command world
-                 (string->symbol (rope->string a-rope))
-                 pos/false
-                 false false template-number
-                 magic-number template/magic-wrap?))
-      
-      
       ;; cursor-position-is-quoted?: world -> boolean
       ;; Returns true if the cursor's current location is at a quoted
       ;; position.
+      ;; FIXME: should look backwards across whitespace.
       (define (cursor-position-is-quoted? world)
         (and (<= 0
                  (sub1 (World-cursor-index world))
@@ -468,45 +450,82 @@
                         (sub1 (World-cursor-index world))))))
       
       
+      ;; open : boolean World rope/false pos/false non-negative-integer non-negative-integer boolean -> World
+      (define (open square? world rope/false pos/false template-number magic-number template/magic-wrap?)
+        (command world
+                 rope/false
+                 pos/false
+                 true square? template-number
+                 magic-number template/magic-wrap?))
+      
+      
+      ;; insert-rope : World symbol pos/false non-negative-integer non-negative-integer boolean -> World
+      (define (insert-rope world a-rope pos/false template-number magic-number template/magic-wrap?)
+        (command world
+                 a-rope
+                 pos/false
+                 false false template-number
+                 magic-number template/magic-wrap?))
+      
+      
       ;; command : World symbol/false pos/false boolean boolean non-negative-integer non-negative-integer boolean -> World
-      (define (command world symbol/false pos/false open?
+      (define (command world a-rope/false pos/false open?
                        square? template-number magic-number template/magic-wrap?)
-        (let* ([world
-                (if pos/false
-                    (set-cursor-position world pos/false)
-                    world)] ; thus we keep the current selection
-               [symbol/false
-                (and symbol/false (magic/expand world
-                                                (World-cursor-position world)
-                                                symbol/false
-                                                magic-number
-                                                template/magic-wrap?))])
-          (let-values ([(template number-of-templates)
-                        (lookup-template symbol/false
-                                         template-number
-                                         open?
-                                         template/magic-wrap?)])
-            (let* ([text (string->rope
-                          (format " ~a " (if template
-                                             (shape-paren (and square? 'Square) template)
-                                             symbol/false)))]
-                   [text (cond
-                           [(cursor-position-is-quoted? world)
-                            (subrope text 1)]
-                           [else text])]
-                   [world (if (<= number-of-templates 1)
-                              world
-                              (success-message
-                               world
-                               (format "template ~a of ~a"
-                                       (add1 (modulo template-number number-of-templates))
-                                       number-of-templates)))]
-                   [world
+        (local
+            (;; get-expanded-text: (values rope world)
+             (define (get-expanded-text&world)
+               (cond
+                 [(and a-rope/false (rope-has-special? a-rope/false))
+                  (let ([world (if pos/false
+                                   (set-cursor-position world pos/false)
+                                   world)])
+                    (values a-rope/false world #f))]
+                 
+                 [else
+                  (let* ([world
+                          (if pos/false
+                              (set-cursor-position world pos/false)
+                              world)] ; thus we keep the current selection
+                         [symbol/false
+                          (and a-rope/false
+                               (string->symbol (rope->string a-rope/false)))]
+                         [symbol/false
+                          (and symbol/false
+                               (magic/expand world
+                                             (World-cursor-position world)
+                                             symbol/false
+                                             magic-number
+                                             template/magic-wrap?))])
+                    (let-values ([(template number-of-templates)
+                                  (lookup-template symbol/false
+                                                   template-number
+                                                   open?
+                                                   template/magic-wrap?)])
+                      (let* ([text (string->rope
+                                    (format " ~a " (if template
+                                                       (shape-paren (and square? 'Square) template)
+                                                       symbol/false)))]
+                             [text (cond
+                                     [(cursor-position-is-quoted? world)
+                                      (subrope text 1)]
+                                     [else text])]
+                             [world (if (<= number-of-templates 1)
+                                        world
+                                        (success-message
+                                         world
+                                         (format "template ~a of ~a"
+                                                 (add1 (modulo template-number number-of-templates))
+                                                 number-of-templates)))])
+                        (values text world template))))])))
+          
+          (let-values ([(text world template)
+                        (get-expanded-text&world)])
+            (let* ([world
                     (print-mem*
-                            'command-indent/selection
-                            (indent/selection
-                             (replace/selection
-                              (dedouble-ellipsis world) text)))])
+                     'command-indent/selection
+                     (indent/selection
+                      (replace/selection
+                       (dedouble-ellipsis world) text)))])
               (if template
                   (holder world)
                   (step-to-the-right world))))))
@@ -754,14 +773,15 @@
                    (filter-double strs))])))
       
       ;; magic/expand : World pos symbol non-negative-integer boolean -> symbol
-      (define (magic/expand world pos symbol magic-number wrap?)
+      (define (magic/expand world pos a-symbol magic-number wrap?)
         (let* ([symbols (map string->symbol
-                             (magic-options world pos symbol))]
+                             (magic-options world pos a-symbol))]
                [magic-number
                 (if wrap?
                     (modulo magic-number (length symbols))
                     magic-number)])
           (list-ref/safe symbols magic-number)))
+      
       
       ;; magic/completion : World symbol -> symbol
       (define (magic/completion world pos symbol)
