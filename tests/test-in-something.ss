@@ -1,7 +1,7 @@
 (module test-in-something mzscheme
   (require (planet "test.ss" ("schematics" "schemeunit.plt" 2 8))
            (planet "text-ui.ss" ("schematics" "schemeunit.plt" 2 8))
-           "in-something.ss")
+           "../in-something.ss")
   
   (define in-something-tests
     (test-suite

@@ -1,7 +1,7 @@
 (module test-tag-state mzscheme
   (require "test-harness.ss"
-           "tag-state.ss"
-           "tag-reader.ss")
+           "../tag-state.ss"
+           "../tag-reader.ss")
 
   ;; Stop when something bad happens
   (print-tests 'stop)
