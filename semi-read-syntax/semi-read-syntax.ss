@@ -139,7 +139,10 @@
                       (hash-table-put! ht (position-offset (position-token-start-pos pos-token)) val)
                       (display "X" to-op)]
                      [(string-prefix? ";" val)
-                      (hash-table-put! ht (position-offset (position-token-start-pos pos-token)) val)
+                      (hash-table-put!
+                       ht
+                       (position-offset
+                        (position-token-start-pos pos-token)) val)
                       (do-ec (:range x (string-length val))
                              (display "X" to-op))]
                      [(string-prefix? "#|" val)

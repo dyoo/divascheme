@@ -14,6 +14,25 @@
       (check-equal? (in-something? "\"hello") "\""))
      (test-case
       "strings with a hanging escape"
-      (check-equal? (in-something? "\"hello\\") "\\\""))))
+      (check-equal? (in-something? "\"hello\\") "\\\""))
+     
+     (test-case
+      "here strings"
+      (check-equal? (in-something? "#<<EOF\nblah")
+                    "\nEOF"))
+     (test-case
+      "here strings 2"
+      (check-equal? (in-something? "#<<EOF\nblah\nEOF")
+                    #f))
+     
+     (test-case
+      "here strings 3"
+      (check-equal? (in-something? "#<<helloworld")
+                    "\nhelloworld"))
+     
+     (test-case
+      "here strings 4"
+      (check-equal? (in-something? "#<<hello\nhelloblah")
+                    "\nhello"))))
   
   (test/text-ui in-something-tests))
