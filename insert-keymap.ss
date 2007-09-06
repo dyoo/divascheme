@@ -399,18 +399,19 @@
              (consume-magic)]
             [else
              (let* ([options ;; options guaranteed not-empty: contains at least (get-text).
-                     (send actions magic-options world-at-beginning-of-insert
+                     (send actions magic-options
+                           world-at-beginning-of-insert
                            left-edge-of-insert
-                           (string->symbol (get-magic-text)))]
-                    [gcd (common-long-prefix-ci options)])
+                           (string->symbol (get-magic-text)))])
                (set! magic-options-lst (rest (make-circular options)))
                (cond 
                  [(empty? (rest options))
-                  (diva-message (format "no completion for ~a" (get-magic-text)))]
-                 [(string-ci=? gcd (get-magic-text))
-                  (consume-magic)]
-                 [else (set-text gcd)]))]))
-
+                  (printf "1~n")
+                  (diva-message
+                   (format "no completion for ~a" (get-magic-text)))]
+                 [else
+                  (consume-magic)]))]))
+        
         
         (define (revert&exit)
           (set-world world-at-beginning-of-insert)

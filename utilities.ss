@@ -5,6 +5,7 @@
            (lib "class.ss")
            (lib "mred.ss" "mred")
            (lib "errortrace-lib.ss" "errortrace")
+           (lib "contract.ss")
            "voice-exn.ss"
            "rope.ss")
   
@@ -527,6 +528,13 @@
                  (syntax-pos->index (+ pos len)))
         (get-subrope/pos+len a-rope (+ pos len) (- len))))
   
+  
+  ;; get-mzcsheme-mapped-symbols: -> (listof symbol)
+  ;; Returns the base symbols exposed by mzscheme.
+  (provide/contract [get-mzscheme-mapped-symbols
+                     (-> (listof symbol?))])
+  (define (get-mzscheme-mapped-symbols)
+    (namespace-mapped-symbols (make-namespace)))
   
   (provide timef)
   (define (timef label thunk)

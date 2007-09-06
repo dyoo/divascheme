@@ -5,17 +5,17 @@
            (lib "list.ss")
            (lib "plt-match.ss")
            (lib "mred.ss" "mred")
+           (only (lib "1.ss" "srfi") lset-union)
+           (lib "framework.ss" "framework")
            "traversal.ss"
            "structures.ss"
            "utilities.ss"
            "templates.ss"
            "tag-state.ss"
            "tag-reader.ss"
-           "dot-processing.ss"
            "text-rope-mixin.ss"
            "rope.ss"
-           (lib "errortrace-lib.ss" "errortrace")
-           (lib "framework.ss" "framework"))
+           "long-prefix.ss")
   
   (define voice-debug false)
   (define (voice-printf . args)
@@ -690,33 +690,80 @@
                        [World-rope (send text get-rope)]
                        [World-syntax-list/lazy #f])))
       
+      
+      ;; default-magic/language: World -> (listof string)
+      ;; Return a list of default magic options that apply
+      ;; at any time.
+      (define (default-magic/language world)
+        ;; TODO: based on the state of the world, we should
+        ;; be able to choose different default lists of magics.
+        (map symbol->string
+             (get-mzscheme-mapped-symbols)))
+      
+      ;; find-common-prefix: (listof string) -> string
+      ;; Returns the common prefix of all the strings.
+      (define (find-common-prefix some-strings)
+        (cond
+          [(empty? some-strings)
+           ""]
+          [else
+           (common-long-prefix-ci some-strings)]))
+      
       ;; magic-options: world number symbol -> (listof string)
       (define (magic-options world pos symbol)
-        (let* ([symbols/stx  (find-all-magic symbol/stx? pos (World-syntax-list world))]
-               [strs      (map (lambda (stx) (symbol->string (syntax-e stx))) symbols/stx)]
-               [strs      (filter (prefix/string? (symbol->string symbol)) strs)]
-               [tag-strs  (map tag-name (tag-library-lookup (get-current-tag-library) (symbol->string symbol)))]
+        (let* ([symbols/stx
+                (find-all-magic symbol/stx? pos
+                                (World-syntax-list world))]
+               [strs (filter-double
+                      (append
+                       (map (lambda (stx)
+                              (symbol->string (syntax-e stx)))
+                            symbols/stx)
+                       (default-magic/language world)))]
+               [strs (filter (prefix/string? (symbol->string symbol))
+                             strs)]
+               [tag-strs (map tag-name
+                              (tag-library-lookup
+                               (get-current-tag-library)
+                               (symbol->string symbol)))]
                [strs      (append strs tag-strs)]
-               [strs      (filter (lambda (str) (< (string-length (symbol->string symbol))
-                                                   (string-length str)))
-                                  strs)]
-               [strs      (cons (symbol->string symbol) strs)])
-              (filter-double strs)))
-        
+               [strs (filter
+                      (lambda (str)
+                        (< (string-length (symbol->string symbol))
+                           (string-length str)))
+                      strs)]
+               [common-prefix
+                (find-common-prefix strs)])
+          (cond
+            [(and (> (string-length common-prefix) 0)
+                  (not (string=? common-prefix
+                                 (symbol->string symbol))))
+             (cons
+              (symbol->string symbol)
+              (cons common-prefix
+                    (sort (filter-double strs) string<?)))]
+            [else
+             (cons (symbol->string symbol)
+                   (sort (filter-double strs) string<?))])))
+      
       ;; magic/expand : World pos symbol non-negative-integer boolean -> symbol
       (define (magic/expand world pos symbol magic-number wrap?)
-        (let* ([symbols      (map string->symbol (magic-options world pos symbol))]
-               [magic-number (if wrap? (modulo magic-number (length symbols)) magic-number)])
+        (let* ([symbols (map string->symbol
+                             (magic-options world pos symbol))]
+               [magic-number
+                (if wrap?
+                    (modulo magic-number (length symbols))
+                    magic-number)])
           (list-ref/safe symbols magic-number)))
-
+      
       ;; magic/completion : World symbol -> symbol
       (define (magic/completion world pos symbol)
         (let* ([symbols (rest (map string->symbol (magic-options world pos symbol)))])
           (if (empty? symbols)
               symbol
               (string->symbol (list->string (list-gcd (map string->list (map symbol->string symbols))))))))
-
-
+      
+      
       ;; magic-bash : World symbol -> World
       (define (magic-bash world symbol)
         (let ([a-rope (string->rope (symbol->string (magic/completion world symbol)))])
