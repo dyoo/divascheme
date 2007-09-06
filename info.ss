@@ -25,6 +25,7 @@
   ;; Some of the tests we have are broken; don't try to
   ;; compile them.
   (define compile-omit-files (list "tests/actions-test.ss"
+                                   "tests/interpreter-test.ss"
                                    "tests/structures-test.ss"
                                    "tests/templates-test.ss"
                                    "tests/traversal-test.ss"
