@@ -73,8 +73,8 @@
           (eval-Open false world loc what 0 0 false 'Normal)]
          [(struct Verb ((struct Command ('Open-Square)) loc what))
           (eval-Open true world loc what 0 0 false 'Normal)]
-         [(struct Verb ((struct Symbol-Cmd (symbol)) loc #f))
-          (eval-Symbol world symbol loc 0 0 false 'Normal)]
+         [(struct Verb ((struct InsertRope-Cmd (rope)) loc #f))
+          (eval-InsertRope world rope loc 0 0 false 'Normal)]
          [(struct Verb ((struct Command ('Close)) #f #f))
           (eval-Close world)]
          [(struct Verb ((struct Command ('Insert)) loc #f))
@@ -413,13 +413,13 @@
                    [World-Pass-f     Pass-f])))
 
 
-  ;; eval-Symbol : World symbol Location/false non-negative-integer non-negative-integer boolean mode -> World
-  (define (eval-Symbol world symbol loc/false template-number magic-number
+  ;; eval-InsertRope : World rope Location/false non-negative-integer non-negative-integer boolean mode -> World
+  (define (eval-InsertRope world a-rope loc/false template-number magic-number
                        template/magic-wrap? mode)
     (local
         ((define (make-unary-callback new-template-number new-magic-number new-mode)
            (lambda (new-world)
-             (eval-Symbol world symbol loc/false
+             (eval-InsertRope world a-rope loc/false
                           new-template-number
                           new-magic-number
                           template/magic-wrap?
@@ -427,7 +427,7 @@
          
          (define (make-binary-callback new-template-number new-magic-number new-mode)
            (lambda (new-world template/magic-wrap?)
-             (eval-Symbol world symbol loc/false
+             (eval-InsertRope world a-rope loc/false
                           new-template-number
                           new-magic-number
                           template/magic-wrap?
@@ -459,7 +459,9 @@
                                loc-base loc/false)]
                     [(new-world)
                      (send (current-actions) symbol
-                           world symbol (and loc/false pos)
+                           world
+                           (string->symbol (rope->string a-rope))
+                           (and loc/false pos)
                            template-number magic-number template/magic-wrap?)]
                     [(Magic-f)
                      (make-binary-callback 0 (add1 magic-number) 'Magic)]

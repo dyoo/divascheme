@@ -110,8 +110,7 @@
                                      (string->symbol (rope->string a-rope))))))
             
             (interpret! world
-                        (make-Verb (make-Symbol-Cmd
-                                    (string->symbol (rope->string a-rope)))
+                        (make-Verb (make-InsertRope-Cmd a-rope)
                                    false
                                    false))))
       

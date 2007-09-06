@@ -426,11 +426,11 @@
   
   (define-datatype Verb-Content
     [Command (command)]
-    [Symbol-Cmd (symbol)])
+    [InsertRope-Cmd (rope)])
   
   (provide-datatype/contract Verb-Content
                              [Command (command?)]
-                             [Symbol-Cmd (symbol?)])
+                             [InsertRope-Cmd (rope?)])
   
   
   (define-datatype Protocol-Syntax-Tree
