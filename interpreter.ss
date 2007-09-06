@@ -475,8 +475,7 @@
                      [World-undo world]
                      [World-redo false]
                      [World-Magic-f Magic-f]
-                     [World-Pass-f Pass-f])))
-    )
+                     [World-Pass-f Pass-f]))))
   
   
   

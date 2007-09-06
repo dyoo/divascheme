@@ -432,7 +432,8 @@
                                 set-on-loss-focus                        ;; set-on-loss-focus
                                 set-after-insert-callback                ;; set-after-insert-callback
                                 set-after-delete-callback                ;; set-after-delete-callback
-                                (lambda (world ast) (diva-ast-put/wait+world world ast)) ;; interpreter
+                                (lambda (world ast)
+                                  (diva-ast-put/wait+world world ast)) ;; interpreter
                                 on-exit                                     ;; post-exit-hook
                                 cmd                                      ;; cmd
                                 edit?                                    ;; edit?

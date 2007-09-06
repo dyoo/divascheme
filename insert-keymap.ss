@@ -6,11 +6,11 @@
            (only (lib "1.ss" "srfi") circular-list)
            (lib "framework.ss" "framework")
            "traversal.ss"
-           "long-prefix.ss"
            "utilities.ss"
            "structures.ss"
            "choose-paren.ss"
            "in-something.ss"
+           "text-rope-mixin.ss"
            (prefix preferences: "diva-preferences.ss"))
   
   
@@ -32,7 +32,7 @@
     (format "~a~a" (case (system-type)
                      [(macosx macos) "d:"]
                      [(windows)      "m:"]
-		     [(unix)         "m:"]
+                     [(unix)         "m:"]
 		     [else           "m:"]) str))
   
   
@@ -94,20 +94,20 @@
   (define make-insert-mode
     (lambda (window actions diva-message get-world set-world set-on-focus-lost
                     set-after-insert-callback set-after-delete-callback
-                    interpreter post-exit-hook cmd edit?)
+                    interpret! post-exit-hook cmd edit?)
       
       (define (consume-text world pending-open text)
         (if pending-open
-            (interpreter (Pending-world pending-open)
+            (interpret! (Pending-world pending-open)
                          (make-Verb (make-Command (Pending-symbol pending-open))
                                     false
                                     (make-WhatN (make-Symbol-Noun (string->symbol text)))))
             
-            (interpreter world (make-Verb (make-Symbol-Cmd (string->symbol text)) false false))))
+            (interpret! world (make-Verb (make-Symbol-Cmd (string->symbol text)) false false))))
       
       
       (define (consume-cmd world symbol)
-        (interpreter world (make-Verb (make-Command symbol) false false)))
+        (interpret! world (make-Verb (make-Command symbol) false false)))
       
       (let ()
         
@@ -127,6 +127,13 @@
         (define (get-text)
           (send window get-text left-edge-of-insert right-edge-of-insert))
         
+        ;; get-rope: -> rope
+        ;; Returns the contents between the left and right edge of the
+        ;; insertion point.
+        (define (get-rope)
+          (read-subrope-in-text window left-edge-of-insert
+                                (- right-edge-of-insert left-edge-of-insert)))
+        
         (define (get-text-to-cursor)
           (send window get-text left-edge-of-insert (send window get-start-position)))
         
@@ -137,7 +144,7 @@
         (define (set-insert&delete-callbacks)
           (set-after-insert-callback on-insert)
           (set-after-delete-callback on-delete))
-
+        
         (define (unset-insert&delete-callbacks)
           (set-after-insert-callback void)
           (set-after-delete-callback void))
