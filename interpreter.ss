@@ -416,58 +416,68 @@
   ;; eval-Symbol : World symbol Location/false non-negative-integer non-negative-integer boolean mode -> World
   (define (eval-Symbol world symbol loc/false template-number magic-number
                        template/magic-wrap? mode)
-    (let* ([loc-base
-            (World-cursor-position world)]
-           [pos
-            (eval-Loc world (make-make-metric world metric-forward)
-                      loc-base loc/false)]
-           [new-world
-            (send (current-actions) symbol
-                  world symbol (and loc/false pos)
-                  template-number magic-number template/magic-wrap?)]
-           [Magic-f
-            (lambda (new-world template/magic-wrap?)
-              (eval-Symbol world symbol loc/false 0
-                           (add1 magic-number) template/magic-wrap? 'Magic))]
-           [Magic-Next-f
-            (lambda (new-world)
-              (eval-Symbol world symbol loc/false 0
-                           (add1 magic-number) template/magic-wrap? 'Magic))]
-           [Magic-Previous-f
-            (lambda (new-world)
-              (eval-Symbol world symbol loc/false 0
-                           (sub1 magic-number) template/magic-wrap? 'Magic))]
-           [Pass-f
-            (lambda (new-world template/magic-wrap?)
-              (eval-Symbol world symbol loc/false (add1 template-number)
-                           magic-number template/magic-wrap? 'Pass))]
-           [Pass-Next-f
-            (lambda (new-world)
-              (eval-Symbol world symbol loc/false (add1 template-number)
-                           magic-number template/magic-wrap? 'Pass))]
-           [Pass-Previous-f
-            (lambda (new-world)
-              (eval-Symbol world symbol loc/false (sub1 template-number)
-                           magic-number template/magic-wrap? 'Pass))]
-           [Next-f     (match mode
-                         ['Normal (default-Next-f)]
-                         ['Magic     Magic-Next-f ]
-                         ['Pass       Pass-Next-f ])]
-           [Previous-f (match mode
-                         ['Normal (default-Previous-f)]
-                         ['Magic     Magic-Previous-f ]
-                         ['Pass       Pass-Previous-f ])])
+    (local
+        ((define (make-unary-callback new-template-number new-magic-number new-mode)
+           (lambda (new-world)
+             (eval-Symbol world symbol loc/false
+                          new-template-number
+                          new-magic-number
+                          template/magic-wrap?
+                          new-mode)))
+         
+         (define (make-binary-callback new-template-number new-magic-number new-mode)
+           (lambda (new-world template/magic-wrap?)
+             (eval-Symbol world symbol loc/false
+                          new-template-number
+                          new-magic-number
+                          template/magic-wrap?
+                          new-mode)))
+         
+         (define (get-Next-and-Previous-f)
+           (let ([Magic-Next-f
+                  (make-unary-callback 0 (add1 magic-number) 'Magic)]
+                 [Magic-Previous-f
+                  (make-unary-callback 0 (sub1 magic-number) 'Magic)]
+                 [Pass-Next-f
+                  (make-unary-callback (add1 template-number) magic-number 'Pass)]
+                 [Pass-Previous-f
+                  (make-unary-callback (sub1 template-number) magic-number 'Pass)])
+             (let ([Next-f (match mode
+                             ['Normal (default-Next-f)]
+                             ['Magic Magic-Next-f]
+                             ['Pass Pass-Next-f])]
+                   [Previous-f (match mode
+                                 ['Normal (default-Previous-f)]
+                                 ['Magic Magic-Previous-f]
+                                 ['Pass Pass-Previous-f])])
+               (values Next-f Previous-f)))))
       
-      (copy-struct World new-world
-                   [World-target-column #f]
-                   [World-Next-f     Next-f]
-                   [World-Previous-f Previous-f]
-                   [World-cancel     world]
-                   [World-undo       world]
-                   [World-redo       false]
-                   [World-Magic-f    Magic-f]
-                   [World-Pass-f     Pass-f])))
-
+      (let*-values ([(loc-base)
+                     (World-cursor-position world)]
+                    [(pos)
+                     (eval-Loc world (make-make-metric world metric-forward)
+                               loc-base loc/false)]
+                    [(new-world)
+                     (send (current-actions) symbol
+                           world symbol (and loc/false pos)
+                           template-number magic-number template/magic-wrap?)]
+                    [(Magic-f)
+                     (make-binary-callback 0 (add1 magic-number) 'Magic)]
+                    [(Pass-f)
+                     (make-binary-callback (add1 template-number) magic-number 'Pass)]
+                    [(Next-f Previous-f)
+                     (get-Next-and-Previous-f)])
+        (copy-struct World new-world
+                     [World-target-column #f]
+                     [World-Next-f Next-f]
+                     [World-Previous-f Previous-f]
+                     [World-cancel world]
+                     [World-undo world]
+                     [World-redo false]
+                     [World-Magic-f Magic-f]
+                     [World-Pass-f Pass-f])))
+    )
+  
   
   
   ;; eval-Close : World -> World
