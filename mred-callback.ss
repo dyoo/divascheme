@@ -224,24 +224,16 @@
         (define (last-char text)
           (string-ref text (sub1 (string-length text))))
         
-        (define (convert-non-control-to-X a-str)
-          (build-string
-           (string-length a-str)
-           (lambda (i)
-             (let ([ch (string-ref a-str i)])
-               (cond [(< (char->integer ch) 32)
-                      ch]
-                     [else #\X])))))
-        
         (define (hide-annotations annotated-text)
           (cond
             [(and (> (string-length annotated-text) 0)
                   (char-whitespace? (last-char annotated-text)))
              (string-append
-              (convert-non-control-to-X (all-but-last annotated-text))
+              (string-convert-non-control-chars
+               (all-but-last annotated-text) #\X)
               (string (last-char annotated-text)))]
             [else
-             (convert-non-control-to-X annotated-text)]))
+             (string-convert-non-control-chars annotated-text #\X)]))
         (let ([a-rope (get-rope)]
               [text (get-text)])
           (rope-append

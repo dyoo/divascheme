@@ -561,6 +561,17 @@
   (define (get-mzscheme-mapped-symbols)
     (namespace-mapped-symbols (make-namespace)))
   
+  (provide/contract [string-convert-non-control-chars
+                     (string? char? . -> . string?)])
+  (define (string-convert-non-control-chars a-str a-char)
+    (build-string
+     (string-length a-str)
+     (lambda (i)
+       (let ([ch (string-ref a-str i)])
+         (cond [(< (char->integer ch) 32)
+                ch]
+               [else a-char])))))
+  
   (provide timef)
   (define (timef label thunk)
     (let-values ([(results cpu real gc)

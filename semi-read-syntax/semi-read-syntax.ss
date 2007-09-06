@@ -7,6 +7,7 @@
            (lib "port.ss")
            (only (lib "1.ss" "srfi") take)
            (only (lib "13.ss" "srfi") string-prefix?)
+           "../utilities.ss"
            "lexer.ss")
   
   ;; A parser for DivaScheme that tries to maintain some of the semi-structure
@@ -141,6 +142,15 @@
                       (hash-table-put! ht (position-offset (position-token-start-pos pos-token)) val)
                       (do-ec (:range x (string-length val))
                              (display "X" to-op))]
+                     [(string-prefix? "#|" val)
+                      (hash-table-put! ht (position-offset (position-token-start-pos pos-token)) val)
+                      (display "\"X" to-op)
+                      (display (string-convert-non-control-chars
+                                (substring val 2
+                                           (- (string-length val) 2))
+                                #\X)
+                               to-op)
+                      (display "X\"" to-op) ]
                      [else
                       (display val to-op)])]
                   [(space)

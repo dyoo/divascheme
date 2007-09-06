@@ -17,6 +17,9 @@ Here strings don't work.
 
 Nested comments #| |# don't work.
 
+    - fixed
+
+
 
 Closing a "---" that doesn't have an $expr$ holder kills an sexpr that
 probably shouldn't die.
