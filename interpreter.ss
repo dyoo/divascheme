@@ -389,6 +389,10 @@
           (lambda (new-world template/magic-wrap?)
             (eval-Open square? world loc/false what/false
                        0 (add1 magic-number) template/magic-wrap? 'Magic))]
+         [Pass-f
+          (lambda (new-world template/magic-wrap?)
+            (eval-Open square? world loc/false what/false
+                       (add1 template-number) magic-number template/magic-wrap? 'Pass))]
          [Magic-Next-f
           (lambda (new-world)
             (eval-Open square? world loc/false what/false
@@ -397,10 +401,6 @@
           (lambda (new-world)
             (eval-Open square? world loc/false what/false
                        0 (add1 magic-number) template/magic-wrap? 'Magic))]
-         [Pass-f
-          (lambda (new-world template/magic-wrap?)
-            (eval-Open square? world loc/false what/false
-                       (add1 template-number) magic-number template/magic-wrap? 'Pass))]
          [Pass-Next-f
           (lambda (new-world)
             (eval-Open square? world loc/false what/false
@@ -474,9 +474,9 @@
                      (eval-Loc world (make-make-metric world metric-forward)
                                loc-base loc/false)]
                     [(new-world)
-                     (send (current-actions) symbol
+                     (send (current-actions) insert-rope
                            world
-                           (string->symbol (rope->string a-rope))
+                           a-rope
                            (and loc/false pos)
                            template-number magic-number template/magic-wrap?)]
                     [(Magic-f)

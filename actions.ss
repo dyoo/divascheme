@@ -64,7 +64,7 @@
               close
               dedouble-ellipsis
               open
-              symbol
+              insert-rope
               holder
               bring
               push
@@ -442,9 +442,9 @@
         (command world symbol/false pos/false true
                  square? template-number magic-number template/magic-wrap?))
       
-      ;; symbol : World symbol pos/false non-negative-integer non-negative-integer boolean -> World
-      (define (symbol world symbol pos/false template-number magic-number template/magic-wrap?)
-        (command world symbol pos/false
+      ;; insert-rope : World symbol pos/false non-negative-integer non-negative-integer boolean -> World
+      (define (insert-rope world a-rope pos/false template-number magic-number template/magic-wrap?)
+        (command world (string->symbol (rope->string a-rope)) pos/false
                  false false template-number
                  magic-number template/magic-wrap?))
       
