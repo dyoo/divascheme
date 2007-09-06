@@ -320,7 +320,8 @@
              [result2 (find-all (syntax-begins-with? symbol) (World-syntax-list world))])
          (sort/metric (make-metric-f base) (append result1 result2)))]
       #; [(struct The-Symbol (symbol))
-          (find-all/metric (syntax-is-symbol? symbol) (make-metric-f base) (World-syntax-list world))]))
+          (find-all/metric (syntax-is-symbol? symbol) (make-metric-f base) (World-syntax-list world))]
+      [_ (raise (make-voice-exn "This does not mean anything for me"))]))
   
   ;; eval-Loc+What : World (pos -> metric) (union Loc false) (union What false) -> (union pos syntax)
   (define (eval-Loc+What world make-metric-f loc/false what/false)
