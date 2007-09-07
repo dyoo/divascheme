@@ -13,30 +13,36 @@
   ;; standard conventions of removing whitespace around parens.
   ;; Positional markers within the rope will be shifted according to deleted whitespace.
   (define (cleanup-whitespace a-rope at-index markers)
-    (printf "cleanup-whitespace: ~s ~a ~a~n" (rope->string a-rope) at-index markers)
+    #; (printf "cleanup-whitespace: ~s ~a ~a~n" (rope->string a-rope) at-index markers)
     (local ((define ip (relocate-input-port
                         (open-input-rope a-rope)
                         #f #f
-                        (add1 at-index))))
-      (let loop ([pos-tok (plt-lexer ip)]
+                        (add1 at-index)))
+            (define (next-position-token)
+              (plt-lexer ip)))
+      (let loop ([pos-tok (next-position-token)]
                  [kill-leading-whitespace? #t]
                  [markers (map add1 markers)]
-                 [acc (string->rope "")])
+                 [acc (string->rope "")]
+                 [count-deleted-chars 0])
         (local ((define tok (position-token-token pos-tok))
-                (define start-pos (position-offset (position-token-start-pos pos-tok)))
+                (define start-pos 
+                  (- (position-offset (position-token-start-pos pos-tok)) 
+                     count-deleted-chars))
                 
                 (define (leave-preserved kill-leading-whitespace?)
-                  (loop (plt-lexer ip)
+                  (loop (next-position-token)
                         kill-leading-whitespace?
                         markers
                         (rope-append acc
                                      ((if (string? (token-value tok))
                                           string->rope
                                           special->rope)
-                                      (token-value tok)))))
+                                      (token-value tok)))
+                        count-deleted-chars))
                 
                 (define (handle-space)
-                  (local ((define next-pos-token (plt-lexer ip))
+                  (local ((define next-pos-token (next-position-token))
                           (define next-tok (position-token-token next-pos-token))
                           
                           (define footer-cleaner-f
@@ -48,11 +54,14 @@
                        (let-values ([(new-str new-markers)
                                      (truncate-all-but-newlines 
                                       (token-value tok)
-                                      (position-offset (position-token-start-pos pos-tok))
+                                      (- (position-offset (position-token-start-pos pos-tok))
+                                         count-deleted-chars) 
                                       markers)])
                          (loop next-pos-token #t
                                new-markers
-                               (rope-append acc (string->rope new-str))))]
+                               (rope-append acc (string->rope new-str))
+                               (+ count-deleted-chars 
+                                  (string-length-delta new-str (token-value tok)))))]
                       
                       [else
                        (local ((define-values (whitespace new-markers-1)
@@ -61,7 +70,10 @@
                                  (footer-cleaner-f whitespace start-pos new-markers-1)))
                          (loop next-pos-token #t
                                new-markers-2
-                               (rope-append acc (string->rope new-whitespace))))]))))
+                               (rope-append acc (string->rope new-whitespace))
+                               (+ count-deleted-chars 
+                                  (string-length-delta 
+                                   new-whitespace (token-value tok)))))]))))
           (case (token-name tok)
             [(atom)
              (leave-preserved #f)]
@@ -76,8 +88,8 @@
             [(space)
              (handle-space)]
             [(end)
-             (printf "==> ~s ~a~n" 
-                     (rope->string acc)
+             #; (printf "==> ~s ~a~n"
+                        (rope->string acc)
                      (map sub1 markers))
              (values acc (map sub1 markers))])))))
   
@@ -96,10 +108,6 @@
            (values new-str new-markers)]
           [else
            (loop new-str new-markers)]))))
-  
-  
-  
-  
   
   
   ;; trim-white-footer: string -> string
@@ -144,7 +152,7 @@
                          (substring a-str end))
                         markers)]
                [else
-                (loop (decrease> (+ at-index (sub1 start)) markers)
+                (loop (decrease> at-index markers)
                       (add1 i))]))))]
       [else
        (values a-str markers)]))
@@ -169,11 +177,14 @@
   ;; If the character we're deleting affects the marker, shift all the markers down by one.
   (define (decrease> index markers)
     (map (lambda (m)
-           (if (>= m index)
+           (if (> m index)
                (max (sub1 m) 1)
                m))
          markers))
   
+  
+  (define (string-length-delta s1 s2) 
+    (- (string-length s2) (string-length s1)))
   
   
   (define positive-number/c (and/c integer? (>=/c 1)))
