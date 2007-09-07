@@ -12,16 +12,17 @@
   ;; Given a rope with Scheme literals and specials, follows
   ;; standard conventions of removing whitespace around parens.
   ;; Positional markers within the rope will be shifted according to deleted whitespace.
-  (define (cleanup-whitespace a-rope start-pos markers)
+  (define (cleanup-whitespace a-rope at-index markers)
     (local ((define ip (relocate-input-port
                         (open-input-rope a-rope)
                         #f #f
-                        (add1 start-pos))))
+                        (add1 at-index))))
       (let loop ([pos-tok (plt-lexer ip)]
                  [kill-leading-whitespace? #t]
                  [markers (map add1 markers)]
                  [acc (string->rope "")])
         (local ((define tok (position-token-token pos-tok))
+                (define start-pos (position-offset (position-token-start-pos pos-tok)))
                 
                 (define (leave-preserved kill-leading-whitespace?)
                   (loop (plt-lexer ip)
@@ -44,11 +45,13 @@
                     (cond
                       [(member (token-name next-tok) (list 'end 'suffix))
                        (loop next-pos-token #t
-                             (truncate-all (token-value tok) start-pos markers)
+                             (truncate-all (token-value tok)
+                                           (position-offset (position-token-start-pos pos-tok))
+                                           markers)
                              acc)]
                       [else
                        (local (
-                               (define start-pos (position-offset (position-token-start-pos pos-tok)))
+                               
                                (define-values (whitespace new-markers-1)
                                  (trim-white-header (token-value tok) start-pos markers))
                                (define-values (new-whitespace new-markers-2)
@@ -56,7 +59,6 @@
                          (loop next-pos-token #t
                                new-markers-2
                                (rope-append acc (string->rope new-whitespace))))]))))
-          
           (case (token-name tok)
             [(atom)
              (leave-preserved #f)]
@@ -144,7 +146,7 @@
   (define (decrease> index markers)
     (map (lambda (m)
            (if (> m index)
-               (max (sub1 m) index)
+               (sub1 m)
                m))
          markers))
   
