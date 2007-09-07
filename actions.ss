@@ -655,10 +655,9 @@
                [line-start (line-pos (World-rope world) pos)])
           (when (= eol-index eof-index)
             (raise (make-voice-exn "No line to join.")))
-          (indent/pos+len (insert
-                           (delete/pos+len world (index->pos eol-index) 1)
-                           (index->pos eol-index) 
-                           (string->rope " "))
+          (indent/pos+len (delete/pos+len
+                           (world-insert-rope world eol-index (string->rope " "))
+                           (add1 (index->pos eol-index)) 1)
                           line-start
                           (+ len (- pos line-start) *indentation-overhang*))))
       

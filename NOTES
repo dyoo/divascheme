@@ -15,6 +15,8 @@ collapsed into "hello\nworld"
 
 Highlight blah, then press enter.
 
+    - fixed.  Silly index deletion problem.
+
 
 
 Copy-and-paste does not use the cleanup functions at the moment.
