@@ -4,8 +4,21 @@
            "../rope.ss"
            "../cleanup-whitespace.ss")
   
+  ;; cw: string -> string
+  ;; Show how cleanup-whitespace handles strings.
   (define (cw s)
-    (rope->string (cleanup-whitespace (string->rope s))))
+    (let-values ([(a-rope _)
+                  (cleanup-whitespace (string->rope s) '())])
+      (rope->string a-rope)))
+  
+  
+  ;; cw/m: string (listof natural) -> (listof natural)
+  ;; Just focus on how markers are preserved after cleanup.
+  (define (cw/m s m)
+    (let-values ([(_ markers)
+                  (cleanup-whitespace (string->rope s) m)])
+      markers))
+  
   
   (define cleanup-whitespace-tests
     (test-suite

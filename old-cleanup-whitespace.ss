@@ -13,12 +13,16 @@
         (let-values
             ([(c m)
               (eat-whitespace index (vector->list (rope->vector a-rope)) markers)])
+          (printf "cleaning up: ~s~n==>~n~s~n"
+                  (rope->string a-rope)
+                  (apply string c))
           (values (vector->rope (list->vector c)) m))))
   
   
-  (define (whitespace? achar)
+  (define (non-line-breaking-whitespace? achar)
     (and (char? achar)
-         (char-whitespace? achar)))
+         (char-whitespace? achar)
+         (not (char=? achar #\newline))))
   
   (define (skip-to index chars markers fn)
     (if (empty? (rest chars))
@@ -35,7 +39,7 @@
     (map (lambda (m) (if (> m index) (sub1 m) m)) markers))
   
   (define (next-state chars)
-    (cond [(whitespace? (first chars))
+    (cond [(non-line-breaking-whitespace? (first chars))
            eat-whitespace]
           [(open-paren? (first chars)) eat-whitespace]
           [(pipe? (first chars)) pipe]
@@ -43,7 +47,7 @@
           [else textchar]))
   
   (define (eat-whitespace index chars markers)
-    (cond [(whitespace? (first chars))
+    (cond [(non-line-breaking-whitespace? (first chars))
            (skip-to index chars markers eat-whitespace)]
           [else (output-to index chars markers (next-state chars))]))
   
@@ -56,11 +60,11 @@
           [else (output-to index chars markers double-quote)]))
   
   (define (textchar index chars markers)
-    (cond [(not (whitespace? (first chars)))
+    (cond [(not (non-line-breaking-whitespace? (first chars)))
            (output-to index chars markers (next-state chars))]
           [(empty? (rest chars))
            (skip-to index chars markers (next-state chars))]
-          [(whitespace? (second chars))
+          [(non-line-breaking-whitespace? (second chars))
            (skip-to index chars markers textchar)]
           [(close-paren? (second chars))
            (skip-to index chars markers textchar)]
