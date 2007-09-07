@@ -266,7 +266,9 @@
                    (loop (stx->lst (first stx-list))))
              (loop (stx->lst (first stx-list))))]
         [else (loop (rest stx-list))])))
-
+  
+  ;; find-pos-sibling-forward: pos (syntax list) -> syntax/false
+  ;; Returns the sibling syntax forward of the given position.
   (define (find-pos-sibling-forward pos stx-list)
     (define (after? stx) (<= pos (syntax-position stx)))
     (let* ([parent (find-pos-parent pos stx-list)])
@@ -274,6 +276,10 @@
           (find after? (stx->lst parent))
           (find after? stx-list))))
   
+  
+  
+  ;; find-pos-sibling-forward: pos (syntax list) -> syntax/false
+  ;; Returns the sibling syntax backward of the given position.
   (define (find-pos-sibling-backward pos stx-list)
     (define (before? stx) (< (syntax-position stx) pos))
     (let* ([parent (find-pos-parent pos stx-list)])

@@ -276,8 +276,17 @@
              (define (cleanup-text/pos world pos)
                (print-mem*
                 'cleanup-text/pos
-                (let* ([start-index (pos->index (line-pos (World-rope world) pos))]
-                       [line (line-rope/pos (World-rope world) pos)]
+                (let* ([start-pos (line-pos (World-rope world) pos)]
+                       [start-pos (cond [(find-pos pos (World-syntax-list world))
+                                         => syntax-position]
+                                        [else start-pos])]
+                       [end-pos (line-end-pos (World-rope world) pos)]
+                       [end-pos (cond [(find-pos pos (World-syntax-list world))
+                                       => syntax-end-position]
+                                      [else end-pos])]
+                       [start-index (pos->index start-pos)]
+                       [end-index (pos->index end-pos)]
+                       [line (subrope (World-rope world) start-index end-index)]
                        [len (rope-length line)])
                   (let-values ([(clean-line lst)
                                 (cleanup-whitespace line start-index
