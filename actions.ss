@@ -280,7 +280,7 @@
                        [line (line-rope/pos (World-rope world) pos)]
                        [len (rope-length line)])
                   (let-values ([(clean-line lst)
-                                (cleanup-whitespace start-index line
+                                (cleanup-whitespace line start-index
                                                     (list (World-selection-index world)
                                                           (World-selection-end-index world)
                                                           (World-mark-index world)
