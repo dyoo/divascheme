@@ -5,6 +5,18 @@ String literals with escapes \\ in them don't clean up correctly.
 Cleanup kills whitespace in strings.  i.e: "hello\n world" will get
 collapsed into "hello\nworld"
 
+   - fixed, but trying to fix case with weird selection.
+
+;;;;;;;;;;;;;;;
+(x (cond
+     (y blah)))
+;;;;;;;;;;;;;;;
+
+
+Highlight blah, then press enter.
+
+
+
 Copy-and-paste does not use the cleanup functions at the moment.
 Also cut and paste are not dedotting anymore.
 
@@ -22,6 +34,8 @@ Nested comments #| |# don't work.
     - fixed, sorta.  They're parsed by semi-parse-syntax finally.  But
 Insert mode doesn't quite work right with nested comments.
 in-something doesn't count how deeply we've nested.
+
+
 
 
 

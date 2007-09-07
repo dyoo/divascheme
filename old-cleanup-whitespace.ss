@@ -9,13 +9,11 @@
   
   ;; cleanup-whitespace : rope index (index list) -> (values rope (index list))
   (define (cleanup-whitespace a-rope index markers)
-    (printf "(cleanup-whitespace ~s ~a ~a)~n" (rope->string a-rope) index markers)
     (if (= (rope-length a-rope) 0)
         (values a-rope markers)
         (let-values
             ([(c m)
               (eat-whitespace index (vector->list (rope->vector a-rope)) markers)])
-          (printf "~s ~a~n" (apply string c) m)
           (values (vector->rope (list->vector c)) m))))
   
   

@@ -21,7 +21,7 @@
   
   (define (cw/im s i m) 
     (let-values ([(new-rope markers)
-                  (cleanup-whitespace (string->rope s) 0 m)])
+                  (cleanup-whitespace (string->rope s) i m)])
       (list (rope->string new-rope) markers)))
   
   
@@ -100,7 +100,14 @@
                            5874
                            ' (5877 5885))
                     (list ";; decrease> "
-                          ' (5874 5882))))))
+                          ' (5874 5882))))
+     
+     (test-case 
+      "this illustrated a bug" 
+      (check-equal? (cw/im "     (y \nblah)))" 9 '(18 22 26 26))
+                    '("(y\nblah)))" 
+                      (12 16 20 20))))
+     ))
   
   
   
