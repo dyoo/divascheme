@@ -2,6 +2,7 @@
   (require (lib "contract.ss")
            (lib "lex.ss" "parser-tools")
            (lib "etc.ss")
+           (lib "port.ss")
            "rope.ss"
            "semi-read-syntax/lexer.ss")
   
@@ -10,11 +11,13 @@
   ;; Given a rope with Scheme literals and specials, follows
   ;; standard conventions of removing whitespace around parens.
   ;; Positional markers within the rope will be shifted according to deleted whitespace.
-  (define (cleanup-whitespace a-rope markers)
-    (local ((define ip (open-input-rope a-rope)))
+  (define (cleanup-whitespace a-rope start-pos markers)
+    (local ((define ip (relocate-input-port
+                        (open-input-rope a-rope)
+                        #f #f (add1 start-pos))))
       (let loop ([pos-tok (plt-lexer ip)]
                  [kill-leading-whitespace? #t]
-                 [markers markers]
+                 [markers (map add1 markers)]
                  [acc (string->rope "")])
         (local ((define tok (position-token-token pos-tok))
                 
@@ -65,7 +68,7 @@
             [(space)
              (handle-space)]
             [(end)
-             (values acc markers)])))))
+             (values acc (map sub1 markers))])))))
   
   
   ;; trim-white-header: string natural-number (listof natural-number) -> (values string (listof natural-number)
@@ -102,6 +105,8 @@
     markers)
   
   
-  (provide/contract [cleanup-whitespace ((rope? (listof natural-number/c))
+  (define positive-number/c (and/c integer? (>=/c 1)))
+  
+  (provide/contract [cleanup-whitespace ((rope? natural-number/c (listof natural-number/c))
                                          . ->* .
                                          (rope? (listof natural-number/c)))]))

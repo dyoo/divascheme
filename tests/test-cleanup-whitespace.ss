@@ -8,7 +8,7 @@
   ;; Show how cleanup-whitespace handles strings.
   (define (cw s)
     (let-values ([(a-rope _)
-                  (cleanup-whitespace (string->rope s) '())])
+                  (cleanup-whitespace (string->rope s) 0 '())])
       (rope->string a-rope)))
   
   
@@ -16,7 +16,7 @@
   ;; Just focus on how markers are preserved after cleanup.
   (define (cw/m s m)
     (let-values ([(_ markers)
-                  (cleanup-whitespace (string->rope s) m)])
+                  (cleanup-whitespace (string->rope s) 0 m)])
       markers))
   
   
