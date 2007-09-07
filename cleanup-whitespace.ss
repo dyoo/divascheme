@@ -135,7 +135,7 @@
                          (substring a-str end))
                         markers)]
                [else
-                (loop (decrease> (+ at-index start) markers)
+                (loop (decrease> (+ at-index (sub1 start)) markers)
                       (add1 i))]))))]
       [else
        (values a-str markers)]))
@@ -146,7 +146,7 @@
   (define (decrease> index markers)
     (map (lambda (m)
            (if (> m index)
-               (sub1 m)
+               (max (sub1 m) 1)
                m))
          markers))
   
