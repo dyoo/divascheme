@@ -9,7 +9,7 @@
   ;; cleanup-whitespace: rope (listof natural-number) -> rope
   ;; Given a rope with Scheme literals and specials, follows
   ;; standard conventions of removing whitespace around parens.
-  ;; Markers within the rope will be shifted according to deleted whitespace.
+  ;; Positional markers within the rope will be shifted according to deleted whitespace.
   (define (cleanup-whitespace a-rope markers)
     (local ((define ip (open-input-rope a-rope)))
       (let loop ([pos-tok (plt-lexer ip)]
@@ -29,21 +29,27 @@
                                       (token-value tok)))))
                 
                 (define (handle-space)
-                  (local ((define next-pos-tok (plt-lexer ip))
-                          (define next-tok (position-token-token next-pos-tok))
-                          (define whitespace
-                            (regexp-replace* "([ \t]*)([\r\n]+)"
-                                             (token-value tok)
-                                             "\\2")))
+                  (local ((define next-pos-token (plt-lexer ip))
+                          (define start-pos (position-offset (position-token-start-pos next-pos-token)))
+                          (define next-tok (position-token-token next-pos-token))
+                          
+                          (define footer-cleaner-f
+                            (if kill-leading-whitespace?
+                                truncate-white-footer
+                                trim-white-footer)))
                     (cond
                       [(member (token-name next-tok) (list 'end 'suffix))
-                       (loop next-pos-tok #t markers acc)]
-                      [kill-leading-whitespace?
-                       (loop next-pos-tok #t markers
-                             (rope-append acc (string->rope (truncate-white-footer whitespace))))]
+                       (loop next-pos-token #t
+                             (truncate-all (token-value tok) start-pos markers)
+                             acc)]
                       [else
-                       (loop next-pos-tok #t markers
-                             (rope-append acc (string->rope (trim-white-footer whitespace))))]))))
+                       (local ((define-values (whitespace new-markers-1)
+                                 (trim-white-header (token-value tok) start-pos markers))
+                               (define-values (new-whitespace new-markers-2)
+                                 (footer-cleaner-f whitespace start-pos new-markers-1)))
+                         (loop next-pos-token #t
+                               new-markers-2
+                               (rope-append acc (string->rope new-whitespace))))]))))
           
           (case (token-name tok)
             [(atom)
@@ -61,20 +67,39 @@
             [(end)
              (values acc markers)])))))
   
+  
+  ;; trim-white-header: string natural-number (listof natural-number) -> (values string (listof natural-number)
+  (define (trim-white-header a-str start-index markers)
+    (let loop ([index start-index]
+               [markers markers]
+               [chars/rev '()])
+      (values
+       (regexp-replace* "([ \t]*)([\r\n]+)" a-str "\\2")
+       markers)))
+  
+  
   ;; trim-white-footer: string -> string
   ;; Removes all but one whitespace from the end of a string.
-  (define (trim-white-footer a-space)
+  (define (trim-white-footer a-str start-index markers)
     (cond
-      [(regexp-match "[\r\n]" a-space)
-       (regexp-replace "[ ]+$" a-space "")]
+      [(regexp-match "[\r\n]" a-str)
+       (values (regexp-replace "[ ]+$" a-str "")
+               markers)]
       [else
-       (regexp-replace "[ ]+$" a-space " ")]))
+       (values (regexp-replace "[ ]+$" a-str " ")
+               markers)]))
   
   
   ;; truncate-white-footer: string -> string
   ;; Removes whitespace from the end of a string.
-  (define (truncate-white-footer a-space)
-    (regexp-replace "[ ]+$" a-space ""))
+  (define (truncate-white-footer a-space start-index markers)
+    (values (regexp-replace "[ ]+$" a-space "")
+            markers))
+  
+  
+  ;; truncate-all: string natural-number (listof natural-number) -> (listof natural-number)
+  (define (truncate-all a-str start-index markers)
+    markers)
   
   
   (provide/contract [cleanup-whitespace ((rope? (listof natural-number/c))
