@@ -244,44 +244,19 @@
       
       ;; cleanup-text/pos+len
       (define (cleanup-text/pos+len world pos len)
-        #; (indent/pos+len
-            world
-            pos
-            len)
         (local
-            (
-             ;; line-map : (World pos -> World) -> World pos len -> World
-             (define ((line-map fun/pos) world pos len)
-               ;; aux : pos non-negative-integer -> World
-               (define (aux world pos len)
-                 (if (> 0 len)
-                     world
-                     (let* ([old-len (rope-length (World-rope world))]
-                            [world (fun/pos world pos)]
-                            [new-len (rope-length (World-rope world))]
-                            [diff (- new-len old-len)]
-                            [-pos (add1 (line-end-pos (World-rope world) pos))]
-                            [-len (- (+ len diff) (- -pos pos))])
-                       (if (<= (pos->index -pos) new-len)
-                           (aux world -pos -len)
-                           world))))
-               (let* ([-pos (line-pos (World-rope world) pos)]
-                      [-len (+ len (- pos -pos))])
-                 (aux world -pos -len)))
-             
-             
-             ;; cleanup-text/pos : World pos -> World
+            (;; cleanup-text/between: World pos -> World
              ;; This function eats all the extra white-space on the line of pos
              ;; and reindents it.
-             (define (cleanup-text/pos world pos)
+             (define (cleanup-text/between world start-pos end-pos)
                (print-mem*
                 'cleanup-text/pos
-                (let* ([start-pos (line-pos (World-rope world) pos)]
-                       [start-pos (cond [(find-pos pos (World-syntax-list world))
+                (let* ([start-pos (line-pos (World-rope world) start-pos)]
+                       [start-pos (cond [(find-pos start-pos (World-syntax-list world))
                                          => syntax-position]
                                         [else start-pos])]
-                       [end-pos (line-end-pos (World-rope world) pos)]
-                       [end-pos (cond [(find-pos pos (World-syntax-list world))
+                       [end-pos (line-end-pos (World-rope world) end-pos)]
+                       [end-pos (cond [(find-pos end-pos (World-syntax-list world))
                                        => syntax-end-position]
                                       [else end-pos])]
                        [start-index (pos->index start-pos)]
@@ -302,13 +277,8 @@
                                     (index->pos (third lst))
                                     (- (fourth lst) (third lst)))))))))
           
-          (let* ([start-pos (line-pos (World-rope world) pos)]
-                 [new-world ((line-map (lambda (world pos) (cleanup-text/pos world pos)))
-                             world pos len)])
-            (indent/pos+len
-             new-world
-             start-pos
-             (+ len (- pos start-pos))))))
+          (let ([new-world (cleanup-text/between world pos (+ pos len))])
+            (indent/pos+len new-world pos len))))
       
       
       

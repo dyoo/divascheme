@@ -13,9 +13,6 @@
         (let-values
             ([(c m)
               (eat-whitespace index (vector->list (rope->vector a-rope)) markers)])
-          (printf "cleaning up: ~s~n==>~n~s~n"
-                  (rope->string a-rope)
-                  (apply string c))
           (values (vector->rope (list->vector c)) m))))
   
   
