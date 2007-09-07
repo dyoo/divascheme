@@ -5,7 +5,6 @@
            (lib "list.ss")
            (lib "plt-match.ss")
            (lib "mred.ss" "mred")
-           (only (lib "1.ss" "srfi") lset-union)
            (lib "framework.ss" "framework")
            "traversal.ss"
            "structures.ss"
@@ -15,7 +14,8 @@
            "tag-reader.ss"
            "text-rope-mixin.ss"
            "rope.ss"
-           "long-prefix.ss")
+           "long-prefix.ss"
+           "old-cleanup-whitespace.ss")
   
   (define voice-debug false)
   (define (voice-printf . args)
@@ -30,19 +30,9 @@
              (char=? achar #\[)
              (char=? achar #\{))))
   
-  (define (close-paren? achar)
-    (and (char? achar)
-         (or (char=? achar #\))
-             (char=? achar #\])
-             (char=? achar #\}))))
   
-  (define (pipe? achar)
-    (and (char? achar)
-         (char=? achar #\|)))
   
-  (define (double-quote? achar)
-    (and (char? achar)
-         (char=? achar #\")))
+  
   
   
   (provide actions%)
@@ -794,62 +784,4 @@
       ;; magic-bash : World symbol -> World
       (define (magic-bash world symbol)
         (let ([a-rope (string->rope (symbol->string (magic/completion world symbol)))])
-          (cursor-at-selection-end (replace/selection world a-rope))))))
-
-  
-  ;; cleanup-whitespace : index rope (index list) -> str and (index list)
-  (define (cleanup-whitespace index a-rope markers)
-    (define (whitespace? achar)
-      (and (char? achar)
-           (char-whitespace? achar)))
-    
-    (define (skip-to index chars markers fn)
-      (if (empty? (rest chars))
-          (values empty (decrease> index markers))
-          (fn index (rest chars) (decrease> index markers))))
-    
-    (define (output-to index chars markers fn)
-      (if (empty? (rest chars))
-          (values chars markers)
-          (let-values ([(c m) (fn (add1 index) (rest chars) markers)])
-            (values (cons (first chars) c) m))))
-    
-    (define (decrease> index markers)
-      (map (lambda (m) (if (> m index) (sub1 m) m)) markers))
-    
-    (define (next-state chars)
-      (cond [(whitespace? (first chars))
-             eat-whitespace]
-            [(open-paren? (first chars)) eat-whitespace]
-            [(pipe? (first chars)) pipe]
-            [(double-quote? (first chars)) double-quote]
-            [else textchar]))
-    
-    (define (eat-whitespace index chars markers)
-      (cond [(whitespace? (first chars))
-             (skip-to index chars markers eat-whitespace)]
-            [else (output-to index chars markers (next-state chars))]))
-    
-    (define (pipe index chars markers)
-      (cond [(pipe? (first chars)) (output-to index chars markers textchar)]
-            [else (output-to index chars markers pipe)]))
-    
-    (define (double-quote index chars markers)
-      (cond [(double-quote? (first chars)) (output-to index chars markers textchar)]
-            [else (output-to index chars markers double-quote)]))
-    
-    (define (textchar index chars markers)
-      (cond [(not (whitespace? (first chars)))
-             (output-to index chars markers (next-state chars))]
-            [(empty? (rest chars))
-             (skip-to index chars markers (next-state chars))]
-            [(whitespace? (second chars))
-             (skip-to index chars markers textchar)]
-            [(close-paren? (second chars))
-             (skip-to index chars markers textchar)]
-            [else (output-to index chars markers eat-whitespace)]))
-    
-    (if (= (rope-length a-rope) 0)
-        (values a-rope markers)
-        (let-values ([(c m) (eat-whitespace index (vector->list (rope->vector a-rope)) markers)])
-          (values (vector->rope (list->vector c)) m)))))
+          (cursor-at-selection-end (replace/selection world a-rope)))))))
