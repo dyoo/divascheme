@@ -19,6 +19,11 @@
                   (cleanup-whitespace (string->rope s) 0 m)])
       markers))
   
+  (define (cw/im s i m) 
+    (let-values ([(new-rope markers)
+                  (cleanup-whitespace (string->rope s) 0 m)])
+      (list (rope->string new-rope) markers)))
+  
   
   (define cleanup-whitespace-tests
     (test-suite
@@ -74,7 +79,23 @@
      (test-case
       "simple markers 3"
       (check-equal? (cw/m "    " (list 0 6))
-                    (list 0 2)))))
+                    (list 0 2)))
+     
+     (test-case 
+      "simple cond" 
+      (check-equal? (cw/im " (cond $expr$ ---) " 0 '(0 19 19 19))
+                    '("(cond $expr$ ---)" (0 17 17 17))))
+     
+     
+     (test-case
+      "shifting the starting position"
+      (check-equal? (cw/im "  " 5874 (list 5876 5876 6163 6163))
+                    (list "" (list 5874 5874 6161 6161)))
+      (check-equal? (cw/im "   ;; decrease> "
+                           5874
+                           ' (5877 5885))
+                    (list ";; decrease> "
+                          ' (5874 5882))))))
   
   
   
