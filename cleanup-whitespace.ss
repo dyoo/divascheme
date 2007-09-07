@@ -50,9 +50,7 @@
                                            markers)
                              acc)]
                       [else
-                       (local (
-                               
-                               (define-values (whitespace new-markers-1)
+                       (local ((define-values (whitespace new-markers-1)
                                  (trim-white-header (token-value tok) start-pos markers))
                                (define-values (new-whitespace new-markers-2)
                                  (footer-cleaner-f whitespace start-pos new-markers-1)))
@@ -145,7 +143,7 @@
   ;; If the character we're deleting affects the marker, shift all the markers down by one.
   (define (decrease> index markers)
     (map (lambda (m)
-           (if (> m index)
+           (if (>= m index)
                (max (sub1 m) 1)
                m))
          markers))

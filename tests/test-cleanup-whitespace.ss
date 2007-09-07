@@ -66,8 +66,8 @@
      
      (test-case
       "simple markers 1"
-      (check-equal? (cw/m "hello   world" (list 0 5))
-                    (list 0 5)))
+      (check-equal? (cw/m "hello   world" (list 0 4))
+                    (list 0 4)))
      
      (test-case
       "simple markers 2"
