@@ -39,8 +39,14 @@ Features:
 * Tab completion behavior improved.  Also, symbols from mzscheme will
   also be considered.
 
+* Improved lexical whitespace cleanup: fixed bug that munged strings
+  spanning multiple lines.
+
+* Lots of other bug fixes.
+
 * General improvements in memory usage and performance.
   
+
 
 Thanks
 ======
