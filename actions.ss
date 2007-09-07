@@ -15,7 +15,7 @@
            "text-rope-mixin.ss"
            "rope.ss"
            "long-prefix.ss"
-           "cleanup-whitespace.ss")
+           "old-cleanup-whitespace.ss")
   
   (define voice-debug false)
   (define (voice-printf . args)

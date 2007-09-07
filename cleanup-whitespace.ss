@@ -44,11 +44,15 @@
                                 trim-white-footer)))
                     (cond
                       [(member (token-name next-tok) (list 'end 'suffix))
-                       (loop next-pos-token #t
-                             (truncate-all (token-value tok)
-                                           (position-offset (position-token-start-pos pos-tok))
-                                           markers)
-                             acc)]
+                       (let-values ([(new-str new-markers)
+                                     (truncate-all-but-newlines 
+                                      (token-value tok)
+                                      (position-offset (position-token-start-pos pos-tok))
+                                      markers)])
+                         (loop next-pos-token #t
+                               new-markers
+                               (rope-append acc (string->rope new-str))))]
+                      
                       [else
                        (local ((define-values (whitespace new-markers-1)
                                  (trim-white-header (token-value tok) start-pos markers))
@@ -91,6 +95,9 @@
   
   
   
+  
+  
+  
   ;; trim-white-footer: string -> string
   ;; Removes all but one whitespace from the end of a string.
   (define (trim-white-footer a-str start-index markers)
@@ -107,11 +114,11 @@
     (adjust-markers "([ \t]+)$" a-str start-index markers))
   
   
-  ;; truncate-all: string natural-number (listof natural-number) -> (listof natural-number)
-  (define (truncate-all a-str start-index markers)
-    (let-values ([(_ new-markers)
-                  (adjust-markers "^(.+)$" a-str start-index markers)])
-      new-markers))
+  ;; truncate-all: string natural-number (listof natural-number) -> (listof string natural-number)
+  (define (truncate-all-but-newlines a-str start-index markers)
+    (let-values ([(new-str new-markers)
+                  (adjust-markers* "([^\n]+)" a-str start-index markers)])
+      (values new-str new-markers)))
   
   
   ;; adjust-markers: regex string number (listof number) -> (values string (listof number))
@@ -137,6 +144,21 @@
                       (add1 i))]))))]
       [else
        (values a-str markers)]))
+  
+  
+  ;; adjust-markers*: regex string natural-number (listof natural-number) -> (values string (listof natural-number))
+  ;; Apply adjust-markers till we hit a fixed point.
+  (define (adjust-markers* regex a-str start-index markers)
+    (let loop ([a-str a-str]
+               [markers markers])
+      (let-values ([(new-str new-markers)
+                    (adjust-markers regex a-str start-index markers)])
+        (cond
+          [(string=? new-str a-str)
+           (values new-str new-markers)]
+          [else
+           (loop new-str new-markers)]))))
+  
   
   
   ;; decrease>: number number -> number

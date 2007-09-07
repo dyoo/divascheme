@@ -76,6 +76,11 @@
       (check-equal? (cw/m "  hello   world" (list 2 6))
                     (list 0 4)))
      
+     (test-case 
+      "cleaning up newlines" 
+      (check-equal? (cw/im "\n" 94 '(95 95 99 99))
+                    '("\n" (95 95 99 99))))
+     
      (test-case
       "simple markers 3"
       (check-equal? (cw/m "    " (list 0 6))
