@@ -76,7 +76,7 @@
   (define (trim-white-header a-str start-index markers)
     (let loop ([a-str a-str]
                [markers markers])
-      (let-values ([(new-str markers)
+      (let-values ([(new-str new-markers)
                     (adjust-markers "([ \t]+)[\r\n]"
                                     1
                                     a-str
@@ -84,9 +84,9 @@
                                     markers)])
         (cond
           [(string=? new-str a-str)
-           (values new-str markers)]
+           (values new-str new-markers)]
           [else
-           (loop new-str markers)]))))
+           (loop new-str new-markers)]))))
   
   
   
@@ -95,23 +95,22 @@
   (define (trim-white-footer a-str start-index markers)
     (cond
       [(regexp-match "[\r\n]" a-str)
-       (values (regexp-replace "[ ]+$" a-str "")
-               markers)]
+       (adjust-markers "([ ]+)$" 1 a-str start-index markers)]
       [else
-       (values (regexp-replace "[ ]+$" a-str " ")
-               markers)]))
+       (adjust-markers "[ ]([ ]*)$" 1 a-str start-index markers)]))
   
   
   ;; truncate-white-footer: string -> string
   ;; Removes whitespace from the end of a string.
-  (define (truncate-white-footer a-space start-index markers)
-    (values (regexp-replace "[ ]+$" a-space "")
-            markers))
+  (define (truncate-white-footer a-str start-index markers)
+    (adjust-markers "([ ]+)$" 1 a-str start-index markers))
   
   
   ;; truncate-all: string natural-number (listof natural-number) -> (listof natural-number)
   (define (truncate-all a-str start-index markers)
-    markers)
+    (let-values ([(_ new-markers)
+                  (adjust-markers "^(.+)$" 1 a-str start-index markers)])
+      new-markers))
   
   
   ;; adjust-markers: regex number string number (listof number) -> (values string (listof number))
