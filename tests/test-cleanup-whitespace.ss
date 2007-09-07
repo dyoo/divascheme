@@ -28,6 +28,10 @@
       (check-equal? (cw "") ""))
      
      (test-case
+      "only whitespace"
+      (check-equal? (cw "      ") ""))
+     
+     (test-case
       "simple case"
       (check-equal? (cw "hello") "hello"))
      
@@ -49,6 +53,13 @@
       (check-equal? (cw "(hello world  \n\n    this is a test )")
                     "(hello world\n\nthis is a test)"))
      
+     
+     (test-case
+      "simple markers 0"
+      (check-equal? (cw/m "    " (list 20 30))
+                    (list 16 26))
+      (check-equal? (cw/m "    " (list 0 6))
+                    (list 0 2)))
      
      (test-case
       "simple markers 1"
