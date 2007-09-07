@@ -57,9 +57,7 @@
      (test-case
       "simple markers 0"
       (check-equal? (cw/m "    " (list 20 30))
-                    (list 16 26))
-      (check-equal? (cw/m "    " (list 0 6))
-                    (list 0 2)))
+                    (list 16 26)))
      
      (test-case
       "simple markers 1"
@@ -71,6 +69,13 @@
       (check-equal? (cw "  hello   world")
                     "hello world")
       (check-equal? (cw/m "  hello   world" (list 2 6))
-                    (list 0 4)))))
+                    (list 0 4)))
+     
+     (test-case
+      "simple markers 3"
+      (check-equal? (cw/m "    " (list 0 6))
+                    (list 0 2)))))
+  
+  
   
   (test/text-ui cleanup-whitespace-tests))

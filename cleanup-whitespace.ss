@@ -35,7 +35,6 @@
                 
                 (define (handle-space)
                   (local ((define next-pos-token (plt-lexer ip))
-                          (define start-pos (position-offset (position-token-start-pos next-pos-token)))
                           (define next-tok (position-token-token next-pos-token))
                           
                           (define footer-cleaner-f
@@ -48,7 +47,9 @@
                              (truncate-all (token-value tok) start-pos markers)
                              acc)]
                       [else
-                       (local ((define-values (whitespace new-markers-1)
+                       (local (
+                               (define start-pos (position-offset (position-token-start-pos pos-tok)))
+                               (define-values (whitespace new-markers-1)
                                  (trim-white-header (token-value tok) start-pos markers))
                                (define-values (new-whitespace new-markers-2)
                                  (footer-cleaner-f whitespace start-pos new-markers-1)))
@@ -141,7 +142,11 @@
   ;; decrease>: number number -> number
   ;; If the character we're deleting affects the marker, shift all the markers down by one.
   (define (decrease> index markers)
-    (map (lambda (m) (if (> m index) (sub1 m) m)) markers))
+    (map (lambda (m)
+           (if (> m index)
+               (max (sub1 m) index)
+               m))
+         markers))
   
   
   
