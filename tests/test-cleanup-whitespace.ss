@@ -49,10 +49,14 @@
       (check-equal? (cw "(hello world  \n\n    this is a test )")
                     "(hello world\n\nthis is a test)"))
      
+     
      (test-case
-      "simple markers"
+      "simple markers 1"
       (check-equal? (cw/m "hello world" (list 0 5))
-                    (list 0 5))
+                    (list 0 5)))
+     
+     (test-case
+      "simple markers 2"
       (check-equal? (cw/m "  hello world" (list 2 7))
                     (list 0 5)))))
   
