@@ -74,36 +74,20 @@
   
   ;; trim-white-header: string natural-number (listof natural-number) -> (values string (listof natural-number)
   (define (trim-white-header a-str start-index markers)
-    (let loop ([i 0]
-               [markers markers]
-               [chars/rev '()])
-      (values
-       (regexp-replace* "([ \t]*)([\r\n]+)" a-str "\\2")
-       markers)))
+    (let loop ([a-str a-str]
+               [markers markers])
+      (let-values ([(new-str markers)
+                    (adjust-markers "([ \t]+)[\r\n]"
+                                    1
+                                    a-str
+                                    start-index
+                                    markers)])
+        (cond
+          [(string=? new-str a-str)
+           (values new-str markers)]
+          [else
+           (loop new-str markers)]))))
   
-  
-  ;; adjust-markers: regex number string number (listof number) -> (values string (listof number))
-  ;; Does the hard work in dropping the whitespace and recomputing the markers.
-  (define (adjust-markers deleting-regex nth-group a-str start-index markers)
-    (cond
-      [(regexp-match-positions deleting-regex a-str)
-       =>
-       (lambda (matches)
-         (local ((define-values (start end)
-                   (values (car (list-ref matches nth-group))
-                           (cdr (list-ref matches nth-group)))))
-           (let loop ([markers markers]
-                      [i start])
-             (cond
-               [(= i end)
-                (values (string-append
-                         (substring a-str 0 start)
-                         (substring a-str end))
-                        markers)]
-               [else
-                (loop (decrease> (+ start-index i) markers) (add1 i))]))))]
-      [else
-       (values a-str markers)]))
   
   
   ;; trim-white-footer: string -> string
@@ -128,6 +112,30 @@
   ;; truncate-all: string natural-number (listof natural-number) -> (listof natural-number)
   (define (truncate-all a-str start-index markers)
     markers)
+  
+  
+  ;; adjust-markers: regex number string number (listof number) -> (values string (listof number))
+  ;; Does the hard work in dropping the whitespace and recomputing the markers.
+  (define (adjust-markers deleting-regex nth-group a-str start-index markers)
+    (cond
+      [(regexp-match-positions deleting-regex a-str)
+       =>
+       (lambda (matches)
+         (local ((define-values (start end)
+                   (values (car (list-ref matches nth-group))
+                           (cdr (list-ref matches nth-group)))))
+           (let loop ([markers markers]
+                      [i start])
+             (cond
+               [(= i end)
+                (values (string-append
+                         (substring a-str 0 start)
+                         (substring a-str end))
+                        markers)]
+               [else
+                (loop (decrease> (+ start-index i) markers) (add1 i))]))))]
+      [else
+       (values a-str markers)]))
   
   
   ;; decrease>: number number -> number
