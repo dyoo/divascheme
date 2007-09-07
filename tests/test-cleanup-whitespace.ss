@@ -47,6 +47,13 @@
      (test-case
       "newlines"
       (check-equal? (cw "(hello world  \n\n    this is a test )")
-                    "(hello world\n\nthis is a test)"))))
+                    "(hello world\n\nthis is a test)"))
+     
+     (test-case
+      "simple markers"
+      (check-equal? (cw/m "hello world" (list 0 5))
+                    (list 0 5))
+      (check-equal? (cw/m "  hello world" (list 2 7))
+                    (list 0 5)))))
   
   (test/text-ui cleanup-whitespace-tests))
