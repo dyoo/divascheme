@@ -1,6 +1,7 @@
 (module old-cleanup-whitespace mzscheme
   (require (lib "list.ss")
            (lib "contract.ss")
+           (lib "trace.ss")
            "rope.ss")
   
   ;; The original cleanup code.

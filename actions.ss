@@ -245,21 +245,25 @@
       ;; cleanup-text/pos+len
       (define (cleanup-text/pos+len world pos len)
         (local
-            (;; cleanup-text/between: World pos -> World
-             ;; This function eats all the extra white-space on the line of pos
-             ;; and reindents it.
+            ((define (get-line-oriented-start-and-end start-pos end-pos) 
+               (let* ([start-pos (line-pos (World-rope world) start-pos)]
+                      [start-pos (cond [(find-pos start-pos (World-syntax-list world))
+                                        => syntax-position]
+                                       [else start-pos])]
+                      [end-pos (line-end-pos (World-rope world) end-pos)]
+                      [end-pos (cond [(find-pos end-pos (World-syntax-list world))
+                                      => syntax-end-position]
+                                     [else end-pos])])
+                 (values start-pos end-pos)))
+             
+             
+             ;; cleanup-text/between: World pos -> World
+             ;; This function eats all the extra white-space between start-pos and
+             ;; end-pos.
              (define (cleanup-text/between world start-pos end-pos)
                (print-mem*
                 'cleanup-text/pos
-                (let* ([start-pos (line-pos (World-rope world) start-pos)]
-                       [start-pos (cond [(find-pos start-pos (World-syntax-list world))
-                                         => syntax-position]
-                                        [else start-pos])]
-                       [end-pos (line-end-pos (World-rope world) end-pos)]
-                       [end-pos (cond [(find-pos end-pos (World-syntax-list world))
-                                       => syntax-end-position]
-                                      [else end-pos])]
-                       [start-index (pos->index start-pos)]
+                (let* ([start-index (pos->index start-pos)]
                        [end-index (pos->index end-pos)]
                        [line (subrope (World-rope world) start-index end-index)]
                        [len (rope-length line)])
@@ -277,8 +281,10 @@
                                     (index->pos (third lst))
                                     (- (fourth lst) (third lst)))))))))
           
-          (let ([new-world (cleanup-text/between world pos (+ pos len))])
-            (indent/pos+len new-world pos len))))
+          (let*-values ([(start-pos end-pos) 
+                         (get-line-oriented-start-and-end pos (+ pos len))]
+                        [(new-world) (cleanup-text/between world start-pos end-pos)])
+            (indent/pos+len new-world start-pos (- end-pos start-pos)))))
       
       
       
