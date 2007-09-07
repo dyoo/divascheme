@@ -28,6 +28,8 @@ Release 2.3:
 
 Features:
 
+* Graphical snips now supported.
+
 * Fixed bug concerning parsing of comments.  Comments can be edited
   just like strings now.
 
