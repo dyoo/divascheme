@@ -2,10 +2,14 @@ Bugs:
 
 String literals with escapes \\ in them don't clean up correctly.
 
+   - fixed
+
 Cleanup kills whitespace in strings.  i.e: "hello\n world" will get
 collapsed into "hello\nworld"
 
    - fixed, but trying to fix case with weird selection.
+   - fixed
+
 
 ;;;;;;;;;;;;;;;
 (x (cond
@@ -36,6 +40,7 @@ Nested comments #| |# don't work.
     - fixed, sorta.  They're parsed by semi-parse-syntax finally.  But
 Insert mode doesn't quite work right with nested comments.
 in-something doesn't count how deeply we've nested.
+    - fixed for real
 
 
 

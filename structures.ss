@@ -297,7 +297,8 @@
     (cond
       [(World-syntax-list/lazy a-world) => identity]
       [else
-       (set-World-syntax-list/lazy! a-world (rope-parse-syntax (World-rope a-world)))
+       (set-World-syntax-list/lazy! a-world
+                                    (rope-parse-syntax (World-rope a-world)))
        (World-syntax-list/lazy a-world)]))
   
   (provide/contract [World-syntax-list (World? . -> . (listof syntax?))])

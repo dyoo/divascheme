@@ -9,17 +9,37 @@
      (test-case
       "empty case"
       (check-false (in-something? "")))
+     
      (test-case
       "strings"
       (check-equal? (in-something? "\"hello") "\""))
+     
+     (test-case
+      "strings close"
+      (check-false (in-something? "\"hello\"")))
+     
      (test-case
       "strings with a hanging escape"
       (check-equal? (in-something? "\"hello\\") "\\\""))
      
      (test-case
+      "nested comments being closed"
+      (check-false (in-something? "#||#")))
+     
+     (test-case
+      "nested comments"
+      (check-equal? (in-something? "#|")
+                    "|#"))
+     
+     (test-case
+      "nested comments 2"
+      (check-equal? (in-something? "#| hello #| world")
+                    "|#|#"))
+     
+     (test-case
       "here strings"
       (check-equal? (in-something? "#<<EOF\nblah")
-                    "\nEOF"))
+                    "\nEOF\n"))
      (test-case
       "here strings 2"
       (check-equal? (in-something? "#<<EOF\nblah\nEOF")
@@ -28,11 +48,16 @@
      (test-case
       "here strings 3"
       (check-equal? (in-something? "#<<helloworld")
-                    "\nhelloworld"))
+                    "\nhelloworld\n"))
      
      (test-case
       "here strings 4"
       (check-equal? (in-something? "#<<hello\nhelloblah")
-                    "\nhello"))))
+                    "\nhello\n"))
+     
+     (test-case
+      "mixup"
+      (check-equal? (in-something? "#\\#|")
+                    "|"))))
   
   (test/text-ui in-something-tests))
