@@ -19,6 +19,11 @@
       (check-false (in-something? "\"hello\"")))
      
      (test-case
+      "piped symbols close"
+      (check-equal? (in-something? "|#<<EOF")
+                    "|"))
+     
+     (test-case
       "comments don't get into strings"
       (check-equal? (in-something? "\" ;; hello")
                     "\""))
