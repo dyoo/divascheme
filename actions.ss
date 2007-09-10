@@ -15,7 +15,8 @@
            "text-rope-mixin.ss"
            "rope.ss"
            "long-prefix.ss"
-           "cleanup-whitespace.ss")
+           "cleanup-whitespace.ss"
+           "language.ss")
   
   (define voice-debug false)
   (define (voice-printf . args)
@@ -698,10 +699,10 @@
       ;; Return a list of default magic options that apply
       ;; at any time.
       (define (default-magic/language world)
-        ;; TODO: based on the state of the world, we should
-        ;; be able to choose different default lists of magics.
-        (map symbol->string
-             (get-mzscheme-mapped-symbols)))
+        ;; TODO: based on the state of the world, we may be able 
+        ;; to choose a better default list of magics. 
+        (get-language-autocompletes))
+      
       
       ;; find-common-prefix: (listof string) -> string
       ;; Returns the common prefix of all the strings.

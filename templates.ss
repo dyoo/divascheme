@@ -444,7 +444,7 @@
     default-templates
     ;; Currently, language-specific template support is disabled until we can 
     ;; figure out a less intrusive way to introduce them during typing.
-    #;(match (get-language)
+    #;(match (get-language-name)
         [(? (lambda (a) (string=? a (string-constant beginning-student)))) beginner-templates]
         [(? (lambda (a) (string=? a (string-constant beginning-student/abbrev)))) beginner-w/list-abbrev-templates]
         [(? (lambda (a) (string=? a (string-constant intermediate-student)))) intermediate-templates]

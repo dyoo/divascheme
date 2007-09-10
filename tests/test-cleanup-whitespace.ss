@@ -86,7 +86,11 @@
       (check-equal? (cw/m "    " (list 0 6))
                     (list 0 2)))
      
-     (test-case 
+     (test-case
+      "comment cleanup"
+      (check-equal? (cw " ;;hello   world  ")
+                    ";;hello   world  "))
+     (test-case
       "simple cond" 
       (check-equal? (cw/im " (cond $expr$ ---) " 0 '(0 19 19 19))
                     '("(cond $expr$ ---)" (0 17 17 17))))
