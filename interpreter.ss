@@ -7,8 +7,9 @@
            (only (lib "1.ss" "srfi") last circular-list partition find)
            "traversal.ss"
            "structures.ss"
-           "utilities.ss"
-           "actions.ss"
+           (all-except "utilities.ss"
+                       insert-rope)
+           (prefix action: "actions.ss")
            "tag-state.ss"
            "tag-reader.ss"
            "rope.ss")
@@ -25,7 +26,6 @@
 
   ;; Provided elements to perform the tests.
   (provide eval-Protocol-Syntax-Tree
-           current-actions
            default-Next-f
            default-Previous-f
            default-Magic-f
@@ -44,10 +44,6 @@
       (apply printf text args)))
   
   
-  
-  ;; TODO : Today, actions really do not need to be an object. Should we do something about that?
-  ;; current-actions : void -> actions%
-  (define current-actions (make-parameter (make-object actions%)))
   
   (define max-undo-count 50)
   
@@ -385,14 +381,14 @@
           (print-mem
            'eval-Open-new-world
            (lambda ()
-             (send (current-actions) open
-                   square?
-                   world
-                   rope/false
-                   (and loc/false pos)
-                   template-number
-                   magic-number
-                   template/magic-wrap?)))]
+             (action:open
+              square?
+              world
+              rope/false
+              (and loc/false pos)
+              template-number
+              magic-number
+              template/magic-wrap?)))]
          [Magic-f
           (lambda (new-world template/magic-wrap?)
             (eval-Open square? world loc/false what/false
@@ -482,11 +478,11 @@
                      (eval-Loc world (make-make-metric world metric-forward)
                                loc-base loc/false)]
                     [(new-world)
-                     (send (current-actions) insert-rope
-                           world
-                           a-rope
-                           (and loc/false pos)
-                           template-number magic-number template/magic-wrap?)]
+                     (action:insert-rope
+                      world
+                      a-rope
+                      (and loc/false pos)
+                      template-number magic-number template/magic-wrap?)]
                     [(Magic-f)
                      (make-binary-callback 0 (add1 magic-number) 'Magic)]
                     [(Pass-f)
@@ -507,7 +503,7 @@
   
   ;; eval-Close : World -> World
   (define (eval-Close world)
-    (let ([new-w (world-clear (send (current-actions) close world))])
+    (let ([new-w (world-clear (action:close world))])
       (if (rope=? (World-rope world)
                   (World-rope new-w))
           (copy-struct World new-w
@@ -539,8 +535,7 @@
       
       (copy-struct World
                    (world-clear
-                    (send (current-actions)
-                          set-cursor-position world position))
+                    (action:set-cursor-position world position))
                    [World-Next-f Next-f]
                    [World-Previous-f Previous-f]
                    [World-cancel world])))
@@ -575,7 +570,7 @@
                                                                                       [World-Previous-f (make-NP -2)]))))])
                            ((make-NP -1) new-world)))])
       
-      (copy-struct World (world-clear (send (current-actions) select/stx world stx))
+      (copy-struct World (world-clear (action:select/stx world stx))
                    [World-Next-f     Next-f]
                    [World-Previous-f Previous-f]
                    [World-cancel     world])))
@@ -607,11 +602,11 @@
           (let* ([stx/false  (eval-What/holder world (make-metric-f base) what/false)]
                  [Next-f     (lambda (new-world) (eval-Holder world backward? loc/false (inc-what-distance what/false 1)))]
                  [Previous-f (lambda (new-world) (eval-Holder world backward? loc/false (dec-what-distance what/false 1)))])
-            (copy-struct World (world-clear (send (current-actions) select/stx world stx/false))
+            (copy-struct World (world-clear (action:select/stx world stx/false))
                          [World-Next-f     Next-f]
                          [World-Previous-f Previous-f]
                          [World-cancel     world]))
-          (copy-struct World (world-clear (send (current-actions) holder world base backward?))
+          (copy-struct World (world-clear (action:holder world base backward?))
                        [World-cancel     world]))))
     
   (define ((default-Next-f) world)
@@ -668,7 +663,7 @@
   ;; eval-Magic-Bash : World What -> World
   (define (eval-Magic-Bash world what)
     (let ([symbol (eval-What/bash what)])
-      (copy-struct World (world-clear (send (current-actions) magic-bash world symbol))
+      (copy-struct World (world-clear (action:magic-bash world symbol))
                    [World-cancel     world]
                    [World-undo       world])))
     
@@ -696,7 +691,7 @@
                           (find-pos-parent base (World-syntax-list world))
                           stx/false)])
       (if stx/false
-          (copy-struct World (world-clear (send (current-actions) select/stx world stx/false))
+          (copy-struct World (world-clear (action:select/stx world stx/false))
                        [World-Next-f     Next-f]
                        [World-Previous-f Previous-f]
                        [World-cancel     world])
@@ -724,7 +719,7 @@
                            (motion-extension world (World-extension-base world) stx/false)
                            [World-target-column target-column])
               
-              (copy-struct World (world-clear (send (current-actions) select/stx world stx/false))
+              (copy-struct World (world-clear (action:select/stx world stx/false))
                            [World-target-column target-column]
                            [World-cancel world]))
           (eval-line-motion world (if is-up? 'up 'down)))))
@@ -745,7 +740,7 @@
       (if stx
           (if (World-extension-base world)
               (motion-extension world (World-extension-base world) stx)
-              (copy-struct World (world-clear (send (current-actions) select/stx world stx))
+              (copy-struct World (world-clear (action:select/stx world stx))
                            [World-cancel world]))
           (raise (make-voice-exn "Nothing forward.")))))
     
@@ -755,20 +750,20 @@
       (if stx
           (if (World-extension-base world)
               (motion-extension world (World-extension-base world) stx)
-              (copy-struct World (world-clear (send (current-actions) select/stx world stx))
+              (copy-struct World (world-clear (action:select/stx world stx))
                            [World-cancel     world]))
           (raise (make-voice-exn "Nothing backward.")))))
 
 
   ;; eval-First : World -> World
   (define (eval-First world)
-    (copy-struct World (world-clear (send (current-actions) first/selection world))
-                   [World-cancel world]))
+    (copy-struct World (world-clear (action:first/selection world))
+                 [World-cancel world]))
 
   ;; eval-Last : World -> World
   (define (eval-Last world)
-    (copy-struct World (world-clear (send (current-actions) last/selection world))
-                   [World-cancel     world]))
+    (copy-struct World (world-clear (action:last/selection world))
+                 [World-cancel     world]))
 
   (define ((not-here?/w world) stx) ((not-here? (World-cursor-position world)) stx))
   (define ((not-here? pos) stx) (not (= pos (syntax-position stx))))
@@ -788,7 +783,7 @@
                           [else
                            (find (not-here?/w world) stx-list)])])
         (if stx/false
-            (copy-struct World (world-clear (send (current-actions) select/stx world stx/false))
+            (copy-struct World (world-clear (action:select/stx world stx/false))
                          [World-cancel world])
             (eval-line-motion world 'right))))
 
@@ -822,7 +817,7 @@
                            [(= 0 (World-selection-length world)) (first stx-list)]
                            [else (find (not-here?/w world) stx-list)])])
           (if stx/false
-              (copy-struct World (world-clear (send (current-actions) select/stx world stx/false))
+              (copy-struct World (world-clear (action:select/stx world stx/false))
                            [World-cancel world])
               (eval-line-motion world 'left)))))
 
@@ -858,8 +853,8 @@
               (values (syntax-position p1) (syntax-end-position p2))
               (values (syntax-position default) (syntax-end-position default)))]
          
-         [(result) (send (current-actions) select/pos+end world 
-                         pos end)])
+         [(result) (action:select/pos+end world
+                                          pos end)])
       (copy-struct World (world-clear/extend result)
                    [World-cancel world])))
                    
@@ -867,31 +862,31 @@
 
   ;; eval-Delete : World -> World
   (define (eval-Delete world)
-    (copy-struct World (world-clear (send (current-actions) delete world))
+    (copy-struct World (world-clear (action:delete world))
                  [World-cancel     world]
                  [World-undo       world]))
   
   ;; eval-Dedouble-Ellipsis : World -> World
   (define (eval-Dedouble-Ellipsis world)
-    (success-message (send (current-actions) dedouble-ellipsis world) false))
+    (success-message (action:dedouble-ellipsis world) false))
   
   ;; TODO
   ;; eval-Bring : World -> World
   (define (eval-Bring world)
-    (copy-struct World (world-clear (send (current-actions) bring world))
+    (copy-struct World (world-clear (action:bring world))
                  [World-cancel     world]
                  [World-undo       world]))        
   
   ;; TODO
   ;; eval-Push : World -> World
   (define (eval-Push world)
-    (copy-struct World (world-clear (send (current-actions) push world))
+    (copy-struct World (world-clear (action:push world))
                  [World-cancel     world]
                  [World-undo       world]))        
 
   ;; eval-Exchange : World -> World
   (define (eval-Exchange world)
-    (copy-struct World (world-clear (send (current-actions) exchange world))
+    (copy-struct World (world-clear (action:exchange world))
                  [World-cancel     world]))        
 
   ;; eval-Mark : World (union Loc false) (union What false) -> World
@@ -905,32 +900,32 @@
                [Previous-f  (lambda (new-world)
                               (eval-Mark world loc/false (dec-what-distance what/false 1)))])
           
-          (copy-struct World (world-clear (send (current-actions) mark/stx world stx))
+          (copy-struct World (world-clear (action:mark/stx world stx))
                        [World-Next-f     Next-f]
                        [World-Previous-f Previous-f]
                        [World-cancel     world]))
-        (copy-struct World (world-clear (send (current-actions) selection->mark world))
+        (copy-struct World (world-clear (action:selection->mark world))
                      [World-cancel     world])))
 
   ;; eval-UnMark : World -> World
   (define (eval-UnMark world)
-    (copy-struct World (world-clear (send (current-actions) unmark world))
+    (copy-struct World (world-clear (action:unmark world))
                  [World-cancel     world]))
 
   ;; eval-Copy : World -> World
   (define (eval-Copy world)
-    (copy-struct World (world-clear (send (current-actions) copy world))
+    (copy-struct World (world-clear (action:copy world))
                  [World-cancel     world]))
 
   ;; eval-Cut : World -> World
   (define (eval-Cut world)
-    (copy-struct World (world-clear (send (current-actions) cut world))
+    (copy-struct World (world-clear (action:cut world))
                  [World-cancel     world]
                  [World-undo       world]))
 
   ;; eval-Paste : World -> World
   (define (eval-Paste world)
-    (copy-struct World (world-clear (send (current-actions) paste world))
+    (copy-struct World (world-clear (action:paste world))
                  [World-cancel     world]
                  [World-undo       world]))
 
@@ -947,19 +942,19 @@
 
   ;; eval-Enter : World -> World
   (define (eval-Enter world)
-    (copy-struct World (world-clear (send (current-actions) enter/selection world))
+    (copy-struct World (world-clear (action:enter/selection world))
                  [World-cancel     world]
                  [World-undo       world]))
 
   ;; eval-Join : World -> World
   (define (eval-Join world)
-    (copy-struct World (world-clear (send (current-actions) join/selection world))
+    (copy-struct World (world-clear (action:join/selection world))
                  [World-cancel     world]
                  [World-undo       world]))
 
   ;; eval-Indent : World -> World
   (define (eval-Indent world)
-    (send (current-actions) indent/selection world))
+    (action:indent/selection world))
   
   
   ;; eval-Transpose : World -> World
@@ -1012,10 +1007,9 @@
                   (World-syntax-list world))])
            (when (empty? positions)
              (raise (make-voice-exn "Not found")))
-           (send (current-actions) 
-                 select/stx
-                 world
-                 (first positions)))]
+           (action:select/stx
+            world
+            (first positions)))]
         [else
          ;; TODO: implement SwitchWorld semantics
          (make-SwitchWorld (tag-path tag) ast)]))

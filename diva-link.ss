@@ -425,8 +425,7 @@
             (lambda ()
               (on-entry)
               (make-insert-mode this                                     ;; window
-                                (current-actions)                        ;; actions
-                                (lambda args (apply diva-message args))  ;; diva-message
+                                (lambda args (apply diva-message args)) ;; diva-message
                                 (lambda () (send this get-mred))         ;; get-world
                                 (lambda (world) (send this set-mred world)) ;; set-world
                                 set-on-loss-focus                        ;; set-on-loss-focus

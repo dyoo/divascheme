@@ -12,6 +12,7 @@
            "in-something.ss"
            "rope.ss"
            "text-rope-mixin.ss"
+           (prefix action: "actions.ss")
            (prefix preferences: "diva-preferences.ss"))
   
   
@@ -101,7 +102,7 @@
   
   ;; FIXME: if this takes so many parameters, there is a structural problem.
   (define make-insert-mode
-    (lambda (window actions diva-message get-world set-world set-on-focus-lost
+    (lambda (window diva-message get-world set-world set-on-focus-lost
                     set-after-insert-callback set-after-delete-callback
                     interpret! post-exit-hook cmd edit?)
       
@@ -187,7 +188,7 @@
             (cond
               [stx/false
                (let ([original-pos (send window get-end-position)])
-                 (set-world (send actions select/stx world stx/false))
+                 (set-world (action:select/stx world stx/false))
                  (begin-symbol (send window get-start-position)
                                (send window get-end-position))
                  (send window diva:set-selection-position
@@ -431,8 +432,8 @@
              (consume-magic)]
             [else
              (let* ([options ;; options guaranteed not-empty: contains at least (get-text).
-                     (send actions magic-options
-                           world-at-beginning-of-insert
+                     (action:magic-options
+                      world-at-beginning-of-insert
                            left-edge-of-insert
                            (string->symbol (get-magic-text)))])
                (set! magic-options-lst (rest (make-circular options)))
