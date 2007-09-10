@@ -89,7 +89,7 @@
      (test-case
       "comment cleanup"
       (check-equal? (cw " ;;hello   world  ")
-                    ";;hello   world  "))
+                    ";;hello   world"))
      (test-case
       "simple cond" 
       (check-equal? (cw/im " (cond $expr$ ---) " 0 '(0 19 19 19))
@@ -103,7 +103,7 @@
       (check-equal? (cw/im "   ;; decrease> "
                            5874
                            ' (5877 5885))
-                    (list ";; decrease> "
+                    (list ";; decrease>"
                           ' (5874 5882))))
      
      (test-case 
@@ -111,6 +111,15 @@
       (check-equal? (cw/im "     (y \nblah)))" 9 '(18 22 26 26))
                     '("(y\nblah)))" 
                       (12 16 20 20))))
+     
+     (test-case
+      "another test"
+      (check-equal? (cw/im ";; hello" 72 '(72 80))
+                    '(";; hello" (72 80))))
+     (test-case
+      "another test"
+      (check-equal? (cw/im "\n;; hello" 72 '(73 81))
+                    '("\n;; hello" (73 81))))
      ))
   
   

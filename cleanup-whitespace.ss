@@ -4,6 +4,7 @@
            (lib "etc.ss")
            (lib "port.ss")
            (lib "list.ss")
+           (only (lib "13.ss" "srfi") string-prefix?)
            "rope.ss"
            "semi-read-syntax/lexer.ss")
   
@@ -72,10 +73,25 @@
                                (rope-append acc (string->rope new-whitespace))
                                (+ count-deleted-chars 
                                   (string-length-delta 
-                                   new-whitespace (token-value tok)))))]))))
+                                   new-whitespace (token-value tok)))))])))
+                
+                (define (handle-atom)
+                  (cond
+                    [(string-prefix? ";" (token-value tok))
+                     (let-values ([(cleaned-str new-markers)
+                                   (truncate-white-footer
+                                    (token-value tok) start-pos markers)])
+                       (loop (next-position-token) #f new-markers
+                             (rope-append acc (string->rope cleaned-str))
+                             (+ count-deleted-chars
+                                (string-length-delta cleaned-str
+                                                     (token-value tok)))))]
+                    [else
+                     (leave-preserved #f)])))
+          
           (case (token-name tok)
             [(atom)
-             (leave-preserved #f)]
+             (handle-atom)]
             [(special-atom)
              (leave-preserved #f)]
             [(quoter-prefix)
@@ -95,10 +111,10 @@
     (let loop ([a-str a-str]
                [markers markers])
       (let-values ([(new-str new-markers)
-                    (adjust-markers "([ \t]+)[\r\n]"
-                                    a-str
-                                    start-index
-                                    markers)])
+                    (regex-delete-and-adjust "([ \t]+)[\r\n]"
+                                             a-str
+                                             start-index
+                                             markers)])
         (cond
           [(string=? new-str a-str)
            (values new-str new-markers)]
@@ -111,27 +127,27 @@
   (define (trim-white-footer a-str start-index markers)
     (cond
       [(regexp-match "[\r\n]" a-str)
-       (adjust-markers "([ \t]+)$" a-str start-index markers)]
+       (regex-delete-and-adjust "([ \t]+)$" a-str start-index markers)]
       [else
-       (adjust-markers "[ \t]([ \t]*)$" a-str start-index markers)]))
+       (regex-delete-and-adjust "[ \t]([ \t]*)$" a-str start-index markers)]))
   
   
   ;; truncate-white-footer: string -> string
   ;; Removes whitespace from the end of a string.
   (define (truncate-white-footer a-str start-index markers)
-    (adjust-markers "([ \t]+)$" a-str start-index markers))
+    (regex-delete-and-adjust "([ \t]+)$" a-str start-index markers))
   
   
   ;; truncate-all: string natural-number (listof natural-number) -> (listof string natural-number)
   (define (truncate-all-but-newlines a-str start-index markers)
     (let-values ([(new-str new-markers)
-                  (adjust-markers* "([^\n]+)" a-str start-index markers)])
+                  (regex-delete-and-adjust* "([^\n]+)" a-str start-index markers)])
       (values new-str new-markers)))
   
   
-  ;; adjust-markers: regex string number (listof number) -> (values string (listof number))
+  ;; regex-delete-and-adjust: regex string number (listof number) -> (values string (listof number)) 
   ;; Does the hard work in dropping the whitespace and recomputing the markers.
-  (define (adjust-markers deleting-regex a-str at-index markers)
+  (define (regex-delete-and-adjust deleting-regex a-str at-index markers)
     (cond
       [(regexp-match-positions deleting-regex a-str)
        =>
@@ -139,6 +155,10 @@
          (local ((define-values (start end)
                    (values (car (second matches))
                            (cdr (second matches)))))
+           (values (string-append (substring a-str 0 start)
+                                  (substring a-str end))
+                   (adjust-markers/delete markers (+ at-index start)
+                                          (- end start)))
            (let loop ([markers markers]
                       [i start])
              (cond
@@ -154,13 +174,26 @@
        (values a-str markers)]))
   
   
-  ;; adjust-markers*: regex string natural-number (listof natural-number) -> (values string (listof natural-number))
-  ;; Apply adjust-markers till we hit a fixed point.
-  (define (adjust-markers* regex a-str start-index markers)
+  ;; Adjusts the markers in response to a deletion. 
+  (define (adjust-markers/delete markers delete-start length)
+    (let loop ([markers markers]
+               [i 0])
+      (cond
+        [(= i length)
+         markers]
+        [else
+         (loop (decrease> delete-start markers)
+               (add1 i))])))
+  
+  
+  ;; regex-delete-and-adjust*: regex string natural-number (listof natural-number) -> (values string (listof natural-number)) 
+  ;; Applies regex-delete-and-adjust till we hit a fixed point. 
+  (define (regex-delete-and-adjust* regex a-str start-index markers)
     (let loop ([a-str a-str]
                [markers markers])
       (let-values ([(new-str new-markers)
-                    (adjust-markers regex a-str start-index markers)])
+                    (regex-delete-and-adjust
+                     regex a-str start-index markers)])
         (cond
           [(string=? new-str a-str)
            (values new-str new-markers)]
@@ -185,6 +218,7 @@
   
   (define positive-number/c (and/c integer? (>=/c 1)))
   
-  (provide/contract [cleanup-whitespace ((rope? natural-number/c (listof natural-number/c))
-                                         . ->* .
-                                         (rope? (listof natural-number/c)))]))
+  (provide/contract
+   [cleanup-whitespace ((rope? natural-number/c (listof natural-number/c))
+                        . ->* .
+                        (rope? (listof natural-number/c)))]))

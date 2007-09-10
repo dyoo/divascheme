@@ -19,6 +19,11 @@
       (check-false (in-something? "\"hello\"")))
      
      (test-case
+      "comments don't get into strings"
+      (check-equal? (in-something? "\" ;; hello")
+                    "\""))
+     
+     (test-case
       "strings with a hanging escape"
       (check-equal? (in-something? "\"hello\\") "\\\""))
      

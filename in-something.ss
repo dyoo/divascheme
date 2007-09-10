@@ -85,15 +85,16 @@
               (is? "#|"))
          (loop (+ i 2) #f #f #f 1)]
         
-        [(is? ";")
+        [(and (not in) (is? ";"))
          (loop (add1 i) "" #f here-marker nested-comments)]
         [(and (is? "\n") (equal? in ""))
          (loop (add1 i) #f #f here-marker nested-comments)]
+        
         [(is? "\\")
          (loop (+ 1 i) in #t here-marker nested-comments)]
         
         [(is? "\"" ) 
-         (consume "\""  )]
+         (consume "\"")]
         [(is? "|")
          (consume "|")]
         [else
