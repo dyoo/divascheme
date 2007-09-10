@@ -77,9 +77,12 @@
     (define shared-diva-central (new diva-central%))
     
     (define (phase1)
+      ;; HACKY: replace with real unit integration when we
+      ;; finally abandon 301 unit compatibilty. 
       (language:initialize-get-language
        drscheme:language-configuration:get-settings-preferences-symbol
-       drscheme:language-configuration:language-settings-language)
+       drscheme:language-configuration:language-settings-language
+       drscheme:language:capability-registered?)
       
       (let ([diva-central-mixin (make-diva-central-mixin shared-diva-central)])
         

@@ -10,26 +10,36 @@
   
   
   
-  ;; get-language will get bound by initialize-get-language.  
-  (define get-language #f)
   
   
+  (define get-settings-preferences-symbol #f)
+  (define language-settings-language #f)
+  (define capability-registered? #f)
   ;; initialize-get-language: (-> drscheme:language-configuration:language-settings?)
   ;;                          drscheme:language-configuration:language-settings?
   ;;                          -> (is-a?/c drscheme:language:language<%>)
+  ;; FIXME: do this proper with unit integration once we've abandoned compatibility
+  ;; with 301. 
   (define (initialize-get-language
            drscheme:language-configuration:get-settings-preferences-symbol
-           drscheme:language-configuration:language-settings-language)
-    (set! get-language
-          (lambda ()
-            (let* ([language-settings
-                    (preferences:get
-                     (drscheme:language-configuration:get-settings-preferences-symbol))]
-                   [language
-                    (drscheme:language-configuration:language-settings-language
-                     language-settings)])
-              language))))
+           drscheme:language-configuration:language-settings-language
+           drscheme:language:capability-registered?)
+    (set! get-settings-preferences-symbol
+          drscheme:language-configuration:get-settings-preferences-symbol)
+    (set! language-settings-language
+          drscheme:language-configuration:language-settings-language)
+    (set! capability-registered?
+          drscheme:language:capability-registered?))
   
+  
+  ;; get-language: -> language%
+  ;; Returns the language. 
+  (define (get-language)
+    (let* ([language-settings
+            (preferences:get (get-settings-preferences-symbol))]
+           [language
+            (language-settings-language language-settings)])
+      language))
   
   
   ;; get-language-name: -> string 
@@ -53,9 +63,7 @@
   ;; Returns a list of strings that can autocomplete 
   (define (get-language-autocompletes)
     (cond
-      [(method-in-interface?
-        'capability-value
-        (object-interface (get-language)))
+      [(capability-registered? 'drscheme:autocomplete-words)
        (send (get-language) capability-value 'drscheme:autocomplete-words)]
       [else
        (map symbol->string (get-mzscheme-mapped-symbols))]))
