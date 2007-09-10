@@ -23,7 +23,8 @@
   ;; print-installation-finished-msg: -> void
   ;; Prints out the installed message banner.
   (define (print-installation-finished-msg)
-    (printf "DivaScheme should now be installed.~n~nTo finish the installation, please restart DrScheme.~nOnce restarted, F4 will toggle DivaScheme on and off."))
+    (printf "DivaScheme should now be installed.~n~nTo finish the installation, please restart DrScheme.~nOnce restarted, F4 will toggle DivaScheme on and off.~n~n")
+    (printf "If you wish to install the launcher for generate-stags, see Help Desk on 'generate-stags' for details.~n"))
   
   
   

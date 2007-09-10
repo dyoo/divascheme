@@ -31,6 +31,10 @@
                                    "tests/traversal-test.ss"
                                    "tests/utilities-test.ss"))
   
-  (define mzscheme-launcher-names '("generate-stags"))
-  (define mzscheme-launcher-libraries '("generate-stags.ss"))
+  ;; The following are commented out because they don't work well
+  ;; for people who don't have permission to write to the default bin
+  ;; directory.  So instead, we have a separate 'install-launchers.ss'
+  ;; module that should do this work. 
+  #;(define mzscheme-launcher-names '("generate-stags"))
+  #;(define mzscheme-launcher-libraries '("generate-stags.ss"))
   )
