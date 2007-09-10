@@ -24,6 +24,11 @@
                     "\""))
      
      (test-case
+      "here strings don't get into strings"
+      (check-equal? (in-something? "\" #<<EOF\n hello")
+                    "\""))
+     
+     (test-case
       "strings with a hanging escape"
       (check-equal? (in-something? "\"hello\\") "\\\""))
      

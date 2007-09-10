@@ -75,13 +75,15 @@
         [escaped-char?
          (loop (add1 i) in #f here-marker nested-comments)]
         
-        [(and (not here-marker)
+        [(and (not in)
+              (not here-marker)
               (is? "#<<"))
          (let ([marker (get-here-string-marker str i)])
            (loop (add1 (+ i 3 (string-length marker)))
                  #f #f marker #f))]
         
-        [(and (not nested-comments)
+        [(and (not in)
+              (not nested-comments)
               (is? "#|"))
          (loop (+ i 2) #f #f #f 1)]
         

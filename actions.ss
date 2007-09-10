@@ -6,6 +6,7 @@
            (lib "plt-match.ss")
            (lib "mred.ss" "mred")
            (lib "framework.ss" "framework")
+           (only (lib "13.ss" "srfi") string-prefix?)
            "traversal.ss"
            "structures.ss"
            "utilities.ss"
@@ -448,7 +449,22 @@
       (define (command world a-rope/false pos/false open?
                        square? template-number magic-number template/magic-wrap?)
         (local
-            (;; get-expanded-text: (values rope world)
+            (
+             
+             ;; apply-template
+             (define (apply-template template symbol/false)
+               (let ([format-string (cond [(and symbol/false
+                                                (string-prefix? "#<<" (symbol->string symbol/false)))
+                                           " ~a"]
+                                          [else
+                                           " ~a "])])
+                 (string->rope
+                  (format format-string (if template
+                                            (shape-paren (and square? 'Square) template)
+                                            symbol/false)))))
+             
+             
+             ;; get-expanded-text: (values rope world)
              (define (get-expanded-text&world)
                (cond
                  [(and a-rope/false (rope-has-special? a-rope/false))
@@ -477,10 +493,7 @@
                                                    template-number
                                                    open?
                                                    template/magic-wrap?)])
-                      (let* ([text (string->rope
-                                    (format " ~a " (if template
-                                                       (shape-paren (and square? 'Square) template)
-                                                       symbol/false)))]
+                      (let* ([text (apply-template template symbol/false)]
                              [text (cond
                                      [(cursor-position-is-quoted? world)
                                       (subrope text 1)]
