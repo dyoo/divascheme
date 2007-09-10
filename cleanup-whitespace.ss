@@ -13,7 +13,6 @@
   ;; standard conventions of removing whitespace around parens.
   ;; Positional markers within the rope will be shifted according to deleted whitespace.
   (define (cleanup-whitespace a-rope at-index markers)
-    #; (printf "cleanup-whitespace: ~s ~a ~a~n" (rope->string a-rope) at-index markers)
     (local ((define ip (relocate-input-port
                         (open-input-rope a-rope)
                         #f #f
@@ -88,9 +87,6 @@
             [(space)
              (handle-space)]
             [(end)
-             #; (printf "==> ~s ~a~n"
-                        (rope->string acc)
-                     (map sub1 markers))
              (values acc (map sub1 markers))])))))
   
   
@@ -152,7 +148,7 @@
                          (substring a-str end))
                         markers)]
                [else
-                (loop (decrease> at-index markers)
+                (loop (decrease> (+ at-index start) markers)
                       (add1 i))]))))]
       [else
        (values a-str markers)]))
