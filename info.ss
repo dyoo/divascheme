@@ -31,6 +31,9 @@
                                    "tests/traversal-test.ss"
                                    "tests/utilities-test.ss"))
   
+  ;; minimal version of DrScheme necessary will be 360.
+  (define required-core-version "360")
+  
   ;; The following are commented out because they don't work well
   ;; for people who don't have permission to write to the default bin
   ;; directory.  So instead, we have a separate 'install-launchers.ss'

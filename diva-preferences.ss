@@ -305,11 +305,17 @@
         [(orbiTouch) 2]
 	[else 0]))
     
+    
+    (define (keybinding-key? datum)
+      (match datum
+        [(? string?)
+         #t]
+        [(list 'alt/meta-prefix (? string?))
+         #t]
+        [else #f]))
+    
     (define keybindings/c
-      (listof (list/c (or/c
-                       string?
-                       (list/c (symbols ' alt/meta-prefix) string?))
-                      symbol?)))
+      (listof (list/c keybinding-key? symbol?)))
     
     (preferences:add-panel
      "DivaScheme"

@@ -2,7 +2,11 @@
   (require (lib "contract.ss")
            (only (lib "13.ss" "srfi") string-prefix?))
   
-  (provide/contract [in-something? (string? . -> . (or/c string? false/c))])
+  (define (string/false? datum)
+    (or (string? datum)
+        (eq? datum #f)))
+  
+  (provide/contract [in-something? (string? . -> . string/false?)])
   
   ;; in-something?: string -> (union #f string)
   ;; Returns a true value if the str appears to be part of an incomplete literal.
