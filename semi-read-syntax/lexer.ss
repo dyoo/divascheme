@@ -205,10 +205,11 @@
                ((special)
                 (token-special-atom lexeme))
                
-               ;; As an emergency, if we can't lex at all, just return as a single
-               ;; character.  We should never hit this rule, but I'm being paranoid. 
-               (any-char (token-atom lexeme))
                
-               ((eof) (token-end lexeme)))))
+               ((eof) (token-end lexeme))
+               
+               ;; As an emergency, if we can't lex at all, just return as a single
+               ;; character.  We should never hit this rule, but I'm being paranoid.
+               (any-char (token-atom lexeme)))))
       (lambda (ip)
         (lexer ip)))))
