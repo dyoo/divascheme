@@ -8,10 +8,11 @@
   
   (define release-notes '((p "Recent changes in 2.3:")
                           (ul
-                           (li "Comments can now be edited like strings.")
-                           (li "Graphical snips now supported.")
-                           (li "Switching tabs while in Insert mode properly works now.")
-                           (li "Up and down are bound to move around in Insert mode."))))
+                           (li "Graphical snips are supported.")
+                           (li "Comments can be edited without exiting DivaScheme.")
+                           (li "Up and down can be used in Insert Mode.")
+                           (li "Tab autocompletion has been improved."))
+                          (p "For more details, see http://www.cs.brown.edu/research/plt/software/divascheme/")))
   
   (define primary-file "install.ss")
   (define categories '(devtools))

@@ -32,7 +32,7 @@ Features and bug fixes:
 
 * Comments can be edited without exiting DivaScheme.
 
-* Up and down can be used in insert mode.  install.ss will try to
+* Up and down can be used in Insert Mode.  install.ss will try to
   automatically upgrade your keybindings appropriately.
 
 * Tab autocompletion behavior has been improved.  In DrScheme v371+,
