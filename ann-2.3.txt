@@ -39,9 +39,9 @@ Features and bug fixes:
   autocompletion will consider keywords provided by the language.
 
 * generate-stags no longer installs when DivaScheme is installed,
-  since not all users have directory write permissions to write
-  plt/bin.  Search for "generate-stags" in Help Desk for details on
-  installing generate-stags.
+  since not all users have directory write permissions to plt/bin.
+  Search for "generate-stags" in Help Desk for details on installing
+  generate-stags.
 
 * Improved lexical whitespace cleanup and tokenization.
 
