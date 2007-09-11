@@ -4,7 +4,7 @@ Subject: DivaScheme 2.3 released
          ...for times when you wish your doctor would listen
 
 This is a minor point release of DivaScheme for bug fixes and
-performance tuning.
+performance tuning.  DivaScheme requires DrScheme >=360.
 
 
 To install, evaluate:
@@ -26,27 +26,34 @@ Changes
 
 Release 2.3:
 
-Features:
+Features and bug fixes:
 
-* Graphical snips now supported.
+* Graphical snips are supported.
 
-* Fixed bug concerning parsing of comments.  Comments can be edited
-  just like strings now.
-
-* Fixed bug involving switching tabs while in insert mode.
+* Comments can be edited without exiting DivaScheme.
 
 * Up and down can be used in insert mode.  install.ss will try to
   automatically upgrade your keybindings appropriately.
 
-* Tab completion behavior improved.  Also, symbols from mzscheme will
-  also be considered.
+* Tab autocompletion behavior has been improved.  In DrScheme v371+,
+  autocompletion will consider keywords provided by the language.
 
-* Improved lexical whitespace cleanup: fixed bug that munged strings
-  spanning multiple lines.
+* generate-stags no longer installs when DivaScheme is installed,
+  since not all users have directory write permissions to write
+  plt/bin.  Search for "generate-stags" in Help Desk for details on
+  installing generate-stags.
 
-* Lots of other bug fixes.
+* Improved lexical whitespace cleanup and tokenization.
 
-* General improvements in memory usage and performance.
+* Bugfix: switching tabs while in insert mode would violate
+  invariants.
+
+* Workaround: Check Syntax is temporarily disabled during Insert Mode.
+
+* Bugfix: joining on column 1 would potentially collapse two symbols.
+
+* Lots of other bug fixes and general improvements in memory usage and
+  performance.
   
 
 
