@@ -18,6 +18,7 @@
            "rope.ss"
            "long-prefix.ss"
            "cleanup-whitespace.ss"
+           "clipboard.ss"
            "language.ss")
   
   (define voice-debug false)

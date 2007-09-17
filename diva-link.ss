@@ -15,6 +15,7 @@
            "utilities.ss"
            "diva-central.ss"
            "rope.ss"
+           "clipboard.ss"
            (prefix preferences: "diva-preferences.ss"))
   
   (provide diva-link:frame-mixin)
