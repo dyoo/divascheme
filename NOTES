@@ -1,56 +1,18 @@
-Bugs:
-
-String literals with escapes \\ in them don't clean up correctly.
-
-   - fixed
-
-Cleanup kills whitespace in strings.  i.e: "hello\n world" will get
-collapsed into "hello\nworld"
-
-   - fixed, but trying to fix case with weird selection.
-   - fixed
+Known bugs and issues after 2.3 release:
 
 
-;;;;;;;;;;;;;;;
-(x (cond
-     (y blah)))
-;;;;;;;;;;;;;;;
-
-
-Highlight blah, then press enter.
-
-    - fixed.  Silly index deletion problem.
-
-
-
-Copy-and-paste does not use the cleanup functions at the moment.
-Also cut and paste are not dedotting anymore.
-
-   - fixed
-
-   - However, copy-and-paste between different applications isn't right anymore.  Hmm...
-   - Workaround done.
-
-Here strings don't work.
-
-    - fixed
-
-Nested comments #| |# don't work.
-
-    - fixed, sorta.  They're parsed by semi-parse-syntax finally.  But
-Insert mode doesn't quite work right with nested comments.
-in-something doesn't count how deeply we've nested.
-    - fixed for real
-
-
-
+Typo in preferences for "dive:end" which should really be "diva:last".
+We need to automatically repair people's preferences in the installer.
 
 
 Closing a "---" that doesn't have an $expr$ holder kills an sexpr that
 probably shouldn't die.
 
-Copy and paste from the interaction window, before the last unread point,
-runs into our manger.
+
+Copy and paste from the interaction window, before the last unread
+point, runs into our munger.  Proper fix is to have parsing work on
+the real text rope, and have the parser be aware of last-unread-point
+instead.
 
 Check syntax in insert mode does not defocus as it should.  All of the
 button presses should get us out of insert mode.
@@ -63,18 +25,9 @@ button presses should get us out of insert mode.
 Major slowness on large files.
 
     - identified as parser.
+    - but there are other areas of concern.  replace/selection is a
+      major culprit, as well as cleanup/whitespace.
 
-
-Inserting a snip in Insert mode breaks.
-
-   -- reason: the internals of insert mode and interpreter.ss are still
-   very much about symbols.  Need to fix this in the next release.
-
-
-
-Avoid using pregexp for simple string munging.  I traced a computation
-that took about a second using pregexp-replace* --- the equivalent
-hand-rolled code is about a millisecond.
 
 
 Cursor motion:
