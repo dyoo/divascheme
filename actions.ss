@@ -6,6 +6,7 @@
            (lib "plt-match.ss")
            (lib "mred.ss" "mred")
            (lib "framework.ss" "framework")
+           (only (lib "1.ss" "srfi") last)
            (only (lib "13.ss" "srfi") string-prefix?)
            "traversal.ss"
            "structures.ss"
@@ -491,7 +492,8 @@
          (rope-count-nonwhitespace (subrope (World-rope world) small big)))))
     
     (define (no-holder)
-      (let ([stx (find-pos-parent (World-cursor-position world) (World-syntax-list world))])
+      (let ([stx (find-pos-parent (World-cursor-position world)
+                                  (World-syntax-list world))])
         (if stx
             (set-cursor-position world (syntax-end-position stx))
             world)))
@@ -503,17 +505,27 @@
   
   ;; first/selection : World -> World
   (define (first/selection world)
-    (let ([stx/false (find-pos-parent (World-cursor-position world) (World-syntax-list world))])
-      (if stx/false
-          (select/stx world (first (stx->lst stx/false)))
-          (raise (make-voice-exn "No containing expression.")))))
+    (let ([stx/false (find-pos-parent (World-cursor-position world)
+                                      (World-syntax-list world))])
+      (cond
+        [(not stx/false)
+         (raise (make-voice-exn "No containing expression."))]
+        [(empty? (stx->lst stx/false))
+         (select/stx world stx/false)]
+        [else
+         (select/stx world (first (stx->lst stx/false)))])))
   
   ;; last/selection : World -> World
   (define (last/selection world)
-    (let ([stx/false (find-pos-parent (World-cursor-position world) (World-syntax-list world))])
-      (if stx/false
-          (select/stx world (first (reverse (stx->lst stx/false))))
-          (raise (make-voice-exn "No containing expression.")))))
+    (let ([stx/false (find-pos-parent (World-cursor-position world)
+                                      (World-syntax-list world))])
+      (cond
+        [(not stx/false)
+         (raise (make-voice-exn "No containing expression."))]
+        [(empty? (stx->lst stx/false))
+         (select/stx world stx/false)]
+        [else
+         (select/stx world (last (stx->lst stx/false)))])))
   
   ;; delete : World -> World
   (define (delete world)
