@@ -60,6 +60,6 @@
                    0)])))
   
   (provide/contract [get-clipboard-content
-                     (-> or/c rope? false/c)]
+                     (-> (or/c rope? false/c))]
                     [set-clipboard-content
                      ((or/c rope? false/c) . -> . any)]))
