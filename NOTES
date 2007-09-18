@@ -22,6 +22,11 @@ button presses should get us out of insert mode.
     for details.
 
 
+When multiple expressions are selected, insert after places the cursor
+after the first sexpression selected rather than the last.
+
+
+
 Major slowness on large files.
 
     - identified as parser.
