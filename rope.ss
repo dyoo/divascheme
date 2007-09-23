@@ -1,6 +1,5 @@
 (module rope mzscheme
-  (require (all-except (planet "rope.ss" ("dyoo" "rope.plt" 2 3))
-                       open-input-rope)
+  (require (planet "rope.ss" ("dyoo" "rope.plt" 3 1))
            (only (lib "13.ss" "srfi") string-count string-fold)
            (lib "contract.ss")
            (lib "etc.ss")
@@ -8,131 +7,7 @@
            (lib "list.ss")
            (lib "plt-match.ss"))
   
-  ;; open-input-rope: rope -> input-port
-  (define (open-input-rope a-rope)
-    (local (;; pipe-f: -> (values inp outp)
-            ;; Builds a pipe for input and output. We do some logic here
-            ;; because make-pipe is faster: if we don't have specials, then
-            ;; we can take advantage of it.
-            (define pipe-f
-              (cond
-                [(rope-has-special? a-rope)
-                 make-pipe-with-specials]
-                [else
-                 make-pipe]))
-            (define-values (inp outp)
-              (pipe-f)))
-      (-rope-fold/leaves (lambda (string/special _)
-                           (cond
-                             [(string? string/special)
-                              (when (> (string-length string/special) 0)
-                                (display string/special outp))]
-                             [else
-                              (write-special string/special outp)]))
-                         #f
-                         a-rope)
-      (close-output-port outp)
-      inp))
   
-  
-  ;; rope->vector: rope -> (vectorof char-or-special)
-  ;; Given a rope, returns a vector containing all of its items.
-  (define (rope->vector a-rope)
-    (local ((define vec (make-vector (rope-length a-rope))))
-      (-rope-fold (lambda (char-or-special index)
-                    (vector-set! vec index char-or-special)
-                    (add1 index))
-                  0
-                  a-rope)
-      vec))
-  
-  
-  ;; vector->rope: (vectorof char special) -> rope
-  ;; Inverts rope->vector.
-  (define (vector->rope a-vec)
-    (let loop ([i 0]
-               [acc rope-empty])
-      (cond [(= i (vector-length a-vec))
-             acc]
-            [(char? (vector-ref a-vec i))
-             (loop (add1 i)
-                   (rope-append
-                    acc
-                    (string->rope (string (vector-ref a-vec i)))))]
-            [else
-             (loop (add1 i)
-                   (rope-append
-                    acc
-                    (special->rope (vector-ref a-vec i))))])))
-  
-  
-  
-  ;; rope=?: rope rope -> boolean
-  ;; Returns true if the two ropes have the same content.
-  (define (rope=? rope-1 rope-2)
-    (cond
-      [(eq? rope-1 rope-2)
-       #t]
-      [(not (= (rope-length rope-1)
-               (rope-length rope-2)))
-       #f]
-      [else
-       ;; Ugly case analysis ahead: we've got
-       ;; to cover all the cases if we want to avoid
-       ;; the default that uses rope->vector.
-       (match (list rope-1 rope-2)
-         [(list (struct rope:string (s1))
-                (struct rope:string (s2)))
-          (string=? s1 s2)]
-         
-         [(list (struct rope:string (s1))
-                (struct rope:special (s2)))
-          #f]
-         
-         [(list (struct rope:string (s1))
-                (struct rope:concat (l2 r2 len2)))
-          (let/ec return
-            (= len2
-               (rope-fold (lambda (ch/special i)
-                            (cond
-                              [(and (char? ch/special)
-                                    (char=? ch/special
-                                            (string-ref s1 i)))
-                               (add1 i)]
-                              [else
-                               (return #f)]))
-                          0
-                          rope-2)))]
-         
-         [(list (struct rope:special (s1))
-                (struct rope:string (s2)))
-          #f]
-         
-         [(list (struct rope:special (s1))
-                (struct rope:special (s2)))
-          (eq? s1 s2)]
-         
-         [(list (struct rope:special (s1))
-                (struct rope:concat (l2 r2 len2)))
-          (or (rope=? rope-1 l2)
-              (rope=? rope-1 r2))]
-         
-         [(list (struct rope:concat (l1 r1 len1))
-                (struct rope:string (s2)))
-          (rope=? rope-2 rope-1)]
-         
-         [(list (struct rope:concat (l1 r1 len1))
-                (struct rope:special (s2)))
-          (rope=? rope-2 rope-1)]
-         
-         [(list (struct rope:concat (l1 r1 len1))
-                (struct rope:concat (l2 r2 len2)))
-          (cond [(= (rope-length l1) (rope-length l2))
-                 (and (rope=? l1 l2)
-                      (rope=? r1 r2))]
-                [else
-                 (equal? (rope->vector rope-1)
-                         (rope->vector rope-2))])])]))
   
   
   
@@ -188,9 +63,9 @@
   ;; line-rope/index : rope index -> rope
   ;; returns the line of text that contains index.
   (define (line-rope/index text index)
-    (-subrope text
-              (line-index text index)
-              (line-end-index text index)))
+    (subrope text
+             (line-index text index)
+             (line-end-index text index)))
   
   
   ;; line-rope/pos : rope pos -> rope
@@ -212,19 +87,6 @@
                         1
                         (subrope a-rope 0 (pos->index pos)))))
   
-  
-  (define -subrope
-    (case-lambda
-      [(a-rope start end)
-       (subrope a-rope start end)]
-      [(a-rope start)
-       (subrope a-rope start)]))
-  
-  (define (-rope-fold f acc a-rope)
-    (rope-fold f acc a-rope))
-  
-  (define (-rope-fold/leaves f acc a-rope)
-    (rope-fold/leaves f acc a-rope))
   
   
   ;; rope-count-whitespace: rope -> natural-number
@@ -275,28 +137,10 @@
   (define rope-empty (string->rope ""))
   
   
-  (provide (all-from-except (planet "rope.ss" ("dyoo" "rope.plt" 2 3))
-                            subrope
-                            rope-fold
-                            rope-fold/leaves))
+  (provide (all-from (planet "rope.ss" ("dyoo" "rope.plt" 3 1))))
   
   
   (provide/contract
-   [open-input-rope (rope? . -> . input-port?)]
-   
-   [rename -subrope subrope
-           (case->
-            (rope? natural-number/c natural-number/c . -> . rope?)
-            (rope? natural-number/c . -> . rope?))]
-   [rename -rope-fold rope-fold
-           (any/c any/c rope? . -> . any)]
-   [rename -rope-fold/leaves rope-fold/leaves
-           (any/c any/c rope? . -> . any)]
-   
-   [rope->vector (rope? . -> . vector?)]
-   [vector->rope (vector? . -> . rope?)]
-   [rope=? (rope? rope? . -> . boolean?)]
-   
    [line-index (rope? index/c . -> . index/c)]
    [line-pos (rope? pos/c . -> . pos/c)]
    [line-end-index (rope? index/c . -> . index/c)]
