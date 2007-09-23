@@ -111,7 +111,7 @@
     (let loop ([a-str a-str]
                [markers markers])
       (let-values ([(new-str new-markers)
-                    (regex-delete-and-adjust "([ \t]+)[\r\n]"
+                    (regex-delete-and-adjust #rx"([ \t]+)[\r\n]"
                                              a-str
                                              start-index
                                              markers)])
@@ -126,22 +126,22 @@
   ;; Removes all but one whitespace from the end of a string.
   (define (trim-white-footer a-str start-index markers)
     (cond
-      [(regexp-match "[\r\n]" a-str)
-       (regex-delete-and-adjust "([ \t]+)$" a-str start-index markers)]
+      [(regexp-match #rx"[\r\n]" a-str)
+       (regex-delete-and-adjust #rx"([ \t]+)$" a-str start-index markers)]
       [else
-       (regex-delete-and-adjust "[ \t]([ \t]*)$" a-str start-index markers)]))
+       (regex-delete-and-adjust #rx"[ \t]([ \t]*)$" a-str start-index markers)]))
   
   
   ;; truncate-white-footer: string -> string
   ;; Removes whitespace from the end of a string.
   (define (truncate-white-footer a-str start-index markers)
-    (regex-delete-and-adjust "([ \t]+)$" a-str start-index markers))
+    (regex-delete-and-adjust #rx"([ \t]+)$" a-str start-index markers))
   
   
   ;; truncate-all: string natural-number (listof natural-number) -> (listof string natural-number)
   (define (truncate-all-but-newlines a-str start-index markers)
     (let-values ([(new-str new-markers)
-                  (regex-delete-and-adjust* "([^\n]+)" a-str start-index markers)])
+                  (regex-delete-and-adjust* #rx"([^\n]+)" a-str start-index markers)])
       (values new-str new-markers)))
   
   

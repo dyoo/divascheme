@@ -203,19 +203,22 @@
          ;; This function eats all the extra white-space between start-pos and
          ;; end-pos.
          (define (cleanup-text/between world start-pos end-pos)
-           (print-mem*
+           (print-time*
             'cleanup-text/pos
             (let* ([start-index (pos->index start-pos)]
                    [end-index (pos->index end-pos)]
                    [line (subrope (World-rope world) start-index end-index)]
                    [len (rope-length line)])
+              (printf "cleanup-text/between: rope-depth before is ~a~n"
+                      (rope-depth line))
               (let-values ([(clean-line lst)
                             (cleanup-whitespace line start-index
                                                 (list (World-selection-index world)
                                                       (World-selection-end-index world)
                                                       (World-mark-index world)
                                                       (World-mark-end-index world)))])
-                
+                (printf "cleanup-text/between: rope-depth after is ~a~n"
+                        (rope-depth clean-line))
                 (let ([new-world (world-replace-rope world start-index clean-line len)])
                   (mark/pos+len (select/pos+len new-world
                                                 (index->pos (first lst))
@@ -277,10 +280,11 @@
     (print-mem*
      'replace/selection
      (let ([len (rope-length a-rope)]
-           [new-world (world-replace-rope world
-                                          (World-cursor-index world)
-                                          a-rope
-                                          (World-selection-length world))])
+           [new-world
+            (world-replace-rope world
+                                (World-cursor-index world)
+                                a-rope
+                                (World-selection-length world))])
        (cleanup-text/selection (recompute-mark/replace
                                 (select/len new-world len)
                                 (World-cursor-position world)

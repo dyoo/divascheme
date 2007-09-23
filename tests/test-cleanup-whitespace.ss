@@ -123,5 +123,31 @@
      ))
   
   
+  (define (string->rope/degenerate a-str)
+    (let loop ([acc rope-empty]
+               [i 0])
+      (cond
+        [(< i (string-length a-str))
+         (loop (rope-append acc (string->rope (string (string-ref a-str i))))
+               (add1 i))]
+        [else
+         acc])))
+  
+  
+  (define (performance-test)
+    (let ([big-rope
+           (string->rope/degenerate "'((((((((((((((((((((((((((((((((((((((((((((((((((((((((((((((((((((((((((((((((((((((((((((((((((((((((((((((((((((((((((((((((((((((((((((((((((((((((((((((((((((((((((((((((((((((((((((((((((((((((((((((((((((((((((((((((((((((((((((((((((((((((((((((((((((((((((((((((((((((((((((((((((((((((((((((($expr$ ---) $expr$ ---) $expr$ ---) $expr$ ---) $expr$ ---) $expr$ ---) $expr$ ---) $expr$ ---) $expr$ ---) $expr$ ---) $expr$ ---) $expr$ ---) $expr$ ---) $expr$ ---) $expr$ ---) $expr$ ---) $expr$ ---) $expr$ ---) $expr$ ---) $expr$ ---) $expr$ ---) $expr$ ---) $expr$ ---) $expr$ ---) $expr$ ---) $expr$ ---) $expr$ ---) $expr$ ---) $expr$ ---) $expr$ ---) $expr$ ---) $expr$ ---) $expr$ ---) $expr$ ---) $expr$ ---) $expr$ ---) $expr$ ---) $expr$ ---) $expr$ ---) $expr$ ---) $expr$ ---) $expr$ ---) $expr$ ---) $expr$ ---) $expr$ ---) $expr$ ---) $expr$ ---) $expr$ ---) $expr$ ---) $expr$ ---) $expr$ ---) $expr$ ---) $expr$ ---) $expr$ ---) $expr$ ---) $expr$ ---) $expr$ ---) $expr$ ---) $expr$ ---) $expr$ ---) $expr$ ---) $expr$ ---) $expr$ ---) $expr$ ---) $expr$ ---) $expr$ ---) $expr$ ---) $expr$ ---) $expr$ ---) $expr$ ---) $expr$ ---) $expr$ ---) $expr$ ---) $expr$ ---) $expr$ ---) $expr$ ---) $expr$ ---) $expr$ ---) $expr$ ---) $expr$ ---) $expr$ ---) $expr$ ---) $expr$ ---) $expr$ ---) $expr$ ---) $expr$ ---) $expr$ ---) $expr$ ---) $expr$ ---) $expr$ ---) $expr$ ---) $expr$ ---) $expr$ ---) $expr$ ---) $expr$ ---) $expr$ ---) $expr$ ---) $expr$ ---) $expr$ ---) $expr$ ---) $expr$ ---) $expr$ ---) $expr$ ---) $expr$ ---) $expr$ ---) $expr$ ---) $expr$ ---) $expr$ ---) $expr$ ---) $expr$ ---) $expr$ ---) $expr$ ---) $expr$ ---) $expr$ ---) $expr$ ---) $expr$ ---) $expr$ ---) $expr$ ---) $expr$ ---) $expr$ ---) $expr$ ---) $expr$ ---) $expr$ ---) $expr$ ---) $expr$ ---) $expr$ ---) $expr$ ---) $expr$ ---) $expr$ ---) $expr$ ---) $expr$ ---) $expr$ ---) $expr$ ---) $expr$ ---) $expr$ ---) $expr$ ---) $expr$ ---) $expr$ ---) $expr$ ---) $expr$ ---) $expr$ ---) $expr$ ---) $expr$ ---) $expr$ ---) $expr$ ---) $expr$ ---) $expr$ ---) $expr$ ---) $expr$ ---) $expr$ ---) $expr$ ---) $expr$ ---) $expr$ ---) $expr$ ---) $expr$ ---) $expr$ ---) $expr$ ---) $expr$ ---) $expr$ ---) $expr$ ---) $expr$ ---) $expr$ ---) $expr$ ---) $expr$ ---) $expr$ ---) $expr$ ---) $expr$ ---) $expr$ ---) $expr$ ---) $expr$ ---) $expr$ ---) $expr$ ---) $expr$ ---) $expr$ ---) $expr$ ---) $expr$ ---) $expr$ ---) $expr$ ---) $expr$ ---) $expr$ ---) $expr$ ---) $expr$ ---) $expr$ ---) $expr$ ---) $expr$ ---) $expr$ ---) $expr$ ---) $expr$ ---) $expr$ ---) $expr$ ---) $expr$ ---) $expr$ ---) $expr$ ---) $expr$ ---) $expr$ ---) $expr$ ---) $expr$ ---) $expr$ ---) $expr$ ---) $expr$ ---) $expr$ ---) $expr$ ---) $expr$ ---) $expr$ ---) $expr$ ---) $expr$ ---) $expr$ ---) $expr$ ---) $expr$ ---) $expr$ ---) $expr$ ---) $expr$ ---) $expr$ ---) $expr$ ---) $expr$ ---) $expr$ ---) $expr$ ---) $expr$ ---) $expr$ ---) $expr$ ---) $expr$ ---) $expr$ ---) $expr$ ---) $expr$ ---) $expr$ ---) $expr$ ---) $expr$ ---) $expr$ ---) $expr$ ---) $expr$ ---) $expr$ ---) $expr$ ---) $expr$ ---) $expr$ ---) $expr$ ---) $expr$ ---) $expr$ ---) $expr$ ---) $expr$ ---) $expr$ ---) $expr$ ---) $expr$ ---) $expr$ ---) $expr$ ---) $expr$ ---) $expr$ ---) $expr$ ---) $expr$ ---) $expr$ ---) $expr$ ---) $expr$ ---) $expr$ ---) $expr$ ---) $expr$ ---) $expr$ ---) $expr$ ---) $expr$ ---) $expr$ ---) $expr$ ---) $expr$ ---) $expr$ ---) $expr$ ---) $expr$ ---) $expr$ ---) $expr$ ---) $expr$ ---) $expr$ ---) $expr$ ---) $expr$ ---) $expr$ ---) $expr$ ---) $expr$ ---) $expr$ ---) $expr$ ---) $expr$ ---) $expr$ ---) $expr$ ---) $expr$ ---) $expr$ ---) $expr$ ---) $expr$ ---) $expr$ ---) $expr$ ---) $expr$ ---) $expr$ ---) $expr$ ---) $expr$ ---) $expr$ ---) $expr$ ---) $expr$ ---) $expr$ ---) $expr$ ---) $expr$ ---) $expr$ ---) $expr$ ---) $expr$ ---) $expr$ ---) $expr$ ---) $expr$ ---) $expr$ ---) $expr$ ---) $expr$ ---) $expr$ ---) $expr$ ---) $expr$ ---) $expr$ ---)")])
+      (time
+       (cleanup-whitespace (rope-append* big-rope
+                                         big-rope
+                                         big-rope
+                                         big-rope
+                                         big-rope)
+                           0 '())
+       (void))))
+  
+  
+  
+  
   
   (test/text-ui cleanup-whitespace-tests))

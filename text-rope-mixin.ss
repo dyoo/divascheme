@@ -17,7 +17,7 @@
                get-start-position
                erase
                insert)
-      (define rope (string->rope ""))
+      (define rope rope-empty)
       
       ;; get-rope: -> rope
       ;; Returns the rope reflected by the text.
@@ -25,7 +25,7 @@
         rope)
       
       ;; Arbitrary constant for rebalancing the rope.
-      (define threshold-for-rebalancing 100)
+      (define threshold-for-rebalancing 25)
       
       ;; On changes to the text, we must repair the rope:
       (define/augment (after-delete start len)
@@ -64,21 +64,20 @@
   
   
   
+  ;; Simple lexer: pulls ropes from a port. Assumes specials
+  ;; should be unboxed.
+  (define mylexer
+    (lexer
+     [(repetition 0 +inf.0 any-char)
+      (string->rope lexeme)]
+     [(special)
+      (special->rope (unbox lexeme))]
+     [(eof) eof]))
+  
   ;; read-subrope-in-text: text% number number -> rope
   (define (read-subrope-in-text a-text start len)
     (local
-        (
-         ;; Simple lexer: pulls ropes from a port. Assumes specials
-         ;; should be unboxed.
-         (define mylexer
-           (lexer
-            [(repetition 0 +inf.0 any-char)
-             (string->rope lexeme)]
-            [(special)
-             (special->rope (unbox lexeme))]
-            [(eof) eof]))
-         
-         (define ip (open-input-text-editor a-text start (+ start len)
+        ((define ip (open-input-text-editor a-text start (+ start len)
                                             (lambda (snip) (box snip))
                                             #f #f)))
       (let loop ([inserted-rope (string->rope "")]
