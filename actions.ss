@@ -543,10 +543,9 @@
     
     (let* ([world (if (originally-unmarked?) (mark-default world) world)]
            [world (extend-mark-to-newline world)]
-           [fill-rope (rope-append
-                       (string->rope " ")
-                       (rope-append (World-mark world)
-                                    (string->rope " ")))]
+           [fill-rope (rope-append* rope-space
+                                    (World-mark world)
+                                    rope-space)]
            [world (id (replace/selection (dedouble-ellipsis (delete/mark world)) fill-rope))]
            [world (if (= (World-cursor-position world)
                          (World-mark-position world))
@@ -594,10 +593,9 @@
   (define (paste world)
     (if (get-clipboard-content)
         (replace/selection (dedouble-ellipsis world)
-                           (rope-append
-                            (string->rope " ")
-                            (rope-append (get-clipboard-content)
-                                         (string->rope " "))))
+                           (rope-append* (string->rope " ")
+                                         (get-clipboard-content)
+                                         (string->rope " ")))
         world))
   
   

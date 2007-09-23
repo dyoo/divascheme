@@ -464,8 +464,9 @@
   
   ;; insert-rope : rope index rope -> rope
   (define (insert-rope a-rope index tyt)
-    (rope-append (rope-append (subrope a-rope 0 index) tyt)
-                 (subrope a-rope index)))
+    (rope-append* (subrope a-rope 0 index)
+                  tyt
+                  (subrope a-rope index)))
   
   
   ;; delete-rope : rope index int -> rope
@@ -483,8 +484,9 @@
      'replace-text
      (if (< len 0)
          (replace-rope a-rope (+ index len) tyt (- len))
-         (rope-append (rope-append (subrope a-rope 0 index) tyt)
-                      (subrope a-rope (+ index len))))))
+         (rope-append* (subrope a-rope 0 index)
+                       tyt
+                       (subrope a-rope (+ index len))))))
   
   
   ;; get-subrope/stx : rope syntax -> rope
