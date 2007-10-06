@@ -6,6 +6,7 @@
            (lib "etc.ss")
            (lib "lex.ss" "parser-tools")
            (lib "contract.ss")
+           (lib "plt-match.ss")
            "rope.ss")
   
   
@@ -54,11 +55,11 @@
   (define (insert-rope-in-text a-text a-rope)
     (rope-fold/leaves
      (lambda (snip _)
-       (cond
-         [(string? snip)
-          (send a-text insert snip (send a-text get-start-position) 'same #f)]
-         [else
-          (send a-text insert (send snip copy) (send a-text get-start-position) 'same #f)]))
+       (match snip
+         [(struct rope:string (s))
+          (send a-text insert s (send a-text get-start-position) 'same #f)]
+         [(struct rope:special (s))
+          (send a-text insert (send s copy) (send a-text get-start-position) 'same #f)]))
      #f
      a-rope))
   

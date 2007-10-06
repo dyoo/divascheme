@@ -13,19 +13,6 @@
   (define last-remembered-clip-id #f)
   
   
-  ;; rope-string/erasing-specials: rope->string
-  ;; FIXME: This might want to live in rope.ss.
-  (define (rope->string/erasing-specials a-rope)
-    (rope->string
-     (rope-fold/leaves (lambda (string/special acc)
-                         (cond
-                           [(string? string/special)
-                            (rope-append acc (string->rope string/special))]
-                           [else acc]))
-                       rope-empty
-                       a-rope)))
-  
-  
   ;; get-clipboard-content : void -> (union rope false)
   (define (get-clipboard-content)
     (local ((define str/false

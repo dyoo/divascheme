@@ -1,5 +1,5 @@
 (module rope mzscheme
-  (require (planet "rope.ss" ("dyoo" "rope.plt" 3 1))
+  (require (planet "rope.ss" ("dyoo" "rope.plt" 3))
            (only (lib "13.ss" "srfi") string-count string-fold)
            (lib "contract.ss")
            (lib "etc.ss")
@@ -77,12 +77,12 @@
   ;; computes line number at pos, starting at line one.
   (define (line-number a-rope pos)
     (local ((define (accum-line-count string/special acc)
-              (cond [(string? string/special)
-                     (+ acc
-                        (string-count string/special
-                                      (lambda (x)
-                                        (char=? x #\newline))))]
-                    [else acc])))
+              (match string/special
+                [(struct rope:string (s))
+                 (+ acc
+                    (string-count s (lambda (x) (char=? x #\newline))))]
+                [(struct rope:special (s))
+                 acc])))
       (rope-fold/leaves accum-line-count
                         1
                         (subrope a-rope 0 (pos->index pos)))))
@@ -93,11 +93,11 @@
   ;; Returns the number of whitespace characters in a rope.
   (define (rope-count-whitespace a-rope)
     (local ((define (f string-or-special current-count)
-              (cond
-                [(string? string-or-special)
+              (match string-or-special
+                [(struct rope:string (s))
                  (+ current-count
-                    (count-whitespace-in-string string-or-special))]
-                [else
+                    (count-whitespace-in-string s))]
+                [(struct rope:special (s))
                  current-count]))
             
             (define (count-whitespace-in-string a-str)
@@ -118,17 +118,18 @@
     (let/ec return
       (rope-fold/leaves
        (lambda (string/special acc)
-         (cond [(string? string/special)
-                (cond
-                  [(regexp-match #rx"^[ \t\n]*$" string/special)
-                   (rope-append acc (string->rope string/special))]
-                  [(regexp-match #rx"^[ \t\n]*" string/special)
-                   =>
-                   (lambda (result)
-                     (return
-                      (rope-append acc (string->rope (first result)))))])]
-               [else
-                (return acc)]))
+         (match string/special
+           [(struct rope:string (s))
+            (cond
+              [(regexp-match #rx"^[ \t\n]*$" s)
+               (rope-append acc string/special)]
+              [(regexp-match #rx"^[ \t\n]*" s)
+               =>
+               (lambda (result)
+                 (return
+                  (rope-append acc (string->rope (first result)))))])]
+           [(struct rope:special (s))
+            (return acc)]))
        (string->rope "")
        a-rope)))
   
@@ -137,7 +138,7 @@
   (define rope-empty (string->rope ""))
   
   
-  (provide (all-from (planet "rope.ss" ("dyoo" "rope.plt" 3 1))))
+  (provide (all-from (planet "rope.ss" ("dyoo" "rope.plt" 3))))
   
   
   (provide/contract

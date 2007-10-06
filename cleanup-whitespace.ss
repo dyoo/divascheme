@@ -23,7 +23,7 @@
       (let loop ([pos-tok (next-position-token)]
                  [kill-leading-whitespace? #t]
                  [markers (map add1 markers)]
-                 [acc (string->rope "")]
+                 [acc '()]
                  [count-deleted-chars 0])
         (local ((define tok (position-token-token pos-tok))
                 (define start-pos 
@@ -34,11 +34,11 @@
                   (loop (next-position-token)
                         kill-leading-whitespace?
                         markers
-                        (rope-append acc
-                                     ((if (string? (token-value tok))
-                                          string->rope
-                                          special->rope)
-                                      (token-value tok)))
+                        (cons ((if (string? (token-value tok))
+                                   string->rope
+                                   special->rope)
+                               (token-value tok))
+                              acc)
                         count-deleted-chars))
                 
                 (define (handle-space)
@@ -59,7 +59,7 @@
                                       markers)])
                          (loop next-pos-token #t
                                new-markers
-                               (rope-append acc (string->rope new-str))
+                               (cons (string->rope new-str) acc)
                                (+ count-deleted-chars 
                                   (string-length-delta new-str (token-value tok)))))]
                       
@@ -70,7 +70,7 @@
                                  (footer-cleaner-f whitespace start-pos new-markers-1)))
                          (loop next-pos-token #t
                                new-markers-2
-                               (rope-append acc (string->rope new-whitespace))
+                               (cons (string->rope new-whitespace) acc)
                                (+ count-deleted-chars 
                                   (string-length-delta 
                                    new-whitespace (token-value tok)))))])))
@@ -82,7 +82,7 @@
                                    (truncate-white-footer
                                     (token-value tok) start-pos markers)])
                        (loop (next-position-token) #f new-markers
-                             (rope-append acc (string->rope cleaned-str))
+                             (cons (string->rope cleaned-str) acc)
                              (+ count-deleted-chars
                                 (string-length-delta cleaned-str
                                                      (token-value tok)))))]
@@ -103,7 +103,8 @@
             [(space)
              (handle-space)]
             [(end)
-             (values acc (map sub1 markers))])))))
+             (values (apply rope-append* (reverse acc))
+                     (map sub1 markers))])))))
   
   
   ;; trim-white-header: string natural-number (listof natural-number) -> (values string (listof natural-number)
