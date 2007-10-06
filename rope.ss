@@ -134,6 +134,19 @@
        a-rope)))
   
   
+  ;; rope-string/erasing-specials: rope->string
+  ;; Like rope->string, but removes specials from the output.
+  (define (rope->string/erasing-specials a-rope)
+    (rope->string
+     (rope-fold/leaves (lambda (string/special acc)
+                         (match string/special
+                           [(struct rope:string (s))
+                            (rope-append acc string/special)]
+                           [(struct rope:special (s))
+                            acc]))
+                       rope-empty
+                       a-rope)))
+  
   (define rope-space (string->rope " "))
   (define rope-empty (string->rope ""))
   
@@ -152,6 +165,7 @@
    
    [rope-count-whitespace (rope? . -> . natural-number/c)]
    [rope-leading-whitespace (rope? . -> . rope?)]
+   [rope->string/erasing-specials (rope? . -> . string?)]
    
    [rope-space rope?]
    [rope-empty rope?]))

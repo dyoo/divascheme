@@ -159,7 +159,8 @@
   (define (recompute-mark/replace world pos b-len a-len)
     (let-values ([(new-mark-index new-mark-length)
                   (compute-new-selection/replace (World-mark-index world) (World-mark-length world) (pos->index pos) b-len a-len)])
-      (mark/pos+len world (index->pos new-mark-index) new-mark-length)))
+      (mark/pos+len world (index->pos new-mark-index)
+                    new-mark-length)))
   
   
   ;; indent/pos+len: World pos non-negative-integer -> World
@@ -188,14 +189,18 @@
   (define (cleanup-text/pos+len world pos len)
     (local
         ((define (get-line-oriented-start-and-end start-pos end-pos)
-           (let* ([start-pos (line-pos (World-rope world) start-pos)]
-                  [start-pos (cond [(find-pos start-pos (World-syntax-list world))
-                                    => syntax-position]
-                                   [else start-pos])]
-                  [end-pos (line-end-pos (World-rope world) end-pos)]
-                  [end-pos (cond [(find-pos end-pos (World-syntax-list world))
-                                  => syntax-end-position]
-                                 [else end-pos])])
+           (let* ([start-pos
+                   (line-pos (World-rope world) start-pos)]
+                  [start-pos
+                   (cond [(find-pos start-pos (World-syntax-list world))
+                          => syntax-position]
+                         [else start-pos])]
+                  [end-pos
+                   (line-end-pos (World-rope world) end-pos)]
+                  [end-pos
+                   (cond [(find-pos end-pos (World-syntax-list world))
+                          => syntax-end-position]
+                         [else end-pos])])
              (values start-pos end-pos)))
          
          
@@ -203,28 +208,22 @@
          ;; This function eats all the extra white-space between start-pos and
          ;; end-pos.
          (define (cleanup-text/between world start-pos end-pos)
-           (print-time*
-            'cleanup-text/pos
-            (let* ([start-index (pos->index start-pos)]
-                   [end-index (pos->index end-pos)]
-                   [line (subrope (World-rope world) start-index end-index)]
-                   [len (rope-length line)])
-              (printf "cleanup-text/between: rope-depth before is ~a~n"
-                      (rope-depth line))
-              (let-values ([(clean-line lst)
-                            (cleanup-whitespace line start-index
-                                                (list (World-selection-index world)
-                                                      (World-selection-end-index world)
-                                                      (World-mark-index world)
-                                                      (World-mark-end-index world)))])
-                (printf "cleanup-text/between: rope-depth after is ~a~n"
-                        (rope-depth clean-line))
-                (let ([new-world (world-replace-rope world start-index clean-line len)])
-                  (mark/pos+len (select/pos+len new-world
-                                                (index->pos (first lst))
-                                                (- (second lst) (first lst)))
-                                (index->pos (third lst))
-                                (- (fourth lst) (third lst)))))))))
+           (let* ([start-index (pos->index start-pos)]
+                  [end-index (pos->index end-pos)]
+                  [line (subrope (World-rope world) start-index end-index)]
+                  [len (rope-length line)])
+             (let-values ([(clean-line lst)
+                           (cleanup-whitespace line start-index
+                                               (list (World-selection-index world)
+                                                     (World-selection-end-index world)
+                                                     (World-mark-index world)
+                                                     (World-mark-end-index world)))])
+               (let ([new-world (world-replace-rope world start-index clean-line len)])
+                 (mark/pos+len (select/pos+len new-world
+                                               (index->pos (first lst))
+                                               (- (second lst) (first lst)))
+                               (index->pos (third lst))
+                               (- (fourth lst) (third lst))))))))
       
       (let*-values ([(start-pos end-pos)
                      (get-line-oriented-start-and-end pos (+ pos len))]
@@ -277,19 +276,17 @@
   ;; replace/selection : World rope -> World
   ;; FIXME: bad performance on large files.
   (define (replace/selection world a-rope)
-    (print-mem*
-     'replace/selection
-     (let ([len (rope-length a-rope)]
-           [new-world
-            (world-replace-rope world
-                                (World-cursor-index world)
-                                a-rope
-                                (World-selection-length world))])
-       (cleanup-text/selection (recompute-mark/replace
-                                (select/len new-world len)
-                                (World-cursor-position world)
-                                (World-selection-length world)
-                                len)))))
+    (let ([len (rope-length a-rope)]
+          [new-world
+           (world-replace-rope world
+                               (World-cursor-index world)
+                               a-rope
+                               (World-selection-length world))])
+      (cleanup-text/selection (recompute-mark/replace
+                               (select/len new-world len)
+                               (World-cursor-position world)
+                               (World-selection-length world)
+                               len))))
   
   ;; close : World -> World
   (define (close world)
@@ -646,19 +643,8 @@
   (define (anti-join/cursor world)
     (anti-join/pos+len world (World-cursor-position world) 0))
   
-  ;; transpose : World -> World
-  (define (transpose world)
-    (let ([text (make-object (text-rope-mixin scheme:text%))])
-      (send text set-rope (World-rope world))
-      (send text diva:set-selection-position
-            (sub1 (World-cursor-position world)))
-      
-      (send text transpose-sexp (sub1 (World-cursor-position world)))
-      (copy-struct World (unmark world)
-                   [World-cursor-position (add1 (send text get-start-position))]
-                   [World-selection-length 0]
-                   [World-rope (send text get-rope)]
-                   [World-syntax-list/lazy #f])))
+  
+  
   
   
   ;; default-magic/language: World -> (listof string)
@@ -764,7 +750,7 @@
            paste
            enter/selection
            join/selection
-           transpose
+           
            indent/selection
            magic-options
            magic-bash)
