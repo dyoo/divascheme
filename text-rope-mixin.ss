@@ -26,7 +26,8 @@
         rope)
       
       ;; Arbitrary constant for rebalancing the rope.
-      (define threshold-for-rebalancing 25)
+      ;; disabled for now: rope.plt should handle this for us.
+      #;(define threshold-for-rebalancing 25)
       
       ;; On changes to the text, we must repair the rope:
       (define/augment (after-delete start len)
@@ -40,9 +41,10 @@
                     (rope-append (subrope rope 0 start)
                                  (read-subrope-in-text this start len))
                     (subrope rope start)))
-        (when (> (rope-depth rope)
-                 threshold-for-rebalancing)
-          (set! rope (rope-balance rope)))
+        ;; commented out: rope.plt v.3 will do this for us.
+        #;(when (> (rope-depth rope)
+                   threshold-for-rebalancing)
+            (set! rope (rope-balance rope)))
         (inner #f after-insert start len))
       
       (super-new)))
