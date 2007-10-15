@@ -43,11 +43,12 @@
              (values ip op)))
          (define-values (pipe-ip pipe-op) (make-counting-pipe))
          (define translation-table (feed-tokens ip pipe-op))]
-      (let loop ([stx (read-syntax source pipe-ip)])
-        (cond [(eof-object? stx) '()]
-              [else
-               (cons (repair-stx stx translation-table)
-                     (loop (read-syntax source pipe-ip)))]))))
+      (parameterize ([read-accept-reader #t])
+        (let loop ([stx (read-syntax source pipe-ip)])
+          (cond [(eof-object? stx) '()]
+                [else
+                 (cons (repair-stx stx translation-table)
+                       (loop (read-syntax source pipe-ip)))])))))
   
   
   
