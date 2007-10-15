@@ -1,5 +1,9 @@
 Known bugs and issues after 2.3 release:
 
+#lang does not interact well; a file using it or a #reader extension
+gives wacky positional information making it infuriating to edit code.
+I think the parser isn't generating the correct locations.
+
 
 Typo in preferences for "dive:end" which should really be "diva:last".
 We need to automatically repair people's preferences in the installer.
