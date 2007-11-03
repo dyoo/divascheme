@@ -68,12 +68,13 @@
                         Pass-f
                         again
                         success-message
-                        extension-length
-                        extension-base
+                        extension
                         imperative-actions
                         markers
                         path) ;; read-only
     )
+  
+  
   
   (provide (struct World (rope
                           syntax-list/lazy
@@ -91,12 +92,18 @@
                           Pass-f
                           again
                           success-message
-                          extension-length
-                          extension-base
+                          extension
                           imperative-actions
                           markers
                           path)))
   
+  (define-struct extension (base
+                            puck
+                            puck-length))
+  
+  (provide (struct extension (base
+                              puck
+                              puck-length)))
   
   (provide World-selection-position
            World-cursor-index
@@ -164,8 +171,9 @@
                               (World-mark-length world))))
     
   
+  (define world-fn/c (World? . -> . World?))
   
-  (provide queue-imperative-action)
+  (provide/contract [queue-imperative-action (World? (World? any/c world-fn/c (World? . -> . void?) . -> . World?) . -> . World?)])
   ;; queue-imperative-action: World (world window -> world) -> World
   ;; Adds an imperative action that will be evaluated at the end of
   ;; evaluation.
@@ -297,12 +305,8 @@
     (cond
       [(World-syntax-list/lazy a-world) => identity]
       [else
-       (printf "World-syntax-list forced~n")
-       (print-time*
-        'World-syntax-list
-        (set-World-syntax-list/lazy!
-         a-world
-         (rope-parse-syntax (World-rope a-world))))
+       (set-World-syntax-list/lazy! a-world
+                                    (rope-parse-syntax (World-rope a-world)))
        (World-syntax-list/lazy a-world)]))
   
   (provide/contract [World-syntax-list (World? . -> . (listof syntax?))])
@@ -350,10 +354,8 @@
           'Again
 
           'Out
-          'Up
           'Down
           'Up
-          'Down
           'Forward
           'Backward
           'Younger
@@ -389,10 +391,40 @@
           'Tag
           'Extend-Selection))
   
+  (define motion-commands
+    ;; commands which must manipulate the cursor position
+    ;; when there is no extended selection but manipulate the puck when there is one
+    (list
+     
+     'Search-Forward
+     'Search-Backward
+     'Search-Top
+     'Search-Bottom
+     
+     'Holder
+     'Holder-Forward
+     'Holder-Backward
+     
+     'Next
+     'Previous
+     
+     'Out
+     'Down
+     'Up
+     'Forward
+     'Backward
+     'Younger
+     'Older
+     'First
+     'Last))
+  
   
   (define command?
     (lambda (symbol) (member symbol commands)))
   
+  (provide motion-command?)
+  (define motion-command?
+    (lambda (symbol) (member symbol motion-commands)))
   
   (define-datatype Noun
     [Symbol-Noun (symbol)]

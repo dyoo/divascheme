@@ -25,7 +25,7 @@
            find-pos-near
            find-pos-parent
            find-pos-spine
-           greatest-distinct-parents
+           positions-within-least-common-parent
            find-pos-updown
            find-ellipsis
            find-siblings-ellipsis
@@ -89,8 +89,7 @@
            (if (or (= (syntax-position stx) pos)
                    (atomic/stx? stx))
                stx
-               (let ([childs (gmap aux stx)])
-                 (or (or* childs))))))
+               (ormap aux (syntax->list stx)))))
     (ormap aux stx-list))
   
   (define (find-pos-near pos stx-list)
@@ -123,7 +122,8 @@
   
   
   ;; find-pos-spline: pos (listof syntax) -> (listof syntax)
-  ;; Returns the list of parent syntaxes, starting with the root.
+  ;; Returns the list of parent syntaxes, starting with the root,
+  ;; including the syntax at pos, if it exists.
   (define (find-pos-spine pos stx-list)
     (define (aux stx)
       (and (in-syntax? pos stx)
@@ -133,17 +133,24 @@
                  (list stx)))))
     (or (ormap aux stx-list) '()))
   
+  (define (find-pos-spine/pos pos stx-list)
+    (let ([s (find-pos-spine pos stx-list)])
+      (if (find-pos pos stx-list)
+          s
+          (append s (list pos)))))
   
-  ;; greatest-distinct-parents: pos pos (listof syntax) -> (values syntax/false syntax/false)
-  (define (greatest-distinct-parents pos1 pos2 stx-list)
-    (let ([spine1 (find-pos-spine pos1 stx-list)]
-          [spine2 (find-pos-spine pos2 stx-list)])
+  ;; positions-within-least-common-parent: pos pos (listof syntax) -> (values syntax/int syntax/int)
+  (define (positions-within-least-common-parent pos1 pos2 stx-list)
+    (let ([spine1 (find-pos-spine/pos pos1 stx-list)]
+          [spine2 (find-pos-spine/pos pos2 stx-list)])
+      
       (let loop ([s1 spine1]
-                 [s2 spine2])
-        (cond [(or (empty? s1) (empty? s2))
-               (values #f #f)]
+                 [s2 spine2]
+                 [p #f])
+        (cond [(or (empty? s1)
+                   (empty? s2)) (values p p)]
               [(eq? (first s1) (first s2))
-               (loop (rest s1) (rest s2))]
+               (loop (rest s1) (rest s2) (first s1))]
               [else (values (first s1) (first s2))]))))
   
   

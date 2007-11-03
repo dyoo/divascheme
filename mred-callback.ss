@@ -62,13 +62,14 @@
       ;;
 
       ;; When the position changes, the insertion should be exited.
-      (define insertion-after-set-position-callback-default (lambda () ()))
-      (define insertion-after-set-position-callback insertion-after-set-position-callback-default)
+      (define insertion-after-set-position-callback-old (lambda () ()))
+      (define insertion-after-set-position-callback insertion-after-set-position-callback-old)
       (define/public (diva:-insertion-after-set-position-callback-set callback)
-	(set! insertion-after-set-position-callback callback))
+        (set! insertion-after-set-position-callback-old insertion-after-set-position-callback)
+        (set! insertion-after-set-position-callback callback))
       (define/public (diva:-insertion-after-set-position-callback-reset)
-	(diva:-insertion-after-set-position-callback-set insertion-after-set-position-callback-default))
-
+        (set! insertion-after-set-position-callback insertion-after-set-position-callback-old))
+      
       
       ;;
       ;; CALLBACKS CALLS

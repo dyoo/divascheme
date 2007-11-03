@@ -171,12 +171,12 @@
     (let-values ([(world mark) (world-new-marker world pos)])
       (queue-imperative-action
        world
-       (lambda (world window)
+       (lambda (world window update-world-fn update-mred-fn)
          (let* ([new-pos (max 0 (sub1 (world-marker-position world mark)))]
                 [new-end-pos (min (string-length (send window get-text))
                                   (+ new-pos len))])
            (send window tabify-selection new-pos new-end-pos)
-           (world-clear-marker world mark))))))
+           (world-clear-marker (update-world-fn world) mark))))))
   
   ;; indent/selection : World -> World
   (define (indent/selection world)
@@ -292,7 +292,7 @@
   (define (close world)
     ;; flash-last-sexp!: world text% -> world
     ;;
-    (define (flash-last-sexp! world window)
+    (define (flash-last-sexp! world window update-world-fn update-mred-fn)
       (let ([pos (send window get-backward-sexp (send window get-start-position))])
         ;; We queue-callback this up since the highlighting fights with
         ;; insertion mode otherwise, plus this is a low-priority item.

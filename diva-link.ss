@@ -13,7 +13,7 @@
 	   "insert-keymap.ss"
 	   "structures.ss"
            "utilities.ss"
-           "diva-central.ss"
+           "diva-central.ss" 
            "rope.ss"
            "clipboard.ss"
            (prefix preferences: "diva-preferences.ss"))
@@ -205,7 +205,6 @@
                           false
                           ""
                           #f
-                          #f
                           empty
                           empty
                           (current-directory))))
@@ -274,14 +273,20 @@
            (lambda () (begin-edit-sequence))
            (lambda ()
              (send current-mred update-mred world)
-             (let ([new-world (foldl (lambda (fn world)
-                                       (with-divascheme-handlers
-                                        world
-                                        (lambda () (fn world this))))
-                                     world
-                                     (reverse (World-imperative-actions world)))])
+             (let
+                 ([new-world
+                   (foldl
+                    (lambda (fn world)
+                      (with-divascheme-handlers
+                       world
+                       (lambda ()
+                         (fn world this
+                             (lambda (w) (send current-mred update-world w))
+                             (lambda (w) (send current-mred update-mred w))))))
+                    world
+                    (reverse (World-imperative-actions world)))])
                (set! current-world
-                     (copy-struct World (send current-mred update-world new-world)
+                     (copy-struct World new-world
                                   [World-imperative-actions empty]))))
            (lambda () (end-edit-sequence)))))
       
@@ -298,10 +303,7 @@
                            [(lambda args true)
                             (lambda (exn) (send current-mred critical-error exn)
                               default-world-on-exn)])
-             (let ([world (thunk)])
-               (when (and (World? world) (World-success-message world))
-                 (diva-message (World-success-message world)))
-               world)))
+             (thunk)))
          (lambda () (end-edit-sequence))))
       
       

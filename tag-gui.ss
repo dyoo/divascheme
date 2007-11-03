@@ -23,9 +23,9 @@
   ;;
   ;; This might take a while, so we allow this to run in a thread while we wait.
   (define (generate-navigation-tags-dialog)
-    (define title "Generate Navigation Tags...")
+    (define title "Generate Navigation Tags")
     (define instructions-msg
-      "Select project directory.")
+      "Select project directory")
     
     (let ([dir (get-directory instructions-msg #f #f '(enter-packages))])
       (when (and dir (directory-exists? dir))

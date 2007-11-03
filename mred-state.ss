@@ -151,23 +151,20 @@
       (define/public (get-mark-position)  
 	(index->pos (send window-text diva:-get-mark-start-position)))
 
-      (define/public (get-mark-length)
-	(let ([mark-start-pos (send window-text diva:-get-mark-start-position)]
+      (define (get-mark-length)
+        (let ([mark-start-pos (send window-text diva:-get-mark-start-position)]
 	      [mark-end-pos   (send window-text diva:-get-mark-end-position)])
 	  (- mark-end-pos mark-start-pos)))
 
-      (define/public (set-mark pos len)
-	(if (>= len 0)
+      (define (set-mark pos len)
+        (if (>= len 0)
 	    (send window-text diva:-set-mark (pos->index pos) (+ (pos->index pos) len))
 	    (set-mark (+ pos len) (- len))))
 
-
-      
-      
       ;;
       ;; TEXT 2 WORLD STUFFS
       ;;
-
+      
       ;; update-world : World -> World
       ;; Takes the state on screen on our text% and constructs a World that reflects
       ;; it.
@@ -202,42 +199,52 @@
       
       ;; update-world-select : World -> World
       (define (update-world-select world)
-        (copy-struct World world
-                     [World-cursor-position   (get-cursor-position)]
-                     [World-selection-length  (get-selection-len)]))
+        (let*-values
+            ([(p l) (values (get-cursor-position) (get-selection-len))]
+             [(stop-extending)
+              (or clear-extension
+                  (not (and
+                        (= p (World-cursor-position world))
+                        (= l (World-selection-length world)))))])
+          (copy-struct World world
+                       [World-cursor-position (get-cursor-position)]
+                       [World-selection-length (get-selection-len)]
+                       [World-extension (if stop-extending #f (World-extension world))])))
       
       ;; update-world-mark : World -> World
       (define (update-world-mark world)
-        (copy-struct World world
-                     [World-mark-position     (get-mark-position)]
-                     [World-mark-length       (get-mark-length)]))
+        (if (World-extension world)
+            world
+            (copy-struct World world
+                         [World-mark-position     (get-mark-position)]
+                         [World-mark-length (get-mark-length)])))
       
       
-      
+      (define clear-extension #f)
       ;;
       ;; WORLD 2 TEXT STUFFS
       ;;
       ;; Pushes changes from the world back into the stateful text%.
       
-      ;; update-mred : World -> World
-      ;; We are updating the mark before the selection so that the selection is not hidden by the mark.
       (define/public (update-mred world)
-        (local
-            (;; update-mred-text : World -> World
-             (define (update-mred-text world)
-               (unless (rope=? (World-rope world) (get-rope))
-                 (update-text (World-rope world)))
-               world)
-             
-             ;; select-mred : World -> World
-             (define (select-mred world)
-               (set-selection (World-cursor-position world) (World-selection-length world))
-               world)
-             
-             ;; mark-mred : World -> World
-             (define (mark-mred world)
+        (unless (rope=? (World-rope world) (get-rope))
+          (update-text (World-rope world)))
+        (set-selection (World-cursor-position world) (World-selection-length world))
+        (cond [(World-extension world)
+               (let ([e (World-extension world)])
+                 (set-mark (extension-puck e)
+                           (extension-puck-length e))
+                 (send window-text scroll-to-position
+                       (extension-puck e)
+                       #f
+                       (+ (extension-puck e) (extension-puck-length e))
+                       'none)
+                 (set! clear-extension #f)
+                 (send window-text diva:-insertion-after-set-position-callback-set
+                       (lambda () (diva-message "") (set! clear-extension #t) (set-mark 1 0))))]
+              [else
                (set-mark (World-mark-position world) (World-mark-length world))
-               world))
-          (select-mred
-           (mark-mred
-            (update-mred-text world))))))))
+               (send window-text diva:-insertion-after-set-position-callback-set
+                     (lambda () (void)))])
+        
+        (diva-message (World-success-message world))))))

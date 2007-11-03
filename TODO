@@ -1,3 +1,8 @@
+
+Can we lower all the DivaScheme widgets to the status bar proper and save screen estate?
+
+BUG: Switching tab back to a text mode tab re-enables DivaScheme on that text tab. It should stay disabled.
+
 BUG: if selection is larger than one s-expression, insert-after
 inserts between the first and second s-expressions.
 
@@ -14,13 +19,6 @@ to contextual parens if they ask for it.
 
 BUG: trying to enter in a vector with the keys #() causes
 erroneous output #(()).  Why?
-
-
-BUG: if caps lock is on, funky things happen.  See why it interacts with
-the keymap.
-
-  -- fixed: we manually capture capslocked-keys in command mode and
-     downcase them.
 
 
 BUG:

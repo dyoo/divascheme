@@ -27,7 +27,7 @@
   ;; Provided elements to perform the tests.
   (provide eval-Protocol-Syntax-Tree
            default-Next-f
-           default-Previous-f
+           default-Previous-f 
            default-Magic-f
            default-Pass-f
            inc-what-distance
@@ -43,8 +43,6 @@
     (when diva-debug?
       (apply printf text args)))
   
-  
-  
   (define max-undo-count 50)
   
   ;; interpreter : ast World -> (union World ChangeWorld)
@@ -52,7 +50,22 @@
     (print-mem
      'interpreter
      (lambda () (diva-printf "Interpreter was called with tree: ~a~n" ast)
-       (eval-Protocol-Syntax-Tree world ast))))
+       (interpreter/extension world ast))))
+  
+  (define (interpreter/extension world ast)
+    (let ([new-world
+           (if (World-extension world)
+               (if (is-motion-ast? ast)
+                   (with-selection-extension world (lambda (world) (eval-Protocol-Syntax-Tree world ast)))
+                   (copy-struct World (eval-Protocol-Syntax-Tree world ast)
+                                [World-extension false]))
+               (eval-Protocol-Syntax-Tree world ast))])
+      
+      (if (and (World-extension new-world)
+               (equal? (World-success-message new-world) ""))
+          (copy-struct World new-world
+                       [World-success-message "extending selection..."])
+          new-world)))
   
   ;; eval-Protocol-Syntax-Tree : World ast -> (union World ChangeWorld)
   (define (eval-Protocol-Syntax-Tree world ast)
@@ -196,24 +209,53 @@
          )))
     ) ;; TODO
   
+  (define (is-motion-ast? ast)
+    (match ast
+      [(struct Verb ((struct Command (s)) loc what))
+       (motion-command? s)]))
+  
+  (define (with-selection-extension world fn)
+    (define (uw-pos int/stx) (if (syntax? int/stx)
+                                 (syntax-position int/stx)
+                                 int/stx))
+    (define (uw-end-pos int/stx) (if (syntax? int/stx)
+                                     (+ (syntax-position int/stx)
+                                        (syntax-span int/stx))
+                                     int/stx))
+    
+    (let* ([saved-extension (World-extension world)]
+           
+           [new-world (copy-struct World world
+                                   [World-extension #f]
+                                   [World-cursor-position (extension-puck (World-extension world))]
+                                   [World-selection-length (extension-puck-length (World-extension world))])]
+           
+           [new-position (fn new-world)]
+           
+           [new-extension (copy-struct extension saved-extension
+                                       [extension-puck (World-cursor-position new-position)]
+                                       [extension-puck-length (World-selection-length new-position)])])
+      
+      (let*-values
+          ([(p1 p2) (positions-within-least-common-parent
+                     (extension-base new-extension)
+                     (extension-puck new-extension)
+                     (World-syntax-list new-position))]
+           [(p1 p2) (if (< (uw-pos p1) (uw-pos p2)) (values p1 p2) (values p2 p1))])
+        
+        (copy-struct World new-position
+                     [World-extension new-extension]
+                     [World-cursor-position (uw-pos p1)]
+                     [World-selection-length (- (uw-end-pos p2) (uw-pos p1))]))))
   
   (define (world-clear world)
-    (copy-struct World (world-clear/extend world)
-                 [World-extension-base #f]
-                 [World-extension-length #f]))
-  
-  (define (world-clear/extend world)
     (copy-struct World world
                  [World-target-column #f]
                  [World-Next-f     (default-Next-f)]
                  [World-Previous-f (default-Previous-f)]
                  [World-Magic-f    (default-Magic-f)]
                  [World-Pass-f     (default-Pass-f)]
-                 [World-redo       false]
-                 [World-success-message (if (and (equal? (World-success-message world) "")
-                                                 (World-extension-base world))
-                                            "extending selection..."
-                                            (World-success-message world))]))
+                 [World-redo false]))
   
   (define (trim-undos world undo-count)
     (print-mem*
@@ -369,8 +411,8 @@
   (define (eval-Open square? world loc/false what/false template-number magic-number template/magic-wrap? mode)
     (let*
         ([rope/false (print-mem*
-                        'eval-Open-symbol/false 
-                        (eval-What/open what/false))]
+                      'eval-Open-symbol/false 
+                      (eval-What/open what/false))]
          [pos (print-mem*
                'eval-Open-pos
                (eval-Loc world
@@ -714,23 +756,31 @@
            [stx/false (find-pos-updown line target-column
                                        (World-syntax-list world) is-up?)])
       (if stx/false
-          (if (World-extension-base world)
-              (copy-struct World
-                           (motion-extension world (World-extension-base world) stx/false)
-                           [World-target-column target-column])
-              
-              (copy-struct World (world-clear (action:select/stx world stx/false))
-                           [World-target-column target-column]
-                           [World-cancel world]))
+          (copy-struct World (world-clear (action:select/stx world stx/false))
+                       [World-target-column target-column]
+                       [World-cancel world])
           (eval-line-motion world (if is-up? 'up 'down)))))
   
   
   (define (eval-line-motion world direction)
     (queue-imperative-action 
      (world-clear world)
-     (lambda (world window)
-       (send window move-position direction)
-       world)))
+     (lambda (world window update-world-fn update-mred-fn)
+       (define (callback world)
+         (send window diva:-insertion-after-set-position-callback-set (lambda () ()))
+         (send window move-position direction)
+         (send window diva:-insertion-after-set-position-callback-reset)
+         (let ([b (box 0)])
+           (send window get-position b)
+           (copy-struct World world
+                        [World-cursor-position (index->syntax-pos (unbox b))]
+                        [World-selection-length 0])))
+       
+       (if (World-extension world)
+           (let ([w (with-selection-extension world callback)])
+             (update-mred-fn w)
+             w)
+           (callback world)))))
   
   
   
@@ -738,20 +788,16 @@
   (define (eval-Older world)
     (let ([stx (find-pos-sibling-forward (World-selection-end-position world) (World-syntax-list world))])
       (if stx
-          (if (World-extension-base world)
-              (motion-extension world (World-extension-base world) stx)
-              (copy-struct World (world-clear (action:select/stx world stx))
-                           [World-cancel world]))
+          (copy-struct World (world-clear (action:select/stx world stx))
+                       [World-cancel world])
           (raise (make-voice-exn "Nothing forward.")))))
-    
+  
   ;; eval-Backward : World -> World
   (define (eval-Younger world)
     (let ([stx (find-pos-sibling-backward (World-cursor-position world) (World-syntax-list world))])
       (if stx
-          (if (World-extension-base world)
-              (motion-extension world (World-extension-base world) stx)
-              (copy-struct World (world-clear (action:select/stx world stx))
-                           [World-cancel     world]))
+          (copy-struct World (world-clear (action:select/stx world stx))
+                       [World-cancel world])
           (raise (make-voice-exn "Nothing backward.")))))
 
 
@@ -771,95 +817,35 @@
 
   ;; eval-Forward: world -> world
   (define (eval-Forward world)
-
-    ;; eval-Forward/normal: World -> World
-    (define (eval-Forward/normal world)
-      (let* ([stx-list (find-all-forward (lambda args true)
-                                         (World-cursor-position world)
-                                         (World-syntax-list world))]
-             [stx/false (cond
-                          [(empty? stx-list) false]
-                          [(= 0 (World-selection-length world)) (first stx-list)]
-                          [else
-                           (find (not-here?/w world) stx-list)])])
-        (if stx/false
-            (copy-struct World (world-clear (action:select/stx world stx/false))
-                         [World-cancel world])
-            (eval-line-motion world 'right))))
-
-    ;; eval-Forward/extension: World -> World
-    (define (eval-Forward/extension world)
-      (let* ([end-pos (World-selection-end-position world)]
-             [stx-list (World-syntax-list world)]
-             [forward-stx/false (or (find-pos-sibling-forward end-pos stx-list)
-                                    (find-pos-parent end-pos stx-list))])
-        (if forward-stx/false
-            (motion-extension world
-                              (World-extension-base world)
-                              forward-stx/false)
-            world)))
-    
-    (if (World-extension-base world)
-        (eval-Forward/extension world)
-        (eval-Forward/normal world)))
+    (let* ([stx-list (find-all-forward (lambda args true)
+                                       (World-cursor-position world)
+                                       (World-syntax-list world))]
+           [stx/false (cond
+                        [(empty? stx-list) false]
+                        [(= 0 (World-selection-length world)) (first stx-list)]
+                        [else
+                         (find (not-here?/w world) stx-list)])])
+      (if stx/false
+          (copy-struct World (world-clear (action:select/stx world stx/false))
+                       [World-cancel world])
+          (eval-line-motion world 'right))))
   
   
   ;; eval-Backward: world -> world
   (define (eval-Backward world)
-    
-    ;; eval-Backward/normal: World -> World
-    (define (eval-Backward/normal world)
-      (let ([stx-list (find-all-backward (lambda args true)
-                                         (World-cursor-position world)
-                                         (World-syntax-list world))])
-        (let ([stx/false (cond
-                           [(empty? stx-list) false]
-                           [(= 0 (World-selection-length world)) (first stx-list)]
-                           [else (find (not-here?/w world) stx-list)])])
-          (if stx/false
-              (copy-struct World (world-clear (action:select/stx world stx/false))
-                           [World-cancel world])
-              (eval-line-motion world 'left)))))
-
-    ;; eval-Backward/extension: World -> World
-    (define (eval-Backward/extension world)
-      (let* ([pos (World-cursor-position world)]
-             [stx-list (World-syntax-list world)]
-             [backward-stx/false (or (find-pos-sibling-backward pos stx-list)
-                              (find-pos-parent pos stx-list))])
-        (if backward-stx/false
-            (motion-extension world (World-extension-base world) backward-stx/false)
-            world)))
-    
-    (if (World-extension-base world)
-        (eval-Backward/extension world)
-        (eval-Backward/normal world)))
+    (let ([stx-list (find-all-backward (lambda args true)
+                                       (World-cursor-position world)
+                                       (World-syntax-list world))])
+      (let ([stx/false (cond
+                         [(empty? stx-list) false]
+                         [(= 0 (World-selection-length world)) (first stx-list)]
+                         [else (find (not-here?/w world) stx-list)])])
+        (if stx/false
+            (copy-struct World (world-clear (action:select/stx world stx/false))
+                         [World-cancel world])
+            (eval-line-motion world 'left)))))
   
   
-  ;; motion-extension: world number syntax -> world
-  ;; Given a base of origin and a syntax that we've moved to, extends
-  ;; the selection in that direction.
-  (define (motion-extension world base moved)
-    (let*-values
-        ([(w1 w2) (if (< base (syntax-position moved))
-                      (values base (syntax-position moved))
-                      (values (syntax-position moved) base))]
-         [(p1 p2)
-          (greatest-distinct-parents w1 w2
-                                     (World-syntax-list world))]
-         [(default) (or p1 p2 (find-pos-near base (World-syntax-list world)))]
-         [(pos end)
-          (if (and p1 p2)
-              (values (syntax-position p1) (syntax-end-position p2))
-              (values (syntax-position default) (syntax-end-position default)))]
-         
-         [(result) (action:select/pos+end world
-                                          pos end)])
-      (copy-struct World (world-clear/extend result)
-                   [World-cancel world])))
-                   
-    
-
   ;; eval-Delete : World -> World
   (define (eval-Delete world)
     (copy-struct World (world-clear (action:delete world))
@@ -961,40 +947,40 @@
   (define (eval-Transpose original-world)
     (queue-imperative-action
      (world-clear original-world)
-     (lambda (world window)
+     (lambda (world window update-world-fn update-mred-fn)
        (send window transpose-sexp (pos->index (World-cursor-position world)))
-       (copy-struct World world
+       (copy-struct World (update-world-fn world)
                     [World-cancel original-world]
                     [World-undo original-world]))))
   
   (define (eval-Extend-Selection world)
-    (world-clear/extend
-     (if (World-extension-base world)
-         (copy-struct World world
-                      [World-extension-base #f]
-                      [World-extension-length #f])
-         (copy-struct World world
-                      [World-extension-base (World-cursor-position world)]
-                      [World-extension-length 0]))))
+    (world-clear
+     (if (World-extension world)
+         (copy-struct World (action:unmark world)
+                      [World-extension #f])
+         (copy-struct World (action:unmark world)
+                      [World-extension (make-extension (World-cursor-position world)
+                                                       (World-cursor-position world)
+                                                       (World-selection-length world))]))))
   
   
   ;; eval-Tag : World what -> (union World SwitchWorld)
   ;; Evaluates a tag command.
   (define (eval-Tag ast world what)
-
+    
     ;; what->string: What -> string
     ;; Extracts the query string from what.
     (define (what->string what)
       ;; FIXME: do proper pattern matching on the data.
       (symbol->string
        (Symbol-Noun-symbol (WhatN-noun what))))
-  
+    
     ;; in-same-file?: world tag -> boolean
     ;; Is the file referred to by the tag the same as the one the world
     ;; is working on?
     (define (in-same-file? world tag)
       (equal? (tag-path tag) (World-path world)))
-    
+  
     ;; apply-tag: tag world -> world
     (define (goto-tag tag world)
       (cond
@@ -1075,3 +1061,10 @@
            (raise (make-voice-exn "No match"))]
           [else
            (apply-tags (sort-for-NP tags world) world)])))
+
+
+
+
+
+
+
