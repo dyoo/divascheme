@@ -1,3 +1,5 @@
+BUGS: should reopen the previous STAGS file between boots.
+
 
 Can we lower all the DivaScheme widgets to the status bar proper and save screen estate?
 
@@ -19,26 +21,6 @@ to contextual parens if they ask for it.
 
 BUG: trying to enter in a vector with the keys #() causes
 erroneous output #(()).  Why?
-
-
-BUG:
-
-When trying to extend across comment:
-
-;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
-syntax-position: expects argument of type <syntax>; given #f
-
-
- === context ===
-/Users/dyoo/Library/PLT Scheme/planet/300/369.1/cache/divascheme/divascheme.plt/1/0/interpreter.ss:774:2: motion-extension
-/Users/dyoo/Library/PLT Scheme/planet/300/369.1/cache/divascheme/divascheme.plt/1/0/diva-link.ss:305:6: value
-/Users/dyoo/Library/PLT Scheme/planet/300/369.1/cache/divascheme/divascheme.plt/1/0/diva-link.ss:296:6: value
-call-with-break-parameterization
-/Users/dyoo/local/plt/collects/mred/private/lock.ss:40:2: as-entry
-
-;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
-
-I'm going to have to review motion-extention anyway...
 
 
 
@@ -84,23 +66,6 @@ directly.
 
     
 
-Chris Warrington:
-
-Could the [ key insert the proper '(' or '[' depending on the context
-as the [ currently does now? For examples, using only the [ key, I can
-produce
-(cond [(zero? n) 1]
-      [else 0])
-With DivaScheme, I have to use { to get the '['.
-
-    - in the future
-    - (01-22-2007: (dyoo) fixed.)
-
-
-CTRL+C does not seem to work on Windows.
-
-    - keep this disabled
-
 
 
 Guillaume Marceau:
@@ -116,9 +81,6 @@ add an link to the high-res movie on the web page
     - done, on test site under new/.  Ready to deploy as soon as release is ready.
 
 
-space-extend is broken
-
-    - still broken, needs fixing
 
 I think ctrl-space should auto-complete too. Also, Eclipse
 auto-completes on space+space. Aka, space on an empty token
@@ -133,13 +95,9 @@ losing focus to go read the help desk, for example, should not leave insert mode
      - yeah, this would be good.  next release
 
 
-We should have a menu item to invoke STAGS
 
-     - done
+We should accomodate both emacs and bash style auto-completion. In fact I think mozrepl has it even better.
      
-We should accomodate both emacs and bash style auto-completion.
-     
-Did you know that DrScheme has emacs-style macros? exciting! but divascheme breaks them. 
 
 
 Mon Mar 27 03:50:11 2006  --- Guillaume
@@ -152,10 +110,12 @@ Mon Mar 27 03:50:11 2006  --- Guillaume
 
 
 - previous should stay available
+- make keyboard searches interactive and colored (like Emacs)
+- previous/next are backward for search-backward and search-bottom
+- the input box should allow pasting
+- it should be possible to search for the item under the cursor
 
 - _search_ should take multiple arguments ("search define bind")
-
-- Probably many functions in traversal.ss are doing the same thing. mred-state.ss has dead code. 
 
 - magic should look for completion in the other open tabs and the repl
 
@@ -164,8 +124,6 @@ Mon Mar 27 03:50:11 2006  --- Guillaume
     and if it is an atomic, then returns the end position of this atom to cleanup-whitespace
 
 - cleanup-whitespace should insert missing space
-- make keyboard searches interactive and colored (like Emacs)
-- previous/next are backward for search-backward and search-bottom
 
 - a command "go to line"
 
@@ -181,4 +139,4 @@ DivaScheme should be aware of editor modes and pause if we're editing in text.
 
 Misspelling a function name when editing key bindings fails silently, it should indicate that there is a problem.
 
-The transpose in the DrScheme does not let you chain
+The transpose in the DrScheme should let you chain
