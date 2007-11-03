@@ -148,6 +148,7 @@
         (send command-keymap add-function "diva:first"     (command 'First))
         (send command-keymap add-function "diva:last"      (command 'Last))
         (send command-keymap add-function "diva:extend-selection" (command 'Extend-Selection))
+        (send command-keymap add-function "diva:stop-extend-selection" (command 'Stop-Extend-Selection))
         (send command-keymap add-function "diva:edit-symbol" (insert false true))
         (send command-keymap add-function "diva:disabled" void)
         (for-each

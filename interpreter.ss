@@ -205,8 +205,8 @@
          
          [(struct Verb ((struct Command ('Extend-Selection)) #f #f))
           (eval-Extend-Selection world)]
-         
-         )))
+         [(struct Verb ((struct Command ('Stop-Extend-Selection)) #f #f))
+          world]))) ;; Automatically turns extension off since this is not a motion command
     ) ;; TODO
   
   (define (is-motion-ast? ast)
@@ -768,6 +768,7 @@
      (lambda (world window update-world-fn update-mred-fn)
        (define (callback world)
          (send window diva:-insertion-after-set-position-callback-set (lambda () ()))
+         (send window set-position (World-cursor-position world) 'same #f #f 'default) ;; this may be the puck or the selection
          (send window move-position direction)
          (send window diva:-insertion-after-set-position-callback-reset)
          (let ([b (box 0)])

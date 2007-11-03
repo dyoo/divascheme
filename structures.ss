@@ -389,7 +389,8 @@
 
           'Transpose
           'Tag
-          'Extend-Selection))
+          'Extend-Selection
+          'Stop-Extend-Selection))
   
   (define motion-commands
     ;; commands which must manipulate the cursor position

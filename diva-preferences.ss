@@ -65,6 +65,7 @@
       (")" "diva:close")
       ("}" "diva:close")
       ("space" "diva:extend-selection")
+      ("esc" "diva:stop-extend-selection")
       ("w" "diva:edit-symbol")
       ("home" "diva:first")
       ("end" "dive:end")))
