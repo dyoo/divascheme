@@ -768,7 +768,8 @@
      (lambda (world window update-world-fn update-mred-fn)
        (define (callback world)
          (send window diva:-insertion-after-set-position-callback-set (lambda () ()))
-         (send window set-position (World-cursor-position world) 'same #f #f 'default) ;; this may be the puck or the selection
+         (send window set-position (pos->index (World-cursor-position world))
+               'same #f #f 'default) ;; this may be the puck or the selection
          (send window move-position direction)
          (send window diva:-insertion-after-set-position-callback-reset)
          (let ([b (box 0)])
@@ -776,12 +777,11 @@
            (copy-struct World world
                         [World-cursor-position (index->syntax-pos (unbox b))]
                         [World-selection-length 0])))
-       
-       (if (World-extension world)
-           (let ([w (with-selection-extension world callback)])
-             (update-mred-fn w)
-             w)
-           (callback world)))))
+       (let ([w (if (World-extension world)
+                    (with-selection-extension world callback)
+                    (callback world))])
+         (update-mred-fn w)
+         w))))
   
   
   
