@@ -1,5 +1,8 @@
 BUGS: should reopen the previous STAGS file between boots.
 
+traversal bug: if on top-level language that doesn't use module,
+pressing "i" does not traverse up on empty whitespace.  Not good!
+
 
 Can we lower all the DivaScheme widgets to the status bar proper and save screen estate?
 
