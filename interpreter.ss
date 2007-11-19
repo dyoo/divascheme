@@ -212,7 +212,8 @@
   (define (is-motion-ast? ast)
     (match ast
       [(struct Verb ((struct Command (s)) loc what))
-       (motion-command? s)]))
+       (motion-command? s)]
+      [else #f]))
   
   (define (with-selection-extension world fn)
     (define (uw-pos int/stx) (if (syntax? int/stx)
