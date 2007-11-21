@@ -158,11 +158,11 @@
     (define (aux stx)
       (if (< line (syntax-line stx))
           empty
-          (let ([sub (apply append! (gmap aux stx))])
+          (let ([sub (apply append (gmap aux stx))])
             (if (= line (syntax-line stx))
                 (cons stx sub)
                 sub))))
-    (apply append! (map aux stx-list)))
+    (apply append (map aux stx-list)))
   
   
   (define (find-pos-updown line column stx-list is-up?)

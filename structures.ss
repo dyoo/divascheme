@@ -10,6 +10,7 @@
            "rope.ss")
   
   
+  
   ;; for debugging:
   #; (define previous-inspector (current-inspector))
   #; (current-inspector (make-inspector))
@@ -24,6 +25,7 @@
   (provide/contract (struct Template ([id       symbol?]
                                       [macro?   boolean?]
                                       [content (listof string?)])))
+  
   
   
   ;; World
@@ -312,6 +314,8 @@
   (provide/contract [World-syntax-list (World? . -> . (listof syntax?))])
   
   
+  
+  
   (provide success-message)
   ;; success-message : World string -> World
   (define (success-message world message)
@@ -420,6 +424,7 @@
      'Last))
   
   
+  
   (define command?
     (lambda (symbol) (member symbol commands)))
   
@@ -434,6 +439,9 @@
     ;; The-Symbol constructor is disabled: currently used only by parser.ss and might be deprecated.
     #; [The-Symbol (symbol)])
   
+  
+  ;; dyoo Drscheme 3.99: Something is wrong with provide-datatype and DrScheme.  Will need to investigate.
+  
   (provide-datatype/contract Noun
                              [Symbol-Noun (symbol?)]
                              [Rope-Noun (rope?)]
@@ -443,6 +451,8 @@
   (define-datatype What
     [WhatN  (noun)]
     [WhatDN (distance noun)])
+ 
+  
   
   (provide-datatype/contract What
                              [WhatN  (Noun?)]
@@ -457,7 +467,7 @@
                              [After ()]
                              [Before ()])
   
-  
+ 
   (define-datatype Location
     [Loc (where what)])
 
@@ -474,6 +484,7 @@
                              [Command (command?)]
                              [InsertRope-Cmd (rope?)])
   
+ 
   
   (define-datatype Protocol-Syntax-Tree
     [Verb (content location what)])
@@ -486,3 +497,4 @@
   (provide/contract (struct ChangeWorld ([path path?])))
   
   #; (current-inspector previous-inspector))
+
