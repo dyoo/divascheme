@@ -117,11 +117,11 @@
                     (next-char (peek-char-or-special i)))
                (cond
                  ((not (or (char? next-char) (eof-object? next-char))) ;; a special
-                  (error-k (apply string-append (reverse! (cons next-line acc)))))
+                  (error-k (apply string-append (reverse (cons next-line acc)))))
                  ((equal? next-line ender) ;; end of string
-                  (apply string-append (reverse! (cons next-line acc))))
+                  (apply string-append (reverse (cons next-line acc))))
                  ((eof-object? next-char)
-                  (error-k (apply string-append (reverse! (cons next-line acc)))))
+                  (error-k (apply string-append (reverse (cons next-line acc)))))
                  (else
                   (read-char i)
                   (loop (cons (string-append next-line "\n") acc)))))))))))
