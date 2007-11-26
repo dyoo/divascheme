@@ -155,6 +155,12 @@
                                 #\X)
                                to-op)
                       (display "X\"" to-op) ]
+                     [(string-prefix? "#reader" val)
+                      (hash-table-put! ht (position-offset (position-token-start-pos pos-token)) val)
+                      (display "!!!!!!!" to-op)]
+                     [(string-prefix? "#lang" val)
+                      (hash-table-put! ht (position-offset (position-token-start-pos pos-token)) val)
+                      (display "!!!!!" to-op)]
                      [else
                       (display val to-op)])]
                   [(space)

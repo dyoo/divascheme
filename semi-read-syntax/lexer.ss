@@ -17,12 +17,12 @@
   (define-lex-abbrev digit (char-set "0123456789"))
   
   (define-lex-abbrev opener-prefix
-    (:or ""
-         "#"
-         "#hash"
+    (:or "#hash"
          "#hasheq"
          (:: "#" (:+ digit))
-         (:: "#;")))
+         (:: "#;")
+         "#"
+         ""))
   
   (define-lex-abbrev openers (:or (:: opener-prefix (:or "(" "[" "{"))))
   
@@ -57,7 +57,7 @@
              escaped-symbol-chars)))
   
   (define-lex-abbrev pounded-atoms
-    (:or "#t" "#f" "#T" "#F"
+    (:or "#t" "#f" "#T" "#F" "#reader" "#lang"
          (:: "#" (char-set "eibodx") pound-prefix-free-atom) ;; numeric constants
          (:: "#%" pound-prefix-free-atom)
          (:: "#:" atom-chars) ;; keywords

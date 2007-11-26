@@ -2,26 +2,17 @@
   (require (lib "launcher.ss" "launcher")
            (lib "etc.ss")
            (lib "contract.ss")
-           (planet "version-case.ss" ("dyoo" "version-case.plt" 1 0)))
+           (lib "runtime-path.ss"))
+
   
   (provide/contract [install-launchers
                      (case->
                       (path-string? . -> . any)
                       (-> any))])
   
-  
-  ;; Definition of generate-stags-path.
-  (version-case
-   [(version<= (version) "360")
-    (require (lib "etc.ss"))
-    (define generate-stags-path
-      (build-path (this-expression-source-directory) "generate-stags.ss"))]
-   [else
-    (require (lib "runtime-path.ss"))
-    (define-runtime-path generate-stags-path "generate-stags.ss")])
-  
-  
-  
+
+  (define-runtime-path generate-stags-path "generate-stags.ss")
+
   
   ;; default-install-directory: -> path 
   ;; Returns the default path where we will install our launchers, plt/bin 

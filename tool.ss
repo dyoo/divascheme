@@ -14,7 +14,7 @@
            (prefix preferences: "diva-preferences.ss")
            (prefix marker: "marker.ss")
            "tag-gui.ss"
-           (planet "version-case.ss" ("dyoo" "version-case.plt" 1 0))
+	   (lib "unit.ss")
            (lib "tool.ss" "drscheme"))
   
   
@@ -24,41 +24,9 @@
   (provide tool@)
   
   
-  ;; The following here is to provide backwards compatiblity between
-  ;; the old unit system and the new one.  Ugly and VERY fragile.  I'll
-  ;; be happy when we don't need this anymore.
-  ;;
-  ;; Notes: the macro assumes there is only one import of the drscheme:tool^,
-  ;; at the very beginning of the tool definition.  To make this cleaner,
-  ;; I have to learn more about macros and lexical binding.
-  (version-case
-   [(version<= (version) "360.0")
-    ;; Under the old unit system:
-    (require (lib "unitsig.ss"))
-    (define-syntax (define-drscheme-tool stx)
-      (syntax-case stx ()
-        [(_ name tool-export import-body rest-body ...)
-         (syntax/loc stx
-           (define name
-             (unit/sig tool-export
-               import-body
-               rest-body ...)))]))]
-   [else
-    ;; Under the new unit system:
-    (require (lib "unit.ss"))
-    (define-syntax (define-drscheme-tool stx)
-      (syntax-case stx ()
-        [(_ name tool-export import-body rest-body ...)
-         (syntax/loc stx
-           (define-unit name
-             import-body
-             (export tool-export)
-             rest-body ...))]))])
-  
-  
-  
-  (define-drscheme-tool tool@ drscheme:tool-exports^
+  (define-unit tool@ 
     (import drscheme:tool^)
+    (export drscheme:tool-exports^)
     ;; ~H~
     
     ;; The definitions and interactions windows have two classes : the text one and the canvas one.
