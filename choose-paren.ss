@@ -34,7 +34,7 @@
   (define (choose-paren text)
     (let* ([pos (send text get-start-position)]
            [real-char #\[]
-           [change-to (λ (i c)
+           [change-to (λ (i c) 
                         ;(printf "change-to, case ~a\n" i)
                         (set! real-char c))]
            [start-pos (send text get-start-position)]
@@ -44,30 +44,18 @@
       (send text insert "[" start-pos 'same #f)
       (when (eq? (send text classify-position pos) 'parenthesis)
         (let* ([before-whitespace-pos (send text skip-whitespace pos 'backward #t)]
-               [matched-cond-like-keyword
-                ;; searches backwards for the keyword in the sequence at this level.
-                ;; if found, it counts how many sexps back it was and then uses that to
-                ;; check the preferences.
-                (let loop ([pos before-whitespace-pos]
-                           [n 0])
-                  (let ([backward-match (send text backward-match pos 0)])
-                    (cond
-                      [backward-match
-                       (let ([before-whitespace-pos (send text skip-whitespace backward-match 'backward #t)])
-                         (loop before-whitespace-pos
-                               (+ n 1)))]
-                      [else
-                       (let* ([afterwards (send text get-forward-sexp pos)]
-                              [keyword
-                               (and afterwards
-                                    (send text get-text pos afterwards))])
-                         (and keyword
-                              (member (list keyword (- n 1))
-                                      (preferences:get 'framework:square-bracket:cond/offset))))])))])
+               [keyword/distance (find-keyword-and-distance before-whitespace-pos text)])
           (cond
-            [matched-cond-like-keyword
+            [(and keyword/distance
+                  (member keyword/distance
+                          (preferences:get 'framework:square-bracket:cond/offset)))
              ;; just leave the square backet in, in this case
              (void)]
+            [(and keyword/distance
+                  (member (car keyword/distance)
+                          (preferences:get 'framework:square-bracket:local)))
+             (unless (= (cadr keyword/distance) 0)
+               (change-to 7 #\())]
             [else
              (let* ([backward-match (send text backward-match before-whitespace-pos 0)]
                     [b-m-char (and (number? backward-match) (send text get-character backward-match))])
@@ -78,7 +66,7 @@
                          [backward-match2 (send text backward-match before-whitespace-pos2 0)])
                     
                     (cond
-                      [(member b-m-char '(#\(#\[#\{))
+                      [(member b-m-char '(#\( #\[ #\{))
                        ;; found a "sibling" parenthesized sequence. use the parens it uses.
                        (change-to 1 b-m-char)]
                       [else
@@ -90,7 +78,7 @@
                   (let ([b-w-p-char (send text get-character (- before-whitespace-pos 1))])
                     (cond
                       [(equal? b-w-p-char #\()
-                       (let* ([second-before-whitespace-pos (send text skip-whitespace
+                       (let* ([second-before-whitespace-pos (send text skip-whitespace 
                                                                   (- before-whitespace-pos 1)
                                                                   'backward
                                                                   #t)]
@@ -110,7 +98,7 @@
                             (void)]
                            [else
                             ;; go back one more sexp in the same row, looking for `let loop' pattern
-                            (let* ([second-before-whitespace-pos2 (send text skip-whitespace
+                            (let* ([second-before-whitespace-pos2 (send text skip-whitespace 
                                                                         second-backwards-match
                                                                         'backward
                                                                         #t)]
@@ -132,14 +120,34 @@
                                 [else
                                  ;; otherwise, round.
                                  (change-to 4 #\()]))]))]
-                      [else
+                      [else 
                        (change-to 5 #\()]))]
-                 [else
+                 [else 
                   (change-to 6 #\()]))])))
       (send text delete pos (+ pos 1) #f)
       (send text end-edit-sequence)
       real-char))
   
+  
+  ;; find-keyword-and-distance : -> (union #f (cons string number))
+  (define (find-keyword-and-distance before-whitespace-pos text)
+    ;; searches backwards for the keyword in the sequence at this level.
+    ;; if found, it counts how many sexps back it was
+    (let loop ([pos before-whitespace-pos]
+               [n 0])
+      (let ([backward-match (send text backward-match pos 0)])
+        (cond
+          [backward-match
+           (let ([before-whitespace-pos (send text skip-whitespace backward-match 'backward #t)])
+             (loop before-whitespace-pos
+                   (+ n 1)))]
+          [else
+           (let* ([afterwards (send text get-forward-sexp pos)]
+                  [keyword
+                   (and afterwards
+                        (send text get-text pos afterwards))])
+             (and keyword
+                  (list keyword (- n 1))))]))))
   
   ;; beginning-of-sequence? : text number -> boolean 
   ;; determines if this position is at the beginning of a sequence

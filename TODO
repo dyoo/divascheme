@@ -1,3 +1,6 @@
+BUG: if language level is unset, disable divascheme or else bad things happen.
+
+
 BUGS: should reopen the previous STAGS file between boots.
 
 traversal bug: if on top-level language that doesn't use module,
