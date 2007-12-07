@@ -4,7 +4,9 @@
   ;; events.
   
   (require (lib "class.ss")
-           (lib "list.ss"))
+           (lib "list.ss")
+           (lib "string-constant.ss" "string-constants")
+           "language.ss")
   
   (provide diva-central%
            make-diva-central-mixin
@@ -63,11 +65,18 @@
       ;; Returns true if DivaScheme is on.  Otherwise, returns false.
       (define/public (diva-on?)
         divascheme-is-on?)
+
+      ;; allow-enable?: boolean
+      ;; Returns true if we're allowed to enable DivaScheme.
+      (define (allow-enable?)
+        (not (string=? (string-constant no-language-chosen)
+             (get-language-name))))
       
       ;; switch-on: -> void 
       (define/public (switch-on)
-        (notify (make-diva-switch-on-evt))
-        (set! divascheme-is-on? #t))
+        (when (allow-enable?)
+          (notify (make-diva-switch-on-evt))
+          (set! divascheme-is-on? #t)))
       
       ;; switch-off: -> void 
       (define/public (switch-off)
