@@ -358,6 +358,7 @@
           'Again
 
           'Out
+          'Non-blank-out
           'Down
           'Up
           'Forward
@@ -366,31 +367,31 @@
           'Older
           'First
           'Last
-
-
+          
+          
           'Delete
           'Dedouble-Ellipsis
-
+          
           'Bring
           'Push
-
+          
           'Exchange
           'Mark
           'UnMark
-
+          
           'Copy
           'Cut
           'Paste
-
+          
           'Definition
           'Usage
           
           'Enter
           'Join
           'Indent
-
+          
           'Voice-Quote
-
+          
           'Transpose
           'Tag
           'Extend-Selection
@@ -414,6 +415,7 @@
      'Previous
      
      'Out
+     'Non-blank-out
      'Down
      'Up
      'Forward
@@ -469,10 +471,12 @@
   
  
   (define-datatype Location
+    [Pos (p eol)]
     [Loc (where what)])
-
+  
   (provide-datatype/contract Location
-    [Loc (Where? (union false/c What?))])
+                             [Pos (integer? boolean?)]
+                             [Loc (Where? (union false/c What?))])
   
   
   
@@ -484,7 +488,7 @@
                              [Command (command?)]
                              [InsertRope-Cmd (rope?)])
   
- 
+  
   
   (define-datatype Protocol-Syntax-Tree
     [Verb (content location what)])

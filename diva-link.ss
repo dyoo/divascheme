@@ -152,19 +152,6 @@
           (diva:-on-loss-focus)))
       
       
-      ;; TODO: dyoo should ask Guillaume what's going on with the call-keyname stuff here.
-      ;; I think it had something to do with hacking the clipboard to do
-      ;; voice commands.  This seems like an overloaded use of the clipboard.
-      (define/override (do-paste start time)
-        (let ([c (get-clipboard-content)])
-          (cond
-            [(rope-has-special? c)
-             (super do-paste start time)]
-            [else
-             (let ([m (regexp-match #rx"^~(.*)~$" (rope->string c))])
-               (if m
-                   (send command-keymap call-keyname (second m))
-                   (super do-paste start time)))])))
       
       
       

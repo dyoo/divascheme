@@ -42,17 +42,18 @@
       (define listeners empty)
       (define divascheme-is-on? #f)
       (super-new)
-
+      
       (define/public (add-listener listener)
         (set! listeners (cons listener listeners)))
       
       (define/public (remove-listener listener)
         (set! listeners (remq listener listeners)))
       
+      
       (define (notify event)
         (for-each (lambda (l) (l event))
                   listeners))
-
+      
       ;; switch-toggle: -> void
       ;; Turns DivaScheme either on or off, depending on the current status.
       (define/public (switch-toggle)

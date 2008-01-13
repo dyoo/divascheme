@@ -15,7 +15,8 @@
   ;; there is some text to be removed, and some part to be read-only, etc..
   
   (provide voice-mred-text-callback-mixin
-           voice-mred-interactions-text-callback-mixin)
+           voice-mred-interactions-text-callback-mixin
+           )
   
   ;;
   ;; DEBUGGING STUFFS
@@ -90,11 +91,11 @@
         (preserve-mark start (- len)))
       
       
-
+      
       ;;
       ;; TEXT STUFFS
       ;;
-
+      
       (inherit get-text can-insert? can-delete? delete insert freeze-colorer thaw-colorer
                begin-edit-sequence end-edit-sequence)
       
@@ -240,4 +241,6 @@
           (rope-append
            (string->rope
             (hide-annotations (substring text 0 (get-unread-start-point))))
-           (subrope a-rope (get-unread-start-point))))))))
+           (subrope a-rope (get-unread-start-point)))))))
+  
+  )

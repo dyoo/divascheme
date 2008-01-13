@@ -730,6 +730,7 @@
   
   (provide select/stx
            select/pos+end
+           select/pos+len
            set-cursor-position
            exchange
            mark/stx

@@ -6,6 +6,7 @@
            (lib "list.ss")
            "choose-paren.ss"
            "structures.ss"
+           "utilities.ss"
            (prefix preferences: "diva-preferences.ss"))
   
   (provide make-command-keymap)
@@ -94,6 +95,21 @@
             (to-insert-mode/cmd edit? (get-contextual-open-cmd editor cmd))))
         
         
+        (define (command-mouse cmd)
+          (lambda (edit event)
+            (let ([x-box (box (send event get-x))]
+                  [y-box (box (send event get-y))]
+                  [eol-box (box #f)])
+              (send edit global-to-local x-box y-box)
+              (let ([click-pos (send edit find-position
+                                     (unbox x-box)
+                                     (unbox y-box)
+                                     eol-box)])
+                (let ([eol (unbox eol-box)])
+                  (interpreter (make-Verb (make-Command cmd)
+                                          (make-Pos (index->syntax-pos click-pos) eol)
+                                          false)))))))
+        
         (define (argument command title)
           (let ([command/default (make-command-to-argument-mode command title)])
             (lambda (any event)
@@ -151,6 +167,8 @@
         (send command-keymap add-function "diva:stop-extend-selection" (command 'Stop-Extend-Selection))
         (send command-keymap add-function "diva:edit-symbol" (insert false true))
         (send command-keymap add-function "diva:disabled" void)
+        (send command-keymap add-function "diva:non-blank-out" (command-mouse 'Non-blank-out))
+        (send command-keymap map-function "leftbutton" "diva:non-blank-out")
         (for-each
          (lambda (key) (send command-keymap map-function key "diva:disabled"))
          `("1" "2" "3" "4" "5" "6" "7" "8" "9" "0"

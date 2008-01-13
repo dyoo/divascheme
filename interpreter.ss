@@ -141,6 +141,8 @@
          
          [(struct Verb ((struct Command ('Out)) loc/false what/false))
           (eval-Out world loc/false what/false)]
+         [(struct Verb ((struct Command ('Non-blank-out)) (struct Pos (p eol)) #f))
+          (eval-Non-blank-out world p)]
          [(struct Verb ((struct Command ('Up)) #f #f))
           (eval-Up world)]
          [(struct Verb ((struct Command ('Down)) #f #f))
@@ -709,16 +711,22 @@
       (copy-struct World (world-clear (action:magic-bash world symbol))
                    [World-cancel     world]
                    [World-undo       world])))
-    
-      
+  
+  (define (eval-Non-blank-out world pos)
+    (let ([stx/false (find-pos/end pos (World-syntax-list world))])
+      (if stx/false
+          (copy-struct World (world-clear (action:select/stx world stx/false))
+                       [World-cancel world])
+          (copy-struct World (world-clear (action:select/pos+len world pos 0))
+                       [World-cancel world]))))
   
   ;; TODO
   ;; eval-Out : World (union Loc false) (union What false) -> World
   (define (eval-Out world loc/false what/false)
     (let* ([stx/pos    (eval-Loc+What world metric-nearest loc/false what/false)]
            [Next-f (if what/false
-                           (lambda (new-world) (eval-Out world loc/false (inc-what-distance what/false 1)))
-                           (default-Next-f))]
+                       (lambda (new-world) (eval-Out world loc/false (inc-what-distance what/false 1)))
+                       (default-Next-f))]
            [Previous-f (if what/false
                            (lambda (new-world) (eval-Out world loc/false (dec-what-distance what/false 1)))
                            (default-Previous-f))]

@@ -22,6 +22,7 @@
            find-all-nearest
            find-all-magic
            find-pos
+           find-pos/end
            find-pos-near
            find-pos-parent
            find-pos-spine
@@ -87,6 +88,16 @@
     (define (aux stx)
       (and (in-syntax? pos stx)
            (if (or (= (syntax-position stx) pos)
+                   (atomic/stx? stx))
+               stx
+               (ormap aux (syntax->list stx)))))
+    (ormap aux stx-list))
+  
+  (define (find-pos/end pos stx-list)
+    (define (aux stx)
+      (and (in-syntax? pos stx)
+           (if (or (= (syntax-position stx) pos)
+                   (= (sub1 (syntax-end-position stx)) pos)
                    (atomic/stx? stx))
                stx
                (ormap aux (syntax->list stx)))))
