@@ -1,12 +1,7 @@
-BUG: if language level is unset, disable divascheme or else bad things happen.
+BUG: tab completion doesn't work on keywords.
 
 
 BUGS: should reopen the previous STAGS file between boots.
-
-traversal bug: if on top-level language that doesn't use module,
-pressing "i" does not traverse up on empty whitespace.  Not good!
-
-   - dyoo: fixed.
 
 
 Can we lower all the DivaScheme widgets to the status bar proper and save screen estate?
