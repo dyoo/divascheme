@@ -4,7 +4,7 @@
            (lib "list.ss")
            (lib "struct.ss")
            (only (lib "1.ss" "srfi") find)
-           (planet "datatype.ss" ("dherman" "struct.plt" 2 3))
+           "struct/datatype.ss"
            "dot-processing.ss"
            "utilities.ss"
            "rope.ss")
