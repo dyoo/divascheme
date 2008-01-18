@@ -329,7 +329,7 @@
   (define (update-ellipsis world stx)
     (let ([str/false (update-ellipsis/stx? stx)])
       (if str/false
-          (world-replace-rope world (syntax-index stx) str/false (syntax-span stx))
+          (world-replace-rope world (syntax-index stx) (string->rope str/false) (syntax-span stx))
           world)))
   
   
