@@ -341,9 +341,9 @@
   (define (eval-What/select world make-metric-f what-base what)
     (match what
       [(struct WhatN (noun))
-       (find-rank what-base (eval-Noun world make-metric-f 0 noun))]
+       (find-rank what-base (eval-Noun world make-metric-f (index->syntax-pos 0) noun))]
       [(struct WhatDN (distance noun))
-       (find-rank what-base (eval-Noun world make-metric-f 0 noun))]))
+       (find-rank what-base (eval-Noun world make-metric-f (index->syntax-pos 0) noun))]))
   
   ;; eval-What/bash : What -> symbol
   (define (eval-What/bash what)
@@ -589,14 +589,14 @@
   ;; eval-Search : World (pos -> metric) pos (union Loc false) (union What false) -> World
   ;; TODO: do we really mean to use the same metric for the base and the what?
   (define (eval-Search world make-metric-f loc-base loc/false what)
-    (let* ([stx        (with-handlers ([voice-exn? (lambda (exn) (raise (make-voice-exn "No match")))])
-                         (eval-What world
-                                    make-metric-f
-                                    (eval-Loc world
-                                              make-metric-f
-                                              loc-base
-                                              loc/false)
-                                    what))]
+    (let* ([stx (with-handlers ([voice-exn? (lambda (exn) (raise (make-voice-exn "No match")))])
+                  (eval-What world
+                             make-metric-f
+                             (eval-Loc world
+                                       make-metric-f
+                                       loc-base
+                                       loc/false)
+                             what))]
            [make-NP    (lambda (x)
                          (lambda (new-world)
                            (eval-Search world make-metric-f loc-base loc/false (inc-what-distance what x))))]
@@ -619,20 +619,20 @@
                    [World-Next-f     Next-f]
                    [World-Previous-f Previous-f]
                    [World-cancel     world])))
-
+  
   ;; eval-Select : World pos (union Loc false) (union What false) -> World
   (define (eval-Select world loc-base loc/false what)
     (let* ([make-metric-f (make-make-metric world metric-forward)]
            [what-base     (eval-Loc world make-metric-f loc-base loc/false)]
-           [rank/false    (with-handlers ([voice-exn? (lambda (exn) (raise (make-voice-exn "nothing to select")))])
-                            (eval-What/select world make-metric-f what-base what))]
+           [rank/false (with-handlers ([voice-exn? (lambda (exn) (raise (make-voice-exn "nothing to select")))])
+                         (eval-What/select world make-metric-f what-base what))]
            [_ (diva-printf "RANK: ~a~n" rank/false)]
            [what          (if rank/false
                               (inc-what-distance what rank/false)
                               what)])
       (diva-printf "HERE: ~a~n" what)
       (if rank/false
-          (eval-Search world make-metric-f        0     false what)
+          (eval-Search world make-metric-f (index->syntax-pos 0) false what)
           (eval-Search world make-metric-f loc-base loc/false what))))
   
   ;; eval-Holder : World boolean (union Loc false) (union What false) -> World
