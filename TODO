@@ -1,3 +1,22 @@
+BUG:
+ormap: expects type <proper list> as 2nd argument, given: #f; other arguments were: #<procedure:aux>
+
+ === context ===
+/home/dyoo/work/divascheme/traversal.ss:290:2: find-pos-sibling-forward
+/home/dyoo/work/divascheme/actions.ss:390:2: command
+/home/dyoo/work/divascheme/interpreter.ss:482:2: eval-InsertRope
+/home/dyoo/work/divascheme/interpreter.ss:55:2: interpreter/extension
+/home/dyoo/work/divascheme/diva-link.ss:307:6: interpreter/imperative
+/home/dyoo/work/divascheme/diva-link.ss:303:6: set-mred/handlers
+/home/dyoo/work/divascheme/insert-keymap.ss:377:8: eval-text
+/home/dyoo/work/divascheme/insert-keymap.ss:452:8: consume&exit
+/home/dyoo/work/divascheme/diva-link.ss:488:6: to-normal-mode method in ...ascheme/diva-link.ss:116:4
+/home/dyoo/work/divascheme/diva-link.ss:57:6: shutdown
+/home/dyoo/work/divascheme/diva-central.ss:83:6: switch-off method in diva-central%
+/home/dyoo/local/plt/collects/scheme/private/more-scheme.ss:155:2: call-with-break-parameterization
+/home/dyoo/local/plt/collects/scheme/private/more-scheme.ss:260:2: call-with-exception-handler
+
+
 
 BUG: tab completion doesn't work on keywords.
 
