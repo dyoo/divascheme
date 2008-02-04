@@ -2,44 +2,103 @@
   (require (lib "plt-match.ss")
            (lib "etc.ss")
            (lib "list.ss")
+           (lib "contract.ss")
            (only (lib "1.ss" "srfi") last find)
            "utilities.ss"
            "templates.ss")
   
-  (provide in-syntax?
-           in-syntax-strict?
-           syntax-list-last-position
-           metric-nearest
-           metric-forward
-           metric-backward
-           metric-magic
-           find-all
-           find-all/not-first
-           sort/metric
-           find-all/metric
-           find-all-forward
-           find-all-backward
-           find-all-nearest
-           find-all-magic
-           find-pos
-           find-pos/end
-           find-pos-near
-           find-pos-parent
-           find-pos-spine
-           positions-within-least-common-parent
-           find-pos-updown
-           find-ellipsis
-           find-siblings-ellipsis
-           find-all-ellipsis
-           find-pos-sibling-forward
-           find-pos-sibling-backward
-           find-pos-mark-forward
-           find-all-pos-mark-forward
-           find-placeholder
-           find-placeholder/symbol
-           find-distance/metric
-           find-pos-fill-forward
-           find-rank)
+  (define pos/c (and/c natural-number/c (>/c 0)))
+  (define index/c natural-number/c)
+  (define line/c natural-number/c)
+  (define column/c natural-number/c)
+  (define syntax/false (or/c syntax? false/c))
+  (define metric/c (syntax? . -> . natural-number/c))
+  
+  (provide/contract
+   
+   [in-syntax?
+    (pos/c syntax? . -> . boolean?)]
+   [in-syntax-strict?
+    (pos/c syntax? . -> . boolean?)]
+   [syntax-list-last-position
+    ((listof syntax?) . -> . pos/c)]
+   
+   [metric-nearest
+    (pos/c . -> . metric/c)]
+   [metric-forward
+    (pos/c pos/c . -> . metric/c)]
+   [metric-backward
+    (pos/c pos/c . -> . metric/c)]
+   [metric-magic
+    (pos/c . -> . metric/c)]
+   
+   [find-all
+    ((syntax? . -> . boolean?) (listof syntax?) . -> . (listof syntax?))]
+   [find-all/not-first
+    ((syntax? . -> . boolean?) (listof syntax?) . -> . (listof syntax?))]
+   [find-all/metric
+    ((syntax? . -> . boolean?) (syntax? . -> . index/c) (listof syntax?) . -> . (listof syntax?))]
+   [find-all-forward
+    ((syntax? . -> . boolean?) pos/c (listof syntax?) . -> . (listof syntax?))]
+   [find-all-backward
+    ((syntax? . -> . boolean?) pos/c (listof syntax?) . -> . (listof syntax?))]
+   [find-all-nearest
+    ((syntax? . -> . boolean?) pos/c (listof syntax?) . -> . (listof syntax?))]
+   [find-all-magic
+    ((syntax? . -> . boolean?) pos/c (listof syntax?) . -> . (listof syntax?))]
+   [find-all-ellipsis
+    (pos/c (listof syntax?) . -> . (listof (list/c syntax? syntax?)))]
+   [find-all-pos-mark-forward
+    (pos/c (listof syntax?) . -> . (listof syntax?))]
+   
+   [find-pos
+    (pos/c (listof syntax?) . -> . syntax/false)]
+   [find-pos/end
+    (pos/c (listof syntax?) . -> . syntax/false)]
+   [find-pos-near
+    (pos/c (listof syntax?) . -> . syntax/false)]
+   [find-pos-parent
+    (pos/c (listof syntax?) . -> . syntax/false)]
+   
+   [find-pos-spine
+    (pos/c (listof syntax?) . -> . (listof syntax?))]
+   
+   [find-pos-updown
+    (line/c column/c (listof syntax?) boolean? . -> . syntax/false)]
+   
+   [find-ellipsis
+    (pos/c (listof syntax?) . -> . syntax/false)]
+   [find-siblings-ellipsis
+    (pos/c (listof syntax?) . -> . (or/c (list/c syntax? syntax?)
+                                         false/c))]
+   
+   [find-pos-sibling-forward
+    (pos/c (listof syntax?) . -> . syntax/false)]
+   [find-pos-sibling-backward
+    (pos/c (listof syntax?) . -> . syntax/false)]
+   [find-pos-mark-forward
+    (pos/c (listof syntax?) . -> . syntax/false)]
+   
+   [find-placeholder
+    (boolean? pos/c (listof syntax?) . -> . syntax/false)]
+   [find-placeholder/symbol
+    (symbol? natural-number/c metric/c (listof syntax?) . -> . syntax?)]
+   
+   [find-distance/metric
+    ((syntax? . -> . boolean?) metric/c (listof syntax?) pos/c . -> . syntax?)]
+   
+   [find-pos-fill-forward
+    (pos/c (listof syntax?) . -> . syntax/false)]
+   
+   [find-rank
+    (pos/c (listof syntax?) . -> . natural-number/c)]
+   
+   [sort/metric
+    (metric/c (listof syntax?) . -> . (listof syntax?))])
+  
+  ;; positions-within-least-common-parent has such an unusual signature that I
+  ;; think it needs fixing.
+  (provide positions-within-least-common-parent)
   
   
   (define voice-debug false)
@@ -93,6 +152,7 @@
                (ormap aux (syntax->list stx)))))
     (ormap aux stx-list))
   
+  ;; find-pos/end : pos (syntax list) -> syntax/false
   (define (find-pos/end pos stx-list)
     (define (aux stx)
       (and (in-syntax? pos stx)
@@ -103,6 +163,7 @@
                (ormap aux (syntax->list stx)))))
     (ormap aux stx-list))
   
+  ;; find-pos-near : pos (syntax list) -> syntax/false
   (define (find-pos-near pos stx-list)
     (or (find-pos pos stx-list)
         (find-pos-sibling-backward pos stx-list)))
@@ -144,6 +205,9 @@
                  (list stx)))))
     (or (ormap aux stx-list) '()))
   
+  
+  ;; find-pos-spine/pos: pos (listof syntax) -> ((listof syntax) . pos)
+  ;; fixme: the type on this is very strange!
   (define (find-pos-spine/pos pos stx-list)
     (let ([s (find-pos-spine pos stx-list)])
       (if (find-pos pos stx-list)
@@ -151,6 +215,8 @@
           (append s (list pos)))))
   
   ;; positions-within-least-common-parent: pos pos (listof syntax) -> (values syntax/int syntax/int)
+  ;; fixme: the type on this is very strange!  The comment above is wrong, but I
+  ;; don't know what this function is used for yet.
   (define (positions-within-least-common-parent pos1 pos2 stx-list)
     (let ([spine1 (find-pos-spine/pos pos1 stx-list)]
           [spine2 (find-pos-spine/pos pos2 stx-list)])
@@ -176,12 +242,14 @@
     (apply append (map aux stx-list)))
   
   
+  ;; find-pos-updown: line column (listof syntax) boolean -> syntax/false
   (define (find-pos-updown line column stx-list is-up?)
     (find-line-column
      column
      (find-pos-on-line ((if is-up? sub1 add1) line) stx-list)))
   
   
+  ;; find-line-column: column (listof syntax) -> syntax/false
   (define (find-line-column column all-stx)
     (define (compare a b)
       (let ([da (- (syntax-column a) column)]
@@ -305,7 +373,7 @@
           (find before? (reverse (stx->lst parent)))
           (find before? (reverse stx-list)))))
   
-  ;; find-placeholder : boolean pos (syntax list) -> syntax
+  ;; find-placeholder : boolean pos (syntax list) -> syntax/false
   (define (find-placeholder backward? pos stx-list)
     (let ([lst ((if backward? find-all-backward find-all-forward) placeholder/stx? pos stx-list)])
       (if (empty? lst)
@@ -313,6 +381,7 @@
           (first lst))))
   
   ;; find-placeholder/symbol : symbol non-negative-integer (metric : syntax -> non-negative-integer) (syntax list) -> syntax
+  ;; Raises exn if it can't find a placeholder.
   (define (find-placeholder/symbol symbol number metric stx-list)
     (match (find-all-placeholder/symbol symbol metric stx-list)
       [(list) (raise (make-voice-exn "Unable to find such a placeholder."))]
@@ -326,6 +395,7 @@
     (find-all/metric pred metric stx-list))
   
   ;; find-distance/metric : (syntax -> boolean) (syntax -> non-negative-integer) (syntax list) integer -> syntax
+  ;; Raises exception if we can't find.
   (define (find-distance/metric pred metric stx-list distance)
     (list-ref/safe (find-all/metric pred metric stx-list) (sub1 distance)))
   
