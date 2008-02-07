@@ -339,11 +339,19 @@
   
   ;; eval-What/select : World (pos -> syntax -> non-negative-integer) pos What -> (union non-negative-integer false)
   (define (eval-What/select world make-metric-f what-base what)
-    (match what
-      [(struct WhatN (noun))
-       (find-rank what-base (eval-Noun world make-metric-f (index->syntax-pos 0) noun))]
-      [(struct WhatDN (distance noun))
-       (find-rank what-base (eval-Noun world make-metric-f (index->syntax-pos 0) noun))]))
+    (let* ([noun
+            (match what
+              [(struct WhatN (noun))
+               noun]
+              [(struct WhatDN (distance noun))
+               noun])]
+           [stx-list
+            (eval-Noun world make-metric-f (index->syntax-pos 0) noun)])
+      (cond
+        [(empty? stx-list)
+         #f]
+        [else
+         (find-rank what-base stx-list)])))
   
   ;; eval-What/bash : What -> symbol
   (define (eval-What/bash what)

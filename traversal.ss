@@ -91,7 +91,8 @@
     (pos/c (listof syntax?) . -> . syntax/false)]
    
    [find-rank
-    (pos/c (listof syntax?) . -> . natural-number/c)]
+    (pos/c (and/c (listof syntax?)
+                  (not/c empty?)) . -> . natural-number/c)]
    
    [sort/metric
     (metric/c (listof syntax?) . -> . (listof syntax?))])
@@ -428,42 +429,15 @@
   
   
   
-  ;; find-rank-old : (syntax -> boolean) pos (syntax -> non-negative-integer) (syntax list) -> non-negative-integer
-  (define (find-rank-old pred base metric stx-list)
-    ;; aux : ((syntax list) syntax cons) -> non-negative-integer
-    (define (aux lst)
-      (match lst
-        [(list _) 1]
-        [(list stx sty tail ...)
-         (if (<= base (syntax-position sty))
-             0
-             (add1 (aux (rest lst))))])) 
-    (let* ([stx-list (find-all/metric pred metric stx-list)])
-      (cond
-        [(empty? stx-list) (raise (make-voice-exn "Unable to find this thing."))]
-        [(<= base (syntax-position (first stx-list))) 0]
-        [else
-         (let ([len (length stx-list)]
-               [n   (aux stx-list)])
-           (voice-printf "LEN: ~a N: ~a ~n" len n)
-           (cond
-             [(n . >= . len) (sub1 len)]
-             [else
-              (let* ([stx1 (list-ref/safe stx-list n)]
-                     [stx2 (list-ref/safe stx-list (add1 n))]
-                     [d1   (- base (syntax-position stx1))]
-                     [d2   (- (syntax-position stx2) base)])
-                (cond
-                  [(< d1 d2) n]
-                  [(> d1 d2) (add1 n)]
-                  [else n]))]))])))
-  
-  
   ;; find-rank : pos (syntax list) -> non-negative-integer
+  ;; fixme: what is the intent of this function?
   (define (find-rank base stx-list)
+    ;; aux: (listof syntax) -> number
+    ;; returns the index of the first element in stx-list whose position is
+    ;; greater than the base, or the length of the list if the search fails.
     (define (aux stx-list)
       (cond
-        [(empty? stx-list) 1]
+        [(empty? stx-list) 0]
         [(<= base (syntax-position (first stx-list))) 0]
         [else (add1 (aux (rest stx-list)))]))
     (let ([len (length stx-list)]
@@ -478,8 +452,4 @@
                 [d2 (- (syntax-position stx2) base)])
            (cond
              [(< d1 d2) (sub1 n)]
-             [(> d1 d2)       n ]
-             [else n]))])))
-  
-  
-  )
+             [else n]))]))))
