@@ -62,11 +62,14 @@
   ;; get-language-autocompletes: (listof string)
   ;; Returns a list of strings that can autocomplete 
   (define (get-language-autocompletes)
+    (define (return-defaults)
+      (map symbol->string (get-mzscheme-mapped-symbols)))
     (cond
       [(capability-registered? 'drscheme:autocomplete-words)
-       (send (get-language) capability-value 'drscheme:autocomplete-words)]
+       (with-handlers ([exn:fail? (lambda (exn) (return-defaults))])
+         (send (get-language) capability-value 'drscheme:autocomplete-words))]
       [else
-       (map symbol->string (get-mzscheme-mapped-symbols))]))
+       (return-defaults)]))
   
   
   (provide/contract [get-language-name (-> string?)]
