@@ -1,5 +1,24 @@
 Known bugs and issues after 2.3 release:
 
+Bug:
+
+"#(())".  Press K when highlighting the inner parens.  We see:
+
+ormap: expects type <proper list> as 2nd argument, given: #f; other arguments were: #<procedure:aux>
+
+ === context ===
+find-pos/end
+/Users/dyoo/work/divascheme/interpreter.ss:723:2: eval-Non-blank-out
+/Users/dyoo/work/divascheme/interpreter.ss:55:2: interpreter/extension
+/Users/dyoo/work/divascheme/diva-link.ss:307:6: interpreter/imperative
+/Users/dyoo/work/divascheme/diva-link.ss:298:6: get&set-mred/handlers
+/Users/dyoo/local/plt/collects/scheme/private/more-scheme.ss:155:2: call-with-break-parameterization
+/Users/dyoo/local/plt/collects/scheme/private/more-scheme.ss:260:2: call-with-exception-handler
+
+
+
+
+
 #lang does not interact well; a file using it or a #reader extension
 gives wacky positional information making it infuriating to edit code.
 I think the parser isn't generating the correct locations.
