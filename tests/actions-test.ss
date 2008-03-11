@@ -5,7 +5,7 @@
            (lib "class.ss")
            (lib "struct.ss")
            "test-harness.ss"
-           "../utilities.ss"
+           (all-except "../utilities.ss" insert-rope)
            "../structures.ss"
            "../templates.ss"
            "../actions.ss")

@@ -8,10 +8,10 @@
            "traversal.ss"
            "utilities.ss"
            "structures.ss"
-           "choose-paren.ss"
+           "gui/choose-paren.ss"
            "in-something.ss"
            "rope.ss"
-           "text-rope-mixin.ss"
+           "gui/text-rope-mixin.ss"
            (prefix action: "actions.ss")
            (prefix preferences: "diva-preferences.ss"))
   

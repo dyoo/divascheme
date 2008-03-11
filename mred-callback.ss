@@ -5,7 +5,7 @@
            "utilities.ss"
            "long-prefix.ss"
            "rope.ss"
-           "text-rope-mixin.ss")
+           "gui/text-rope-mixin.ss")
   
   ;; Here we are defining mixins for text% and canvas% classes
   ;; whose instanciations would be handled by a mred-state%.

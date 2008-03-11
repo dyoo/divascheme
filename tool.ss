@@ -9,7 +9,7 @@
            "mred-callback.ss"
            "diva-central.ss"
            "diva-file-menu.ss"
-           "text-rope-mixin.ss"
+           "gui/text-rope-mixin.ss"
            (prefix language: "language.ss")
            (prefix preferences: "diva-preferences.ss")
            (prefix marker: "marker.ss")

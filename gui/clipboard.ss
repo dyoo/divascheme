@@ -3,7 +3,7 @@
            (lib "class.ss")
            (lib "mred.ss" "mred")
            (lib "contract.ss")
-           "rope.ss")
+           "../rope.ss")
   
   ;; We do some kludgery here to store snip content in a clipboard.
   ;; If we try to set-clipboard-content with a snip, we remember

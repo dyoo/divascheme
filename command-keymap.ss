@@ -4,7 +4,7 @@
            (lib "framework.ss" "framework")
            (lib "mred.ss" "mred")
            (lib "list.ss")
-           "choose-paren.ss"
+           "gui/choose-paren.ss"
            "structures.ss"
            "utilities.ss"
            (prefix preferences: "diva-preferences.ss"))

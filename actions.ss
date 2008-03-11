@@ -14,11 +14,11 @@
            "templates.ss"
            "tag-state.ss"
            "tag-reader.ss"
-           "text-rope-mixin.ss"
+           "gui/text-rope-mixin.ss"
            "rope.ss"
            "long-prefix.ss"
            "cleanup-whitespace.ss"
-           "clipboard.ss"
+           "gui/clipboard.ss"
            "language.ss")
   
   (define voice-debug false)

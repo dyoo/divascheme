@@ -7,7 +7,7 @@
            (lib "lex.ss" "parser-tools")
            (lib "contract.ss")
            (lib "plt-match.ss")
-           "rope.ss")
+           "../rope.ss")
   
   
   
