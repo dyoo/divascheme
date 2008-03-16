@@ -420,19 +420,23 @@
             #f
             (lambda ()
               (on-entry)
-              (make-insert-mode this                                     ;; window
-                                (lambda args (apply diva-message args)) ;; diva-message
-                                (lambda () (send this get-mred))         ;; get-world
-                                (lambda (world) (send this set-mred world)) ;; set-world
-                                set-on-loss-focus                        ;; set-on-loss-focus
-                                set-after-insert-callback                ;; set-after-insert-callback
-                                set-after-delete-callback                ;; set-after-delete-callback
-                                (lambda (world ast)
-                                  (diva-ast-put/wait+world world ast)) ;; interpreter
-                                on-exit                                     ;; post-exit-hook
-                                cmd                                      ;; cmd
-                                edit?                                    ;; edit?
-                                )))]))
+              ;; Currently, we're ignoring the return value of make-insert-mode.
+              ;; TODO: take advantage of having a value for this, so we don't have to pass
+              ;; so many silly callback functions.
+              (void
+               (make-insert-mode this ;; window
+                                 (lambda args (apply diva-message args)) ;; diva-message
+                                 (lambda () (send this get-mred)) ;; get-world
+                                 (lambda (world) (send this set-mred world)) ;; set-world
+                                 set-on-loss-focus ;; set-on-loss-focus
+                                 set-after-insert-callback ;; set-after-insert-callback
+                                 set-after-delete-callback ;; set-after-delete-callback
+                                 (lambda (world ast)
+                                   (diva-ast-put/wait+world world ast)) ;; interpreter
+                                 on-exit ;; post-exit-hook
+                                 cmd ;; cmd
+                                 edit? ;; edit?
+                                 ))))]))
       
       
       ;; Command Mode
