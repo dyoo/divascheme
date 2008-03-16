@@ -19,14 +19,6 @@
   (provide make-insert-mode)
   
   
-  (define (alt/meta-prefix str)
-    (format "~a~a" (case (system-type)
-                     [(macosx macos) "d:"]
-                     [(windows)      "m:"]
-                     [(unix)         "m:"]
-                     [else           "m:"]) str))
-  
-  
   ;;
   ;; The Insertion Mode
   ;;

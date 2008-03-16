@@ -65,6 +65,17 @@
         [else #f])))
   
   
+  ;; alt/meta-prefix: string -> string
+  ;; Given a string, constructs a key description appending
+  ;; whatever system-specific control character describes meta.
+  (provide alt/meta-prefix)
+  (define (alt/meta-prefix str)
+    (format "~a~a" (case (system-type)
+                     [(macosx macos) "d:"]
+                     [(windows) "m:"]
+                     [(unix) "m:"]
+                     [else "m:"]) str))
+  
   
   (provide filter-double)
   (define (filter-double xs)

@@ -7,7 +7,8 @@
            (lib "list.ss")
            (lib "plt-match.ss")
            (lib "contract.ss")
-           "diva-central.ss")
+           "diva-central.ss"
+           "utilities.ss")
   
   (provide install-diva-central-handler
            enable-on-startup?
@@ -226,13 +227,6 @@
   
   ;; install-keybindings: keymap (listof (list key function-name))
   (define (install-keybindings keymap bindings)
-    (define (alt/meta-prefix str)
-      (format "~a~a" (case (system-type)
-                       [(macosx macos) "d:"]
-                       [(windows) "m:"]
-                       [(unix) "m:"]
-                       [else "m:"]) str))
-    
     (define (key->decorated-key key)
       (match key
         [(list 'alt/meta-prefix key)
