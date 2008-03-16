@@ -2,9 +2,9 @@
   (require (lib "etc.ss")
 	   (lib "list.ss")
            (lib "class.ss")
-           (lib "mred.ss" "mred")
            (only (lib "1.ss" "srfi") circular-list)
            (lib "framework.ss" "framework")
+           "rigid-keymap.ss"
            "traversal.ss"
            "utilities.ss"
            "structures.ss"
@@ -18,74 +18,13 @@
   
   (provide make-insert-mode)
   
-  ;;
-  ;; DEBUG STUFFS
-  ;;
-  
-  ;; diva-debug : boolean
-  (define diva-debug false)
-  
-  ;; This function prints something if and only if diva-debug is true.
-  (define (diva-printf text . args)
-    (when diva-debug
-      (apply printf text args)))
   
   (define (alt/meta-prefix str)
     (format "~a~a" (case (system-type)
                      [(macosx macos) "d:"]
                      [(windows)      "m:"]
                      [(unix)         "m:"]
-		     [else           "m:"]) str))
-  
-  
-  
-  ;; even it was forgotten in the documentation, key identifiers "back" and "backspace" are the same for map-function.
-  ;; 
-  (define (make-rigid-keymap keymap fun)
-    (send keymap add-function "diva:rigid-rid-off" fun)
-    
-    (send keymap map-function "up"      "diva:rigid-rid-off")
-    (send keymap map-function "down"    "diva:rigid-rid-off")
-    
-    (send keymap map-function "home"     "diva:rigid-rid-off")
-    (send keymap map-function "end"      "diva:rigid-rid-off")
-    (send keymap map-function "pageup"   "diva:rigid-rid-off")
-    (send keymap map-function "pagedown" "diva:rigid-rid-off")
-    
-    (send keymap map-function "delete"   "diva:rigid-rid-off")
-    (send keymap map-function "insert"   "diva:rigid-rid-off")
-    
-    (send keymap map-function "leftbutton"   "diva:rigid-rid-off")
-    (send keymap map-function "rightbutton"  "diva:rigid-rid-off")
-    (send keymap map-function "middlebutton" "diva:rigid-rid-off")
-    
-    (send keymap set-grab-key-function
-	  (lambda (str km editor event)
-            (define whitespace
-              (list #\nul #\rubout #\backspace #\tab #\return #\space
-                    #\linefeed #\newline #\null #\page #\vtab))
-            (diva-printf "GRAB KEY FUNCTION WAS CALLED for TEXT: str:~a km: editor: event:%~a%'~n" str (send event get-key-code))
-            (if str
-                (if ((prefix/string? "diva:") str) false true)
-                (let ([key-code (send event get-key-code)])
-                  (cond
-                    [(and (char? key-code)
-                          (not (member key-code whitespace)))
-                     (send editor insert key-code)
-                     true]
-                    [else
-                     false]))))))
-  
-  
-  
-  (define (blank-string? text)
-    (let loop ([i 0])
-      (cond
-        [(= i (string-length text))
-         #t]
-        [(char-whitespace? (string-ref text i))
-         (loop (add1 i))]
-        [else #f])))
+                     [else           "m:"]) str))
   
   
   ;;
@@ -516,7 +455,7 @@
         (define insert-keymap (make-object keymap:aug-keymap%))
         
         ;; setting up callbacks
-        (make-rigid-keymap insert-keymap void)
+        (install-rigid-keymap-bindings! insert-keymap)
         
         (send insert-keymap add-function "diva:exit"        (wrap-up (consume&exit)))
         (send insert-keymap add-function "diva:cancel"      (wrap-up (revert&exit)))

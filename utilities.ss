@@ -28,8 +28,8 @@
   (define (end-cons l a)
     (reverse (cons a (reverse l))))
   
-  (provide list-gcd)
   
+  (provide list-gcd)
   ;; list-gcd : (('a list) list) -> ('a list)
   (define (list-gcd lst)
     (define ?
@@ -52,6 +52,20 @@
                     empty))))))
   
   
+  (provide blank-string?)
+  ;; blank-string? string -> boolean
+  ;; Returns true if the string consists only of whitespace characters.
+  (define (blank-string? text)
+    (let loop ([i 0])
+      (cond
+        [(= i (string-length text))
+         #t]
+        [(char-whitespace? (string-ref text i))
+         (loop (add1 i))]
+        [else #f])))
+  
+  
+  
   (provide filter-double)
   (define (filter-double xs)
     (define ht (make-hash-table 'equal))
@@ -68,7 +82,7 @@
         [else 
          (mark! (first xs))
          (cons (first xs) (loop (rest xs)))])))
-
+  
   (provide list-ref/safe)
   ;; list-ref/safe : ('a list) int -> 'a
   ;; Calls list-ref with error.
