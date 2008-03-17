@@ -346,8 +346,22 @@
           (begin-symbol-insertion/nothing-pending)))
     
     (define (eval-text&cmd symbol)
-      (eval-text)
-      (eval-cmd symbol))
+      ;; FIXME: ugly kludge ahead.  The original architecture of this makes
+      ;; the right fix too hard to implement.  I need to think a little more before
+      ;; implementing it.  I think that the template system should be more
+      ;; involved at this point, rather than the insertion keymap.
+      ;; The issue is if we enter the sequence "#(...", we want the templating
+      ;; system to introduce "#($expr$)", but not execute the opening command, or else
+      ;; we end up getting the silly expression "#(($expr$))".
+      (cond [(text-already-introduces-open? (get-text))
+             (eval-text)]
+            [else
+             (eval-text)
+             (eval-cmd symbol)]))
+    
+    (define (text-already-introduces-open? txt)
+      (or (string=? txt "#")
+          (string=? txt "#s")))
     
     (define (magic-expand-insertion-text)
       (define quote-prefix "^([\"#'`,@]*)")

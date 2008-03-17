@@ -42,10 +42,13 @@
       (|,| ",$expr$")
       (|,@| ",@$expr$")
       
-      ;; This one is not right, but there's little we can do until we write
+      ;; This one is not quite right, but there's little we can do until we write
       ;; our own reader to handle weird cases like this.
-      (|#| "#($expr$)")
-
+      ;; Fixme: I want to adjust templates so that we can tell the caller that we've
+      ;; introduced a set of parens that wasn't in the original input.
+      (|#| "#($expr$ ---)")
+      (|#s| "#s($expr$ ---)")
+      
       (|#'| "#'$expr$")
       (|#`| "#`$expr$")
       (|#,| "#,$expr$")
@@ -458,7 +461,7 @@
          #t))
   
   
-  ;; lookup-template : (union symbol false) non-negative-integer boolean boolean -> sexp-string
+  ;; lookup-template : (union symbol false) non-negative-integer boolean boolean -> (values sexp-string number)
   (define (lookup-template symbol template-number open? wrap?)
     (define templates 
       (and symbol
