@@ -15,6 +15,9 @@ find-pos/end
 /Users/dyoo/local/plt/collects/scheme/private/more-scheme.ss:155:2: call-with-break-parameterization
 /Users/dyoo/local/plt/collects/scheme/private/more-scheme.ss:260:2: call-with-exception-handler
 
+   - fixed!  Bug fixed in 37cb1e.
+
+
 
 
 
@@ -22,6 +25,8 @@ find-pos/end
 #lang does not interact well; a file using it or a #reader extension
 gives wacky positional information making it infuriating to edit code.
 I think the parser isn't generating the correct locations.
+
+   - fixed
 
 
 Typo in preferences for "dive:end" which should really be "diva:last".
@@ -55,19 +60,3 @@ Major slowness on large files.
     - identified as parser.
     - but there are other areas of concern.  replace/selection is a
       major culprit, as well as cleanup/whitespace.
-
-
-
-Cursor motion:
-map: expects type <proper list> as 2nd argument, given: #f; other arguments were: #<procedure:aux>
-
- === context ===
-/home/dyoo/work/divascheme/traversal.ss:164:5
-/home/dyoo/work/divascheme/interpreter.ss:655:2: eval-column-motion
-/home/dyoo/work/divascheme/diva-link.ss:315:6: interpreter/imperative
-/home/dyoo/work/divascheme/diva-link.ss:306:6: get&set-mred/handlers
-call-with-break-parameterization
-
-   - not sure how this is happening, or if it still is a problem: I've
-changed the syntax list implemenation to compute lazily now, so it
-should never be visible as #f from traversal.ss.
