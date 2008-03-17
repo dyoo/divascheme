@@ -329,7 +329,7 @@
   (define (id x) x)
   
   
-  (provide or* atomic? atomic/stx? stx->lst gmap orgmap andgmap syntax-is-syntax? equal-syntax?)
+  (provide or* atomic? atomic/stx? gmap orgmap andgmap syntax-is-syntax? equal-syntax?)
   
   ;; or* : ('a list) -> 'a
   (define (or* args)
@@ -346,29 +346,30 @@
     (atomic? (syntax-e stx)))
   
   ;; stx->lst : syntax -> (syntax list)
+  (provide/contract [stx->lst (syntax? . -> . (listof syntax?))])
   (define (stx->lst stx)
     (match (syntax-e stx)
-           [(? atomic?)           empty]
-           [(vector xs ...)       xs]
-           [(list xs   ...)       xs]
-           [(list-rest lst ... last) (append lst (list last))])) ; for things like '(a b c . d)
+      [(? atomic?)           empty]
+      [(vector xs ...)       xs]
+      [(list xs   ...)       xs]
+      [(list-rest lst ... last) (append lst (list last))])) ; for things like '(a b c . d)
   
   ;; gmap : (syntax -> 'a) syntax -> ('a list)
   (define (gmap fn stx)
     (map fn (stx->lst stx)))
-
+  
   ;; orgmap : (syntax -> 'a) syntax -> 'a
   (define (orgmap fn stx)
     (ormap fn (stx->lst stx)))
-
+  
   ;; andgmap : (syntax -> 'a) syntax -> 'a
   (define (andgmap fn stx)
     (andmap fn (stx->lst stx)))
-
+  
   ;; syntax-is-syntax? : syntax -> syntax -> boolean
   (define ((syntax-is-syntax? stx) sty)
     (equal-syntax? stx sty))
-
+  
   ;; equal-syntax? : syntax syntax -> boolean
   (define (equal-syntax? stx1 stx2)
     (equal? (syntax-object->datum stx1) (syntax-object->datum stx2)))

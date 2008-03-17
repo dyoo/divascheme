@@ -150,7 +150,7 @@
            (if (or (= (syntax-position stx) pos)
                    (atomic/stx? stx))
                stx
-               (ormap aux (syntax->list stx)))))
+               (ormap aux (stx->lst stx)))))
     (ormap aux stx-list))
   
   ;; find-pos/end : pos (syntax list) -> syntax/false
@@ -161,7 +161,7 @@
                    (= (sub1 (syntax-end-position stx)) pos)
                    (atomic/stx? stx))
                stx
-               (ormap aux (syntax->list stx)))))
+               (ormap aux (stx->lst stx)))))
     (ormap aux stx-list))
   
   ;; find-pos-near : pos (syntax list) -> syntax/false
@@ -171,17 +171,17 @@
   
   ;; find-pos-parent : pos (syntax list) -> syntax/false
   (define (find-pos-parent pos stx-list)
-    (define target (find-pos pos stx-list))
-    (define (eq-target? stx) (eq? stx target))
-    (define (aux stx)
-      (and (in-syntax? pos stx)
-           (if (or* (gmap eq-target? stx))
-               stx
-               (or* (gmap aux stx)))))
-    (if target
-        (ormap aux stx-list)
-        (find-blank-parent pos stx-list)))
-
+    (let ([target (find-pos pos stx-list)])
+      (define (eq-target? stx) (eq? stx target))
+      (define (aux stx)
+        (and (in-syntax? pos stx)
+             (if (or* (gmap eq-target? stx))
+                 stx
+                 (or* (gmap aux stx)))))
+      (if target
+          (ormap aux stx-list)
+          (find-blank-parent pos stx-list))))
+  
   
   ;; find-blank-parent : pos (syntax list) -> syntax/false
   ;; Finds the s-expression enclosing the position, assuming
