@@ -52,7 +52,6 @@
     (define (initialize!)
       ;; Keymap stuff.
       (set! insert-keymap (make-insert-keymap))
-      (preferences:install-insert-mode-bindings insert-keymap)
       (when this-insert-mode-exited?
         (error 'insert-keymap "Insert keymap used after it exited."))
       (send (send window get-keymap) chain-to-keymap insert-keymap #t)
@@ -415,11 +414,6 @@
       (set! this-insert-mode-exited? true))
     
     
-    (define (maybe-literal* c . thunks)
-      (if (in-something? (get-text-to-cursor))
-          (send window insert c)
-          (for-each (lambda (t) (t)) thunks)))
-    
     ;; Returns a new event handler that can handle failure.
     (define-syntax (wrap-up stx)
       (syntax-case stx ()
@@ -454,6 +448,11 @@
         [(_ c e ...)
          (syntax/loc stx
            (maybe-literal* c (lambda () e) ...))]))
+    
+    (define (maybe-literal* c . thunks)
+      (if (in-something? (get-text-to-cursor))
+          (send window insert c)
+          (for-each (lambda (t) (t)) thunks)))
     
     (define (magic-or-pass)
       (if (= (string-length (get-text)) 0)
@@ -501,6 +500,8 @@
       
       (send insert-keymap add-function "diva:left*" (wrap-up (move-left*)))
       (send insert-keymap add-function "diva:right*" (wrap-up (move-right*)))
+      
+      (preferences:install-insert-mode-bindings insert-keymap)
       
       insert-keymap)
     
