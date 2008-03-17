@@ -349,8 +349,6 @@
       (eval-text)
       (eval-cmd symbol))
     
-    (define (make-circular lst) (apply circular-list lst))
-    
     (define (magic-expand-insertion-text)
       (define quote-prefix "^([\"#'`,@]*)")
       
@@ -377,7 +375,7 @@
                   world-at-beginning-of-insert
                   left-edge-of-insert
                   (string->symbol (get-magic-text)))])
-           (set! magic-options-lst (rest (make-circular options)))
+           (set! magic-options-lst (rest (apply circular-list options)))
            (cond
              [(empty? (rest options))
               (diva-message
