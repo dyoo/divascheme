@@ -172,7 +172,7 @@
                   
                   [(prefix quoter-prefix)
                    (cond
-                     [(string-prefix? "#;" val)
+                     [(or (string-prefix? "#;" val) (string-prefix? "#s" val))
                       (hash-table-put! ht (position-offset (position-token-start-pos pos-token)) val)
                       (display "''" to-op)
                       ;; The condition below is redundant,

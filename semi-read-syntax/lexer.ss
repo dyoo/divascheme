@@ -32,7 +32,8 @@
                                   "#;" ;; nested comments
                                   "#&" ;; boxes
                                   "#'" "#`" "#," "#,@"
-                                  "#cs" "#ci"))
+                                  "#cs" "#ci"
+                                  "#s"))
   
   (define-lex-abbrev nl (:or "\r\n"
                              "\n"
