@@ -410,7 +410,7 @@
         (void))
       
       
-      ;; Insertion Mod
+      ;; Insertion Mode
       (define to-insert-mode
         (case-lambda 
           [(edit? on-entry on-exit)

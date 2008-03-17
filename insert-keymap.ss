@@ -32,7 +32,7 @@
   
   
   ;; FIXME: if this takes so many parameters, there is a structural problem.
-  (define (make-insert-mode window diva-message get-world set-world set-on-focus-lost
+  (define (make-insert-mode editor diva-message get-world set-world set-on-focus-lost
                             set-after-insert-callback set-after-delete-callback
                             interpret! post-exit-hook cmd edit?)
     
@@ -41,20 +41,17 @@
     (define magic-options-lst false)
     (define magic-option-base false)
     
-    (define left-edge-of-insert (send window get-start-position))
-    (define right-edge-of-insert (send window get-start-position))
+    (define left-edge-of-insert (send editor get-start-position))
+    (define right-edge-of-insert (send editor get-start-position))
     
     (define clear-highlight (lambda () (void)))
-    (define this-insert-mode-exited? false)
     (define insert-keymap #f)
     
     
     (define (initialize!)
       ;; Keymap stuff.
       (set! insert-keymap (make-insert-keymap))
-      (when this-insert-mode-exited?
-        (error 'insert-keymap "Insert keymap used after it exited."))
-      (send (send window get-keymap) chain-to-keymap insert-keymap #t)
+      (send (send editor get-keymap) chain-to-keymap insert-keymap #t)
       
       ;; Hooking up the other callbacks
       (set-on-focus-lost consume&exit)
@@ -92,20 +89,20 @@
     
     
     (define (get-text)
-      (send window get-text left-edge-of-insert right-edge-of-insert))
+      (send editor get-text left-edge-of-insert right-edge-of-insert))
     
     ;; get-rope: -> rope
     ;; Returns the contents between the left and right edge of the
     ;; insertion point.
     (define (get-rope)
-      (read-subrope-in-text window left-edge-of-insert
+      (read-subrope-in-text editor left-edge-of-insert
                             (- right-edge-of-insert left-edge-of-insert)))
     
     (define (get-text-to-cursor)
-      (send window get-text left-edge-of-insert (send window get-start-position)))
+      (send editor get-text left-edge-of-insert (send editor get-start-position)))
     
     (define (set-text text)
-      (send window insert text left-edge-of-insert (send window get-start-position) true))
+      (send editor insert text left-edge-of-insert (send editor get-start-position) true))
     
     
     (define (set-insert&delete-callbacks)
@@ -133,14 +130,14 @@
                                      (list #f))))])
         (cond
           [stx/false
-           (let ([original-pos (send window get-end-position)])
+           (let ([original-pos (send editor get-end-position)])
              (set-world (action:select/stx world stx/false))
-             (begin-symbol (send window get-start-position)
-                           (send window get-end-position))
-             (send window diva:set-selection-position
+             (begin-symbol (send editor get-start-position)
+                           (send editor get-end-position))
+             (send editor diva:set-selection-position
                    (clamp original-pos
-                          (send window get-start-position)
-                          (send window get-end-position)))
+                          (send editor get-start-position)
+                          (send editor get-end-position)))
              (set-insert&delete-callbacks))]
           [else
            (begin-symbol-insertion)])))
@@ -149,18 +146,18 @@
     
     
     (define (begin-symbol-insertion)
-      (define left-point (send window get-start-position))
+      (define left-point (send editor get-start-position))
       
       (define need-space-before
         (and (not (= 0 left-point))
              (not (eq? #\space
-                       (send window get-character (sub1 left-point))))))
+                       (send editor get-character (sub1 left-point))))))
       
       (define need-space-after
-        (or (= (string-length (send window get-text))
+        (or (= (string-length (send editor get-text))
                left-point)
             (not (eq? #\space
-                      (send window get-character (add1 left-point))))))
+                      (send editor get-character (add1 left-point))))))
       
       (define (prepare-insertion-point!)
         (if need-space-before
@@ -168,13 +165,13 @@
             (begin-symbol left-point left-point))
         (unset-insert&delete-callbacks)
         (unless (empty-selection?)
-          (send window delete))
+          (send editor delete))
         (when need-space-before
-          (send window insert " "))
+          (send editor insert " "))
         (when need-space-after
-          (send window insert " ")
-          (send window diva:set-selection-position
-                (max (sub1 (send window get-end-position)) 0)))
+          (send editor insert " ")
+          (send editor diva:set-selection-position
+                (max (sub1 (send editor get-end-position)) 0)))
         (set-insert&delete-callbacks))
       
       (prepare-insertion-point!)
@@ -192,7 +189,7 @@
     
     
     (define (crop n)
-      (clamp n 0 (string-length (send window get-text))))
+      (clamp n 0 (string-length (send editor get-text))))
     
     
     ;; empty-selection?: -> boolean
@@ -200,7 +197,7 @@
     (define (empty-selection?)
       (define start (box 0))
       (define end (box 0))
-      (send window get-position start end)
+      (send editor get-position start end)
       (= (unbox start) (unbox end)))
     
     
@@ -212,72 +209,72 @@
     
     (define (snap-to-edges)
       (let ([snapped-pos
-             (clamp (send window get-start-position)
+             (clamp (send editor get-start-position)
                     left-edge-of-insert right-edge-of-insert)])
-        (unless (= snapped-pos (send window get-start-position))
-          (send window diva:set-selection-position snapped-pos))))
+        (unless (= snapped-pos (send editor get-start-position))
+          (send editor diva:set-selection-position snapped-pos))))
     
     (define (move-up)
-      (send window move-position 'up)
+      (send editor move-position 'up)
       (snap-to-edges))
     
     (define (move-down)
-      (send window move-position 'down)
+      (send editor move-position 'down)
       (snap-to-edges))
     
     (define (move-left)
-      (send window move-position 'left)
+      (send editor move-position 'left)
       (snap-to-edges))
     
     (define (move-right)
-      (send window move-position 'right)
+      (send editor move-position 'right)
       (snap-to-edges))
     
     (define (move-left*)
-      (send window diva:set-selection-position left-edge-of-insert))
+      (send editor diva:set-selection-position left-edge-of-insert))
     
     (define (move-right*)
-      (send window diva:set-selection-position right-edge-of-insert))
+      (send editor diva:set-selection-position right-edge-of-insert))
     
     
     (define (delete-backward)
       (cond
-        [(= left-edge-of-insert (send window get-start-position))
+        [(= left-edge-of-insert (send editor get-start-position))
          (void)
          ;; not quite working yet
          #;(eval-text&cmd 'Younger)
          ]
         [(< left-edge-of-insert
-            (send window get-start-position))
-         (send window delete)]))
+            (send editor get-start-position))
+         (send editor delete)]))
     
     
     (define (delete-forward)
-      (when (< (send window get-start-position)
+      (when (< (send editor get-start-position)
                right-edge-of-insert)
-        (send window delete
-              (send window get-start-position)
-              (add1 (send window get-start-position)))))
+        (send editor delete
+              (send editor get-start-position)
+              (add1 (send editor get-start-position)))))
     
     
     ;; copy-and-paste from framework/private/keymap.ss.
     (define (kill-word-forward)
-      (let ([sel-start (send window get-start-position)]
-            [sel-end (send window get-end-position)])
+      (let ([sel-start (send editor get-start-position)]
+            [sel-end (send editor get-end-position)])
         (let ([end-box (box sel-end)])
-          (send window find-wordbreak #f end-box 'caret)
-          (send window kill
+          (send editor find-wordbreak #f end-box 'caret)
+          (send editor kill
                 0
                 sel-start
                 (min right-edge-of-insert (unbox end-box))))))
     
     
     (define (kill-word-backward)
-      (let ([sel-start (send window get-start-position)]
-            [sel-end (send window get-end-position)])
+      (let ([sel-start (send editor get-start-position)]
+            [sel-end (send editor get-end-position)])
         (let ([start-box (box sel-start)])
-          (send window find-wordbreak start-box #f 'caret)
-          (send window kill
+          (send editor find-wordbreak start-box #f 'caret)
+          (send editor kill
                 0
                 (max left-edge-of-insert (unbox start-box))
                 sel-end))))
@@ -287,15 +284,15 @@
       (clear-highlight)
       (local ((define left-
                 (cond
-                  [(= (send window
+                  [(= (send editor
                             position-line left-edge-of-insert)
-                      (send window
+                      (send editor
                             position-line (crop (sub1 left-edge-of-insert))))
                    (crop (sub1 left-edge-of-insert))]
                   [else
                    left-edge-of-insert])))
         (set! clear-highlight
-              (send window highlight-range
+              (send editor highlight-range
                     left-
                     (crop (add1 right-edge-of-insert))
                     (insert-color)))))
@@ -349,10 +346,8 @@
           (begin-symbol-insertion/nothing-pending)))
     
     (define (eval-text&cmd symbol)
-      (let ([start (box 0)]
-            [end (box 0)])
-        (eval-text)
-        (eval-cmd symbol)))
+      (eval-text)
+      (eval-cmd symbol))
     
     (define (make-circular lst) (apply circular-list lst))
     
@@ -406,12 +401,11 @@
     
     
     (define (exit)
-      (send (send window get-keymap) remove-chained-keymap insert-keymap)
+      (send (send editor get-keymap) remove-chained-keymap insert-keymap)
       (clear-highlight)
       (set-on-focus-lost (lambda () (void)))
       (unset-insert&delete-callbacks)
-      (post-exit-hook)
-      (set! this-insert-mode-exited? true))
+      (post-exit-hook))
     
     
     ;; Returns a new event handler that can handle failure.
@@ -425,13 +419,13 @@
     (define (wrap-up* . thunks)
       (lambda (any event)
         (dynamic-wind
-         (lambda () (send window begin-edit-sequence))
+         (lambda () (send editor begin-edit-sequence))
          (lambda ()
            (with-handlers ([voice-exn? (lambda (exn)
                                          (diva-message (voice-exn-message exn))
                                          (exit))])
              (for-each (lambda (t) (t)) thunks)))
-         (lambda () (send window end-edit-sequence)))))
+         (lambda () (send editor end-edit-sequence)))))
     
     
     ;; Slightly special command here, since we need to communicate with
@@ -451,7 +445,7 @@
     
     (define (maybe-literal* c . thunks)
       (if (in-something? (get-text-to-cursor))
-          (send window insert c)
+          (send editor insert c)
           (for-each (lambda (t) (t)) thunks)))
     
     (define (magic-or-pass)
