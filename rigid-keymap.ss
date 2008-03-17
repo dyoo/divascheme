@@ -42,7 +42,7 @@
   ;; rigid-grab-key: string-or-false keymap text% event
   ;; Our grab-key-function watches key events and only lets ones through that
   ;; either are regular printable key events, or calls to a function that
-  ;; have the "diva:" prefix to them.
+  ;; have the "diva:" prefix to them.  Other keystrokes are ignored.
   (define (rigid-grab-key callback-name/false km editor event)
     (define no-further-dispatch-needed #t)
     (define more-dispatch-needed #f)
@@ -50,8 +50,12 @@
     
     (cond
       [(not callback-name/false)
-       (let ([key-code (send event get-key-code)])
+       (let ([key-code (send event get-key-code)]
+             [meta-down? (send event get-meta-down)]
+             [control-down? (send event get-control-down)])
          (cond
+           [(or meta-down? control-down?)
+            no-further-dispatch-needed]
            [(printable-char? key-code)
             (send editor insert key-code)
             no-further-dispatch-needed]
