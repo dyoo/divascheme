@@ -35,6 +35,36 @@
   (define (make-insert-mode window diva-message get-world set-world set-on-focus-lost
                             set-after-insert-callback set-after-delete-callback
                             interpret! post-exit-hook cmd edit?)
+    
+    (define world-at-beginning-of-insert #f)
+    (define pending-open false)
+    (define magic-options-lst false)
+    (define magic-option-base false)
+    
+    (define left-edge-of-insert (send window get-start-position))
+    (define right-edge-of-insert (send window get-start-position))
+    
+    (define clear-highlight (lambda () (void)))
+    (define this-insert-mode-exited? false)
+    (define insert-keymap #f)
+    
+    
+    (define (initialize!)
+      ;; Keymap stuff.
+      (set! insert-keymap (make-insert-keymap))
+      (preferences:install-insert-mode-bindings insert-keymap)
+      (when this-insert-mode-exited?
+        (error 'insert-keymap "Insert keymap used after it exited."))
+      (send (send window get-keymap) chain-to-keymap insert-keymap #t)
+      
+      ;; Hooking up the other callbacks
+      (set-on-focus-lost consume&exit)
+      (unset-insert&delete-callbacks)
+      (if edit? (begin-symbol-edit) (begin-symbol-insertion))
+      (when cmd (eval-cmd cmd)))
+    
+    
+    
     ;; consume-text: World Pending rope -> void
     ;; Send the new text to be filled into the buffer.
     ;; The templating system forces us to consider if the insertion
@@ -58,18 +88,9 @@
     (define (consume-cmd world symbol)
       (interpret! world (make-Verb (make-Command symbol) false false)))
     
-    (define world-at-beginning-of-insert #f)
-    (define pending-open false)
-    (define magic-options-lst false)
-    (define magic-option-base false)
-    
-    (define left-edge-of-insert (send window get-start-position))
-    (define right-edge-of-insert (send window get-start-position))
-    
     (define (insert-color)
       (preferences:get 'framework:paren-match-color))
     
-    (define clear-highlight (lambda () (void)))
     
     (define (get-text)
       (send window get-text left-edge-of-insert right-edge-of-insert))
@@ -384,7 +405,7 @@
             (exit))))
     
     
-    (define this-insert-mode-exited? false)
+    
     (define (exit)
       (send (send window get-keymap) remove-chained-keymap insert-keymap)
       (clear-highlight)
@@ -485,16 +506,4 @@
     
     
     
-    
-    ;; Keymap stuff.
-    (define insert-keymap (make-insert-keymap))
-    (preferences:install-insert-mode-bindings insert-keymap)
-    (when this-insert-mode-exited?
-      (error 'insert-keymap "Insert keymap used after it exited."))
-    (send (send window get-keymap) chain-to-keymap insert-keymap #t)
-    
-    ;; Hooking up the other callbacks
-    (set-on-focus-lost consume&exit)
-    (unset-insert&delete-callbacks)
-    (if edit? (begin-symbol-edit) (begin-symbol-insertion))
-    (when cmd (eval-cmd cmd))))
+    (initialize!)))
