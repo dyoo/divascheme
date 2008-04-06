@@ -26,10 +26,6 @@
 
   ;; Provided elements to perform the tests.
   (provide eval-Protocol-Syntax-Tree
-           default-Next-f
-           default-Previous-f 
-           default-Magic-f
-           default-Pass-f
            inc-what-distance
            dec-what-distance
            inc-Loc-distance
@@ -662,30 +658,22 @@
           (copy-struct World (world-clear (action:holder world base backward?))
                        [World-cancel     world]))))
     
-  (define ((default-Next-f) world)
-    (raise (make-voice-exn "Next is not supported")))
-  (define ((default-Previous-f) world)
-    (raise (make-voice-exn "Previous is not supported")))
-  (define ((default-Magic-f) world wrap?)
-    (raise (make-voice-exn "Magic is not supported")))
-  (define ((default-Pass-f) world template-wrap?)
-    (raise (make-voice-exn "Pass is not supported")))
-
+  
   ;; eval-Next : World -> World
   (define (eval-Next world)
     ((World-Next-f world) world))
-
+  
   ;; eval-Previous : World -> World
   (define (eval-Previous world)
     ((World-Previous-f world) world))
-    
+  
   ;; eval-Cancel : World -> World
   (define (eval-Cancel world)
     (if (World-cancel world)
         (copy-struct World (World-cancel world)
                      [World-redo world])
         (raise (make-voice-exn "Cancel is not supported"))))
-
+  
   ;; eval-Undo : World -> World
   (define (eval-Undo world)
     (if (World-undo world)

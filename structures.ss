@@ -99,6 +99,47 @@
                           markers
                           path)))
   
+  
+  (define ((default-Next-f) world)
+    (raise (make-voice-exn "Next is not supported")))
+  (define ((default-Previous-f) world)
+    (raise (make-voice-exn "Previous is not supported")))
+  (define ((default-Magic-f) world wrap?)
+    (raise (make-voice-exn "Magic is not supported")))
+  (define ((default-Pass-f) world template-wrap?)
+    (raise (make-voice-exn "Pass is not supported")))
+  
+  (provide default-Next-f
+           default-Previous-f
+           default-Magic-f
+           default-Pass-f)
+  
+  ;; make-fresh-world: -> world
+  ;; Creates a fresh new world.
+  (define (make-fresh-world)
+    (make-World (string->rope "")
+                empty
+                (index->syntax-pos 0)
+                #f
+                0
+                (index->syntax-pos 0)
+                0
+                (default-Next-f)
+                (default-Previous-f)
+                false
+                false
+                false
+                (default-Magic-f)
+                (default-Pass-f)
+                false
+                ""
+                #f
+                empty
+                empty
+                (current-directory)))
+  (provide/contract [make-fresh-world (-> World?)])
+  
+  
   (define-struct extension (base
                             puck
                             puck-length))
