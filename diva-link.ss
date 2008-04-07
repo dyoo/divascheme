@@ -154,15 +154,21 @@
       
       
       
-      
+      ;; diva-label: string -> void
+      ;; Displays a label.
       (define (diva-label label) 
         (when (get-top-level-window)
           (send (get-top-level-window) diva-label label)))
       
+      ;; diva-message: string -> void
+      ;; Displays a message.
       (define (diva-message msg)
         (when (get-top-level-window)
           (send (get-top-level-window) diva-message msg)))
       
+      ;; diva-question: string string (-> void) (string -> void) -> void
+      ;; Asks a question.  If cancelled, calls the cancel callback.  Otherwise,
+      ;; calls the answer callback with the provided string.
       (define (diva-question question default cancel answer)
         (send (get-top-level-window) diva-question question default cancel answer))
       
