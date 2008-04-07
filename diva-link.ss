@@ -31,6 +31,8 @@
   
   
   
+  
+  
   ;; This is the central location where we handle turning on and off DivaScheme
   ;; for an individual frame.
   (define (diva-link:frame-mixin super%)
@@ -93,6 +95,8 @@
   
   
   
+  
+  
   ;;
   ;; THE TEXT
   ;; 
@@ -113,13 +117,16 @@
   ;; that's why we should wait for the first hit on F4 on to set all the things.
   
   (define (diva-link:text-mixin super%)
-    (class super%
+    (class (focus-callback-mixin super%)
       (inherit get-top-level-window
                get-keymap
                get-canvas
                begin-edit-sequence
                end-edit-sequence
                diva:-get-rope ;; from mred-callback mixin
+               
+               diva:-set-on-loss-focus
+               diva:-on-loss-focus
                get-diva-central
                set-position)
       
@@ -133,7 +140,7 @@
       (define/override (set-surrogate surrogate)
         (cond
           [(send (get-diva-central) diva-on?)
-           (on-loss-focus)
+           (diva:-on-loss-focus)
            (uninstall-command-keymap)
            (super set-surrogate surrogate)
            (cond
@@ -341,26 +348,6 @@
       
       
       
-      ;;
-      ;; FOCUS STUFFS
-      ;;
-      (define/override (on-focus on?)
-        (super on-focus on?)
-        (unless on?
-          (diva:-on-loss-focus)))
-      
-      ;; To quit the insertion mode when the focus is lost.
-      (define on-loss-focus (lambda () ()))
-      
-      (define (set-on-loss-focus fun)
-        (set! on-loss-focus fun))
-      
-      (define/public (diva:-on-loss-focus)
-        (on-loss-focus))
-      
-      
-      
-      
       ;; INSERT/DELETE STUFF
       (define after-insert-callback (lambda (start end) (void)))
       (define after-delete-callback (lambda (start end) (void)))
@@ -418,7 +405,10 @@
                                  (lambda (msg) (diva-message msg)) ;; diva-message
                                  (lambda () (pull-from-mred)) ;; get-world
                                  (lambda (world) (push-into-mred world)) ;; set-world
-                                 set-on-loss-focus ;; set-on-loss-focus
+                                 ;; set-on-loss-focus
+                                 (lambda (callback)
+                                   (diva:-set-on-loss-focus callback))
+                                 
                                  set-after-insert-callback ;; set-after-insert-callback
                                  set-after-delete-callback ;; set-after-delete-callback
                                  (lambda (world ast)
@@ -487,7 +477,7 @@
            (check-good-syntax))))
       
       (define/public (to-normal-mode)
-        (on-loss-focus)
+        (diva:-on-loss-focus)
         (uninstall-command-keymap)
         (diva-label false))
       
@@ -517,7 +507,7 @@
         (install-f4-keymap)
         (cond
           [(send (get-diva-central) diva-on?)
-           (on-loss-focus)
+           (diva:-on-loss-focus)
            (uninstall-command-keymap)
            (set! command-keymap (new-command-keymap))
            (install-command-keymap)]
@@ -536,6 +526,34 @@
            (set-position start 'same #f #t 'local)]))))
   
   
+  ;;
+  ;; FOCUS STUFF.
+  ;;
+  ;; Adds hooks for when we lose focus.
+  ;; Main usage pattern: trigger the exit from insertion mode
+  ;; when we lose window focus.
+  (define (focus-callback-mixin super%)
+    (class super%
+      (define/override (on-focus on?)
+        (super on-focus on?)
+        (unless on?
+          (diva:-on-loss-focus)))
+      
+      (define on-loss-focus (lambda () ()))
+      
+      (define/public (diva:-set-on-loss-focus fun)
+        (set! on-loss-focus fun))
+      
+      (define/public (diva:-on-loss-focus)
+        (on-loss-focus))
+      
+      (super-new)))
+  
+  
+  
+  ;; diva-link:interactions-text-mixin: diva-link:text -> diva-link:interactions-text
+  ;; One additional layer on top of interactions.  Interactions are
+  ;; slightly weird because they do REPL stuff.
   (define (diva-link:interactions-text-mixin super%)
     (class super%
       (super-new)
