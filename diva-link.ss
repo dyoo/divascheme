@@ -94,6 +94,14 @@
       (initialize)))
   
   
+  ;; apply-callback-mixins: text% -> diva-text%
+  ;; Given a text, adds callback attachment methods.
+  ;; We do this because diva-link was starting to get way too heavy.
+  (define (apply-callback-mixins super%)
+    (set-position/preserving-marks-callback-mixin
+     (insert-and-delete-callback-mixin
+      (focus-callback-mixin
+       super%))))
   
   
   
@@ -117,7 +125,7 @@
   ;; that's why we should wait for the first hit on F4 on to set all the things.
   
   (define (diva-link:text-mixin super%)
-    (class (focus-callback-mixin super%)
+    (class (apply-callback-mixins super%)
       (inherit get-top-level-window
                get-keymap
                get-canvas
@@ -127,6 +135,9 @@
                
                diva:-set-on-loss-focus
                diva:-on-loss-focus
+               diva:-set-after-insert-callback
+               diva:-set-after-delete-callback
+               
                get-diva-central
                set-position)
       
@@ -347,26 +358,6 @@
             (interpreter/imperative ast world)))))
       
       
-      
-      ;; INSERT/DELETE STUFF
-      (define after-insert-callback (lambda (start end) (void)))
-      (define after-delete-callback (lambda (start end) (void)))
-      
-      (define (set-after-insert-callback fun)
-        (set! after-insert-callback fun))
-      
-      (define/augment (after-insert start end)
-        (after-insert-callback start end)
-        (inner void after-insert start end))
-      
-      (define (set-after-delete-callback fun)
-        (set! after-delete-callback fun))
-      
-      (define/augment (after-delete start end)
-        (after-delete-callback start end)
-        (inner void after-delete start end))
-      
-      
       ;;
       ;; MODE STUFFS
       ;;
@@ -409,10 +400,18 @@
                                  (lambda (callback)
                                    (diva:-set-on-loss-focus callback))
                                  
-                                 set-after-insert-callback ;; set-after-insert-callback
-                                 set-after-delete-callback ;; set-after-delete-callback
+                                 ;; set-after-insert-callback
+                                 (lambda (callback)
+                                   (diva:-set-after-insert-callback callback))
+                                 
+                                 ;; set-after-delete-callback
+                                 (lambda (callback)
+                                   (diva:-set-after-delete-callback callback))
+                                 
+                                 ;; interpreter
                                  (lambda (world ast)
-                                   (diva-ast-put/wait+world world ast)) ;; interpreter
+                                   (diva-ast-put/wait+world world ast))
+                                 
                                  on-exit ;; post-exit-hook
                                  cmd ;; cmd
                                  edit? ;; edit?
@@ -548,6 +547,125 @@
         (on-loss-focus))
       
       (super-new)))
+  
+  
+  
+  ;; INSERT/DELETE STUFF
+  ;; Creates a class with two exposed methods:
+  ;; diva:-set-after-insert-callback
+  ;; diva:-set-after-delete-callback
+  (define (insert-and-delete-callback-mixin super%)
+    (class super%
+      (define after-insert-callback (lambda (start end) (void)))
+      (define after-delete-callback (lambda (start end) (void)))
+      
+      (define/public (diva:-set-after-insert-callback fun)
+        (set! after-insert-callback fun))
+      
+      (define/augment (after-insert start end)
+        (after-insert-callback start end)
+        (inner void after-insert start end))
+      
+      (define/public (diva:-set-after-delete-callback fun)
+        (set! after-delete-callback fun))
+      
+      (define/augment (after-delete start end)
+        (after-delete-callback start end)
+        (inner void after-delete start end))
+      
+      (super-new)))
+  
+  
+  
+  ;;
+  ;; INSERTION MODE CALLBACKS
+  ;;
+  (define (set-position/preserving-marks-callback-mixin super%)
+    (class super%
+      (inherit highlight-range get-text)
+      
+      ;; When the position changes, the insertion should be exited.
+      (define insertion-after-set-position-callback-old
+        (lambda () ()))
+      (define insertion-after-set-position-callback
+        insertion-after-set-position-callback-old)
+      
+      (define/public (diva:-insertion-after-set-position-callback-set callback)
+        (set! insertion-after-set-position-callback-old
+              insertion-after-set-position-callback)
+        (set! insertion-after-set-position-callback callback))
+      
+      (define/public (diva:-insertion-after-set-position-callback-reset)
+        (set! insertion-after-set-position-callback
+              insertion-after-set-position-callback-old))
+      ;;
+      ;; CALLBACKS CALLS
+      ;;
+      (define/augment (after-set-position)
+        (insertion-after-set-position-callback))
+      
+      (define/augment (after-insert start len)
+        (inner void after-insert start len)
+        (preserve-mark start len))
+      
+      (define/augment (after-delete start len)
+        (inner void after-delete start len)
+        (preserve-mark start (- len)))
+      
+      
+      ;;
+      ;; MARK STUFFS
+      ;;
+      
+      ;; We are supplying the same API as for the selection:
+      ;;  * start and end position, no length
+      ;;  * the same style of name
+      ;;  * etc.
+      
+      (define mark-start-position 0)
+      (define mark-end-position 0)
+      
+      (define/public (diva:-get-mark-start-position)
+        mark-start-position)
+      
+      (define/public (diva:-get-mark-end-position)
+        mark-end-position)
+      
+      (define/public (diva:-set-mark start-pos end-pos)
+        (hide-mark)
+        (set! mark-start-position start-pos)
+        (set! mark-end-position end-pos)
+        (show-mark))
+      
+      (define mark-color (send the-color-database find-color "Orange"))
+      
+      (define (show-mark)
+        (unless (= mark-start-position mark-end-position)
+          (set! hide-mark
+                (highlight-range mark-start-position
+                                 mark-end-position
+                                 mark-color
+                                 false
+                                 false
+                                 'low))))
+      
+      (define hide-mark (lambda () ()))
+      
+      (define (preserve-mark start delta)
+        (hide-mark)
+        (when (<= start mark-start-position)
+          (set! mark-start-position (+ mark-start-position delta))
+          (set! mark-end-position (+ mark-end-position delta)))
+        (unless (and (legal-mark-pos? mark-start-position)
+                     (legal-mark-pos? mark-end-position))
+          (set! mark-start-position 0)
+          (set! mark-end-position 0))
+        (show-mark))
+      
+      (define (legal-mark-pos? pos)
+        (<= 0 pos (string-length (get-text))))
+      (super-new)))
+  
   
   
   

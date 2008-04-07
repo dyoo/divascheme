@@ -49,42 +49,7 @@
 
   (define (voice-mred-text-callback-mixin super%)
     (class super%
-      (super-instantiate ()) ; compulsory if we want it to work
-
-      ;;
-      ;; INSERTION MODE CALLBACKS
-      ;;
-
-      ;; When the position changes, the insertion should be exited.
-      (define insertion-after-set-position-callback-old (lambda () ()))
-      (define insertion-after-set-position-callback insertion-after-set-position-callback-old)
-      
-      (define/public (diva:-insertion-after-set-position-callback-set callback)
-        (set! insertion-after-set-position-callback-old insertion-after-set-position-callback)
-        (set! insertion-after-set-position-callback callback))
-      
-      (define/public (diva:-insertion-after-set-position-callback-reset)
-        (set! insertion-after-set-position-callback insertion-after-set-position-callback-old))
-      
-      
-      ;;
-      ;; CALLBACKS CALLS
-      ;;
-      
-      (define/augment (after-set-position)
-        (diva-printf "AFTER-SET-POSITION called.~n")
-        (insertion-after-set-position-callback))
-      
-      (define/augment (after-insert start len) 
-        (diva-printf "AFTER INSERT called with start: ~a len: ~a~n" start len)
-        (inner void after-insert start len)
-        (preserve-mark start len))
-      
-      (define/augment (after-delete start len)
-        (diva-printf "AFTER DELETE called with start: ~a len: ~a~n" start len)
-        (inner void after-delete start len)
-        (preserve-mark start (- len)))
-      
+      (super-instantiate ())
       
       
       ;;
@@ -138,52 +103,7 @@
          (lambda () (end-edit-sequence))))
       
       
-      ;;
-      ;; MARK STUFFS
-      ;;
-      
-      ;; We are supplying the same API as for the selection:
-      ;;  * start and end position, no length
-      ;;  * the same style of name
-      ;;  * etc.
-      
-      (define mark-start-position 0)
-      (define mark-end-position 0)
-
-      (define/public (diva:-get-mark-start-position)
-	mark-start-position)
-
-      (define/public (diva:-get-mark-end-position)
-	mark-end-position)
-
-      (define/public (diva:-set-mark start-pos end-pos)
-        (hide-mark)
-	(set! mark-start-position start-pos)
-	(set! mark-end-position   end-pos)
-	(show-mark))
-      
-      
-      (define mark-color (send the-color-database find-color "Orange"))
-      
-      (define (show-mark)
-        (unless (= mark-start-position mark-end-position)
-          (set! hide-mark (highlight-range mark-start-position mark-end-position mark-color false false 'low))))
-      
-      (define hide-mark (lambda () ()))
-      
-      (define (preserve-mark start delta)
-        (hide-mark)
-        (when (<= start mark-start-position)
-          (set! mark-start-position (+ mark-start-position delta))
-          (set! mark-end-position (+ mark-end-position delta)))
-        (unless (and (legal-mark-pos? mark-start-position)
-                     (legal-mark-pos? mark-end-position))
-          (set! mark-start-position 0)
-          (set! mark-end-position 0))
-        (show-mark))
-      
-      (define (legal-mark-pos? pos)
-        (<= 0 pos (string-length (get-text))))))
+      ))
   
   
   
