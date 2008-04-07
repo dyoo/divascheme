@@ -182,7 +182,7 @@
       (define current-mred
         (make-object MrEd-state% diva-message this))
       (define current-world 
-        (send current-mred update-world (make-fresh-world)))
+        (send current-mred pull-world (make-fresh-world)))
       
       
       
@@ -223,7 +223,7 @@
          'get-mred
          (lambda ()
            (let ([new-world
-                  (success-message (send current-mred update-world
+                  (success-message (send current-mred pull-world
                                          current-world) "")])
              (cond
                [(rope=? (World-rope new-world)
@@ -256,7 +256,7 @@
                        world
                        (lambda ()
                          (fn world this
-                             (lambda (w) (send current-mred update-world w))
+                             (lambda (w) (send current-mred pull-world w))
                              (lambda (w) (send current-mred update-mred w))))))
                     world
                     (reverse (World-imperative-actions world)))])

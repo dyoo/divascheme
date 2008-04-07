@@ -97,10 +97,13 @@
       ;; TEXT & SYNTAX STUFFS
       ;;
       
+      ;; get-rope: -> rope
+      ;; Returns the rope content of the window.
       (define (get-rope)
         (send window-text diva:-get-rope))
       
-      
+      ;; update-text: rope -> void
+      ;; Mutates the window to the rope's content.
       (define (update-text rope)
         (send window-text diva:-update-text rope))
       
@@ -114,18 +117,23 @@
       ;; CURSOR STUFFS
       ;;
       
+      ;; get-cursor-position: -> number
+      ;; Returns the cursor position.
       (define (get-cursor-position)
         (index->pos (send window-text get-start-position)))
       
+      ;; set-cursor-position: number -> void
+      ;; Sets the cursor position.
       (define (set-cursor-position pos)
         (send window-text diva:set-selection-position (pos->index pos)))
-
+      
       
       ;;
       ;; SELECTION STUFFS
       ;;
-
-      (define/public (set-selection pos len)
+      ;; set-selection: number number -> void
+      ;; Sets the window selection.
+      (define (set-selection pos len)
         (if (<= 0 len)
             (begin (send window-text set-position
                          (pos->index pos)
@@ -137,23 +145,25 @@
                          (+ len (pos->index pos))
                          'start))
             (set-selection (+ pos len) (- len))))
-
-      (define/public (get-selection-len)
+      
+      ;; get-selection-len: -> number
+      ;; Returns the selection length.
+      (define (get-selection-len)
         (let ([start-pos (send window-text get-start-position)]
               [end-pos   (send window-text get-end-position)])
           (- end-pos start-pos)))
-
-
+      
+      
       ;;
       ;; MARK STUFFS
       ;;
       
-      (define/public (get-mark-position)  
-	(index->pos (send window-text diva:-get-mark-start-position)))
-
+      (define (get-mark-position)
+        (index->pos (send window-text diva:-get-mark-start-position)))
+      
       (define (get-mark-length)
         (let ([mark-start-pos (send window-text diva:-get-mark-start-position)]
-	      [mark-end-pos   (send window-text diva:-get-mark-end-position)])
+              [mark-end-pos   (send window-text diva:-get-mark-end-position)])
 	  (- mark-end-pos mark-start-pos)))
 
       (define (set-mark pos len)
@@ -165,57 +175,64 @@
       ;; TEXT 2 WORLD STUFFS
       ;;
       
-      ;; update-world : World -> World
+      ;; pull-world : World -> World
       ;; Takes the state on screen on our text% and constructs a World that reflects
       ;; it.
-      (define/public (update-world world)
+      (define/public (pull-world original-world)
         (update-world-path
          (update-world-mark 
           (update-world-select 
            ;; update-world-text should be first so that if the content of the buffer
            ;; is not parsable, nothing is changed.
-           (update-world-text world)))))
+           (update-world-text original-world)))))
       
       
       ;; update-world-path: World -> World
-      (define (update-world-path world)
-        (copy-struct World world
+      ;; Creates a new world whose World-path now reflects what
+      ;; we see in mred.
+      (define (update-world-path original-world)
+        (copy-struct World original-world
                      [World-path (send window-text get-filename)]))
       
       ;; update-world-text : World -> World
       ;; Takes the rope state in the mred, and returns a new world reflecting
       ;; what's on screen.
-      (define/public (update-world-text world)
+      (define (update-world-text original-world)
         (cond
-          [(rope=? (World-rope world) (get-rope))
-           ;; we save the new rope for faster eq? checking next time.
-           (copy-struct World world
-                        [World-rope (get-rope)])]
+          [(rope=? (World-rope original-world) (get-rope))
+           ;; we save the new rope for faster eq? checking next time, but
+           ;; reuse the World-syntax-list/lazy structure.
+           (copy-struct World original-world
+                        [World-rope (get-rope)]
+                        [World-syntax-list/lazy
+                         (World-syntax-list/lazy original-world)])]
           [else
-           (copy-struct World world
+           (copy-struct World original-world
                         [World-rope (get-rope)]
                         [World-syntax-list/lazy #f])]))
       
       
       ;; update-world-select : World -> World
-      (define (update-world-select world)
+      ;; Returns the new world whose selection matches what we see
+      ;; from the mred side.
+      (define (update-world-select original-world)
         (let*-values
             ([(p l) (values (get-cursor-position) (get-selection-len))]
              [(stop-extending)
               (or clear-extension
                   (not (and
-                        (= p (World-cursor-position world))
-                        (= l (World-selection-length world)))))])
-          (copy-struct World world
+                        (= p (World-cursor-position original-world))
+                        (= l (World-selection-length original-world)))))])
+          (copy-struct World original-world
                        [World-cursor-position (get-cursor-position)]
                        [World-selection-length (get-selection-len)]
-                       [World-extension (if stop-extending #f (World-extension world))])))
+                       [World-extension (if stop-extending #f (World-extension original-world))])))
       
       ;; update-world-mark : World -> World
-      (define (update-world-mark world)
-        (if (World-extension world)
-            world
-            (copy-struct World world
+      (define (update-world-mark original-world)
+        (if (World-extension original-world)
+            original-world
+            (copy-struct World original-world
                          [World-mark-position     (get-mark-position)]
                          [World-mark-length (get-mark-length)])))
       
