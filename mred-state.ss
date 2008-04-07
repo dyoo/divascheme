@@ -28,10 +28,6 @@
   ;; Here's our interface.
   (define MrEd-state<%>
     (interface ()
-      ;; Messaging to the outside world.
-      critical-error
-      error-message
-      message
       
       ;; pull-world: world -> world
       ;; Pull a world from what's on screen.
@@ -60,33 +56,11 @@
       ;;  * diva-message-init : a function to send messages to the user
       ;;  * window-text-init  : the text object of the window that MrEd-State should take care
       
-      (init diva-message-init window-text-init)
-      
-      (define diva-message- diva-message-init)
-      (define window-text   window-text-init)
-
-      (define (diva-message text . args)
-        ;;(apply diva-printf text args)
-        ;; (printf "diva-message: ~a ~a~n" text args)
-        (apply diva-message- text args))
+      (init window-text-init)
+      (define window-text window-text-init)
       
       
-      ;;
-      ;; MESSAGE STUFFS
-      ;;
       
-      (define/public (critical-error exn)
-        (let ([err-msg (format "DivaScheme Error: ~a" exn)])
-          (print-error-trace (current-error-port) exn)
-          (diva-message err-msg))
-        (raise exn))
-      
-      
-      (define/public (error-message str)
-        (and str (diva-message str)))
-      
-      (define/public (message str)
-        (diva-message str))
       
       
       ;;
@@ -256,10 +230,13 @@
                        'none)
                  (set! clear-extension #f)
                  (send window-text diva:-insertion-after-set-position-callback-set
-                       (lambda () (diva-message "") (set! clear-extension #t) (set-mark 1 0))))]
+                       (lambda ()
+                         (send window-text diva-message "")
+                         (set! clear-extension #t)
+                         (set-mark 1 0))))]
               [else
                (set-mark (World-mark-position world) (World-mark-length world))
                (send window-text diva:-insertion-after-set-position-callback-set
                      (lambda () (void)))])
         
-        (diva-message (World-success-message world))))))
+        (send window-text diva-message (World-success-message world))))))

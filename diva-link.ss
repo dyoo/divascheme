@@ -6,12 +6,13 @@
            (lib "framework.ss" "framework")
            (lib "struct.ss")
            (lib "plt-match.ss")
+           (lib "errortrace-lib.ss" "errortrace")
            "interpreter.ss"
            "dot-processing.ss"
            "mred-state.ss"
            "command-keymap.ss"
-	   "insert-keymap.ss"
-	   "structures.ss"
+           "insert-keymap.ss"
+           "structures.ss"
            "utilities.ss"
            "diva-central.ss" 
            "rope.ss"
@@ -91,6 +92,31 @@
       (initialize)))
   
   
+  ;; A thin class to provide messaging.
+  ;; May be eliminated soon.
+  (define messager%
+    (class object%
+      ;; diva-message-init: string -> void
+      (init diva-message-init)
+      (define diva-message- diva-message-init)
+      (super-new)
+      
+      (define/public (critical-error exn)
+        (let ([err-msg (format "DivaScheme Error: ~a" exn)])
+          (print-error-trace (current-error-port) exn)
+          (diva-message err-msg))
+        (raise exn))
+      
+      
+      (define/public (error-message str)
+        (and str (diva-message str)))
+      
+      (define/public (message str)
+        (diva-message str))
+      
+      (define (diva-message text . args)
+        (apply diva-message- text args))))
+  
   
   
   ;;
@@ -160,9 +186,10 @@
         (when (get-top-level-window)
           (send (get-top-level-window) diva-label label)))
       
+      
       ;; diva-message: string -> void
       ;; Displays a message.
-      (define (diva-message msg)
+      (define/public (diva-message msg)
         (when (get-top-level-window)
           (send (get-top-level-window) diva-message msg)))
       
@@ -179,9 +206,13 @@
       
       
       ;; STATE STUFFS
+      (define current-messager
+        (make-object messager% (lambda (msg) (diva-message msg))))
+      
       (define current-mred
-        (make-object MrEd-state% diva-message this))
-      (define current-world 
+        (make-object MrEd-state% this))
+      
+      (define current-world
         (send current-mred pull-world (make-fresh-world)))
       
       
@@ -245,11 +276,14 @@
       ;; of world-imperative-actions!  This is a design flaw.
       (define (push-into-mred world)
         (with-handlers ([voice-exn?
-                         (lambda (exn) (send current-mred error-message (voice-exn-message exn)))]
+                         (lambda (exn)
+                           (send current-messager error-message (voice-exn-message exn)))]
                         [(lambda args true)
-                         (lambda (exn) (send current-mred critical-error exn))])
+                         (lambda (exn)
+                           (send current-messager critical-error exn))])
           (dynamic-wind
-           (lambda () (begin-edit-sequence))
+           (lambda ()
+             (begin-edit-sequence))
            (lambda ()
              (send current-mred push-world world)
              (let
@@ -269,35 +303,43 @@
                (set! current-world
                      (copy-struct World new-world
                                   [World-imperative-actions empty]))))
-           (lambda () (end-edit-sequence)))))
+           (lambda ()
+             (end-edit-sequence)))))
       
+      
+      ;; with-divascheme-handlers: world (-> world) -> world
+      ;; Calls the thunk and returns a world.  If something bad happens, returns the
+      ;; default world.
       (define (with-divascheme-handlers default-world-on-exn thunk)
         (dynamic-wind
-         (lambda () (begin-edit-sequence))
+         (lambda ()
+           (begin-edit-sequence))
          (lambda () 
            (with-handlers ([voice-exn?
                             (lambda (exn)
-                              (send current-mred error-message (voice-exn-message exn))
+                              (send current-messager error-message (voice-exn-message exn))
                               default-world-on-exn)]
                            [voice-exn/world?
                             (lambda (exn)
-                              (send current-mred error-message (voice-exn/world-message exn))
+                              (send current-messager error-message (voice-exn/world-message exn))
                               (voice-exn/world-world exn))]
                            [(lambda args true)
-                            (lambda (exn) (send current-mred critical-error exn)
+                            (lambda (exn)
+                              (send current-messager critical-error exn)
                               default-world-on-exn)])
              (thunk)))
-         (lambda () (end-edit-sequence))))
+         (lambda ()
+           (end-edit-sequence))))
       
       
       ;; get&set-mred/handlers: (world -> world) -> void
       (define (get&set-mred/handlers fn)
         (let ([world (pull-from-mred)])
-          (send this set-mred (with-divascheme-handlers world (lambda () (fn world))))))
+          (push-into-mred (with-divascheme-handlers world (lambda () (fn world))))))
       
       ;; set-mred/handlers: (-> world) world -> void
       (define (set-mred/handlers default-world-on-exn thunk)
-        (send this set-mred (with-divascheme-handlers default-world-on-exn thunk)))
+        (push-into-mred (with-divascheme-handlers default-world-on-exn thunk)))
       
       
       (define (interpreter/imperative ast world)
@@ -407,9 +449,9 @@
               ;; so many silly callback functions.
               (void
                (make-insert-mode this ;; window
-                                 (lambda args (apply diva-message args)) ;; diva-message
-                                 (lambda () (send this get-mred)) ;; get-world
-                                 (lambda (world) (send this set-mred world)) ;; set-world
+                                 (lambda (msg) (diva-message msg)) ;; diva-message
+                                 (lambda () (pull-from-mred)) ;; get-world
+                                 (lambda (world) (push-into-mred world)) ;; set-world
                                  set-on-loss-focus ;; set-on-loss-focus
                                  set-after-insert-callback ;; set-after-insert-callback
                                  set-after-delete-callback ;; set-after-delete-callback
@@ -457,7 +499,7 @@
                                  (to-insert-mode edit? on-entry on-exit))
                                (lambda (edit? command)
                                  (to-insert-mode edit? on-entry on-exit command))
-                               diva-message
+                               (lambda (msg) (diva-message msg))
                                diva-question
                                (lambda (ast) (diva-ast-put/wait ast)))))
       
