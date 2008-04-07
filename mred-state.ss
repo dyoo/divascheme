@@ -9,7 +9,7 @@
            "structures.ss"
            "rope.ss")
   
-  (provide MrEd-state%)
+  (provide MrEd-state% MrEd-state<%>)
   
   ;; Here is defined the class of a MrEd-state object.
   ;; Such an object is an interface between DivaScheme and DrScheme.
@@ -24,37 +24,33 @@
   ;; Such an object is stateless modulo the text object of course 
   ;; (because of the field and a function like get-text returns something according to the text).
 
-
-  ;;
-  ;; DEBUGGING STUFFS
-  ;;
-
-  ;; diva-debug : boolean
-  (define diva-debug false)
   
-  ;; This function prints something if and only if diva-debug is true.
-  (define (diva-printf text . args)
-    (when diva-debug
-      (apply printf text args)))
-
-  (define ((a title) a)
-    (diva-printf "A: ~a: ~a~n" title a)
-    a)
+  ;; Here's our interface.
+  (define MrEd-state<%>
+    (interface ()
+      ;; Messaging to the outside world.
+      critical-error
+      error-message
+      message
+      
+      ;; pull-world: world -> world
+      ;; Pull a world from what's on screen.
+      pull-world
+      
+      ;; push-world: world -> world
+      ;; Force the screen's content to that of the given world.
+      push-world))
   
-  (define (b b)
-    (diva-printf "B: ~a ~n" b)
-    b)
-
-
+  
   ;;
   ;; MrEd-state%
   ;;
-
+  
   (define MrEd-state%
-    (class object%
-
+    (class* object% (MrEd-state<%>)
+      
       (super-instantiate ())
-
+      
       ;;
       ;; INIT STUFFS
       ;;
@@ -63,7 +59,7 @@
       ;; these are the input/ouput objects.
       ;;  * diva-message-init : a function to send messages to the user
       ;;  * window-text-init  : the text object of the window that MrEd-State should take care
-
+      
       (init diva-message-init window-text-init)
       
       (define diva-message- diva-message-init)
@@ -176,8 +172,10 @@
       ;;
       
       ;; pull-world : World -> World
-      ;; Takes the state on screen on our text% and constructs a World that reflects
-      ;; it.
+      ;; Takes the state on screen on our text% and constructs
+      ;; a World that reflects it.
+      ;; We take an original-world as an optimization: if the text hasn't
+      ;; changed, we reuse the parse tree of the original world.
       (define/public (pull-world original-world)
         (update-world-path
          (update-world-mark 
@@ -243,7 +241,7 @@
       ;;
       ;; Pushes changes from the world back into the stateful text%.
       
-      (define/public (update-mred world)
+      (define/public (push-world world)
         (unless (rope=? (World-rope world) (get-rope))
           (update-text (World-rope world)))
         (set-selection (World-cursor-position world) (World-selection-length world))

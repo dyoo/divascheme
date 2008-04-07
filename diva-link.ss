@@ -247,7 +247,7 @@
           (dynamic-wind
            (lambda () (begin-edit-sequence))
            (lambda ()
-             (send current-mred update-mred world)
+             (send current-mred push-world world)
              (let
                  ([new-world
                    (foldl
@@ -256,8 +256,10 @@
                        world
                        (lambda ()
                          (fn world this
-                             (lambda (w) (send current-mred pull-world w))
-                             (lambda (w) (send current-mred update-mred w))))))
+                             (lambda (w)
+                               (send current-mred pull-world w))
+                             (lambda (w)
+                               (send current-mred push-world w))))))
                     world
                     (reverse (World-imperative-actions world)))])
                (set! current-world
