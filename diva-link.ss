@@ -241,6 +241,8 @@
       
       ;; push-into-mred: world -> void
       ;; pushes our world into mred.
+      ;; WARNING: this also does things to our world, based on our kludgy implementation
+      ;; of world-imperative-actions!  This is a design flaw.
       (define (push-into-mred world)
         (with-handlers ([voice-exn?
                          (lambda (exn) (send current-mred error-message (voice-exn-message exn)))]
@@ -323,14 +325,6 @@
          (lambda (world)
            (interpreter/imperative ast world))))
       
-      (define/private (diva-ast-put/world world ast)
-        (push-callback
-         (lambda ()
-           (set-mred/handlers
-            world
-            (lambda ()
-              (interpreter/imperative ast world))))))
-      
       (define/private (diva-ast-put/wait+world world ast)
         (set-mred/handlers
          world
@@ -348,10 +342,10 @@
       (define on-loss-focus (lambda () ()))
       
       (define (set-on-loss-focus fun)
-	(set! on-loss-focus fun))
+        (set! on-loss-focus fun))
       
       (define/public (diva:-on-loss-focus)
-	(on-loss-focus))
+        (on-loss-focus))
       
       (define/public (diva:focus-to-window)
         (send (get-canvas) focus))
