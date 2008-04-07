@@ -217,8 +217,9 @@
       
       ;; INTERPRETATION
       
-      ;; get-mred: -> world
-      (define/public (get-mred)
+      ;; pull-from-mred: -> world
+      ;; Pulls a new world from mred into us.
+      (define (pull-from-mred)
         (print-mem
          'get-mred
          (lambda ()
@@ -238,8 +239,9 @@
                              [World-undo current-world])])))))
       
       
-      ;; set-mred: world -> void
-      (define/public (set-mred world)
+      ;; push-into-mred: world -> void
+      ;; pushes our world into mred.
+      (define (push-into-mred world)
         (with-handlers ([voice-exn?
                          (lambda (exn) (send current-mred error-message (voice-exn-message exn)))]
                         [(lambda args true)
@@ -272,10 +274,12 @@
          (lambda () (begin-edit-sequence))
          (lambda () 
            (with-handlers ([voice-exn?
-                            (lambda (exn) (send current-mred error-message (voice-exn-message exn))
+                            (lambda (exn)
+                              (send current-mred error-message (voice-exn-message exn))
                               default-world-on-exn)]
                            [voice-exn/world?
-                            (lambda (exn) (send current-mred error-message (voice-exn/world-message exn))
+                            (lambda (exn)
+                              (send current-mred error-message (voice-exn/world-message exn))
                               (voice-exn/world-world exn))]
                            [(lambda args true)
                             (lambda (exn) (send current-mred critical-error exn)
@@ -286,7 +290,7 @@
       
       ;; get&set-mred/handlers: (world -> world) -> void
       (define (get&set-mred/handlers fn)
-        (let ([world (get-mred)])
+        (let ([world (pull-from-mred)])
           (send this set-mred (with-divascheme-handlers world (lambda () (fn world))))))
       
       ;; set-mred/handlers: (-> world) world -> void
@@ -299,9 +303,9 @@
           [(struct SwitchWorld (path ast))
            (let ([frame (handler:edit-file path)])
              (when (eq? this (send frame get-editor))
-               (set-mred (get-mred)))
+               (push-into-mred (pull-from-mred)))
              (send (send frame get-editor) diva-ast-put ast))
-           (get-mred)]
+           (pull-from-mred)]
           [new-world new-world]))
       
       
