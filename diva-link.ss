@@ -92,32 +92,6 @@
       (initialize)))
   
   
-  ;; A thin class to provide messaging.
-  ;; May be eliminated soon.
-  (define messager%
-    (class object%
-      ;; diva-message-init: string -> void
-      (init diva-message-init)
-      (define diva-message- diva-message-init)
-      (super-new)
-      
-      (define/public (critical-error exn)
-        (let ([err-msg (format "DivaScheme Error: ~a" exn)])
-          (print-error-trace (current-error-port) exn)
-          (diva-message err-msg))
-        (raise exn))
-      
-      
-      (define/public (error-message str)
-        (and str (diva-message str)))
-      
-      (define/public (message str)
-        (diva-message str))
-      
-      (define (diva-message text . args)
-        (apply diva-message- text args))))
-  
-  
   
   ;;
   ;; THE TEXT
@@ -179,7 +153,6 @@
       
       
       
-      
       ;; diva-label: string -> void
       ;; Displays a label.
       (define (diva-label label) 
@@ -188,10 +161,26 @@
       
       
       ;; diva-message: string -> void
-      ;; Displays a message.
+      ;; Displays a message to the top-level frame window.
       (define/public (diva-message msg)
         (when (get-top-level-window)
           (send (get-top-level-window) diva-message msg)))
+      
+      
+      ;; error-exn: exn -> void
+      ;; Report an exception message.
+      (define (error-exn exn)
+        (let ([err-msg (format "DivaScheme Error: ~a" exn)])
+          (print-error-trace (current-error-port) exn)
+          (diva-message err-msg)))
+      
+      
+      ;; error-message: string -> void
+      ;; Report a non-critical error to the user.
+      (define (error-message str)
+        (and str (diva-message str)))
+      
+      
       
       ;; diva-question: string string (-> void) (string -> void) -> void
       ;; Asks a question.  If cancelled, calls the cancel callback.  Otherwise,
@@ -206,8 +195,6 @@
       
       
       ;; STATE STUFFS
-      (define current-messager
-        (make-object messager% (lambda (msg) (diva-message msg))))
       
       (define current-mred
         (make-object MrEd-state% this))
@@ -267,10 +254,10 @@
       (define (push-into-mred world)
         (with-handlers ([voice-exn?
                          (lambda (exn)
-                           (send current-messager error-message (voice-exn-message exn)))]
+                           (error-message (voice-exn-message exn)))]
                         [(lambda args true)
                          (lambda (exn)
-                           (send current-messager critical-error exn))])
+                           (error-exn exn))])
           (dynamic-wind
            (lambda ()
              (begin-edit-sequence))
@@ -307,15 +294,15 @@
          (lambda () 
            (with-handlers ([voice-exn?
                             (lambda (exn)
-                              (send current-messager error-message (voice-exn-message exn))
+                              (error-message (voice-exn-message exn))
                               default-world-on-exn)]
                            [voice-exn/world?
                             (lambda (exn)
-                              (send current-messager error-message (voice-exn/world-message exn))
+                              (error-message (voice-exn/world-message exn))
                               (voice-exn/world-world exn))]
                            [(lambda args true)
                             (lambda (exn)
-                              (send current-messager critical-error exn)
+                              (error-exn exn)
                               default-world-on-exn)])
              (thunk)))
          (lambda ()
