@@ -344,37 +344,18 @@
       (define/public (diva-ast-put ast)
         (push-callback
          (lambda ()
-           (diva-ast-put/wait ast))))
-      
-      ;; diva-ast-put/wait: ast -> void
-      ;; Evaluates the ast command and applies the effect.  Blocks until
-      ;; the ast has been evaluated.
-      (define (diva-ast-put/wait ast)
-        (get&set-mred/handlers
-         (lambda (world)
-           (interpreter/imperative ast world))))
+           (let ([world (pull-from-mred)])
+             (diva-ast-put/wait+world world ast)))))
       
       
-      ;; Applies the ast on the given world, not on the current one.
+      ;; diva-ast-put/wait+world: world ast -> void
+      ;; Applies the ast on the given world.
       (define (diva-ast-put/wait+world world ast)
-        (set-mred/handlers
-         world
-         (lambda ()
-           (interpreter/imperative ast world))))
-      
-      
-      ;; get&set-mred/handlers: (world -> world) -> void
-      ;; Applies the function and sets the world according to it.
-      (define (get&set-mred/handlers fn)
-        (let ([world (pull-from-mred)])
-          (set-mred/handlers world (lambda () (fn world)))))
-      
-      
-      ;; set-mred/handlers: world (-> world) -> void
-      ;; Applies the thunk and pushes into the world according to it.
-      (define (set-mred/handlers default-world-on-exn thunk)
-        (push-into-mred (with-divascheme-handlers default-world-on-exn thunk)))
-      
+        (push-into-mred
+         (with-divascheme-handlers
+          world
+          (lambda ()
+            (interpreter/imperative ast world)))))
       
       
       
@@ -503,7 +484,8 @@
                                  (to-insert-mode edit? on-entry on-exit command))
                                (lambda (msg) (diva-message msg))
                                diva-question
-                               (lambda (ast) (diva-ast-put/wait ast)))))
+                               (lambda (ast)
+                                 (diva-ast-put/wait+world (pull-from-mred) ast)))))
       
       (define command-keymap (new-command-keymap))
       

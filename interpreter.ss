@@ -41,7 +41,7 @@
   
   (define max-undo-count 50)
   
-  ;; interpreter : ast World -> (union World ChangeWorld)
+  ;; interpreter : ast World -> (union World SwitchWorld)
   (define (interpreter ast world)
     (print-mem
      'interpreter
