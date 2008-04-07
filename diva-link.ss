@@ -235,16 +235,6 @@
 	(parameterize ([current-eventspace (send (get-top-level-window) get-eventspace)])
           (queue-callback callback)))
       
-      ;; Same function as the previous except that the thread is waiting for the action to be done.
-      ;; That's particuly useful for the command or the insertion mde, I can't remember exactly which one.
-      ;; BECAREFUL ! This function can be a deadlock.
-      (define (push-callback/wait callback)
-	(let* ([semaphore (make-semaphore 0)]
-	       [callback* (lambda () (callback) (semaphore-post semaphore))])
-	  (push-callback callback*)
-          (semaphore-wait semaphore)))
-    
-      
       
       ;; INTERPRETATION
       
@@ -273,7 +263,7 @@
       ;; push-into-mred: world -> void
       ;; pushes our world into mred.
       ;; WARNING: this also does things to our world, based on our kludgy implementation
-      ;; of world-imperative-actions!  This is a design flaw.
+      ;; of world-imperative-actions!  This seems like a design flaw.
       (define (push-into-mred world)
         (with-handlers ([voice-exn?
                          (lambda (exn)
@@ -332,18 +322,6 @@
            (end-edit-sequence))))
       
       
-      ;; get&set-mred/handlers: (world -> world) -> void
-      ;; Applies the function and sets the world according to it.
-      (define (get&set-mred/handlers fn)
-        (let ([world (pull-from-mred)])
-          (set-mred/handlers world (lambda () (fn world)))))
-      
-      
-      ;; set-mred/handlers: (-> world) world -> void
-      ;; Applies the thunk and sets the world according to it.
-      (define (set-mred/handlers default-world-on-exn thunk)
-        (push-into-mred (with-divascheme-handlers default-world-on-exn thunk)))
-      
       
       ;; interpreter/imperative: ast world -> world
       ;; Evaluate the given ast and the world, and returns the new state of the world.
@@ -368,17 +346,34 @@
          (lambda ()
            (diva-ast-put/wait ast))))
       
-      ;; evalutes the ast command and applies the effect.
+      ;; diva-ast-put/wait: ast -> void
+      ;; Evaluates the ast command and applies the effect.  Blocks until
+      ;; the ast has been evaluated.
       (define (diva-ast-put/wait ast)
         (get&set-mred/handlers
          (lambda (world)
            (interpreter/imperative ast world))))
       
+      
+      ;; Applies the ast on the given world, not on the current one.
       (define (diva-ast-put/wait+world world ast)
         (set-mred/handlers
          world
          (lambda ()
            (interpreter/imperative ast world))))
+      
+      
+      ;; get&set-mred/handlers: (world -> world) -> void
+      ;; Applies the function and sets the world according to it.
+      (define (get&set-mred/handlers fn)
+        (let ([world (pull-from-mred)])
+          (set-mred/handlers world (lambda () (fn world)))))
+      
+      
+      ;; set-mred/handlers: world (-> world) -> void
+      ;; Applies the thunk and pushes into the world according to it.
+      (define (set-mred/handlers default-world-on-exn thunk)
+        (push-into-mred (with-divascheme-handlers default-world-on-exn thunk)))
       
       
       
