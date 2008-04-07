@@ -146,11 +146,6 @@
            (super set-surrogate surrogate)]))
       
       
-      (define/override (on-focus on?)
-        (super on-focus on?)
-        (unless on?
-          (diva:-on-loss-focus)))
-      
       
       
       ;; diva-label: string -> void
@@ -349,6 +344,10 @@
       ;;
       ;; FOCUS STUFFS
       ;;
+      (define/override (on-focus on?)
+        (super on-focus on?)
+        (unless on?
+          (diva:-on-loss-focus)))
       
       ;; To quit the insertion mode when the focus is lost.
       (define on-loss-focus (lambda () ()))
@@ -358,9 +357,6 @@
       
       (define/public (diva:-on-loss-focus)
         (on-loss-focus))
-      
-      (define/public (diva:focus-to-window)
-        (send (get-canvas) focus))
       
       
       
