@@ -171,30 +171,6 @@
       ;; COMMAND CENTER STUFFS
       ;;
       
-      ;; make-fresh-world: -> world
-      ;; Creates a fresh new world.
-      (define (make-fresh-world)
-        (make-World (string->rope "")
-                    empty
-                    (index->syntax-pos 0)
-                    #f
-                    0
-                    (index->syntax-pos 0)
-                    0
-                    (default-Next-f)
-                    (default-Previous-f)
-                    false
-                    false
-                    false
-                    (default-Magic-f)
-                    (default-Pass-f)
-                    false
-                    ""
-                    #f
-                    empty
-                    empty
-                    (current-directory)))
-      
       
       ;; STATE STUFFS
       (define current-mred
