@@ -333,41 +333,48 @@
       
       
       ;; get&set-mred/handlers: (world -> world) -> void
+      ;; Applies the function and sets the world according to it.
       (define (get&set-mred/handlers fn)
         (let ([world (pull-from-mred)])
-          (push-into-mred (with-divascheme-handlers world (lambda () (fn world))))))
+          (set-mred/handlers world (lambda () (fn world)))))
+      
       
       ;; set-mred/handlers: (-> world) world -> void
+      ;; Applies the thunk and sets the world according to it.
       (define (set-mred/handlers default-world-on-exn thunk)
         (push-into-mred (with-divascheme-handlers default-world-on-exn thunk)))
       
       
+      ;; interpreter/imperative: ast world -> world
+      ;; Evaluate the given ast and the world, and returns the new state of the world.
       (define (interpreter/imperative ast world)
         (match (interpreter ast world)
-          [(struct SwitchWorld (path ast))
+          ;; The command may refer to another file path, in which
+          ;; case we have to do some tab/frame stuff.
+          [(struct SwitchWorld (path inner-ast))
            (let ([frame (handler:edit-file path)])
              (when (eq? this (send frame get-editor))
                (push-into-mred (pull-from-mred)))
-             (send (send frame get-editor) diva-ast-put ast))
+             (send (send frame get-editor) diva-ast-put inner-ast))
            (pull-from-mred)]
-          [new-world new-world]))
+          [new-world
+           new-world]))
       
       
-      
-      
+      ;; diva-ast-put: ast -> void
+      ;; Schedules an evaluation of the ast command using push-callback.
       (define/public (diva-ast-put ast)
         (push-callback
          (lambda ()
-           (get&set-mred/handlers
-            (lambda (world)
-              (interpreter/imperative ast world))))))
+           (diva-ast-put/wait ast))))
       
-      (define/private (diva-ast-put/wait ast)
+      ;; evalutes the ast command and applies the effect.
+      (define (diva-ast-put/wait ast)
         (get&set-mred/handlers
          (lambda (world)
            (interpreter/imperative ast world))))
       
-      (define/private (diva-ast-put/wait+world world ast)
+      (define (diva-ast-put/wait+world world ast)
         (set-mred/handlers
          world
          (lambda ()

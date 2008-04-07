@@ -30,23 +30,16 @@
     (when diva-debug
       (apply printf text args)))
   
-  (define ((a title) a)
-    (diva-printf "A: ~a: ~a~n" title a)
-    a)
-  
-  (define (b b)
-    (diva-printf "B: `~a' ~n" b)
-    b)
   
   
   ;;
   ;; THE MRED TEXT CALLBACK MIXINS
   ;;
-
+  
   ;; Here we are trying to solve problems about the content of the window
   ;; which is changing whereas DivaScheme is activated and these changes are not done through DivaScheme.
   ;; TODO : re-thought all these stuffs here; I'm sure all that can be better...
-
+  
   ;; To be told that the cursor position changed is very difficult because there are a lot of ways to change it
   ;; and each has got its own processing method.
   ;;  * when clicking with the mouse: I don't remember
@@ -65,9 +58,11 @@
       ;; When the position changes, the insertion should be exited.
       (define insertion-after-set-position-callback-old (lambda () ()))
       (define insertion-after-set-position-callback insertion-after-set-position-callback-old)
+      
       (define/public (diva:-insertion-after-set-position-callback-set callback)
         (set! insertion-after-set-position-callback-old insertion-after-set-position-callback)
         (set! insertion-after-set-position-callback callback))
+      
       (define/public (diva:-insertion-after-set-position-callback-reset)
         (set! insertion-after-set-position-callback insertion-after-set-position-callback-old))
       
@@ -75,11 +70,11 @@
       ;;
       ;; CALLBACKS CALLS
       ;;
-
+      
       (define/augment (after-set-position)
-	(diva-printf "AFTER-SET-POSITION called.~n")
-	(insertion-after-set-position-callback))
-
+        (diva-printf "AFTER-SET-POSITION called.~n")
+        (insertion-after-set-position-callback))
+      
       (define/augment (after-insert start len) 
         (diva-printf "AFTER INSERT called with start: ~a len: ~a~n" start len)
         (inner void after-insert start len)
@@ -96,8 +91,8 @@
       ;; TEXT STUFFS
       ;;
       
-      (inherit get-text can-insert? can-delete? delete insert freeze-colorer thaw-colorer
-               begin-edit-sequence end-edit-sequence)
+      (inherit get-text can-insert? delete begin-edit-sequence end-edit-sequence
+               highlight-range)
       
       (define/public (diva:-get-rope)
         (send this get-rope))
@@ -167,12 +162,11 @@
 	(set! mark-end-position   end-pos)
 	(show-mark))
       
-      (inherit highlight-range)
       
       (define mark-color (send the-color-database find-color "Orange"))
       
       (define (show-mark)
-	(unless (= mark-start-position mark-end-position)
+        (unless (= mark-start-position mark-end-position)
           (set! hide-mark (highlight-range mark-start-position mark-end-position mark-color false false 'low))))
       
       (define hide-mark (lambda () ()))

@@ -1,10 +1,7 @@
 (module mred-state mzscheme
   (require (lib "class.ss")
-           (lib "etc.ss")
            (lib "struct.ss")
            (lib "mred.ss" "mred")
-           (lib "errortrace-lib.ss" "errortrace")
-           "dot-processing.ss"
            "utilities.ss"
            "structures.ss"
            "rope.ss")
