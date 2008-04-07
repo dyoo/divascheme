@@ -97,11 +97,11 @@
       ;; TEXT & SYNTAX STUFFS
       ;;
       
-      (define/public (get-rope)
+      (define (get-rope)
         (send window-text diva:-get-rope))
       
       
-      (define/public (update-text rope)
+      (define (update-text rope)
         (send window-text diva:-update-text rope))
       
       
@@ -114,10 +114,10 @@
       ;; CURSOR STUFFS
       ;;
       
-      (define/public (get-cursor-position)
+      (define (get-cursor-position)
         (index->pos (send window-text get-start-position)))
       
-      (define/public (set-cursor-position pos)
+      (define (set-cursor-position pos)
         (send window-text diva:set-selection-position (pos->index pos)))
 
       
