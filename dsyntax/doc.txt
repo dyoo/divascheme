@@ -1,0 +1,222 @@
+======================================================================
+_dsyntax_ - DivaScheme syntax traversal library
+======================================================================
+
+Index terms: _dsyntax_, _divascheme_, _DivaScheme_, _dstx_, _syntax_,
+
+
+Note: much of the documentation here describes functions and modules
+that have not been written yet.  I'm just trying to be good by
+documenting the system before it's implemented, rather than as an
+afterthought.  It'll help me think through the design.
+
+
+
+Example
+-------
+
+[fill me in]
+
+
+
+
+API
+---
+
+
+A convenience module _dsyntax.ss_ module aggregates all of the
+structures and API functions described below, with individual module
+names for each major component commented if you want to choose modules
+more selectively.
+
+
+
+======================================================================
+Data types (struct.ss)
+======================================================================
+
+We expose three main data types.
+
+    * dstx
+    * loc
+    * cursor
+
+A _dstx_ is one of the following:
+
+    * an _atom_
+    * a _space_
+    * a _fusion_
+
+A dstx roughly corresponds to the idea of an s-expression, a
+tree-structure.  Both atoms and spaces represent elements without
+internal structure; the distinction is that the main focusing commands
+will ignore spaces and snap across them.
+
+> dstx?: any -> boolean
+> atom?: any -> boolean
+> space?: any -> boolean
+> fusion?: any -> boolean
+
+> make-atom: string -> atom
+> atom-content: atom -> string
+
+> make-space: string -> space
+> space-content: space -> string
+
+> make-fusion: string (listof dstx) string -> fusion
+> fusion-prefix: fusion -> string
+> fusion-children: fusion -> (listof dstx)
+> function-suffix: fusion -> string
+
+
+_loc_
+
+A locs maintains our location.
+
+> make-loc: natural-number natural-number natural-number -> loc
+> loc-line: loc -> natural-number
+> loc-col: loc -> natural-number
+> loc-pos: loc -> natural-number
+
+
+_cursor_
+
+A cursor defines our location within a dstx.  Cursors are not meant to
+be constructed directly, but are to be acquired by calling
+_make-toplevel-cursor_ in focus.ss.
+
+> cursor-dstx: cursor -> dstx
+> cursor-loc: cursor -> loc
+> cursor-line: cursor -> number
+> cursor-col: cursor -> number
+> cursor-pos: cursor -> number
+> cursor-endpos: cursor -> number
+
+======================================================================
+_focus_ (focus.ss)
+======================================================================
+
+
+Cursors offer structured movement within a dstx.  By default, movement
+will snap over spaces.
+
+> make-toplevel-cursor: (listof dstx) -> cursor
+
+Constructs a new cursor that's focused on the first dstx given in the
+input list.  The list is assumed to be ordered in increasing
+seniority.
+
+
+> cursor-line: cursor -> natural-number
+
+Returns the current line number of the focused dstx.
+Line numbers start counting by 1.
+
+
+> cursor-col: cursor -> natural-number
+
+Returns the current column number at the left end of the focused dstx.
+Column numbers start counting by 0.
+
+
+> cursor-dstx: cursor -> dstx
+
+Returns the focused dstx.
+
+
+> focus-toplevel: cursor -> cursor
+
+Moves the cursor back up to the toplevel.
+
+
+> focus-in: cursor -> (union cursor #f)
+
+Moves focus in the focused fusion to the first non-space child.  If
+the focus was not in a fusion, or if the fusion has no non-space
+children, returns #f.
+
+
+> focus-out: cursor -> (union cursor #f)
+
+Moves focus out to the immediate parent.  If no such parent exists,
+returns #f.
+
+
+> focus-older: cursor -> (union cursor #f)
+
+Moves focus to the immediate older non-space sibling.  If no such dstx
+exists, returns #f.
+
+
+> focus-younger: cursor -> (union cursor #f)
+
+Moves focus to the immediate younger non-space sibling.  If no such
+dstx exists, returns #f.
+
+
+> focus-successor: cursor -> (union cursor #f)
+
+Moves focus to the non-space successor, assuming a depth-first traversal.
+
+
+> focus-predecessor: cursor -> (union cursor #f)
+
+Moves focus to the non-space predecessor, assuming a depth-first traversal.
+
+
+> focus-pos: cursor number -> (union cursor #f)
+
+> focus-line: cursor number -> (union cursor #f)
+
+> focus-line&col: cursor number number -> (union cursor #f)
+
+
+
+======================================================================
+Editing (edit.ss)
+======================================================================
+
+
+> insert-before: cursor dstx -> cursor
+[fill me in]
+
+
+> insert-after: cursor dstx -> cursor
+[fill me in]
+
+
+> replace: cursor dstx -> cursor
+[fill me in]
+
+
+> delete: cursor dstx -> cursor
+[fill me in]
+
+
+
+======================================================================
+Parsers and Pretty-Printers
+======================================================================
+
+(I'm ambitous: I want to do at least two or three languages.)
+
+parse-plt-scheme.ss
+[fill me in]
+
+parse-xml.ss
+[fill me in]
+
+parse-java.ss
+[fill me in]
+
+parse-ocaml.ss
+[fill me in]
+
+
+References
+==========
+
+DivaScheme home page: http://www.cs.brown.edu/research/plt/software/divascheme/
+
+Ge'rard Huet. (1997) Functional Pearl: The Zipper.  J. Functional
+Programming 7(5); 549-554, September 1997

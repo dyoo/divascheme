@@ -221,7 +221,7 @@
       
       ;; get-current-world: -> World
       ;; Returns the current world state.
-      (define (get-current-world)
+      (define/public (get-current-world)
         (cworld-world central-world))
       
       ;; set-current-world!: World -> void
@@ -398,10 +398,9 @@
                         (World-rope (get-current-world))))
            ;; Local optimization: if our rope is equal
            ;; to the one in the current-world, just reuse that.
-           (World-syntax-list (get-current-world))]
+           (void (World-syntax-list (get-current-world)))]
           [else
-           (rope-parse-syntax (diva:-get-rope))])
-        (void))
+           (void (rope-parse-syntax (diva:-get-rope)))]))
       
       
       ;; Insertion Mode

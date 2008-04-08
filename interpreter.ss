@@ -48,6 +48,8 @@
      (lambda () (diva-printf "Interpreter was called with tree: ~a~n" ast)
        (interpreter/extension world ast))))
   
+  
+  ;; interpreter/extension: World ast -> (union World SwitchWorld)
   (define (interpreter/extension world ast)
     (let ([new-world
            (if (World-extension world)
@@ -63,7 +65,8 @@
                        [World-success-message "extending selection..."])
           new-world)))
   
-  ;; eval-Protocol-Syntax-Tree : World ast -> (union World ChangeWorld)
+  
+  ;; eval-Protocol-Syntax-Tree : World ast -> (union World SwitchWorld)
   (define (eval-Protocol-Syntax-Tree world ast)
     (print-mem*
      'eval-Protocol-Syntax-Tree
