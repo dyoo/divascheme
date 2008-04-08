@@ -11,12 +11,6 @@
   
   
   
-  ;; for debugging:
-  #; (define previous-inspector (current-inspector))
-  #; (current-inspector (make-inspector))
-  
-  
-  
   
   
   ;; if macro? is true then we do not need to say open first
@@ -148,6 +142,15 @@
                               puck
                               puck-length)))
   
+  
+  
+  ;; SwitchWorld occurs if we need to switch focus from one file to another.
+  (define-struct SwitchWorld (path ast))
+  
+  (provide (struct SwitchWorld (path ast)))
+  
+  
+  
   (provide World-selection-position
            World-cursor-index
            World-selection-index
@@ -159,24 +162,16 @@
            World-selection
            World-mark)
   
-  
-  ;; SwitchWorld occurs if we need to switch focus from one file to another.
-  (define-struct SwitchWorld (path ast))
-  
-  (provide (struct SwitchWorld (path ast)))
-
-  
-  
   ;; World-selection-position : World -> pos
   (define World-selection-position World-cursor-position)
-
+  
   ;; World-cursor-index : World -> non-negative-integer
   (define (World-cursor-index world)
     (syntax-pos->index (World-cursor-position world)))
-
+  
   ;; World-selection-index : World -> non-negative-integer (== index)
   (define World-selection-index World-cursor-index)
-
+  
   ;; World-mark-index : World -> non-negative-integer
   (define (World-mark-index world)
     (syntax-pos->index (World-mark-position world)))
@@ -478,24 +473,20 @@
   
   (define-datatype Noun
     [Symbol-Noun (symbol)]
-    [Rope-Noun (rope)]
-    
-    ;; The-Symbol constructor is disabled: currently used only by parser.ss and might be deprecated.
-    #; [The-Symbol (symbol)])
+    [Rope-Noun (rope)])
+  
   
   
   ;; dyoo Drscheme 3.99: Something is wrong with provide-datatype and DrScheme.  Will need to investigate.
-  
   (provide-datatype/contract Noun
                              [Symbol-Noun (symbol?)]
-                             [Rope-Noun (rope?)]
-                             #; [The-Symbol (symbol?)])
+                             [Rope-Noun (rope?)])
   
   
   (define-datatype What
     [WhatN  (noun)]
     [WhatDN (distance noun)])
- 
+  
   
   
   (provide-datatype/contract What
@@ -511,7 +502,7 @@
                              [After ()]
                              [Before ()])
   
- 
+  
   (define-datatype Location
     [Pos (p eol)]
     [Loc (where what)])

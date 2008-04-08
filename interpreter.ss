@@ -41,7 +41,9 @@
   
   (define max-undo-count 50)
   
+  
   ;; interpreter : ast World -> (union World SwitchWorld)
+  ;; Applies the ast command on the given world, returning a new world.
   (define (interpreter ast world)
     (print-mem
      'interpreter
@@ -50,12 +52,14 @@
   
   
   ;; interpreter/extension: World ast -> (union World SwitchWorld)
+  ;; Apply the interpreter, maintaining selection information.
   (define (interpreter/extension world ast)
     (let ([new-world
            (if (World-extension world)
                (if (is-motion-ast? ast)
                    (with-selection-extension world (lambda (world) (eval-Protocol-Syntax-Tree world ast)))
-                   (copy-struct World (eval-Protocol-Syntax-Tree world ast)
+                   (copy-struct World
+                                (eval-Protocol-Syntax-Tree world ast)
                                 [World-extension false]))
                (eval-Protocol-Syntax-Tree world ast))])
       
@@ -210,11 +214,15 @@
           world]))) ;; Automatically turns extension off since this is not a motion command
     ) ;; TODO
   
+  
+  ;; is-motion-ast?: ast -> boolean
+  ;; Returns true if the command is a movement command.
   (define (is-motion-ast? ast)
     (match ast
       [(struct Verb ((struct Command (s)) loc what))
        (motion-command? s)]
       [else #f]))
+  
   
   (define (with-selection-extension world fn)
     (define (uw-pos int/stx) (if (syntax? int/stx)
