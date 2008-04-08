@@ -12,8 +12,6 @@
   
   
   
-  
-  
   ;; if macro? is true then we do not need to say open first
   ;; Template : symbol boolean string
   (define-struct Template (id macro? content))
@@ -70,10 +68,7 @@
     )
   
   
-  
-  
-  
-  
+  ;; Here are some default functions for the World.
   (define ((default-Next-f) world)
     (raise (make-voice-exn "Next is not supported")))
   (define ((default-Previous-f) world)
@@ -83,10 +78,7 @@
   (define ((default-Pass-f) world template-wrap?)
     (raise (make-voice-exn "Pass is not supported")))
   
-  (provide default-Next-f
-           default-Previous-f
-           default-Magic-f
-           default-Pass-f)
+  
   
   ;; make-fresh-world: -> world
   ;; Creates a fresh new world.
@@ -111,16 +103,14 @@
                 empty
                 empty
                 (current-directory)))
-  (provide/contract [make-fresh-world (-> World?)])
+  
   
   
   (define-struct extension (base
                             puck
                             puck-length))
   
-  (provide (struct extension (base
-                              puck
-                              puck-length)))
+  
   
   
   
@@ -517,10 +507,10 @@
   
   
   (provide/contract
-   (struct Template ([id symbol?]
+   [struct Template ([id symbol?]
                      [macro? boolean?]
-                     [content (listof string?)]))
-   (struct World ([rope rope?]
+                     [content (listof string?)])]
+   [struct World ([rope rope?]
                   [syntax-list/lazy (or/c false/c (listof syntax?))]
                   [cursor-position number?]
                   [target-column (or/c false/c number?)]
@@ -543,7 +533,16 @@
                                                (World? . -> . any)
                                                . -> . World?))]
                   [markers (listof Marker?)]
-                  [path (or/c false/c path-string?)])))
+                  [path (or/c false/c path-string?)])]
+   [struct extension ([base number?]
+                      [puck number?]
+                      [puck-length number?])]
+   
+   [make-fresh-world (-> World?)]
+   [default-Next-f (-> (World? . -> . World?))]
+   [default-Previous-f (-> (World? . -> . World?))]
+   [default-Magic-f (-> (World? boolean? . -> . World?))]
+   [default-Pass-f (-> (World? boolean? . -> . World?))])
   
   
   
