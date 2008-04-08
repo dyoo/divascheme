@@ -3,6 +3,7 @@
            (lib "etc.ss")
            (lib "list.ss")
            (lib "struct.ss")
+           (lib "mred.ss" "mred")
            (only (lib "1.ss" "srfi") find)
            "struct/datatype.ss"
            "dot-processing.ss"
@@ -16,9 +17,7 @@
   ;; if macro? is true then we do not need to say open first
   ;; Template : symbol boolean string
   (define-struct Template (id macro? content))
-  (provide/contract (struct Template ([id       symbol?]
-                                      [macro?   boolean?]
-                                      [content (listof string?)])))
+  
   
   
   
@@ -72,26 +71,7 @@
   
   
   
-  (provide (struct World (rope
-                          syntax-list/lazy
-                          cursor-position
-                          target-column
-                          selection-length
-                          mark-position
-                          mark-length
-                          Next-f
-                          Previous-f
-                          cancel
-                          undo
-                          redo
-                          Magic-f
-                          Pass-f
-                          again
-                          success-message
-                          extension
-                          imperative-actions
-                          markers
-                          path)))
+  
   
   
   (define ((default-Next-f) world)
@@ -532,6 +512,40 @@
   
   (define-struct ChangeWorld (path))
   (provide/contract (struct ChangeWorld ([path path?])))
+  
+  
+  
+  
+  (provide/contract
+   (struct Template ([id symbol?]
+                     [macro? boolean?]
+                     [content (listof string?)]))
+   (struct World ([rope rope?]
+                  [syntax-list/lazy (or/c false/c (listof syntax?))]
+                  [cursor-position number?]
+                  [target-column (or/c false/c number?)]
+                  [selection-length number?]
+                  [mark-position number?]
+                  [mark-length number?]
+                  [Next-f (World? . -> . World?)]
+                  [Previous-f (World? . -> . World?)]
+                  [cancel (or/c false/c World?)]
+                  [undo (or/c false/c World?)]
+                  [redo (or/c false/c World?)]
+                  [Magic-f (World? boolean? . -> . World?)]
+                  [Pass-f (World? boolean? . -> . World?)]
+                  [again (or/c false/c Protocol-Syntax-Tree?)]
+                  [success-message string?]
+                  [extension (or/c false/c extension?)]
+                  [imperative-actions (listof
+                                       (World? (is-a?/c text%)
+                                               (World? . -> . World?)
+                                               (World? . -> . World?)
+                                               . -> . World?))]
+                  [markers (listof Marker?)]
+                  [path (or/c false/c path-string?)])))
+  
+  
   
   #; (current-inspector previous-inspector))
 
