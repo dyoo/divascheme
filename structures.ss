@@ -250,7 +250,7 @@
       replacing-length)))
   
   
-  (provide world-insert-rope)
+  
   ;; world-insert-rope: World index rope -> World
   (define (world-insert-rope world index a-rope)
     (let ([new-rope (insert-rope (World-rope world) index a-rope)])
@@ -263,8 +263,7 @@
   
   
   
-  (provide world-delete-rope)
-  ;; world-delete-rope: World index rope -> World
+  ;; world-delete-rope: World index length -> World
   (define (world-delete-rope world index length)
     (let ([new-rope (delete-rope (World-rope world) index length)])
       (update-markers/delete
@@ -276,8 +275,8 @@
   
   
   
-  (provide world-replace-rope)
-  ;; world-replace-rope : world index string int -> string
+  
+  ;; world-replace-rope : world index rope int -> World
   (define (world-replace-rope world index tyt len)
     (let ([new-rope (replace-rope (World-rope world) index tyt len)])
       ;; FIXME: update marks
@@ -301,12 +300,10 @@
                                     (rope-parse-syntax (World-rope a-world)))
        (World-syntax-list/lazy a-world)]))
   
-  (provide/contract [World-syntax-list (World? . -> . (listof syntax?))])
   
   
   
   
-  (provide success-message)
   ;; success-message : World string -> World
   ;; Replace the success-message of the world with a given string.
   (define (success-message world message)
@@ -417,32 +414,30 @@
      'Last))
   
   
+  ;; command?: symbol -> boolean
+  ;; Returns true if the symbol represents a command.
+  (define (command? symbol)
+    (and (member symbol commands) #t))
   
-  (define command?
-    (lambda (symbol) (member symbol commands)))
   
-  (provide motion-command?)
-  (define motion-command?
-    (lambda (symbol) (member symbol motion-commands)))
+  ;; motion-command: symbol -> boolean
+  ;; Returns true if the symbol represents a motion command.
+  (define (motion-command? symbol)
+    (and (member symbol motion-commands) #t))
+  
   
   (define-datatype Noun
     [Symbol-Noun (symbol)]
     [Rope-Noun (rope)])
-  
-  
-  
-  ;; dyoo Drscheme 3.99: Something is wrong with provide-datatype and DrScheme.  Will need to investigate.
   (provide-datatype/contract Noun
                              [Symbol-Noun (symbol?)]
                              [Rope-Noun (rope?)])
   
   
+  
   (define-datatype What
     [WhatN  (noun)]
     [WhatDN (distance noun)])
-  
-  
-  
   (provide-datatype/contract What
                              [WhatN  (Noun?)]
                              [WhatDN (integer? Noun?)])
@@ -451,7 +446,6 @@
   (define-datatype Where
     [After ()]
     [Before ()])
-  
   (provide-datatype/contract Where
                              [After ()]
                              [Before ()])
@@ -460,17 +454,15 @@
   (define-datatype Location
     [Pos (p eol)]
     [Loc (where what)])
-  
   (provide-datatype/contract Location
                              [Pos (integer? boolean?)]
-                             [Loc (Where? (union false/c What?))])
+                             [Loc (Where? (or/c false/c What?))])
   
   
   
   (define-datatype Verb-Content
     [Command (command)]
     [InsertRope-Cmd (rope)])
-  
   (provide-datatype/contract Verb-Content
                              [Command (command?)]
                              [InsertRope-Cmd (rope?)])
@@ -479,9 +471,8 @@
   
   (define-datatype Protocol-Syntax-Tree
     [Verb (content location what)])
-  
   (provide-datatype/contract Protocol-Syntax-Tree
-                             [Verb (Verb-Content? (union false/c Location?) (union false/c What?))])
+                             [Verb (Verb-Content? (or/c false/c Location?) (or/c false/c What?))])
   
   
   
@@ -558,5 +549,16 @@
    [world-clear-marker
     (World? symbol? . -> . World?)]
    [world-marker-position
-    (World? symbol? . -> . (or/c false/c number?))]))
+    (World? symbol? . -> . (or/c false/c number?))]
+   
+   
+   [world-insert-rope (World? number? rope? . -> . World?)]
+   [world-delete-rope (World? number? number? . -> . World?)]
+   
+   [World-syntax-list (World? . -> . (listof syntax?))]
+   [world-replace-rope (World? number? rope? number? . -> . World?)]
+   
+   [success-message (World? string? . -> . World?)]
+   
+   [motion-command? (symbol? . -> . boolean?)]))
 
