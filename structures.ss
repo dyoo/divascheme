@@ -111,26 +111,10 @@
                             puck-length))
   
   
-  
-  
-  
   ;; SwitchWorld occurs if we need to switch focus from one file to another.
   (define-struct SwitchWorld (path ast))
   
-  (provide (struct SwitchWorld (path ast)))
   
-  
-  
-  (provide World-selection-position
-           World-cursor-index
-           World-selection-index
-           World-mark-index
-           World-selection-end-position
-           World-mark-end-position
-           World-selection-end-index
-           World-mark-end-index
-           World-selection
-           World-mark)
   
   ;; World-selection-position : World -> pos
   (define World-selection-position World-cursor-position)
@@ -181,7 +165,7 @@
   
   (define world-fn/c (World? . -> . World?))
   
-  (provide/contract [queue-imperative-action (World? (World? any/c world-fn/c (World? . -> . void?) . -> . World?) . -> . World?)])
+  
   ;; queue-imperative-action: World (world window -> world) -> World
   ;; Adds an imperative action that will be evaluated at the end of
   ;; evaluation.
@@ -196,7 +180,7 @@
   ;; robust under insertion, deletion, and replacement.
   (define-struct Marker (name index) #f)
   
-  (provide world-new-marker)
+  
   ;; new-marker: World index -> (values World symbol)
   (define world-new-marker
     (let ([counter 0])
@@ -208,7 +192,7 @@
                   (Marker-name new-marker))))))
   
   ;; world-clear-marker: world name -> world
-  (provide world-clear-marker)
+  ;; Removes the marker from the world.
   (define (world-clear-marker world name)
     (copy-struct World world
                  [World-markers (filter
@@ -217,7 +201,7 @@
                                  (World-markers world))]))
   
   
-  (provide world-marker-position)
+  ;; world-marker-position: World symbol -> number
   (define (world-marker-position world name)
     (let ([marker (find (lambda (elt)
                           (symbol=? name (Marker-name elt)))
@@ -500,9 +484,6 @@
                              [Verb (Verb-Content? (union false/c Location?) (union false/c What?))])
   
   
-  (define-struct ChangeWorld (path))
-  (provide/contract (struct ChangeWorld ([path path?])))
-  
   
   
   
@@ -534,6 +515,10 @@
                                                . -> . World?))]
                   [markers (listof Marker?)]
                   [path (or/c false/c path-string?)])]
+   
+   [struct SwitchWorld ([path path-string?]
+                        [ast Protocol-Syntax-Tree?])]
+   
    [struct extension ([base number?]
                       [puck number?]
                       [puck-length number?])]
@@ -542,9 +527,36 @@
    [default-Next-f (-> (World? . -> . World?))]
    [default-Previous-f (-> (World? . -> . World?))]
    [default-Magic-f (-> (World? boolean? . -> . World?))]
-   [default-Pass-f (-> (World? boolean? . -> . World?))])
-  
-  
-  
-  #; (current-inspector previous-inspector))
+   [default-Pass-f (-> (World? boolean? . -> . World?))]
+   
+   
+   [World-selection-position
+    (World? . -> . number?)]
+   [World-cursor-index
+    (World? . -> . number?)]
+   [World-selection-index
+    (World? . -> . number?)]
+   [World-mark-index
+    (World? . -> . number?)]
+   [World-selection-end-position
+    (World? . -> . number?)]
+   [World-mark-end-position
+    (World? . -> . number?)]
+   [World-selection-end-index
+    (World? . -> . number?)]
+   [World-mark-end-index
+    (World? . -> . number?)]
+   [World-selection
+    (World? . -> . (or/c false/c rope?))]
+   [World-mark
+    (World? . -> . (or/c false/c rope?))]
+   
+   [queue-imperative-action (World? (World? any/c world-fn/c (World? . -> . void?) . -> . World?) . -> . World?)]
+   
+   [world-new-marker
+    ((World? number?) . ->* . (World? symbol?))]
+   [world-clear-marker
+    (World? symbol? . -> . World?)]
+   [world-marker-position
+    (World? symbol? . -> . (or/c false/c number?))]))
 
