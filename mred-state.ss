@@ -211,7 +211,7 @@
       ;; WORLD 2 TEXT STUFFS
       ;;
       ;; Pushes changes from the world back into the stateful text%.
-      
+      ;; push-world: world -> void
       (define/public (push-world world)
         (unless (rope=? (World-rope world) (get-rope))
           (update-text (World-rope world)))

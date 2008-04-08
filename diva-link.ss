@@ -178,6 +178,7 @@
       ;; diva-message: string -> void
       ;; Displays a message to the top-level frame window.
       (define/public (diva-message msg)
+        (printf "~a~n" msg)
         (when (get-top-level-window)
           (send (get-top-level-window) diva-message msg)))
       
@@ -292,6 +293,8 @@
       ;; WARNING: this also does things to our world, based on our kludgy implementation
       ;; of world-imperative-actions!  This seems like a design flaw.
       (define (push-into-mred world)
+        (unless (World? world)
+          (error 'push-into-mred))
         (with-handlers ([voice-exn?
                          (lambda (exn)
                            (error-message (voice-exn-message exn)))]

@@ -540,7 +540,7 @@
                   [imperative-actions (listof
                                        (World? (is-a?/c text%)
                                                (World? . -> . World?)
-                                               (World? . -> . World?)
+                                               (World? . -> . any)
                                                . -> . World?))]
                   [markers (listof Marker?)]
                   [path (or/c false/c path-string?)])))
