@@ -216,6 +216,8 @@
       (define current-world
         (send current-mred pull-world (make-fresh-world)))
       
+      (define central-world
+        (new-cworld (send current-mred pull-world (make-fresh-world))))
       
       
       ;; When loading a file, we don't want to add onto the undo
@@ -246,8 +248,8 @@
          'get-mred
          (lambda ()
            (let ([new-world
-                  (success-message (send current-mred pull-world
-                                         current-world) "")])
+                  (success-message (send current-mred pull-world current-world)
+                                   "")])
              (cond
                [(rope=? (World-rope new-world)
                         (World-rope current-world))
@@ -455,7 +457,8 @@
                                  (to-insert-mode edit? on-entry on-exit))
                                (lambda (edit? command)
                                  (to-insert-mode edit? on-entry on-exit command))
-                               (lambda (msg) (diva-message msg))
+                               (lambda (msg)
+                                 (diva-message msg))
                                diva-question
                                (lambda (ast)
                                  (diva-ast-put/wait+world (pull-from-mred) ast)))))

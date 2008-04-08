@@ -359,6 +359,7 @@
   
   (provide success-message)
   ;; success-message : World string -> World
+  ;; Replace the success-message of the world with a given string.
   (define (success-message world message)
     (copy-struct World world
                  [World-success-message message]))
@@ -379,11 +380,11 @@
           'Search-Backward
           'Search-Top
           'Search-Bottom
-
+          
           'Holder
           'Holder-Forward
           'Holder-Backward
-
+          
           'Next
           'Previous
           'Cancel
