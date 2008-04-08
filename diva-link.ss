@@ -17,6 +17,7 @@
            "utilities.ss"
            "diva-central.ss" 
            "rope.ss"
+           "cworld.ss"
            "gui/clipboard.ss"
            (prefix preferences: "diva-preferences.ss"))
   
@@ -213,11 +214,34 @@
       (define current-mred
         (make-object MrEd-state% this))
       
-      (define current-world
-        (send current-mred pull-world (make-fresh-world)))
       
+      ;; Central world stuff
       (define central-world
         (new-cworld (send current-mred pull-world (make-fresh-world))))
+      
+      ;; get-current-world: -> World
+      ;; Returns the current world state.
+      (define (get-current-world)
+        (cworld-world central-world))
+      
+      ;; set-current-world!: World -> void
+      ;; Sets the current world to the new world.
+      (define (set-current-world! new-world)
+        (channel-put central-world-mailbox (make-op:replace-world new-world)))
+      
+      
+      ;; Whenever new events happen, we'll send an operation message to the central world
+      ;; mailbox for processing.
+      (define central-world-mailbox (make-channel))
+      
+      ;; A thread will run to process events in the order we receive them.
+      (thread (lambda ()
+                (let loop ()
+                  (let ([new-op (channel-get central-world-mailbox)])
+                    (set! central-world (cworld-apply-op central-world new-op)))
+                  (loop))))
+      
+      
       
       
       ;; When loading a file, we don't want to add onto the undo
@@ -248,11 +272,11 @@
          'get-mred
          (lambda ()
            (let ([new-world
-                  (success-message (send current-mred pull-world current-world)
+                  (success-message (send current-mred pull-world (get-current-world))
                                    "")])
              (cond
                [(rope=? (World-rope new-world)
-                        (World-rope current-world))
+                        (World-rope (get-current-world)))
                 new-world]
                [last-action-load?
                 (set! last-action-load? false)
@@ -260,7 +284,7 @@
                              [World-undo #f])]
                [else
                 (copy-struct World new-world
-                             [World-undo current-world])])))))
+                             [World-undo (get-current-world)])])))))
       
       
       ;; push-into-mred: world -> void
@@ -293,9 +317,8 @@
                                (send current-mred push-world w))))))
                     world
                     (reverse (World-imperative-actions world)))])
-               (set! current-world
-                     (copy-struct World new-world
-                                  [World-imperative-actions empty]))))
+               (set-current-world! (copy-struct World new-world
+                                                [World-imperative-actions empty]))))
            (lambda ()
              (end-edit-sequence)))))
       
@@ -370,12 +393,12 @@
       ;; raise an exception.
       (define (check-good-syntax)
         (cond
-          [(and current-world
+          [(and (get-current-world)
                 (rope=? (diva:-get-rope)
-                        (World-rope current-world)))
+                        (World-rope (get-current-world))))
            ;; Local optimization: if our rope is equal
            ;; to the one in the current-world, just reuse that.
-           (World-syntax-list current-world)]
+           (World-syntax-list (get-current-world))]
           [else
            (rope-parse-syntax (diva:-get-rope))])
         (void))

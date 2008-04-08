@@ -23,6 +23,36 @@
   ;; Applies an operation on the world.  Anyone who is a listener will get
   ;; notified.
   (define (cworld-apply-op a-cworld an-op)
+    (let ([new-cworld (apply-primitive-op a-cworld an-op)])
+      (notify-all-listeners! new-cworld)
+      new-cworld))
+  
+  
+  ;; cworld-add-listener: cworld listener -> cworld
+  ;; Adds a new listener that will get notified whenever we apply operations.
+  (define (cworld-add-listener a-cworld a-listener)
+    (copy-struct cworld a-cworld
+                 [cworld-listeners
+                  (cons a-listener (cworld-listeners a-cworld))]))
+  
+  
+  ;; notify-all-listeners!: cworld -> void
+  ;; Tell all listeners that the cworld has just processed an operation.
+  (define (notify-all-listeners! a-cworld)
+    (for-each (lambda (a-listener)
+                (a-listener a-cworld))
+              (cworld-listeners a-cworld)))
+  
+  
+  ;; op is the base type of all operations we apply against cworlds.
+  (define-struct op ())
+  ;; op:replace-world: entirely replace the current world with a new one.
+  (define-struct (op:replace-world op) (world))
+  ;; fill me in: we need more operations.
+  
+  
+  ;; apply-primitive-op: cworld op -> cworld
+  (define (apply-primitive-op a-cworld an-op)
     (match an-op
       [(struct op:replace-world (new-world))
        (copy-struct cworld a-cworld
@@ -30,28 +60,16 @@
                     [cworld-ops (cons an-op (cworld-ops a-cworld))])]))
   
   
-  (define (cworld-add-listener a-cworld a-listener)
-    (copy-struct cworld a-cworld
-                 [cworld-listeners
-                  (cons a-listener (cworld-listeners a-cworld))]))
   
+  ;; We define a listener to be a function that can consume a cworld.
+  (define listener/c (cworld? . -> . any))
   
-  
-  (define-struct op ())
-  
-  ;; op:replace-world: entirely replace the current world with a new one.
-  (define-struct (op:replace-world op) (world))
-  ;; fill me in: we need more operations.
-  
-  
-  
-  (define thunk/c (-> any))
   
   (provide/contract
    [struct cworld ([world World?]
                    [ops (listof op?)]
-                   [listeners (listof thunk/c)])]
-   [new-cworld (-> cworld?)]
+                   [listeners (listof listener/c)])]
+   [new-cworld (World? . -> . cworld?)]
    
    [struct op ()]
    [struct (op:replace-world op) ([world World?])]
@@ -60,4 +78,4 @@
     (cworld? op? . -> . cworld?)]
    
    [cworld-add-listener
-    (cworld? thunk/c . -> . any)]))
+    (cworld? listener/c . -> . any)]))
