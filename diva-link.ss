@@ -219,15 +219,17 @@
       (define central-world
         (new-cworld (send current-mred pull-world (make-fresh-world))))
       
+      
       ;; get-current-world: -> World
       ;; Returns the current world state.
       (define/public (get-current-world)
         (cworld-world central-world))
       
+      
       ;; set-current-world!: World -> void
       ;; Sets the current world to the new world.
       (define (set-current-world! new-world)
-        (channel-put central-world-mailbox (make-op:replace-world new-world)))
+        (send-cworld-op (make-op:replace-world new-world)))
       
       
       ;; Whenever new events happen, we'll send an operation message to the central world
@@ -240,6 +242,12 @@
                   (let ([new-op (channel-get central-world-mailbox)])
                     (set! central-world (cworld-apply-op central-world new-op)))
                   (loop))))
+      
+      
+      ;; send-cworld-op: op -> void
+      ;; Sends a new message to the cworld.
+      (define/public (send-cworld-op an-op)
+        (channel-put central-world-mailbox an-op))
       
       
       
