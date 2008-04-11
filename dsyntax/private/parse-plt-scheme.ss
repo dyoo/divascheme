@@ -41,7 +41,7 @@
                                   "#;"    ;; nested comments
                                   "#&"    ;; boxes 
                                   "#'" "#`" "#," "#,@"
-                                  "#cs" "#ci"))
+                                  "#cs" "#ci" "#s"))
   
   (define-lex-abbrev nl (:or "\r\n"
                              "\n"
@@ -58,18 +58,18 @@
   ;; We treat pounded atoms separately since they're messy.
   (define-lex-abbrev pound-prefix-free-atom
     (:& (complement (:: "#" any-string))
-        atom-chars))
+        (:+ atom-char)))
   
-  (define-lex-abbrev atom-chars
-    (:+ (:or (:& (char-complement (char-set "|\\"))
-                 (char-complement (:& any-char atom-delims)))
-             escaped-symbol-chars)))
+  (define-lex-abbrev atom-char
+    (:or (:& (char-complement (char-set "|\\"))
+             (char-complement (:& any-char atom-delims)))
+         escaped-symbol-chars))
   
   (define-lex-abbrev pounded-atoms
-    (:or "#t" "#f" "#T" "#F" "#lang"
+    (:or "#t" "#f" "#T" "#F" "#lang" "#reader"
          (:: "#" (char-set "eibodx") pound-prefix-free-atom)     ;; numeric constants
          (:: "#%" pound-prefix-free-atom)
-         (:: "#:" atom-chars) ;; keywords
+         (:: "#:" (:* atom-char)) ;; keywords
          (:: "#\\" any-char)
          (:: "#\\" alphabetic alphabetic (:* alphabetic))
          (:: "#\\" (:? any-char) (:+ digit))

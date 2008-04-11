@@ -222,6 +222,10 @@
       "nested comments 3"
       (check-equal? (parse "#|\n#||#\n|#") (new-atom "#|\n#||#\n|#")))
      
+     (test-case
+      "empty keyword"
+      (check-equal? (parse "(#:)") (new-fusion "(" (list (new-atom "#:")) ")")))
+     
      
      (test-case
       "simple graphical symbol test"
