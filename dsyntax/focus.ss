@@ -17,9 +17,12 @@
                     [loc-after (loc? dstx? . -> . loc?)]
                     
                     [focus-in focus-function/c]
+                    [focus-in/no-snap focus-function/c]
                     [focus-out focus-function/c]
                     [focus-older focus-function/c]
+                    [focus-older/no-snap focus-function/c]
                     [focus-younger focus-function/c]
+                    [focus-younger/no-snap focus-function/c]
                     [focus-successor focus-function/c]
                     [focus-predecessor focus-function/c]
                     [focus-toplevel focus-function/c]
@@ -92,6 +95,29 @@
                                (rest children))]))])))
   
   
+  ;; focus-in/no-snap: cursor -> (or/c cursor #f)
+  (define (focus-in/no-snap a-cursor)
+    (local ((define focus (cursor-dstx a-cursor)))
+      (cond
+        [(atom? focus) #f]
+        [(space? focus) #f]
+        [(fusion? focus)
+         (let ([younger-rev '()]
+               [younger-loc-rev '()]
+               [children (fusion-children focus)]
+               [loc (after-displayed-string (cursor-loc a-cursor)
+                                            (fusion-prefix focus))])
+           (cond [(empty? children) #f]
+                 [else
+                  (make-cursor (first children)
+                               loc
+                               a-cursor
+                               younger-rev
+                               younger-loc-rev
+                               (rest children))]))])))
+  
+  
+  
   ;; focus-out: cursor -> (union cursor #f)
   ;;
   ;; Moves back up out to the fusion parent.
@@ -101,7 +127,7 @@
     (cond
       [(cursor-parent a-cursor)
        => identity
-       ;; fixme: not right if we allow for focused edits... will need
+       ;; fixme!: this is definitely not right if we allow for focused edits... will need
        ;; edits.ss later on to motivate the unit tests and fix.
        ]
       [else #f]))
@@ -139,6 +165,33 @@
               new-cursor]))])))
   
   
+  ;; focus-older/no-snap: cursor -> (union cursor #f)
+  ;; Moves the focus to the next older sibling, not snapping
+  ;; across whitespace.
+  (define (focus-older/no-snap a-cursor)
+    (local ((define loc
+              (loc-after (cursor-loc a-cursor)
+                         (cursor-dstx a-cursor)))
+            (define youngers-rev
+              (cons (cursor-dstx a-cursor)
+                    (cursor-youngers-rev a-cursor)))
+            (define youngers-loc-rev
+              (cons (cursor-loc a-cursor)
+                    (cursor-youngers-loc-rev a-cursor)))
+            (define olders (cursor-olders a-cursor)))
+      (cond
+        [(empty? olders) #f]
+        [else
+         (make-cursor (first olders)
+                      loc
+                      (cursor-parent a-cursor)
+                      youngers-rev
+                      youngers-loc-rev
+                      (rest olders))])))
+  
+  
+  
+  
   ;; focus-younger: cursor -> (union cursor #f)
   ;;
   ;; Moves the focus to the next youngest sibling.
@@ -162,6 +215,25 @@
               (focus-younger new-cursor)]
              [else
               new-cursor]))])))
+  
+  
+  ;; focus-younger/no-snap: cursor -> (or/c cursor #f]
+  ;; Moves the focus to a younger sibling, not snapping across whitespace.
+  (define (focus-younger/no-snap a-cursor)
+    (local ((define youngers-rev (cursor-youngers-rev a-cursor))
+            (define youngers-loc-rev (cursor-youngers-loc-rev a-cursor))
+            (define olders (cursor-olders a-cursor)))
+      (cond
+        [(empty? youngers-rev) #f]
+        [else
+         (make-cursor (first youngers-rev)
+                      (first youngers-loc-rev)
+                      (cursor-parent a-cursor)
+                      (rest youngers-rev)
+                      (rest youngers-loc-rev)
+                      (cons (cursor-dstx a-cursor)
+                            olders))])))
+  
   
   
   ;; focus-successor: cursor -> (union cursor #f)
