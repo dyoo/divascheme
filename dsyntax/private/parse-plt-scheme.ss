@@ -66,7 +66,7 @@
              escaped-symbol-chars)))
   
   (define-lex-abbrev pounded-atoms
-    (:or "#t" "#f" "#T" "#F"
+    (:or "#t" "#f" "#T" "#F" "#lang"
          (:: "#" (char-set "eibodx") pound-prefix-free-atom)     ;; numeric constants
          (:: "#%" pound-prefix-free-atom)
          (:: "#:" atom-chars) ;; keywords
@@ -189,7 +189,7 @@
                (closers
                 (token-suffix lexeme))
                
-               ((repetition 1 +inf.0 whitespace)
+               (whitespace ;; a single whitespace character
                 (token-space lexeme))
                
                (quoters

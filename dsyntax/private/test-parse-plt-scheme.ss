@@ -56,6 +56,12 @@
        (new-atom "#%datum")))
      
      (test-case
+      "parsing #lang"
+      (check-equal?
+       (parse "#lang")
+       (new-atom "#lang")))
+     
+     (test-case
       "parse vector"
       (check-equal?
        (parse "#(1)")
@@ -72,8 +78,8 @@
       "parse simple s-expression"
       (check-equal? (parse "(hello world)")
                     (new-fusion "(" (list (new-atom "hello")
-                                           (new-space " ")
-                                           (new-atom "world"))
+                                          (new-space " ")
+                                          (new-atom "world"))
                                  ")")))
      
      (test-case
