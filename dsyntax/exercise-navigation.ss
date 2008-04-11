@@ -17,7 +17,9 @@
         [(#\j)
          (send editor set-tree-cursor (focus-predecessor a-cursor))]
         [(#\l)
-         (send editor set-tree-cursor (focus-successor a-cursor))])))
+         (send editor set-tree-cursor (focus-successor a-cursor))]
+        [(#\K)
+         (send editor set-tree-cursor (focus-out a-cursor))])))
   
   
   (define my-text%
@@ -28,8 +30,9 @@
       (send (get-keymap) add-function
             "dsyntax:test-handler" my-key-handler)
       (send (get-keymap) remove-grab-key-function)
-      (send (get-keymap) map-function "c:j" "dsyntax:test-handler")
-      (send (get-keymap) map-function "c:l" "dsyntax:test-handler")
+      (send (get-keymap) map-function "j" "dsyntax:test-handler")
+      (send (get-keymap) map-function "K" "dsyntax:test-handler")
+      (send (get-keymap) map-function "l" "dsyntax:test-handler")
       
       
       (define tree
@@ -65,7 +68,7 @@
                               'start)))))
   
   (define (test)
-    (open-file "~/local/plt-svn/collects/tex2page/tex2page-aux.ss"))
+    (open-file (expand-user-path "~/local/plt/collects/tex2page/tex2page-aux.ss")))
   
   
   (define (open-file filename)
