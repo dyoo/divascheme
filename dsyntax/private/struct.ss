@@ -3,6 +3,7 @@
   
   (require (lib "contract.ss")
            (lib "plt-match.ss")
+           (lib "list.ss")
            (prefix table: (planet "table.ss" ("soegaard" "galore.plt" 3))))
   
   
@@ -45,7 +46,11 @@
   ;; new-fusion: string (listof dstx?) string -> fusion
   ;; Constructor with default empty properties.
   (define (new-fusion prefix children suffix)
-    (make-fusion empty-table prefix children suffix))
+    (cond
+      [(empty? children)
+       (make-fusion empty-table prefix (list (new-space "")) suffix)]
+      [else
+       (make-fusion empty-table prefix children suffix)]))
   
   
   ;; dstx-property-names: dstx -> (listof symbol)
@@ -102,6 +107,9 @@
   (define empty-table
     (table:make-ordered symbol-cmp))
   
+  (define (nelistof x)
+    (and/c (not/c null?)
+           (listof x)))
   
   
   (define key/value (list/c symbol? any/c))
@@ -120,7 +128,7 @@
    [struct (fusion dstx)
            ([properties (listof key/value)]
             [prefix string?]
-            [children (listof dstx?)]
+            [children (nelistof dstx?)]
             [suffix string?])]
    
    [new-atom (string? . -> . atom?)]

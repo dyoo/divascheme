@@ -189,13 +189,6 @@ Editing (edit.ss)
 > insert-after: cursor dstx -> cursor
 [fill me in]
 
-> insert-in: cursor dstx -> cursor
-Precondition: cursor is focused at the toplevel or a fusion.
-[fill me in]
-
-> replace: cursor dstx -> cursor
-[fill me in]
-
 > delete: cursor dstx -> cursor
 [fill me in]
 

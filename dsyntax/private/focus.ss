@@ -36,7 +36,7 @@
   (define (make-toplevel-cursor dstxs)
     (cond
       [(empty? dstxs)
-       (make-cursor (make-space "")
+       (make-cursor (new-space "")
                     (make-loc 1 0 0)
                     #f
                     '()
