@@ -22,6 +22,7 @@
                     [focus-younger focus-function/c]
                     [focus-successor focus-function/c]
                     [focus-predecessor focus-function/c]
+                    [focus-toplevel focus-function/c]
                     
                     [focus-pos
                      (cursor? natural-number/c . -> . cursor-or-false/c)])
@@ -100,10 +101,11 @@
     (cond
       [(cursor-parent a-cursor)
        => identity
-       ;; not quite right if we allow for focused edits... will need
+       ;; fixme: not right if we allow for focused edits... will need
        ;; edits.ss later on to motivate the unit tests and fix.
        ]
       [else #f]))
+  
   
   
   ;; focus-older: cursor -> (union cursor #f)
@@ -197,5 +199,27 @@
       [else #f]))
   
   
+  ;; focus-toplevel: cursor -> cursor
+  ;; Moves the cursor to the first dstx at the toplevel.
+  (define (focus-toplevel a-cursor)
+    (let ([outermost (maximally-repeat-movement a-cursor focus-out)])
+      (maximally-repeat-movement outermost focus-younger)))
+  
+  
+  ;; maximally-repeat-movement: cursor focus-function -> cursor
+  ;; Repeatedly applies a-movement on a-cursor until we hit an endpoint.
+  (define (maximally-repeat-movement a-cursor a-movement)
+    (let loop ([a-cursor a-cursor])
+      (cond
+        [(a-movement a-cursor)
+         =>
+         (lambda (cursor-after-movement)
+           (loop cursor-after-movement))]
+        [else
+         a-cursor])))
+  
+  
+  
   (define (focus-pos a-cursor a-pos)
+    ;; fixme
     (void)))

@@ -132,7 +132,7 @@ Returns the focused dstx.
 
 > focus-toplevel: cursor -> cursor
 
-Moves the cursor back up to the toplevel.
+Moves the cursor back up to the first dstx at the toplevel.
 
 
 > focus-in: cursor -> (union cursor #f)
