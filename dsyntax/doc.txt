@@ -5,17 +5,40 @@ _dsyntax_ - DivaScheme syntax traversal library
 Index terms: _dsyntax_, _divascheme_, _DivaScheme_, _dstx_, _syntax_,
 
 
-Note: much of the documentation here describes functions and modules
-that have not been written yet.  I'm just trying to be good by
-documenting the system before it's implemented, rather than as an
-afterthought.  It'll help me think through the design.
+dsyntax provides a _dstx_ structure that represents an
+sexpression-like type, as well as utilities to traverse and do edits
+on tree structure.  All of the operations here are non-destructive.
 
 
 
 Example
 -------
 
-[fill me in]
+> (require "dsyntax.ss")
+> (define a-cursor
+    (let* ([a-cursor (make-toplevel-cursor '())]
+           [a-cursor (cursor-insert-after a-cursor (new-atom "hello"))]
+           [a-cursor (cursor-insert-after a-cursor (new-atom "this"))]
+           [a-cursor (cursor-insert-after a-cursor (new-atom "is"))]
+           [a-cursor (cursor-insert-after a-cursor 
+                                          (new-fusion "("
+                                                      (list (new-atom "a") 
+                                                            (new-atom "test"))
+                                                      ")"))])
+      a-cursor))
+> (cursor-pos a-cursor)
+11
+> (cursor-line a-cursor)
+1
+> (cursor-col a-cursor)
+11
+> (cursor-dstx a-cursor)
+#(struct:fusion
+  #(struct:object:table-from-set% ...)
+  "("
+  (#(struct:atom #(struct:object:table-from-set% ...) "a") 
+   #(struct:atom #(struct:object:table-from-set% ...) "test"))
+  ")")
 
 
 
@@ -58,19 +81,35 @@ will ignore spaces and snap across them.
 > fusion?: any -> boolean
 
 > dstx-property-names: dstx -> (listof symbol)
-> dstx-set-property: dstx symbol any -> dstx
-> dstx-get-property: dstx symbol -> any
 
-> make-atom: string -> atom
+Returns a list of the property names associated to the dstx.
+
+
+> dstx-property-set: dstx symbol any -> dstx
+
+Nondestructively associate a property name and value to a dstx.
+
+
+> dstx-property-ref: dstx symbol -> any
+
+Refers to the property with the given symbolic name.
+
+
+
+> new-atom: string -> atom
 > atom-content: atom -> string
 
-> make-space: string -> space
+> new-special-atom: any -> special-atom
+> special-atom-content: special-atom -> any
+
+> new-space: string -> space
 > space-content: space -> string
 
-> make-fusion: string (listof dstx) string -> fusion
+> new-fusion: string (listof dstx) string -> fusion
 > fusion-prefix: fusion -> string
 > fusion-children: fusion -> (listof dstx)
 > fusion-suffix: fusion -> string
+
 
 
 _cursor_
@@ -104,8 +143,9 @@ _focus_ (focus.ss)
 ======================================================================
 
 
-Cursors offer structured movement within a dstx.  By default, movement
-will snap over spaces.
+Cursors offer structured movement within a dstx.  Movement
+will snap over spaces for many of these functions.
+
 
 > make-toplevel-cursor: (listof dstx) -> cursor
 

@@ -59,14 +59,14 @@
     (table:keys (dstx-properties a-dstx)))
   
   
-  ;; dstx-get-property: dstx symbol -> any
-  (define (dstx-get-property a-dstx a-sym)
+  ;; dstx-property-ref: dstx symbol -> any
+  (define (dstx-property-ref a-dstx a-sym)
     (table:lookup a-sym (dstx-properties a-dstx)))
   
   
-  ;; dstx-set-property: dstx symbol any -> dstx
+  ;; dstx-property-set: dstx symbol any -> dstx
   ;; Nondestructively set a property.
-  (define (dstx-set-property a-dstx a-sym a-val)
+  (define (dstx-property-set a-dstx a-sym a-val)
     (let ([new-properties
            (table:insert a-sym a-val (dstx-properties a-dstx))])
       (match a-dstx
@@ -130,6 +130,10 @@
             [prefix string?]
             [children (nelistof dstx?)]
             [suffix string?])]
+   
+   [dstx-property-names (dstx? . -> . (listof symbol?))]
+   [dstx-property-ref (dstx? symbol? . -> . any)]
+   [dstx-property-set (dstx? symbol? any/c . -> . dstx?)]
    
    [new-atom (string? . -> . atom?)]
    [new-special-atom (any/c . -> . special-atom?)]

@@ -275,7 +275,7 @@
   ;; Moves the cursor to the first dstx at the toplevel.
   (define (focus-toplevel a-cursor)
     (let ([outermost (maximally-repeat-movement a-cursor focus-out)])
-      (maximally-repeat-movement outermost focus-younger)))
+      (maximally-repeat-movement outermost focus-younger/no-snap)))
   
   
   ;; maximally-repeat-movement: cursor focus-function -> cursor

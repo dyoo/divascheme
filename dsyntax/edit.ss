@@ -47,17 +47,25 @@
   
   
   (define (cursor-delete a-cursor)
-    ;; fixme!
     (void))
   
   
-  (define (cursor-set-property a-cursor a-symbol a-value)
-    ;; fixme!
-    (void))
+  ;; cursor-dstx-property-set: cursor symbol any -> cursor
+  (define (cursor-dstx-property-set a-cursor a-symbol a-value)
+    (match a-cursor
+      [(struct cursor (dstx loc parent youngers-rev youngers-loc-rev olders))
+       (let ([new-cursor
+              (make-cursor (dstx-property-set dstx a-symbol a-value)
+                           loc
+                           parent
+                           youngers-rev
+                           youngers-loc-rev
+                           olders)])
+         new-cursor)]))
   
   
   (provide/contract
    [cursor-insert-before (cursor? dstx? . -> . cursor?)]
    [cursor-insert-after (cursor? dstx? . -> . cursor?)]
    [cursor-delete (cursor? . -> . cursor?)]
-   [cursor-set-property (cursor? symbol? any/c . -> . cursor?)]))
+   [cursor-dstx-property-set (cursor? symbol? any/c . -> . cursor?)]))

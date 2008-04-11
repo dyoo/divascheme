@@ -32,4 +32,46 @@
                         (new-atom "earthling"))
           (check-equal? (cursor-dstx
                          (focus-younger new-cursor))
-                        (new-atom "greetings"))))))))
+                        (new-atom "greetings")))))
+     
+     
+     (test-case
+      "inserting from an empty toplevel"
+      (let* ([a-cursor (make-toplevel-cursor '())]
+             [a-cursor (cursor-insert-after a-cursor (new-atom "hello"))]
+             [a-cursor (cursor-insert-after a-cursor (new-atom "this"))]
+             [a-cursor (cursor-insert-after a-cursor (new-atom "is"))]
+             [a-cursor (cursor-insert-after a-cursor (new-fusion "("
+                                                                 (list (new-atom "a") (new-atom "test"))
+                                                                 ")"))])
+        (check-equal? (cursor-dstx a-cursor)
+                      (new-fusion "("
+                                  (list (new-atom "a") (new-atom "test"))
+                                  ")"))
+        (check-equal? (cursor-dstx (focus-younger a-cursor))
+                      (new-atom "is"))))
+     
+     (test-case
+      "setting a property"
+      (let ([cursor (make-toplevel-cursor (list (new-atom "answer")))])
+        (check-equal? (dstx-property-names (cursor-dstx cursor)) '())
+        (let ([new-cursor
+               (cursor-dstx-property-set cursor 'value 42)])
+          (check-equal? (dstx-property-names (cursor-dstx new-cursor)) '(value))
+          (check-equal? (atom-content (cursor-dstx new-cursor)) "answer")
+          (check-equal? (dstx-property-ref (cursor-dstx new-cursor) 'value)
+                        42))))
+     
+     (test-case
+      "setting a property twice"
+      (let ([cursor (make-toplevel-cursor (list (new-atom "answer")))])
+        (check-equal? (dstx-property-names (cursor-dstx cursor)) '())
+        (let* ([new-cursor
+                (cursor-dstx-property-set cursor 'value 42)]
+               [new-cursor
+                (cursor-dstx-property-set new-cursor 'value
+                                          (add1 (dstx-property-ref (cursor-dstx new-cursor) 'value)))])
+          (check-equal? (dstx-property-names (cursor-dstx new-cursor)) '(value))
+          (check-equal? (atom-content (cursor-dstx new-cursor)) "answer")
+          (check-equal? (dstx-property-ref (cursor-dstx new-cursor) 'value)
+                        43)))))))
