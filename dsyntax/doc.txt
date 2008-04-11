@@ -57,6 +57,10 @@ will ignore spaces and snap across them.
 > space?: any -> boolean
 > fusion?: any -> boolean
 
+> dstx-property-names: dstx -> (listof symbol)
+> dstx-set-property: dstx symbol any -> dstx
+> dstx-get-property: dstx symbol -> any
+
 > make-atom: string -> atom
 > atom-content: atom -> string
 
@@ -66,17 +70,7 @@ will ignore spaces and snap across them.
 > make-fusion: string (listof dstx) string -> fusion
 > fusion-prefix: fusion -> string
 > fusion-children: fusion -> (listof dstx)
-> function-suffix: fusion -> string
-
-
-_loc_
-
-A locs maintains our location.
-
-> make-loc: natural-number natural-number natural-number -> loc
-> loc-line: loc -> natural-number
-> loc-col: loc -> natural-number
-> loc-pos: loc -> natural-number
+> fusion-suffix: fusion -> string
 
 
 _cursor_
@@ -91,6 +85,18 @@ _make-toplevel-cursor_ in focus.ss.
 > cursor-col: cursor -> number
 > cursor-pos: cursor -> number
 > cursor-endpos: cursor -> number
+
+
+
+_loc_
+
+A loc lets us know where we are in terms of line and column number.
+
+> make-loc: natural-number natural-number natural-number -> loc
+> loc-line: loc -> natural-number
+> loc-col: loc -> natural-number
+> loc-pos: loc -> natural-number
+
 
 ======================================================================
 _focus_ (focus.ss)

@@ -47,90 +47,90 @@
       "simple test of atom"
       (check-equal?
        (parse "hello")
-       (make-atom "hello")))
+       (new-atom "hello")))
      
      (test-case
       "pound-percent"
       (check-equal?
        (parse "#%datum")
-       (make-atom "#%datum")))
+       (new-atom "#%datum")))
      
      (test-case
       "parse vector"
       (check-equal?
        (parse "#(1)")
-       (make-fusion "#(" (list (make-atom "1")) ")")))
+       (new-fusion "#(" (list (new-atom "1")) ")")))
      
      (test-case
       "true and false"
-      (check-equal? (parse "#t") (make-atom "#t"))
-      (check-equal? (parse "#f") (make-atom "#f"))
-      (check-equal? (parse "#T") (make-atom "#T"))
-      (check-equal? (parse "#F") (make-atom "#F")))
+      (check-equal? (parse "#t") (new-atom "#t"))
+      (check-equal? (parse "#f") (new-atom "#f"))
+      (check-equal? (parse "#T") (new-atom "#T"))
+      (check-equal? (parse "#F") (new-atom "#F")))
      
      (test-case
       "parse simple s-expression"
       (check-equal? (parse "(hello world)")
-                    (make-fusion "(" (list (make-atom "hello")
-                                           (make-space " ")
-                                           (make-atom "world"))
+                    (new-fusion "(" (list (new-atom "hello")
+                                           (new-space " ")
+                                           (new-atom "world"))
                                  ")")))
      
      (test-case
       "boxed value"
-      (check-equal? (parse "#&5") (make-fusion "#&" (list (make-atom "5")) ""))
+      (check-equal? (parse "#&5") (new-fusion "#&" (list (new-atom "5")) ""))
       (check-equal? (parse "#&()")
-                    (make-fusion "#&"
-                                 (list (make-fusion "(" '() ")"))
+                    (new-fusion "#&"
+                                 (list (new-fusion "(" '() ")"))
                                  "")))
      
      (test-case
       "vector with size"
       (check-equal? (parse "#5(1)")
-                    (make-fusion "#5(" (list (make-atom "1")) ")")))
+                    (new-fusion "#5(" (list (new-atom "1")) ")")))
      
      (test-case
       "quoted"
       (check-equal?
        (parse "'42")
-       (make-fusion "'" (list (make-atom "42")) ""))
+       (new-fusion "'" (list (new-atom "42")) ""))
       (check-equal?
        (parse "'(foo!)")
-       (make-fusion "'" (list (make-fusion "(" (list (make-atom "foo!")) ")")) ""))
+       (new-fusion "'" (list (new-fusion "(" (list (new-atom "foo!")) ")")) ""))
       (check-equal?
        (parse "``dyoo")
-       (make-fusion "`" (list (make-fusion "`" (list (make-atom "dyoo")) "")) ""))
+       (new-fusion "`" (list (new-fusion "`" (list (new-atom "dyoo")) "")) ""))
       (check-equal?
        (parse "#``dyoo")
-       (make-fusion "#`" (list (make-fusion "`" (list (make-atom "dyoo")) "")) ""))
+       (new-fusion "#`" (list (new-fusion "`" (list (new-atom "dyoo")) "")) ""))
       (check-equal?
        (parse ",@ugh")
-       (make-fusion ",@" (list (make-atom "ugh")) ""))
+       (new-fusion ",@" (list (new-atom "ugh")) ""))
       (check-equal?
        (parse "#,@ugh")
-       (make-fusion "#,@" (list (make-atom "ugh")) "")))
+       (new-fusion "#,@" (list (new-atom "ugh")) "")))
      
      (test-case
       "pipe literal"
       (check-equal? (parse "#\\|")
-                    (make-atom "#\\|"))
+                    (new-atom "#\\|"))
       (check-equal? (parse "(#\\| #\\|)")
-                    (make-fusion "("
-                                 (list (make-atom "#\\|")
-                                       (make-space " ")
-                                       (make-atom "#\\|"))
+                    (new-fusion "("
+                                 (list (new-atom "#\\|")
+                                       (new-space " ")
+                                       (new-atom "#\\|"))
                                  ")"))
       
       (check-equal? (parse "(#\\| #rx#\"|\")")
-                    (make-fusion "("
-                                 (list (make-atom "#\\|")
-                                       (make-space " ")
-                                       (make-atom "#rx#\"|\""))
+                    (new-fusion "("
+                                 (list (new-atom "#\\|")
+                                       (new-space " ")
+                                       (new-atom "#rx#\"|\""))
                                  ")")))
      
      (test-case
       "character constants (plus a nonsense one)"
-      (for-each (lambda (x) (check-equal? (parse x) (make-atom x)))
+      (for-each (lambda (x) (check-equal? (parse x) (new-atom x)))
                 '("#\\nul"
                   "#\\null"
                   "#\\backspace"
@@ -151,70 +151,70 @@
      (test-case
       "strings"
       (check-equal? (parse "\"hello world\"")
-                    (make-atom "\"hello world\""))
+                    (new-atom "\"hello world\""))
       (check-equal? (parse "(\"hello\" \"world\")")
-                    (make-fusion "("
-                                 (list (make-atom "\"hello\"")
-                                       (make-space " ")
-                                       (make-atom "\"world\""))
+                    (new-fusion "("
+                                 (list (new-atom "\"hello\"")
+                                       (new-space " ")
+                                       (new-atom "\"world\""))
                                  ")"))
       (check-equal? (parse "#\"hello\"")
-                    (make-atom "#\"hello\"")))
+                    (new-atom "#\"hello\"")))
      
      (test-case
       "strings 2"
       (check-equal? (parse "#rx\"foo\"")
-                    (make-atom "#rx\"foo\""))
+                    (new-atom "#rx\"foo\""))
       (check-equal? (parse "#rx#\"^([^|]*)\\\\|\"")
-                    (make-atom "#rx#\"^([^|]*)\\\\|\"")))
+                    (new-atom "#rx#\"^([^|]*)\\\\|\"")))
      
      (test-case
       "weird symbols"
       (check-equal? (parse "a\\(b")
-                    (make-atom "a\\(b"))
+                    (new-atom "a\\(b"))
       (check-equal? (parse "a| |b")
-                    (make-atom "a| |b"))
+                    (new-atom "a| |b"))
       (check-equal? (parse "|a||b|")
-                    (make-atom "|a||b|"))
+                    (new-atom "|a||b|"))
       (check-equal? (parse "(|a| |b|)")
-                    (make-fusion "("
-                                 (list (make-atom "|a|")
-                                       (make-space " ")
-                                       (make-atom "|b|"))
+                    (new-fusion "("
+                                 (list (new-atom "|a|")
+                                       (new-space " ")
+                                       (new-atom "|b|"))
                                  ")")))
      
      (test-case
       "keywords"
       (check-equal? (parse "#:some-keyword")
-                    (make-atom "#:some-keyword"))
+                    (new-atom "#:some-keyword"))
       (check-equal? (parse "#:#:x")
-                    (make-atom "#:#:x")))
+                    (new-atom "#:#:x")))
      
      (test-case
       "numeric constants"
       (check-equal? (parse "#x3F")
-                    (make-atom "#x3F")))
+                    (new-atom "#x3F")))
      
      (test-case
       "hash constants"
       (check-equal?
        (parse "#hash((3 4))")
-       (make-fusion "#hash("
-                    (list (make-fusion
+       (new-fusion "#hash("
+                    (list (new-fusion
                            "("
-                           (list (make-atom "3") (make-space " ") (make-atom "4"))
+                           (list (new-atom "3") (new-space " ") (new-atom "4"))
                            ")"))
                     ")")))
      
      (test-case
       "nested comments"
-      (check-equal? (parse "#||#") (make-atom "#||#")))
+      (check-equal? (parse "#||#") (new-atom "#||#")))
      (test-case
       "nested comments 2"
-      (check-equal? (parse "#|#||#|#") (make-atom "#|#||#|#")))
+      (check-equal? (parse "#|#||#|#") (new-atom "#|#||#|#")))
      (test-case
       "nested comments 3"
-      (check-equal? (parse "#|\n#||#\n|#") (make-atom "#|\n#||#\n|#")))
+      (check-equal? (parse "#|\n#||#\n|#") (new-atom "#|\n#||#\n|#")))
      
      
      (test-case

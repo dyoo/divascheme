@@ -247,15 +247,15 @@
                 (dstxs (() (list))
                        ((dstx dstxs) (cons $1 $2)))
                 (dstx ((atom)
-                       (dstx:make-atom $1))
+                       (dstx:new-atom $1))
                       ((special-atom)
-                       (dstx:make-special-atom $1))
+                       (dstx:new-special-atom $1))
                       ((space)
-                       (dstx:make-space $1))
+                       (dstx:new-space $1))
                       ((prefix dstxs suffix)
-                       (dstx:make-fusion $1 $2 $3))
+                       (dstx:new-fusion $1 $2 $3))
                       ((quoter-prefix dstx)
-                       (dstx:make-fusion $1 (list $2) "")))))))
+                       (dstx:new-fusion $1 (list $2) "")))))))
       (lambda (f)
         (prof 'plt-parser
               (p f)))))
@@ -272,9 +272,9 @@
          (define (apply-k k dstxs suffix)
            (match k
              [(struct fusion-k (val old-k acc one-shot?))
-              (accumulate/continue (dstx:make-fusion val dstxs suffix) acc one-shot? val old-k)]
+              (accumulate/continue (dstx:new-fusion val dstxs suffix) acc one-shot? val old-k)]
              [(struct quoter-k (val old-k acc one-shot?))
-              (accumulate/continue (dstx:make-fusion val dstxs "") acc one-shot? val old-k)]
+              (accumulate/continue (dstx:new-fusion val dstxs "") acc one-shot? val old-k)]
              [(struct identity-k ())
               dstxs]))
          
@@ -292,11 +292,11 @@
                    (define val (token-value next-token)))
              (case type
                [(atom)
-                (accumulate/continue (dstx:make-atom val) acc one-shot? val k)]
+                (accumulate/continue (dstx:new-atom val) acc one-shot? val k)]
                [(special-atom)
-                (accumulate/continue (dstx:make-special-atom val) acc one-shot? val k)]
+                (accumulate/continue (dstx:new-special-atom val) acc one-shot? val k)]
                [(space)
-                (accumulate/continue (dstx:make-space val) acc one-shot? val k)]
+                (accumulate/continue (dstx:new-space val) acc one-shot? val k)]
                [(prefix)
                 (parser '() (make-fusion-k val k acc one-shot?) #f)]
                [(quoter-prefix)
