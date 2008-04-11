@@ -98,6 +98,7 @@ A loc lets us know where we are in terms of line and column number.
 > loc-pos: loc -> natural-number
 
 
+
 ======================================================================
 _focus_ (focus.ss)
 ======================================================================
@@ -142,6 +143,12 @@ the focus was not in a fusion, or if the fusion has no non-space
 children, returns #f.
 
 
+> focus-in/no-snap: cursor -> (union cursor #f)
+
+Moves focus in into the first child.  If the focus wasn't initially
+on a fusion, returns #f.
+
+
 > focus-out: cursor -> (union cursor #f)
 
 Moves focus out to the immediate parent.  If no such parent exists,
@@ -154,10 +161,22 @@ Moves focus to the immediate older non-space sibling.  If no such dstx
 exists, returns #f.
 
 
+> focus-older/no-snap: cursor -> (union cursor #f)
+
+Moves focus to the immediate older sibling.  If no such dstx exists,
+returns #f.
+
+
 > focus-younger: cursor -> (union cursor #f)
 
 Moves focus to the immediate younger non-space sibling.  If no such
 dstx exists, returns #f.
+
+
+> focus-younger/no-snap: cursor -> (union cursor #f)
+
+Moves focus to the immediate younger sibling.  If no such dstx exists,
+returns #f.
 
 
 > focus-successor: cursor -> (union cursor #f)
@@ -183,16 +202,19 @@ Editing (edit.ss)
 ======================================================================
 
 
-> insert-before: cursor dstx -> cursor
+> cursor-insert-before: cursor dstx -> cursor
+Inserts before the current focus and moves focus to the new element.
+
+
+> cursor-insert-after: cursor dstx -> cursor
+Inserts after the current focus and moves focus to the new element.
+
+
+> cursor-delete: cursor dstx -> cursor
 [fill me in]
 
-> insert-after: cursor dstx -> cursor
-[fill me in]
 
-> delete: cursor dstx -> cursor
-[fill me in]
-
-> set-property: cursor symbol value -> cursor
+> cursor-set-property: cursor symbol value -> cursor
 [fill me in]
 
 
@@ -200,10 +222,19 @@ Editing (edit.ss)
 Parsers and Pretty-Printers
 ======================================================================
 
-(I'm ambitous: I want to do at least two or three languages.)
 
 parse-plt-scheme.ss
-[fill me in]
+
+> parse-port: input-port -> (listof dstx)
+
+Parses all of the dstx objects we can read off the port.
+
+
+
+> pretty-print: dstx output-port -> void
+
+Pretty prints the dstx to the output-port.
+
 
 
 References
