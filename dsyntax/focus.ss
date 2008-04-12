@@ -316,7 +316,8 @@
            (or (focus-search a-cursor
                              focus-successor
                              (lambda (a-cursor)
-                               (at-or-after? a-cursor a-pos)))
+                               (or (at-or-after? a-cursor a-pos)
+                                   (at-end? a-cursor))))
                a-cursor)])
       (focus-search cursor-forward
                     focus-predecessor
@@ -333,4 +334,10 @@
   ;; at-or-after?: cursor pos -> boolean
   ;; Returns true if the cursor is positioned at or after a-pos.
   (define (at-or-after? a-cursor a-pos)
-    (>= (loc-pos (cursor-loc a-cursor)) a-pos)))
+    (>= (loc-pos (cursor-loc a-cursor)) a-pos))
+  
+  
+  ;; at-end?: cursor -> boolean
+  ;; Returns true if we're at the end, when there is no sucessor.
+  (define (at-end? a-cursor)
+    (eqv? (focus-successor a-cursor) #f)))
