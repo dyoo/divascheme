@@ -35,7 +35,24 @@
         (check-equal? (cursor-dstx (focus-pos a-cursor 5))
                       (new-atom "bar"))
         (check-equal? (cursor-dstx (focus-pos a-cursor 6))
-                      (new-atom "bar"))))))
+                      (new-atom "bar"))))
+     
+     (test-case
+      "focus-pos with structure"
+      (let* ([a-dstx (new-fusion "["
+                                 (list (new-atom "box"))
+                                 "]")]
+             [a-cursor (make-toplevel-cursor (list a-dstx))])
+        (check-equal? (cursor-dstx (focus-pos a-cursor 0))
+                      a-dstx)
+        (check-equal? (cursor-dstx (focus-pos a-cursor 1))
+                      (new-atom "box"))
+        (check-equal? (cursor-dstx (focus-pos a-cursor 2))
+                      (new-atom "box"))
+        (check-equal? (cursor-dstx (focus-pos a-cursor 3))
+                      (new-atom "box"))
+        (check-equal? (cursor-dstx (focus-pos a-cursor 4))
+                      (new-atom "box"))))))
   
   
   (define (test)
