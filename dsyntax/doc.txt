@@ -61,8 +61,8 @@ Data types (struct.ss)
 We expose three main data types.
 
     * dstx
-    * loc
     * cursor
+    * loc
 
 A _dstx_ is one of the following:
 
@@ -129,13 +129,20 @@ _make-toplevel-cursor_ in focus.ss.
 
 _loc_
 
-A loc lets us know where we are in terms of line and column number.
+A loc lets us know where we are in terms of line and column number, as
+well as positionally.
 
-> make-loc: natural-number natural-number natural-number -> loc
-> loc-line: loc -> natural-number
+> make-loc: positive-number natural-number natural-number -> loc
+
+> loc-line: loc -> positive-number
+Note: lines start counting from one.
+[fixme?  Maybe we should count from zero here too?]
+
 > loc-col: loc -> natural-number
-> loc-pos: loc -> natural-number
+Note: columns start counting from zero.
 
+> loc-pos: loc -> natural-number
+Note: locations start counting from zero.
 
 
 ======================================================================
