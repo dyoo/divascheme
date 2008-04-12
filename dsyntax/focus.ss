@@ -291,7 +291,46 @@
          a-cursor])))
   
   
+  ;; focus-search: cursor focus-function (cursor -> boolean) -> (or/c cursor #f)
+  ;; Move across a cursor until the predicate is true.  If we can't find,
+  ;; return #f.  Otherwise, return the cursor.
+  (define (focus-search a-cursor a-movement a-pred)
+    (cond
+      [(a-pred a-cursor)
+       a-cursor]
+      [else
+       (let ([new-cursor (a-movement a-cursor)])
+         (cond
+           [new-cursor
+            (focus-search new-cursor a-movement a-pred)]
+           [else #f]))]))
   
+  
+  ;; focus-pos: cursor number -> (or/c cursor #f)
+  ;; Given a cursor and a position, refocuses the cursor at the dstx
+  ;; at or immediately to the left of the cursor.  If no such syntax
+  ;; exists, returns #f.
   (define (focus-pos a-cursor a-pos)
-    ;; fixme
-    (void)))
+    ;; First scan forward, and then scan backward.
+    (let ([cursor-forward
+           (or (focus-search a-cursor
+                             focus-successor
+                             (lambda (a-cursor)
+                               (at-or-after? a-cursor a-pos)))
+               a-cursor)])
+      (focus-search cursor-forward
+                    focus-predecessor
+                    (lambda (a-cursor)
+                      (at-or-before? a-cursor a-pos)))))
+  
+  
+  ;; at-or-before?: cursor pos -> boolean
+  ;; Returns true if the cursor is positioned at or before a-pos.
+  (define (at-or-before? a-cursor a-pos)
+    (<= (loc-pos (cursor-loc a-cursor)) a-pos))
+  
+  
+  ;; at-or-after?: cursor pos -> boolean
+  ;; Returns true if the cursor is positioned at or after a-pos.
+  (define (at-or-after? a-cursor a-pos)
+    (>= (loc-pos (cursor-loc a-cursor)) a-pos)))

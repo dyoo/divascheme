@@ -77,12 +77,13 @@
       (special->rope (unbox lexeme))]
      [(eof) eof]))
   
+  
   ;; read-subrope-in-text: text% number number -> rope
   (define (read-subrope-in-text a-text start len)
     (local
-        ((define ip (open-input-text-editor a-text start (+ start len)
-                                            (lambda (snip) (box snip))
-                                            #f #f)))
+      ((define ip (open-input-text-editor a-text start (+ start len)
+                                          (lambda (snip) (box snip))
+                                          #f #f)))
       (let loop ([inserted-rope (string->rope "")]
                  [next-chunk (mylexer ip)])
         (cond
