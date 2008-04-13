@@ -10,6 +10,9 @@
            (planet "test.ss" ("schematics" "schemeunit.plt" 2 8))
            (planet "text-ui.ss" ("schematics" "schemeunit.plt" 2 8)))
   
+  
+  (provide test-parse-plt-scheme)
+  
   ;; parse: string -> dstx
   ;; convenience function for testing.
   (define (parse s)
@@ -24,7 +27,7 @@
          [saved-snips children]))
   
   
-
+  
   ;; Produces a port with a graphical snip and calls f on it.
   (define (call-with-graphical-snip-port ip-consumer)
     (local ((define text (new scheme:text%))
@@ -40,9 +43,9 @@
       (call-with-text-input-port text ip-consumer)))
   
   
-  (define parse-plt-scheme-tests
+  (define test-parse-plt-scheme
     (test-suite
-     "parse-plt-scheme.ss"
+     "test-parse-plt-scheme.ss"
      (test-case
       "simple test of atom"
       (check-equal?
@@ -231,5 +234,5 @@
       "simple graphical symbol test"
       (call-with-graphical-snip-port parse-port))))
   
-  
-  (test/text-ui parse-plt-scheme-tests))
+  (define (test)
+    (test/text-ui test-parse-plt-scheme)))

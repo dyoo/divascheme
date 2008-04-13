@@ -8,6 +8,8 @@
   (define (test)
     (test/text-ui test-edit))
   
+  (provide test-edit)
+  
   (define test-edit
     (test-suite
      "test-edit.ss"

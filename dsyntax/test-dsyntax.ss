@@ -7,7 +7,7 @@
            (planet "text-ui.ss" ("schematics" "schemeunit.plt" 2 8)))
   
   
-  (provide dsyntax-tests)
+  (provide test-dsyntax)
   
   ;; As an ugly test case, I will be using the sq function.
   (define sq-function-dstx
@@ -24,9 +24,9 @@
                  ")"))
   
   
-  (define dsyntax-tests
+  (define test-dsyntax
     (test-suite
-     "dsyntax.ss"
+     "test-dsyntax.ss"
      
      (test-case
       "initial focus"
@@ -441,8 +441,5 @@
   
   
   
-  
-  (test/text-ui
-   (test-suite
-    "all tests"
-    dsyntax-tests)))
+  (define (test)
+    (test/text-ui test-dsyntax)))
