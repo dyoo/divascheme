@@ -1,7 +1,7 @@
 (module test-edit mzscheme
   (require (planet "test.ss" ("schematics" "schemeunit.plt" 2 8))
            (planet "text-ui.ss" ("schematics" "schemeunit.plt" 2 8))
-           "edit.ss"
+           "cursor.ss"
            "struct.ss"
            "focus.ss")
   
