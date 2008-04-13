@@ -23,7 +23,10 @@
                     [cursor-insert-before (cursor? dstx? . -> . cursor?)]
                     [cursor-insert-after (cursor? dstx? . -> . cursor?)]
                     [cursor-delete (cursor? . -> . cursor?)]
-                    [cursor-dstx-property-set (cursor? symbol? any/c . -> . cursor?)]
+                    [cursor-dstx-property-set
+                     (cursor? symbol? any/c . -> . cursor?)]
+                    [cursor-dstx-property-ref
+                     (cursor? symbol? . -> . any)]
                     [make-toplevel-cursor ((listof dstx?) . -> . cursor?)]
                     
                     [loc-after (loc? dstx? . -> . loc?)]
@@ -128,6 +131,11 @@
                            youngers-loc-rev
                            olders)])
          new-cursor)]))
+  
+  ;; cursor-dstx-property-ref: cursor symbol -> any
+  ;; Returns the property value of the currently focused dstx.
+  (define (cursor-dstx-property-ref a-cursor a-symbol)
+    (dstx-property-ref (cursor-dstx a-cursor) a-symbol))
   
   
   

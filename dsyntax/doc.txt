@@ -5,14 +5,15 @@ _dsyntax_ - DivaScheme syntax traversal library
 Index terms: _dsyntax_, _divascheme_, _DivaScheme_, _dstx_, _syntax_,
 
 
-dsyntax provides a _dstx_ structure that represents an
-sexpression-like type, as well as utilities to traverse and do edits
-on tree structure.  All of the operations here are non-destructive.
+dsyntax provides a _dstx_ structure that represents a generalized
+s-expression type.  It also provides a zipper-like "cursor" data structure
+to traverse and edit dstx structure.  All of the operations here are
+non-destructive.
 
 
 
-Example
--------
+Quick example
+-------------
 
 > (require "dsyntax.ss")
 > (define a-cursor
@@ -67,6 +68,7 @@ We expose three main data types.
 A _dstx_ is one of the following:
 
     * an _atom_
+    * a _special-atom_
     * a _space_
     * a _fusion_
 
@@ -77,6 +79,7 @@ will ignore spaces and snap across them.
 
 > dstx?: any -> boolean
 > atom?: any -> boolean
+> special-atom: any -> boolean
 > space?: any -> boolean
 > fusion?: any -> boolean
 
@@ -106,24 +109,15 @@ Refers to the property with the given symbolic name.
 > space-content: space -> string
 
 > new-fusion: string (listof dstx) string -> fusion
+
+Creates a new fusion with the prefix, a list of children, and a suffix.
+Note: fusions will always contain, as a first child, an empty string
+space (new-space "") as a sentinel.
+
+
 > fusion-prefix: fusion -> string
 > fusion-children: fusion -> (listof dstx)
 > fusion-suffix: fusion -> string
-
-
-
-_cursor_
-
-A cursor defines our location within a dstx.  Cursors are not meant to
-be constructed directly, but are to be acquired by calling
-_make-toplevel-cursor_ in focus.ss.
-
-> cursor-dstx: cursor -> dstx
-> cursor-loc: cursor -> loc
-> cursor-line: cursor -> number
-> cursor-col: cursor -> number
-> cursor-pos: cursor -> number
-> cursor-endpos: cursor -> number
 
 
 
@@ -145,12 +139,24 @@ Note: columns start counting from zero.
 Note: locations start counting from zero.
 
 
-======================================================================
-_focus_ (focus.ss)
-======================================================================
 
 
-Cursors offer structured movement within a dstx.  Movement
+_cursor_
+
+Cursors provide traversal and editing along dstxs.  A cursor defines
+our location within a dstx.  Cursors are not meant to
+be constructed directly, but are to be acquired by calling
+_make-toplevel-cursor_ in focus.ss.
+
+> cursor-dstx: cursor -> dstx
+> cursor-loc: cursor -> loc
+> cursor-line: cursor -> number
+> cursor-col: cursor -> number
+> cursor-pos: cursor -> number
+> cursor-endpos: cursor -> number
+
+
+Cursors offer structured, focused movement within a dstx.  Movement
 will snap over spaces for many of these functions.
 
 
@@ -161,16 +167,21 @@ input list.  The list is assumed to be ordered in increasing
 seniority.
 
 
-> cursor-line: cursor -> natural-number
+> cursor-line: cursor -> positive-number
 
 Returns the current line number of the focused dstx.
-Line numbers start counting by 1.
+Line numbers start counting from 1.
 
 
 > cursor-col: cursor -> natural-number
 
 Returns the current column number at the left end of the focused dstx.
-Column numbers start counting by 0.
+Column numbers start counting from 0.
+
+
+> cursor-pos: cursor -> natural number
+
+Returns the current position offset.  Positions start counting from 0.
 
 
 > cursor-dstx: cursor -> dstx
@@ -244,44 +255,52 @@ Moves focus to the non-space predecessor, assuming a depth-first traversal.
 
 
 
-======================================================================
-Editing (edit.ss)
-======================================================================
+_editing_
 
+All editing is done through cursors.
 
 > cursor-insert-before: cursor dstx -> cursor
-Inserts before the current focus and moves focus to the new element.
+Inserts before the current focus.  Focus moves to the new element.
 
 
 > cursor-insert-after: cursor dstx -> cursor
-Inserts after the current focus and moves focus to the new element.
+Inserts after the current focus.  Focus moves to the new element.
 
 
 > cursor-delete: cursor dstx -> cursor
-[fill me in]
+Removes the currently focused dstx.  Focus moves to the immediate
+right of the deleted dstx if one exists, and otherwise moves to 
+the left.
 
 
-> cursor-set-property: cursor symbol value -> cursor
-[fill me in]
+> cursor-dstx-property-set: cursor symbol value -> cursor
+Sets a new property binding onto the currently focused dstx.  Focus
+stays on the dstx.
+
+
+> cursor-dstx-property-get: cursor symbol -> value
+Gets the property binding on the currently focused dstx.
+
 
 
 ======================================================================
-Parsers and Pretty-Printers
+Parsing and Pretty-Printing
 ======================================================================
 
+We provide a sample parser for constructing dstx's out of input ports.
 
-parse-plt-scheme.ss
+_parse-plt-scheme.ss_
 
 > parse-port: input-port -> (listof dstx)
 
-Parses all of the dstx objects we can read off the port.
-
+Parses all of the dstx objects we can read off the port.  Specials in the
+input-port are translated to special-atom dstxs.
 
 
 > pretty-print: dstx output-port -> void
 
 Pretty prints the dstx to the output-port.
-
+(FIXME: what happens if we try to pretty print a dstx with embedded specials?)
 
 
 References
