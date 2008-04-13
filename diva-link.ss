@@ -11,6 +11,7 @@
            "dot-processing.ss"
            "mred-state.ss"
            "mred-callback.ss"
+           "operations.ss"
            "command-keymap.ss"
            "insert-keymap.ss"
            "structures.ss"
@@ -226,11 +227,6 @@
         (cworld-world central-world))
       
       
-      ;; set-current-world!: World -> void
-      ;; Sets the current world to the new world.
-      (define (set-current-world! new-world)
-        (send-cworld-op (make-op:replace-world new-world)))
-      
       
       ;; Whenever new events happen, we'll send an operation message to the central world
       ;; mailbox for processing.
@@ -387,6 +383,7 @@
       ;; diva-ast-put/wait+world: world ast -> void
       ;; Applies the ast on the given world.
       (define (diva-ast-put/wait+world world ast)
+        ;; fixme!  Types are no longer right.
         (push-into-mred
          (with-divascheme-handlers
           world

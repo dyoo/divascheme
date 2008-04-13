@@ -6,8 +6,10 @@
   ;; Protocol-Syntax-Tree.
   (define-struct operation ())
   
-  ;; operation:sequence: do all the ops in order
+  ;; operation:sequence: do all the ops in order.
   (define-struct (operation:sequence operation) (ops))
+  
+  ;; To do nothing, just return a (make-operation:sequence '()).
   
   ;; operation:insert: insert the rope at the following position
   (define-struct (operation:insert operation) (rope pos))

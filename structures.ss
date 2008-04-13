@@ -315,103 +315,102 @@
   ;; move to line, move to, move here
   ;; template == on parse (read-syntax) et on cherche les define & define-syntax 
   (define commands
-    (list 'Open
-          'Open-Square
-          'Close
+    (list #;'Open
+          #;'Open-Square
+          #;'Close
           
-          'Insert
+          #;'Insert
           
-          'Select
-          'Search-Forward
-          'Search-Backward
-          'Search-Top
-          'Search-Bottom
+          #;'Select
+          #;'Search-Forward
+          #;'Search-Backward
+          #;'Search-Top
+          #;'Search-Bottom
           
-          'Holder
-          'Holder-Forward
-          'Holder-Backward
+          #;'Holder
+          #;'Holder-Forward
+          #;'Holder-Backward
           
-          'Next
-          'Previous
-          'Cancel
-          'Undo
-          'Redo
-
-          'Magic
-          'Magic-Bash
-          'Magic-Wrap
-          'Pass
-          'Pass-Wrap
-
-          'Again
-
-          'Out
-          'Non-blank-out
-          'Down
-          'Up
-          'Forward
-          'Backward
-          'Younger
-          'Older
-          'First
-          'Last
+          #;'Next
+          #;'Previous
+          #;'Cancel
+          #;'Undo
+          #;'Redo
           
+          #;'Magic
+          #;'Magic-Bash
+          #;'Magic-Wrap
+          #;'Pass
+          #;'Pass-Wrap
           
-          'Delete
-          'Dedouble-Ellipsis
+          #;'Again
           
-          'Bring
-          'Push
+          #;'Out
+          #;'Non-blank-out
+          #;'Down
+          #;'Up
+          #;'Forward
+          #;'Backward
+          #;'Younger
+          #;'Older
+          #;'First
+          #;'Last
           
-          'Exchange
-          'Mark
-          'UnMark
+          #;'Delete
+          #;'Dedouble-Ellipsis
           
-          'Copy
-          'Cut
-          'Paste
+          #;'Bring
+          #;'Push
           
-          'Definition
-          'Usage
+          #;'Exchange
+          #;'Mark
+          #;'UnMark
           
-          'Enter
-          'Join
-          'Indent
+          #;'Copy
+          #;'Cut
+          #;'Paste
           
-          'Voice-Quote
+          #;'Definition
+          #;'Usage
           
-          'Transpose
-          'Tag
-          'Extend-Selection
-          'Stop-Extend-Selection))
+          #;'Enter
+          #;'Join
+          #;'Indent
+          
+          #;'Voice-Quote
+          
+          #;'Transpose
+          #;'Tag
+          #;'Extend-Selection
+          #;'Stop-Extend-Selection))
   
   (define motion-commands
     ;; commands which must manipulate the cursor position
     ;; when there is no extended selection but manipulate the puck when there is one
     (list
      
-     'Search-Forward
-     'Search-Backward
-     'Search-Top
-     'Search-Bottom
+     #;'Search-Forward
+     #;'Search-Backward
+     #;'Search-Top
+     #;'Search-Bottom
      
-     'Holder
-     'Holder-Forward
-     'Holder-Backward
+     #;'Holder
+     #;'Holder-Forward
+     #;'Holder-Backward
      
-     'Next
-     'Previous
+     #;'Next
+     #;'Previous
      
-     'Out
-     'Non-blank-out
-     'Down
-     'Up
-     'Forward
-     'Backward
-     'Younger
-     'Older
-     'First
-     'Last))
+     #;'Out
+     #;'Non-blank-out
+     #;'Down
+     #;'Up
+     #;'Forward
+     #;'Backward
+     #;'Younger
+     #;'Older
+     #;'First
+     #;'Last))
   
   
   ;; command?: symbol -> boolean
@@ -473,7 +472,6 @@
     [Verb (content location what)])
   (provide-datatype/contract Protocol-Syntax-Tree
                              [Verb (Verb-Content? (or/c false/c Location?) (or/c false/c What?))])
-  
   
   
   
