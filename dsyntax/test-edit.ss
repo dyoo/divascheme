@@ -2,8 +2,7 @@
   (require (planet "test.ss" ("schematics" "schemeunit.plt" 2 8))
            (planet "text-ui.ss" ("schematics" "schemeunit.plt" 2 8))
            "cursor.ss"
-           "struct.ss"
-           "focus.ss")
+           "struct.ss")
   
   (define (test)
     (test/text-ui test-edit))

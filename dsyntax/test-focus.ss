@@ -1,7 +1,7 @@
 (module test-focus mzscheme
   (require (planet "test.ss" ("schematics" "schemeunit.plt" 2 8))
            (planet "text-ui.ss" ("schematics" "schemeunit.plt" 2 8))
-           "focus.ss"
+           "cursor.ss"
            "struct.ss")
   
   (provide test-focus)
