@@ -54,6 +54,15 @@
                       (new-atom "is"))))
      
      (test-case
+      "inserting into a fusion"
+      (let* ([a-cursor (make-toplevel-cursor (list (new-fusion "(" '() ")")))]
+             [a-cursor (focus-in/no-snap a-cursor)]
+             [a-cursor (cursor-insert-after a-cursor (new-atom "inside"))])
+        (check-equal? (cursor-dstx a-cursor) (new-atom "inside"))
+        (check-equal? (cursor-dstx (focus-out a-cursor))
+                      (new-fusion "(" (list (new-atom "inside")) ")"))))
+     
+     (test-case
       "setting a property"
       (let ([cursor (make-toplevel-cursor (list (new-atom "answer")))])
         (check-equal? (dstx-property-names (cursor-dstx cursor)) '())
