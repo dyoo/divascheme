@@ -12,6 +12,37 @@
                  apply-move))
   
   
+  (define cursor-or-false/c (or/c cursor? false/c))
+  (define focus-function/c (cursor? . -> . cursor-or-false/c))
+  
+  (provide/contract [cursor-line (cursor? . -> . natural-number/c)]
+                    [cursor-col (cursor? . -> . natural-number/c)]
+                    [cursor-pos (cursor? . -> . natural-number/c)]
+                    [cursor-endloc (cursor? . -> . loc?)]
+                    [cursor-endpos (cursor? . -> . natural-number/c)]
+                    [cursor-insert-before (cursor? dstx? . -> . cursor?)]
+                    [cursor-insert-after (cursor? dstx? . -> . cursor?)]
+                    [cursor-delete (cursor? . -> . cursor?)]
+                    [cursor-dstx-property-set (cursor? symbol? any/c . -> . cursor?)]
+                    [make-toplevel-cursor ((listof dstx?) . -> . cursor?)]
+                    
+                    [loc-after (loc? dstx? . -> . loc?)]
+                    
+                    [focus-in focus-function/c]
+                    [focus-in/no-snap focus-function/c]
+                    [focus-out focus-function/c]
+                    [focus-older focus-function/c]
+                    [focus-older/no-snap focus-function/c]
+                    [focus-younger focus-function/c]
+                    [focus-younger/no-snap focus-function/c]
+                    [focus-successor focus-function/c]
+                    [focus-predecessor focus-function/c]
+                    [focus-toplevel focus-function/c]
+                    
+                    [focus-pos
+                     (cursor? natural-number/c . -> . cursor-or-false/c)])
+  
+  
   ;; cursor-line: cursor -> natural-number
   ;;
   ;; Returns the line where the cursor is focused.
@@ -97,34 +128,6 @@
                            youngers-loc-rev
                            olders)])
          new-cursor)]))
-  
-  
-  
-  
-  
-  
-  
-  (define cursor-or-false/c (or/c cursor? false/c))
-  
-  (define focus-function/c (cursor? . -> . cursor-or-false/c))
-  (provide/contract [make-toplevel-cursor ((listof dstx?) . -> . cursor?)]
-                    
-                    [loc-after (loc? dstx? . -> . loc?)]
-                    
-                    [focus-in focus-function/c]
-                    [focus-in/no-snap focus-function/c]
-                    [focus-out focus-function/c]
-                    [focus-older focus-function/c]
-                    [focus-older/no-snap focus-function/c]
-                    [focus-younger focus-function/c]
-                    [focus-younger/no-snap focus-function/c]
-                    [focus-successor focus-function/c]
-                    [focus-predecessor focus-function/c]
-                    [focus-toplevel focus-function/c]
-                    
-                    [focus-pos
-                     (cursor? natural-number/c . -> . cursor-or-false/c)])
-  
   
   
   
@@ -435,17 +438,4 @@
   ;; at-end?: cursor -> boolean
   ;; Returns true if we're at the end, when there is no sucessor.
   (define (at-end? a-cursor)
-    (eqv? (focus-successor a-cursor) #f))
-  
-  
-  
-  
-  (provide/contract [cursor-line (cursor? . -> . natural-number/c)]
-                    [cursor-col (cursor? . -> . natural-number/c)]
-                    [cursor-pos (cursor? . -> . natural-number/c)]
-                    [cursor-endloc (cursor? . -> . loc?)]
-                    [cursor-endpos (cursor? . -> . natural-number/c)]
-                    [cursor-insert-before (cursor? dstx? . -> . cursor?)]
-                    [cursor-insert-after (cursor? dstx? . -> . cursor?)]
-                    [cursor-delete (cursor? . -> . cursor?)]
-                    [cursor-dstx-property-set (cursor? symbol? any/c . -> . cursor?)]))
+    (eqv? (focus-successor a-cursor) #f)))
