@@ -23,7 +23,7 @@
   ;; cworld-apply-operation: cworld operation -> cworld
   ;; Applies an operation on the world.  Anyone who is a listener will get
   ;; notified.
-  (define (cworld-apply-op a-cworld an-op)
+  (define (cworld-apply-operation a-cworld an-op)
     (let ([new-cworld (apply-primitive-op a-cworld an-op)])
       (notify-all-listeners! new-cworld)
       new-cworld))
@@ -65,7 +65,7 @@
   
   (provide/contract
    [struct cworld ([world World?]
-                   [ops (listof op?)]
+                   [ops (listof operation?)]
                    [listeners (listof listener/c)])]
    [new-cworld (World? . -> . cworld?)]
    
