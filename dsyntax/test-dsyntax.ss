@@ -232,31 +232,42 @@
         (check-equal?
          (focus-in original-cursor)
          (make-cursor
-          (new-atom "x") (make-loc 1 1 1) original-cursor '() '() '())))
+          (new-atom "x")
+          (make-loc 1 1 1)
+          original-cursor
+          (list (new-space ""))
+          (list (make-loc 1 1 1))
+          '())))
       (local
-          ((define original-cursor
-             (make-toplevel-cursor
-              (list (new-fusion "#(" (list (new-atom "42")) ")")))))
+        ((define original-cursor
+           (make-toplevel-cursor
+            (list (new-fusion "#(" (list (new-atom "42")) ")")))))
         (check-equal?
          (focus-in original-cursor)
          (make-cursor (new-atom "42")
                       (make-loc 1 2 2)
-                      original-cursor '() '() '()))))
+                      original-cursor
+                      (list (new-space ""))
+                      (list (make-loc 1 2 2))
+                      '()))))
      
      (test-case
       "focus-in should skip space"
       (local
-          ((define original-cursor
-             (make-toplevel-cursor
-              (list (new-fusion "#("
-                                 (list (new-space "    ")
-                                       (new-atom "42"))
-                                 ")")))))
+        ((define original-cursor
+           (make-toplevel-cursor
+            (list (new-fusion "#("
+                              (list (new-space "    ")
+                                    (new-atom "42"))
+                              ")")))))
         (check-equal?
          (focus-in original-cursor)
-         (make-cursor
-          (new-atom "42") (make-loc 1 6 6) original-cursor
-          `(,(new-space "    ")) `(,(make-loc 1 2 2)) '()))))
+         (make-cursor (new-atom "42")
+                      (make-loc 1 6 6)
+                      original-cursor
+                      (list (new-space "    ") (new-space ""))
+                      (list (make-loc 1 2 2) (make-loc 1 2 2))
+                      '()))))
      
      
      (test-case
@@ -264,26 +275,33 @@
       (check-false
        (focus-out (make-toplevel-cursor (list (new-atom "no go")))))
       (local ((define my-dstx (new-fusion "<<<"
-                                           `(,(new-atom "ok"))
-                                           ">>>"))
+                                          `(,(new-atom "ok"))
+                                          ">>>"))
               (define toplevel-cursor
                 (make-toplevel-cursor (list my-dstx))))
-        (check-equal?
-         (make-cursor
-          (new-atom "ok") (make-loc 1 3 3) toplevel-cursor '() '() '())
-         (focus-in toplevel-cursor))
-        (check-equal?
-         (make-cursor my-dstx (make-loc 1 0 0) #f '() '() '())
-         (focus-out (focus-in toplevel-cursor)))))
+        (check-equal? (focus-in toplevel-cursor)
+                      (make-cursor (new-atom "ok")
+                                   (make-loc 1 3 3)
+                                   toplevel-cursor
+                                   (list (new-space ""))
+                                   (list (make-loc 1 3 3))
+                                   '()))
+        (check-equal? (focus-out (focus-in toplevel-cursor))
+                      (make-cursor my-dstx
+                                   (make-loc 1 0 0)
+                                   #f
+                                   '()
+                                   '()
+                                   '()))))
      
      (test-case
       "focus-older"
       (local
-          ((define simple-dstx (new-fusion "("
-                                            `(,(new-atom "hello")
-                                              ,(new-atom "world"))
-                                            ")"))
-           (define top (make-toplevel-cursor (list simple-dstx))))
+        ((define simple-dstx (new-fusion "("
+                                         `(,(new-atom "hello")
+                                           ,(new-atom "world"))
+                                         ")"))
+         (define top (make-toplevel-cursor (list simple-dstx))))
         (check-equal? (cursor-dstx (focus-older (focus-in top)))
                       (new-atom "world"))
         (check-equal? (cursor-loc (focus-older (focus-in top)))
