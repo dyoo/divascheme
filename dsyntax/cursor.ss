@@ -222,13 +222,30 @@
   ;; Postcondition: if the return is a cursor, then that cursor
   ;; must be focused on a fusion.
   (define (focus-out a-cursor)
+    (let ([parent-cursor (cursor-parent a-cursor)])
+      (cond
+        [parent-cursor
+         (match parent-cursor
+           [(struct cursor ((struct fusion (props opener _ closer))
+                            loc parent youngers-rev youngers-loc-rev olders))
+            (let ([new-children
+                   (append/rev (cursor-youngers-rev a-cursor)
+                               (cons (cursor-dstx a-cursor)
+                                 (cursor-olders a-cursor)))])
+              (make-cursor (make-fusion props opener new-children closer)
+                           loc parent youngers-rev youngers-loc-rev olders))])]
+        [else #f])))
+  
+  
+  ;; append/rev: (listof X) (listof X) -> (listof X)
+  ;; Appends the elements of lst/rev in reverse order onto the tail.
+  (define (append/rev lst/rev tail)
     (cond
-      [(cursor-parent a-cursor)
-       => identity
-       ;; fixme!: this is definitely not right if we allow for focused edits... will need
-       ;; edits.ss later on to motivate the unit tests and fix.
-       ]
-      [else #f]))
+      [(empty? lst/rev)
+       tail]
+      [else
+       (append/rev (rest lst/rev)
+                   (cons (first lst/rev) tail))]))
   
   
   

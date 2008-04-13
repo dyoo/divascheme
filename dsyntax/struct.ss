@@ -28,6 +28,29 @@
   (define-struct (fusion dstx) (prefix children suffix) #f)
   
   
+  ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+  ;; Some constants:
+  
+  ;; An empty ordered table specialized for symbol keys.
+  (define empty-table
+    (let ()
+      ;; symbol-cmp: symbol symbol -> (or/c -1 0 1)
+      (define (symbol-cmp sym-1 sym-2)
+        (let ([s1 (symbol->string sym-1)]
+              [s2 (symbol->string sym-2)])
+          (cond
+            [(string<? s1 s2) -1]
+            [(string>? s1 s2) 1]
+            [else 0])))
+      (table:make-ordered symbol-cmp)))
+  
+  
+  ;; The empty space atom is sometimes used as a sentinel, so let's
+  ;; keep one here.
+  (define empty-space-atom (make-space empty-table ""))
+  ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+  
+  
   ;; new-atom: string -> atom
   ;; Constructor with default empty properties.
   (define (new-atom content)
@@ -43,14 +66,16 @@
   (define (new-space content)
     (make-space empty-table content))
   
+  
   ;; new-fusion: string (listof dstx?) string -> fusion
   ;; Constructor with default empty properties.
   (define (new-fusion prefix children suffix)
     (cond
       [(empty? children)
-       (make-fusion empty-table prefix (list (new-space "")) suffix)]
+       (make-fusion empty-table prefix (list empty-space-atom) suffix)]
       [else
-       (make-fusion empty-table prefix children suffix)]))
+       (make-fusion empty-table prefix (cons empty-space-atom children)
+                    suffix)]))
   
   
   ;; dstx-property-names: dstx -> (listof symbol)
@@ -86,47 +111,31 @@
   (define-struct cursor
     (dstx loc parent youngers-rev youngers-loc-rev olders) #f)
   
-  
   ;; location: line and column.
   (define-struct loc (line col pos) #f)
   
-  
-  
-  ;; symbol-cmp: symbol symbol -> (or/c -1 0 1)
-  (define (symbol-cmp sym-1 sym-2)
-    (let ([s1 (symbol->string sym-1)]
-          [s2 (symbol->string sym-2)])
-      (cond
-        [(string<? s1 s2) -1]
-        [(string>? s1 s2) 1]
-        [else 0])))
-  
-  ;; make-empty-table
-  ;; -> table
-  ;; Creates an empty ordered table specialized for symbol keys.
-  (define empty-table
-    (table:make-ordered symbol-cmp))
   
   (define (nelistof x)
     (and/c (not/c null?)
            (listof x)))
   
   
-  (define key/value (list/c symbol? any/c))
+  (define property-map/c (table:table-of/c symbol? any/c))
+  
   (provide/contract
    [struct dstx
-           ([properties (listof key/value)])]
+           ([properties property-map/c])]
    [struct (atom dstx)
-           ([properties (listof key/value)]
+           ([properties property-map/c]
             [content string?])]
    [struct (special-atom dstx)
-           ([properties (listof key/value)]
+           ([properties property-map/c]
             [content any/c])]
    [struct (space dstx)
-           ([properties (listof key/value)]
+           ([properties property-map/c]
             [content string?])]
    [struct (fusion dstx)
-           ([properties (listof key/value)]
+           ([properties property-map/c]
             [prefix string?]
             [children (nelistof dstx?)]
             [suffix string?])]
