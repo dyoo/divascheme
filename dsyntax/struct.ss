@@ -105,6 +105,24 @@
          (make-fusion new-properties prefix children suffix)])))
   
   
+  ;; dstx-deepmap: (dstx -> dstx) dstx -> dstx
+  ;; Deeply apply f to transform a dstx into another dstx.
+  (define (dstx-deepmap f a-dstx)
+    (match a-dstx
+      [(struct atom (prop content))
+       (f a-dstx)]
+      [(struct special-atom (prop content))
+       (f a-dstx)]
+      [(struct space (prop content))
+       (f a-dstx)]
+      [(struct fusion (prop prefix children suffix))
+       (f (make-fusion prop
+                       prefix
+                       (map (lambda (a-dstx)
+                              (dstx-deepmap f a-dstx))
+                            children)
+                       suffix))]))
+  
   
   ;; Cursors.  Zipper structure for efficient movement within a dstx,
   ;; also keeping track of our cursor position.
@@ -148,6 +166,8 @@
    [new-special-atom (any/c . -> . special-atom?)]
    [new-space (string? . -> . space?)]
    [new-fusion (string? (listof dstx?) string? . -> . fusion?)]
+   
+   [dstx-deepmap ((dstx? . -> . dstx?) dstx? . -> . dstx?)]
    
    [struct cursor ((dstx dstx?)
                    (loc loc?)
