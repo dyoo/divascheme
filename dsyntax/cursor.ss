@@ -126,9 +126,30 @@
          (focus-older/no-snap new-cursor))]))
   
   
+  ;; cursor-delete: cursor -> cursor
+  ;; Delete the currently focused dstx.  Focus moves to the next older dstx.  If no such
+  ;; dstx exists, then focus moves to the immediate younger dstx.  Again, if that doesn't exist,
+  ;; then focus moves to an automatically generated empty space.
   (define (cursor-delete a-cursor)
-    ;; fixme!
-    (void))
+    (match a-cursor
+      [(struct cursor (dstx loc parent youngers-rev youngers-loc-rev olders))
+       (cond [(empty? olders)
+              (cond [(empty? youngers-rev)
+                     (make-cursor (new-space "") loc parent youngers-rev youngers-loc-rev olders)]
+                    [else
+                     (make-cursor (first youngers-rev)
+                                  (first youngers-loc-rev)
+                                  parent
+                                  (rest youngers-rev)
+                                  (rest youngers-loc-rev)
+                                  olders)])]
+             [else
+              (make-cursor (first olders)
+                           loc
+                           parent
+                           youngers-rev
+                           youngers-loc-rev
+                           (rest olders))])]))
   
   
   ;; cursor-dstx-property-set: cursor symbol any -> cursor
@@ -154,7 +175,6 @@
   ;; make-toplevel-cursor: (listof dstx) -> cursor
   ;;
   ;; Creates the initial cursor focused on the first object in the list.
-  ;; FIXME: what if there's a space?
   (define (make-toplevel-cursor dstxs)
     (cond
       [(empty? dstxs)

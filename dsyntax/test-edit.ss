@@ -84,4 +84,72 @@
           (check-equal? (dstx-property-names (cursor-dstx new-cursor)) '(value))
           (check-equal? (atom-content (cursor-dstx new-cursor)) "answer")
           (check-equal? (dstx-property-ref (cursor-dstx new-cursor) 'value)
-                        43)))))))
+                        43))))
+     
+     
+     (test-case
+      "deleting the empty toplevel should be idempotent"
+      (let ([a-cursor (make-toplevel-cursor (list))])
+        (let* ([new-cursor (cursor-delete a-cursor)])
+          (check-equal? a-cursor new-cursor))))
+     
+     (test-case
+      "deleting a single toplevel atom"
+      (let ([a-cursor (make-toplevel-cursor (list (new-atom "DELETED!")))])
+        (check-equal? (cursor-delete a-cursor)
+                      (make-toplevel-cursor (list)))))
+     
+     (test-case
+      "deleting from two toplevel atoms"
+      (let ([a-cursor (make-toplevel-cursor (list (new-atom "x")
+                                                  (new-atom "y")))])
+        (check-equal? (cursor-delete a-cursor)
+                      (make-toplevel-cursor (list (new-atom "y"))))))
+     
+     (test-case
+      "deleting from second of the two toplevel atoms"
+      (let* ([a-cursor (make-toplevel-cursor (list (new-atom "x")
+                                                   (new-atom "y")))]
+             [a-cursor (focus-successor a-cursor)])
+        (check-equal? (cursor-delete a-cursor)
+                      (make-toplevel-cursor (list (new-atom "x"))))))
+     
+     (test-case
+      "deleting from inside a fusion (removing y)"
+      (let* ([a-cursor (make-toplevel-cursor
+                        (list (new-atom "x")
+                              (new-fusion "[" (list (new-atom "y")
+                                                    (new-atom "z"))
+                                          "]")))]
+             [a-cursor (focus-successor a-cursor)]
+             [a-cursor (focus-in a-cursor)])
+        ;; check that the focus moved to z
+        (check-equal? (cursor-dstx (cursor-delete a-cursor))
+                      (new-atom "z"))
+        ;; and check content.
+        (check-equal? (focus-toplevel (cursor-delete a-cursor))
+                      (make-toplevel-cursor
+                       (list (new-atom "x")
+                             (new-fusion "[" (list (new-atom "z"))
+                                         "]"))))))
+     
+     
+     (test-case
+      "deleting from inside a fusion (removing z)"
+      (let* ([a-cursor (make-toplevel-cursor
+                        (list (new-atom "x")
+                              (new-fusion "[" (list (new-atom "y")
+                                                    (new-atom "z"))
+                                          "]")))]
+             [a-cursor (focus-successor a-cursor)]
+             [a-cursor (focus-successor a-cursor)]
+             [a-cursor (focus-successor a-cursor)])
+        ;; check the new focus...
+        (check-equal? (cursor-dstx (cursor-delete a-cursor))
+                      (new-atom "y"))
+        ;; and check the content.
+        (check-equal? (focus-toplevel (cursor-delete a-cursor))
+                      (make-toplevel-cursor
+                       (list (new-atom "x")
+                             (new-fusion "[" (list (new-atom "y"))
+                                         "]")))))))))
