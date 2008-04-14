@@ -10,7 +10,13 @@
   (require (lib "class.ss")
            (lib "mred.ss" "mred")
            (prefix cursor: "cursor.ss")
-           "struct.ss")
+           (prefix struct: "struct.ss"))
+  
+  
+  (provide dstx-text-mixin)
+  
+  ;; TODO: distill interface
+  
   
   
   ;; next-local-id: -> number
@@ -25,9 +31,9 @@
   ;; dstx-attach-local-ids: dstx -> dstx
   ;; Attach the local-id property to each dstx, deeply.
   (define (dstx-attach-local-ids a-dstx)
-    (dstx-deepmap (lambda (a-dstx)
-                    (dstx-property-set a-dstx 'local-id (next-local-id)))
-                  a-dstx))
+    (struct:dstx-deepmap (lambda (a-dstx)
+                           (struct:dstx-property-set a-dstx 'local-id (next-local-id)))
+                         a-dstx))
   
   
   ;; Made dstx-text-mixin and dstx-cursor friends.  The following methods
@@ -122,7 +128,7 @@
       ;; Operations performed with the cursor will be reflected
       ;; back on screen.
       (define/public (get-dstx-cursor)
-        (new cursor% [text this]))
+        (new dstx-cursor% [text this]))
       
       
       ;; get-input-port-after-insert: number number -> input-port
@@ -141,13 +147,17 @@
   ;; reflect onto the text.
   (define dstx-cursor%
     (class object%
-      (init-field text)
+      (init text)
+      (define current-text text)
       
       (define a-cursor
-        (cursor:make-toplevel-cursor (send text get-top-dstxs)))
+        (cursor:make-toplevel-cursor (send current-text get-top-dstxs)))
       
       
       ;; Getters
+      (define/public (cursor-dstx)
+        (struct:cursor-dstx a-cursor))
+      
       (define/public (cursor-line)
         (cursor:cursor-line a-cursor))
       
@@ -199,9 +209,24 @@
         (set! a-cursor (cursor:focus-pos a-cursor a-pos)))
       
       
-      (define (pretty-print a-dstx a-pos)
-        ;; fixme!
-        (void))
+      ;; pretty-print-to-text: dstx -> void
+      ;; Write out the dstx content to the text
+      (define (pretty-print-to-text a-dstx)
+        (cond
+          [(struct:space? a-dstx)
+           (send current-text insert (struct:space-content a-dstx))]
+          [(struct:atom? a-dstx)
+           (send current-text insert (struct:atom-content a-dstx))]
+          [(struct:special-atom? a-dstx)
+           ;; fixme: we should see if it's a snip.
+           (send current-text insert (struct:special-atom-content a-dstx))]
+          [(struct:fusion? a-dstx)
+           (send current-text insert (struct:fusion-prefix a-dstx))
+           (for-each (lambda (sub-dstx)
+                       (pretty-print-to-text sub-dstx))
+                     (struct:fusion-children a-dstx))
+           (send current-text insert (struct:fusion-suffix a-dstx))]))
+      
       
       
       ;; Editors
@@ -209,42 +234,44 @@
         (let ([a-dstx (dstx-attach-local-ids a-dstx)])
           (dynamic-wind
            (lambda ()
-             (send text begin-dstx-edit-sequence))
+             (send current-text begin-dstx-edit-sequence))
            (lambda ()
-             (pretty-print a-dstx (cursor-pos))
+             (send current-text set-position (cursor-pos) 'same #f #f 'local)
+             (pretty-print-to-text a-dstx)
              (set! a-cursor (cursor:cursor-insert-before a-cursor a-dstx))
-             (send text set-top-dstxs (cursor:cursor-toplevel-dstxs a-cursor)))
+             (send current-text set-top-dstxs (cursor:cursor-toplevel-dstxs a-cursor)))
            (lambda ()
-             (send text end-dstx-edit-sequence)))))
+             (send current-text end-dstx-edit-sequence)))))
       
       
       (define/public (cursor-insert-after a-dstx)
         (let ([a-dstx (dstx-attach-local-ids a-dstx)])
           (dynamic-wind
            (lambda ()
-             (send text begin-dstx-edit-sequence))
+             (send current-text begin-dstx-edit-sequence))
            (lambda ()
-             (pretty-print a-dstx (cursor-endpos))
+             (send current-text set-position (cursor-endpos) 'same #f #f 'local)
+             (pretty-print-to-text a-dstx)
              (set! a-cursor (cursor:cursor-insert-after a-cursor a-dstx))
-             (send text set-top-dstxs (cursor:cursor-toplevel-dstxs a-cursor)))
+             (send current-text set-top-dstxs (cursor:cursor-toplevel-dstxs a-cursor)))
            (lambda ()
-             (send text end-dstx-edit-sequence)))))
+             (send current-text end-dstx-edit-sequence)))))
       
       
       (define/public (cursor-delete)
         (dynamic-wind
          (lambda ()
-           (send text begin-dstx-edit-sequence))
+           (send current-text begin-dstx-edit-sequence))
          (lambda ()
            (let ([deletion-length
-                  (- (loc-pos (cursor:loc-after
-                               (cursor-loc a-cursor)))
+                  (- (struct:loc-pos (cursor:loc-after
+                                      (struct:cursor-loc a-cursor)))
                      (cursor-pos))])
-             (send text delete (cursor-pos) deletion-length #f)
+             (send current-text delete (cursor-pos) deletion-length #f)
              (set! a-cursor (cursor:cursor-delete a-cursor))
-             (send text set-top-dstxs (cursor:cursor-toplevel-dstxs a-cursor))))
+             (send current-text set-top-dstxs (cursor:cursor-toplevel-dstxs a-cursor))))
          (lambda ()
-           (send text end-dstx-edit-sequence))))
+           (send current-text end-dstx-edit-sequence))))
       
       
       
