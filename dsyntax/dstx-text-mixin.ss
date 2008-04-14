@@ -175,7 +175,8 @@
           ;; Delete the old, introduce the new.
           (let ([new-dstxs
                  (parse-between (send a-cursor cursor-pos)
-                                (+ len
+                                (+ (send a-cursor cursor-pos)
+                                   len
                                    (- (send a-cursor cursor-endpos)
                                       (send a-cursor cursor-pos))))])
             (dynamic-wind (lambda () (begin-dstx-edit-sequence))
