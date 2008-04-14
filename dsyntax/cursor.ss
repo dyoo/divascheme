@@ -25,6 +25,7 @@
                     [cursor-insert-before (cursor? dstx? . -> . cursor?)]
                     [cursor-insert-after (cursor? dstx? . -> . cursor?)]
                     [cursor-delete (cursor? . -> . cursor?)]
+                    [cursor-replace (cursor? dstx? . -> . cursor?)]
                     [cursor-dstx-property-set
                      (cursor? symbol? any/c . -> . cursor?)]
                     [cursor-dstx-property-ref
@@ -150,6 +151,14 @@
                            youngers-rev
                            youngers-loc-rev
                            (rest olders))])]))
+  
+  
+  ;; cursor-replace: cursor dstx -> cursor
+  ;; Replace the currently focused dstx with the new dstx
+  (define (cursor-replace a-cursor a-new-dstx)
+    (match a-cursor
+      [(struct cursor (dstx loc parent youngers-rev youngers-loc-rev olders))
+       (make-cursor a-new-dstx loc parent youngers-rev youngers-loc-rev olders)]))
   
   
   ;; cursor-dstx-property-set: cursor symbol any -> cursor

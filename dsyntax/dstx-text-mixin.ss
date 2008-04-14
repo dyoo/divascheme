@@ -44,9 +44,15 @@
   ;; dstx-attach-local-ids: dstx -> dstx
   ;; Attach the local-id property to each dstx, deeply.
   (define (dstx-attach-local-ids a-dstx)
-    (struct:dstx-deepmap (lambda (a-dstx)
-                           (struct:dstx-property-set a-dstx 'local-id (next-local-id)))
-                         a-dstx))
+    (struct:dstx-deepmap
+     (lambda (a-dstx)
+       (cond [(member 'local-id (struct:dstx-property-names a-dstx))
+              a-dstx]
+             [else
+              (struct:dstx-property-set a-dstx 'local-id (next-local-id))]))
+     a-dstx))
+  
+  
   
   
   ;; Made dstx-text-mixin and dstx-cursor friends.  The following methods
@@ -178,7 +184,7 @@
                       (lambda () (end-dstx-edit-sequence)))
         (let* ([ip (get-input-port-after-insert 0 (last-position))]
                [dstxs (parser:parse-port ip)])
-          (set-top-dstxs dstxs)))
+          (set-top-dstxs (map dstx-attach-local-ids dstxs))))
       
       
       ;; Returns a toplevel cursor into the dstx.
@@ -204,9 +210,10 @@
   ;; reflect onto the text.
   (define dstx-cursor%
     (class object%
+      (super-new)
+      
       (init text)
       (define current-text text)
-      
       (define a-cursor
         (cursor:make-toplevel-cursor (send current-text get-top-dstxs)))
       
@@ -334,10 +341,9 @@
                      (cursor-pos))])
              (send current-text delete (cursor-pos) (+ (cursor-pos) deletion-length) #f)
              (set! a-cursor (cursor:cursor-delete a-cursor))
+             (set! a-cursor (cursor:cursor-replace
+                             a-cursor
+                             (dstx-attach-local-ids (struct:cursor-dstx a-cursor))))
              (send current-text set-top-dstxs (cursor:cursor-toplevel-dstxs a-cursor))))
          (lambda ()
-           (send current-text end-dstx-edit-sequence))))
-      
-      
-      
-      (super-new))))
+           (send current-text end-dstx-edit-sequence)))))))
