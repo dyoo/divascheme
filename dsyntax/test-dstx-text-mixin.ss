@@ -103,5 +103,4 @@
                       (map strip-local-ids (list (new-space "")
                                                  (new-atom "goodbye")
                                                  (new-space " ")
-                                                 (new-atom "world"))))
-        )))))
+                                                 (new-atom "world")))))))))

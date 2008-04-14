@@ -4,7 +4,8 @@
            "test-dsyntax.ss"
            "test-edit.ss"
            "test-focus.ss"
-           "test-parse-plt-scheme.ss")
+           "test-parse-plt-scheme.ss"
+           "test-dstx-text-mixin.ss")
   
   (define dsyntax-test-suite
     (test-suite
@@ -12,7 +13,8 @@
      test-dsyntax
      test-edit
      test-focus
-     test-parse-plt-scheme))
+     test-parse-plt-scheme
+     test-dstx-text-mixin))
   
   (define (test)
     (test/text-ui dsyntax-test-suite)))
