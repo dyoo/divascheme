@@ -9,7 +9,7 @@
   
   (require (lib "class.ss")
            (lib "mred.ss" "mred")
-           
+           (lib "plt-match.ss")
            (prefix parser: "parse-plt-scheme.ss")
            (prefix cursor: "cursor.ss")
            (prefix struct: "struct.ss"))
@@ -121,10 +121,51 @@
         (void))
       
       
+      ;; handle-possibly-unstructured-insert: number number -> void
+      ;; When the text changes without explicit structured operations, we
+      ;; must maintain semi-structure.
       (define (handle-possibly-unstructured-insert start-pos len)
-        ;; Possibly unstructured edit.
-        ;; fixme!
-        (void))
+        
+        (define (edit-within-focused-dstx? a-cursor)
+          (and ((send a-cursor cursor-pos) . < . start-pos)
+               (start-pos . < . (send a-cursor cursor-endpos))))
+        
+        (define (edit-bordering-focused-dstx? a-cursor)
+          (or ((send a-cursor cursor-pos) . = . start-pos)
+              (start-pos . = . (send a-cursor cursor-endpos))))
+        
+        ;; Treat an unstructured insertion as an atom with the
+        ;; 'unstructured property.
+        (let ([a-cursor (get-dstx-cursor)])
+          (send a-cursor focus-pos start-pos)
+          (cond
+            [(edit-within-focused-dstx? a-cursor)
+             (match (send a-cursor cursor-dstx)
+               [(struct struct:atom (props content))
+                ;; Delete the atom, introduce a new atom with
+                ;; the same content.
+                (void)]
+               [(struct struct:special-atom (props content width))
+                ;; This should not be possible
+                (void)]
+               [(struct struct:space (props content))
+                ;; split up
+                (void)]
+               [(struct struct:fusion (props prefix children suffix))
+                ;; Delete the fusion, reparse it.
+                (void)])]
+            
+            [(edit-bordering-focused-dstx? a-cursor)
+             (match (send a-cursor cursor-dstx)
+               [(struct struct:atom (props content))
+                (void)]
+               [(struct struct:special-atom (props content))
+                (void)]
+               [(struct struct:space (props content))
+                (void)]
+               [(struct struct:fusion (props prefix children suffix))
+                (void)])])))
+      
       
       
       ;; load-file: string -> void
