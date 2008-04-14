@@ -103,4 +103,31 @@
                       (map strip-local-ids (list (new-space "")
                                                  (new-atom "goodbye")
                                                  (new-space " ")
-                                                 (new-atom "world")))))))))
+                                                 (new-atom "world"))))))
+     
+     (test-case
+      "editing a symbol at the front"
+      (let* ([text (make-text-instance)]
+             [cursor (send text get-dstx-cursor)])
+        (send cursor cursor-insert-after (new-atom "orld"))
+        (send text insert "w" 0)
+        
+        ;; Check what's on screen...
+        (check-equal? (send text get-text) "world")
+        ;; As well as what's in the dstx
+        (check-equal? (map strip-local-ids (send text get-top-dstxs))
+                      (map strip-local-ids (list (new-space "") (new-atom "world"))))))
+     
+     
+     (test-case
+      "editing a symbol internally"
+      (let* ([text (make-text-instance)]
+             [cursor (send text get-dstx-cursor)])
+        (send cursor cursor-insert-after (new-atom "wrld"))
+        (send text insert "o" 1)
+        
+        ;; Check what's on screen...
+        (check-equal? (send text get-text) "world")
+        ;; As well as what's in the dstx
+        (check-equal? (map strip-local-ids (send text get-top-dstxs))
+                      (map strip-local-ids (list (new-space "") (new-atom "world")))))))))

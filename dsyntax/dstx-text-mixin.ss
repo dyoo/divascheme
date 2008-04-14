@@ -86,7 +86,7 @@
       ;; end-dstx-edit-sequence: -> void
       ;; Protected.
       (define/public (end-dstx-edit-sequence)
-        (set! dstx-edit-depth (add1 dstx-edit-depth)))
+        (set! dstx-edit-depth (sub1 dstx-edit-depth)))
       
       
       ;; in-dstx-edit-sequence: -> boolean
@@ -107,6 +107,7 @@
       
       ;; after-insert: number number -> void
       (define/augment (after-insert start-pos len)
+        (printf "After-insert, with in-dstx-edit-sequence?: ~a~n" (in-dstx-edit-sequence?))
         (inner #f after-insert start-pos len)
         (cond
           [(in-dstx-edit-sequence?)
@@ -125,46 +126,47 @@
       ;; When the text changes without explicit structured operations, we
       ;; must maintain semi-structure.
       (define (handle-possibly-unstructured-insert start-pos len)
-        
-        (define (edit-within-focused-dstx? a-cursor)
-          (and ((send a-cursor cursor-pos) . < . start-pos)
-               (start-pos . < . (send a-cursor cursor-endpos))))
-        
-        (define (edit-bordering-focused-dstx? a-cursor)
-          (or ((send a-cursor cursor-pos) . = . start-pos)
-              (start-pos . = . (send a-cursor cursor-endpos))))
-        
-        ;; Treat an unstructured insertion as an atom with the
-        ;; 'unstructured property.
+        ;; FIXME/TODO:
+        ;; treat an unstructured insertion as an atom with the
+        ;; 'unstructured property?
+        (printf "Trying to handle ~a~n" (list start-pos len))
         (let ([a-cursor (get-dstx-cursor)])
           (send a-cursor focus-pos start-pos)
           (cond
-            [(edit-within-focused-dstx? a-cursor)
-             (match (send a-cursor cursor-dstx)
-               [(struct struct:atom (props content))
-                ;; Delete the atom, introduce a new atom with
-                ;; the same content.
-                (void)]
-               [(struct struct:special-atom (props content width))
-                ;; This should not be possible
-                (void)]
-               [(struct struct:space (props content))
-                ;; split up
-                (void)]
-               [(struct struct:fusion (props prefix children suffix))
-                ;; Delete the fusion, reparse it.
-                (void)])]
+            [(edit-within-focused-dstx? a-cursor start-pos)
+             (let ([new-dstx
+                    (parser:parse-port
+                     (get-input-port-after-insert
+                      (send a-cursor cursor-pos)
+                      (+ len
+                         (- (send a-cursor cursor-endpos)
+                            (send a-cursor cursor-pos)))))])
+               (send a-cursor cursor-insert-before new-dstx)
+               (send a-cursor focus-older)
+               (send a-cursor delete))
+             ;; fixme: what if we have something unstructured?
+             ]
             
-            [(edit-bordering-focused-dstx? a-cursor)
-             (match (send a-cursor cursor-dstx)
-               [(struct struct:atom (props content))
-                (void)]
-               [(struct struct:special-atom (props content))
-                (void)]
-               [(struct struct:space (props content))
-                (void)]
-               [(struct struct:fusion (props prefix children suffix))
-                (void)])])))
+            [(edit-bordering-focused-dstx? a-cursor start-pos)
+             (let ([new-dstx
+                    (parser:parse-port
+                     (get-input-port-after-insert start-pos len))])
+               (send a-cursor insert-before new-dstx))
+             ;; fixme: what if we have something unstructured?
+             ])))
+      
+      
+      
+      ;; edit-within-focused-dstx? dstx-cursor number -> boolean
+      (define (edit-within-focused-dstx? a-cursor a-pos)
+        (and ((send a-cursor cursor-pos) . < . a-pos)
+             (a-pos . < . (send a-cursor cursor-endpos))))
+      
+      
+      ;; edit-bordering-focused-dstx? dstx-cursor number -> boolean
+      (define (edit-bordering-focused-dstx? a-cursor a-pos)
+        (or ((send a-cursor cursor-pos) . = . a-pos)
+            (a-pos . = . (send a-cursor cursor-endpos))))
       
       
       
