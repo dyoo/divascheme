@@ -9,15 +9,25 @@
   
   (require (lib "class.ss")
            (lib "mred.ss" "mred")
-           (prefix cursor: "cursor.ss"))
+           (prefix cursor: "cursor.ss")
+           "struct.ss")
   
   
-  ;; next-local-clock: -> number
+  ;; next-local-id: -> number
   ;; Returns the next local clock.
-  (define next-local-clock
-    (let ([current-local-clock 0])
+  (define next-local-id
+    (let ([current-local-id 0])
       (lambda ()
-        (set! current-local-clock (add1 current-local-clock)))))
+        (set! current-local-id (add1 current-local-id))
+        current-local-id)))
+  
+  
+  ;; dstx-attach-local-ids: dstx -> dstx
+  ;; Attach the local-id property to each dstx, deeply.
+  (define (dstx-attach-local-ids a-dstx)
+    (dstx-deepmap (lambda (a-dstx)
+                    (dstx-property-set a-dstx 'local-id (next-local-id)))
+                  a-dstx))
   
   
   ;; Made dstx-text-mixin and dstx-cursor friends.  The following methods
@@ -83,9 +93,7 @@
           [(in-dstx-edit-sequence?)
            (void)]
           [else
-           ;; Possibly unstructured edit.
-           ;; fixme!
-           (void)]))
+           (handle-possibly-unstructured-delete start-pos len)]))
       
       
       ;; after-insert: number number -> void
@@ -95,9 +103,19 @@
           [(in-dstx-edit-sequence?)
            (void)]
           [else
-           ;; Possibly unstructured edit.
-           ;; fixme!
-           (void)]))
+           (handle-possibly-unstructured-insert start-pos len)]))
+      
+      
+      (define (handle-possibly-unstructured-delete start-pos len)
+        ;; Possibly unstructured edit.
+        ;; fixme!
+        (void))
+      
+      
+      (define (handle-possibly-unstructured-insert start-pos len)
+        ;; Possibly unstructured edit.
+        ;; fixme!
+        (void))
       
       
       ;; Returns a toplevel cursor into the dstx.
@@ -188,31 +206,45 @@
       
       ;; Editors
       (define/public (cursor-insert-before a-dstx)
-        (dynamic-wind
-         (lambda ()
-           (send text begin-dstx-edit-sequence))
-         (lambda ()
-           (pretty-print a-dstx (cursor-pos))
-           (set! a-cursor (cursor:cursor-insert-before a-cursor a-dstx))
-           (send text set-top-dstxs (cursor:cursor-toplevel-dstxs a-cursor)))
-         (lambda ()
-           (send text end-dstx-edit-sequence))))
+        (let ([a-dstx (dstx-attach-local-ids a-dstx)])
+          (dynamic-wind
+           (lambda ()
+             (send text begin-dstx-edit-sequence))
+           (lambda ()
+             (pretty-print a-dstx (cursor-pos))
+             (set! a-cursor (cursor:cursor-insert-before a-cursor a-dstx))
+             (send text set-top-dstxs (cursor:cursor-toplevel-dstxs a-cursor)))
+           (lambda ()
+             (send text end-dstx-edit-sequence)))))
       
       
       (define/public (cursor-insert-after a-dstx)
+        (let ([a-dstx (dstx-attach-local-ids a-dstx)])
+          (dynamic-wind
+           (lambda ()
+             (send text begin-dstx-edit-sequence))
+           (lambda ()
+             (pretty-print a-dstx (cursor-endpos))
+             (set! a-cursor (cursor:cursor-insert-after a-cursor a-dstx))
+             (send text set-top-dstxs (cursor:cursor-toplevel-dstxs a-cursor)))
+           (lambda ()
+             (send text end-dstx-edit-sequence)))))
+      
+      
+      (define/public (cursor-delete)
         (dynamic-wind
          (lambda ()
            (send text begin-dstx-edit-sequence))
          (lambda ()
-           (pretty-print a-dstx (cursor-endpos))
-           (set! a-cursor (cursor:cursor-insert-after a-cursor a-dstx))
-           (send text set-top-dstxs (cursor:cursor-toplevel-dstxs a-cursor)))
+           (let ([deletion-length
+                  (- (loc-pos (cursor:loc-after
+                               (cursor-loc a-cursor)))
+                     (cursor-pos))])
+             (send text delete (cursor-pos) deletion-length #f)
+             (set! a-cursor (cursor:cursor-delete a-cursor))
+             (send text set-top-dstxs (cursor:cursor-toplevel-dstxs a-cursor))))
          (lambda ()
            (send text end-dstx-edit-sequence))))
-      
-      
-      (define/public (cursor-delete)
-        (void))
       
       
       
