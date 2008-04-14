@@ -15,9 +15,32 @@
            (prefix struct: "struct.ss"))
   
   
-  (provide dstx-text-mixin)
+  (provide dstx-text-mixin dstx-text<%> dstx-cursor<%>)
   
-  ;; TODO: distill interface
+  
+  (define dstx-text<%> (interface () get-top-dstxs get-dstx-cursor))
+  (define dstx-cursor<%> (interface ()
+                           cursor-dstx
+                           cursor-line
+                           cursor-col
+                           cursor-pos
+                           cursor-endpos
+                           cursor-dstx-property-ref
+                           focus-in
+                           focus-in/no-snap
+                           focus-out
+                           focus-older
+                           focus-older/no-snap
+                           focus-younger
+                           focus-younger/no-snap
+                           focus-successor
+                           focus-predecessor
+                           focus-toplevel
+                           focus-pos
+                           cursor-insert-before
+                           cursor-insert-after
+                           cursor-delete))
+  
   
   
   ;; (repeat 5 body) will repeat body five times.
@@ -62,13 +85,18 @@
   (define-member-name end-dstx-edit-sequence (generate-member-key))
   
   
+  
+  
   ;; dstx-text-mixin: text% -> text%
   ;; Adds in some functionality specific to dstx maintenance.
   (define (dstx-text-mixin super%)
-    (class super%
+    (class* super% (dstx-text<%>)
       (inherit last-position
                get-text
-               delete)
+               delete
+               split-snip
+               find-snip
+               get-snip-position)
       
       ;; top-dstxs: (listof dstx)
       ;; The toplevel dstx elements.
@@ -146,12 +174,10 @@
           (send a-cursor focus-pos start-pos)
           ;; Delete the old, introduce the new.
           (let ([new-dstxs
-                 (parser:parse-port
-                  (get-input-port-after-insert
-                   (send a-cursor cursor-pos)
-                   (+ len
-                      (- (send a-cursor cursor-endpos)
-                         (send a-cursor cursor-pos)))))])
+                 (parse-between (send a-cursor cursor-pos)
+                                (+ len
+                                   (- (send a-cursor cursor-endpos)
+                                      (send a-cursor cursor-pos))))])
             (dynamic-wind (lambda () (begin-dstx-edit-sequence))
                           (lambda () (delete start-pos (+ start-pos len)))
                           (lambda () (end-dstx-edit-sequence)))
@@ -182,9 +208,49 @@
         (dynamic-wind (lambda () (begin-dstx-edit-sequence))
                       (lambda () (super load-file filename))
                       (lambda () (end-dstx-edit-sequence)))
-        (let* ([ip (get-input-port-after-insert 0 (last-position))]
-               [dstxs (parser:parse-port ip)])
+        (let* ([dstxs (parse-between 0 (last-position))])
           (set-top-dstxs (map dstx-attach-local-ids dstxs))))
+      
+      
+      ;; parse-between: number number -> (listof dstx)
+      ;; Parse the text between start and end.  If the content
+      ;; is unparseable, return a list containing a new fusion
+      ;; marked with the property 'unparsed.
+      (define (parse-between start end)
+        (with-handlers ([exn:fail? (lambda (exn)
+                                     (parse-between/unparsed start end))])
+          (let* ([ip (get-input-port-after-insert start end)]
+                 [dstxs (parser:parse-port ip)])
+            dstxs)))
+      
+      
+      ;; parse-between/unparsed: start end -> (listof dstx)
+      ;; Returns a list of dstx objects that represent the unparsed
+      ;; elements.  This is a catch-all for cases where we have no idea how to
+      ;; parse something.
+      (define (parse-between/unparsed start end)
+        (reverse (map (lambda (a-snip)
+                        (dstx-attach-local-ids (struct:new-special-atom (box a-snip))))
+                      (get-snips/rev start end))))
+      
+      
+      ;; get-snips/rev: start end -> (listof snip)
+      ;; Returns a list of copied snips in reverse order between
+      ;; start and end.
+      (define (get-snips/rev start end)
+        (split-snip start)
+        (split-snip end)
+        (let loop ([snips/rev '()]
+                   [a-snip
+                    (find-snip start 'after-or-none)])
+          (cond
+            [(or (not a-snip)
+                 (>= (get-snip-position a-snip)
+                     end))
+             snips/rev]
+            [else
+             (loop (cons (send a-snip copy) snips/rev)
+                   (send a-snip next))])))
       
       
       ;; Returns a toplevel cursor into the dstx.
