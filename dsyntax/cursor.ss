@@ -20,6 +20,8 @@
                     [cursor-pos (cursor? . -> . natural-number/c)]
                     [cursor-endloc (cursor? . -> . loc?)]
                     [cursor-endpos (cursor? . -> . natural-number/c)]
+                    [cursor-toplevel-dstxs (cursor? . -> . (listof dstx?))]
+                    
                     [cursor-insert-before (cursor? dstx? . -> . cursor?)]
                     [cursor-insert-after (cursor? dstx? . -> . cursor?)]
                     [cursor-delete (cursor? . -> . cursor?)]
@@ -46,6 +48,8 @@
                      (cursor? natural-number/c . -> . cursor-or-false/c)])
   
   
+  
+  
   ;; cursor-line: cursor -> natural-number
   ;;
   ;; Returns the line where the cursor is focused.
@@ -70,6 +74,14 @@
   
   (define (cursor-endpos a-cursor)
     (loc-pos (cursor-endloc a-cursor)))
+  
+  
+  ;; cursor-toplevel-dstxs: cursor -> (listof dstx)
+  ;; Returns the toplevel dstx elements.
+  (define (cursor-toplevel-dstxs a-cursor)
+    (let ([top-cursor (focus-toplevel a-cursor)])
+      (cons (cursor-dstx top-cursor)
+            (cursor-olders top-cursor))))
   
   
   ;; cursor-insert-before: cursor dstx -> cursor
