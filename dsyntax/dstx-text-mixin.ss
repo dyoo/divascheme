@@ -138,43 +138,23 @@
         ;; 'unstructured property?
         (let ([a-cursor (get-dstx-cursor)])
           (send a-cursor focus-pos start-pos)
-          (cond
-            [(edit-within-focused-dstx? a-cursor start-pos)
-             ;; Delete the old, introduce the new.
-             (let ([new-dstxs
-                    (parser:parse-port
-                     (get-input-port-after-insert
-                      (send a-cursor cursor-pos)
-                      (+ len
-                         (- (send a-cursor cursor-endpos)
-                            (send a-cursor cursor-pos)))))])
-               (dynamic-wind (lambda () (begin-dstx-edit-sequence))
-                             (lambda () (delete start-pos (+ start-pos len)))
-                             (lambda () (end-dstx-edit-sequence)))
-               (printf "text now contains ~s~n" (get-text))
-               (for-each (lambda (new-dstx)
-                           (printf "Inserting ~a~n" new-dstx)
-                           (send a-cursor cursor-insert-before new-dstx))
-                         new-dstxs)
-               (repeat (length new-dstxs)
-                       (send a-cursor focus-older))
-               (send a-cursor cursor-delete))
-             ;; fixme: what if we have something unstructured?
-             ]
-            
-            [(edit-bordering-focused-dstx? a-cursor start-pos)
-             (printf "bordering~n")
-             (let ([new-dstxs
-                    (parser:parse-port
-                     (get-input-port-after-insert start-pos len))])
-               (dynamic-wind (lambda () (begin-dstx-edit-sequence))
-                             (lambda () (delete start-pos (+ start-pos len)))
-                             (lambda () (end-dstx-edit-sequence)))
-               (for-each (lambda (new-dstx)
-                           (send a-cursor cursor-insert-before new-dstx))
-                         new-dstxs))
-             ;; fixme: what if we have something unstructured?
-             ])))
+          ;; Delete the old, introduce the new.
+          (let ([new-dstxs
+                 (parser:parse-port
+                  (get-input-port-after-insert
+                   (send a-cursor cursor-pos)
+                   (+ len
+                      (- (send a-cursor cursor-endpos)
+                         (send a-cursor cursor-pos)))))])
+            (dynamic-wind (lambda () (begin-dstx-edit-sequence))
+                          (lambda () (delete start-pos (+ start-pos len)))
+                          (lambda () (end-dstx-edit-sequence)))
+            (for-each (lambda (new-dstx)
+                        (send a-cursor cursor-insert-before new-dstx))
+                      new-dstxs)
+            (repeat (length new-dstxs)
+                    (send a-cursor focus-older))
+            (send a-cursor cursor-delete))))
       
       
       

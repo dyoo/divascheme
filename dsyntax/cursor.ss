@@ -476,10 +476,21 @@
                                (or (at-or-after? a-cursor a-pos)
                                    (at-end? a-cursor))))
                a-cursor)])
-      (focus-search cursor-forward
-                    focus-predecessor
-                    (lambda (a-cursor)
-                      (at-or-before? a-cursor a-pos)))))
+      (let ([new-cursor (focus-search cursor-forward
+                                      focus-predecessor
+                                      (lambda (a-cursor)
+                                        (at-or-before? a-cursor a-pos)))])
+        (cond [(and (sentinel-space? (cursor-dstx a-cursor))
+                    (focus-older/no-snap new-cursor))
+               => identity]
+              [else new-cursor]))))
+  
+  
+  ;; sentinel-space?: dstx -> boolean
+  ;; Returns true if we're on a sentinel space.
+  (define (sentinel-space? a-dstx)
+    (and (space? a-dstx)
+         (string=? "" (space-content a-dstx))))
   
   
   ;; at-or-before?: cursor pos -> boolean
