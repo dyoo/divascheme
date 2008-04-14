@@ -207,16 +207,17 @@
   ;; Postcondition: the parent of the resulting cursor, if it exists,
   ;; must have been focused on a fusion.
   (define (focus-in a-cursor)
-    (local ((define focus (cursor-dstx a-cursor)))
+    (local ((define focused-dstx (cursor-dstx a-cursor)))
       (cond
-        [(atom? focus) #f]
-        [(space? focus) #f]
-        [(fusion? focus)
+        [(atom? focused-dstx) #f]
+        [(special-atom? focused-dstx) #f]
+        [(space? focused-dstx) #f]
+        [(fusion? focused-dstx)
          (let loop ([younger-rev '()]
                     [younger-loc-rev '()]
-                    [children (fusion-children focus)]
+                    [children (fusion-children focused-dstx)]
                     [loc (after-displayed-string (cursor-loc a-cursor)
-                                                 (fusion-prefix focus))])
+                                                 (fusion-prefix focused-dstx))])
            (cond [(empty? children) #f]
                  [(space? (first children))
                   (loop (cons (first children) younger-rev)
@@ -235,16 +236,17 @@
   
   ;; focus-in/no-snap: cursor -> (or/c cursor #f)
   (define (focus-in/no-snap a-cursor)
-    (local ((define focus (cursor-dstx a-cursor)))
+    (local ((define focused-dstx (cursor-dstx a-cursor)))
       (cond
-        [(atom? focus) #f]
-        [(space? focus) #f]
-        [(fusion? focus)
+        [(atom? focused-dstx) #f]
+        [(special-atom? focused-dstx) #f]
+        [(space? focused-dstx) #f]
+        [(fusion? focused-dstx)
          (let ([younger-rev '()]
                [younger-loc-rev '()]
-               [children (fusion-children focus)]
+               [children (fusion-children focused-dstx)]
                [loc (after-displayed-string (cursor-loc a-cursor)
-                                            (fusion-prefix focus))])
+                                            (fusion-prefix focused-dstx))])
            (cond [(empty? children) #f]
                  [else
                   (make-cursor (first children)

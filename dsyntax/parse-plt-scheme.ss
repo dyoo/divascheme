@@ -310,12 +310,16 @@
   
   ;; pretty-print: dstx output-port -> void
   ;; Prints out the content of the dstx to the output port.
+  ;; Specials print out as periods.
   (define (pretty-print a-dstx op)
     (cond
       [(dstx:space? a-dstx)
        (display (dstx:space-content a-dstx) op)]
       [(dstx:atom? a-dstx)
        (display (dstx:atom-content a-dstx) op)]
+      [(dstx:special-atom? a-dstx)
+       (display (build-string (dstx:special-atom-width a-dstx) (lambda (i) #\.))
+                op)]
       [(dstx:fusion? a-dstx)
        (display (dstx:fusion-prefix a-dstx) op)
        (for-each (lambda (sub-dstx)

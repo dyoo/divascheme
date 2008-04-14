@@ -23,7 +23,7 @@
   
   (define-struct dstx (properties) #f)
   (define-struct (atom dstx) (content) #f)
-  (define-struct (special-atom dstx) (content) #f)
+  (define-struct (special-atom dstx) (content width) #f)
   (define-struct (space dstx) (content) #f)
   (define-struct (fusion dstx) (prefix children suffix) #f)
   
@@ -57,9 +57,9 @@
     (make-atom empty-table content))
   
   ;; new-special-atom: any -> special-atom
-  ;; Constructor with default empty properties.
+  ;; Constructor with default empty properties and default width 1.
   (define (new-special-atom content)
-    (make-special-atom empty-table content))
+    (make-special-atom empty-table content 1))
   
   ;; new-space: string -> space
   ;; Constructor with default empty properties.
@@ -97,8 +97,8 @@
       (match a-dstx
         [(struct atom (_ content))
          (make-atom new-properties content)]
-        [(struct special-atom (_ content))
-         (make-special-atom new-properties content)]
+        [(struct special-atom (_ content width))
+         (make-special-atom new-properties content width)]
         [(struct space (_ content))
          (make-space new-properties content)]
         [(struct fusion (_ prefix children suffix))
@@ -111,7 +111,7 @@
     (match a-dstx
       [(struct atom (prop content))
        (f a-dstx)]
-      [(struct special-atom (prop content))
+      [(struct special-atom (prop content width))
        (f a-dstx)]
       [(struct space (prop content))
        (f a-dstx)]
@@ -148,7 +148,8 @@
             [content string?])]
    [struct (special-atom dstx)
            ([properties property-map/c]
-            [content any/c])]
+            [content any/c]
+            [width natural-number/c])]
    [struct (space dstx)
            ([properties property-map/c]
             [content string?])]

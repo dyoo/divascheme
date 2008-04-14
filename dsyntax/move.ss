@@ -207,6 +207,10 @@
       (cond
         [(atom? a-dstx)
          (after-atom-or-space (atom-content a-dstx))]
+        [(special-atom? a-dstx)
+         (make-move:newline&forward 0
+                                    (special-atom-width a-dstx)
+                                    (special-atom-width a-dstx))]
         [(space? a-dstx)
          (after-atom-or-space (space-content a-dstx))]
         [(fusion? a-dstx)
