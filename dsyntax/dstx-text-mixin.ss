@@ -20,6 +20,17 @@
   ;; TODO: distill interface
   
   
+  ;; (repeat 5 body) will repeat body five times.
+  (define-syntax (repeat stx)
+    (syntax-case stx ()
+      [(_ num body ...)
+       (syntax/loc stx
+         (let ([N num])
+           (let loop ([i 0])
+             (when (< i N)
+               body ...
+               (loop (add1 i))))))]))
+  
   
   ;; next-local-id: -> number
   ;; Returns the next local clock.
@@ -49,13 +60,9 @@
   ;; Adds in some functionality specific to dstx maintenance.
   (define (dstx-text-mixin super%)
     (class super%
-      (inherit begin-edit-sequence
-               end-edit-sequence
-               in-edit-sequence?
-               get-start-position
-               last-position
-               erase
-               insert)
+      (inherit last-position
+               get-text
+               delete)
       
       ;; top-dstxs: (listof dstx)
       ;; The toplevel dstx elements.
@@ -107,7 +114,6 @@
       
       ;; after-insert: number number -> void
       (define/augment (after-insert start-pos len)
-        (printf "After-insert, with in-dstx-edit-sequence?: ~a~n" (in-dstx-edit-sequence?))
         (inner #f after-insert start-pos len)
         (cond
           [(in-dstx-edit-sequence?)
@@ -122,6 +128,7 @@
         (void))
       
       
+      
       ;; handle-possibly-unstructured-insert: number number -> void
       ;; When the text changes without explicit structured operations, we
       ;; must maintain semi-structure.
@@ -129,29 +136,43 @@
         ;; FIXME/TODO:
         ;; treat an unstructured insertion as an atom with the
         ;; 'unstructured property?
-        (printf "Trying to handle ~a~n" (list start-pos len))
         (let ([a-cursor (get-dstx-cursor)])
           (send a-cursor focus-pos start-pos)
           (cond
             [(edit-within-focused-dstx? a-cursor start-pos)
-             (let ([new-dstx
+             ;; Delete the old, introduce the new.
+             (let ([new-dstxs
                     (parser:parse-port
                      (get-input-port-after-insert
                       (send a-cursor cursor-pos)
                       (+ len
                          (- (send a-cursor cursor-endpos)
                             (send a-cursor cursor-pos)))))])
-               (send a-cursor cursor-insert-before new-dstx)
-               (send a-cursor focus-older)
-               (send a-cursor delete))
+               (dynamic-wind (lambda () (begin-dstx-edit-sequence))
+                             (lambda () (delete start-pos (+ start-pos len)))
+                             (lambda () (end-dstx-edit-sequence)))
+               (printf "text now contains ~s~n" (get-text))
+               (for-each (lambda (new-dstx)
+                           (printf "Inserting ~a~n" new-dstx)
+                           (send a-cursor cursor-insert-before new-dstx))
+                         new-dstxs)
+               (repeat (length new-dstxs)
+                       (send a-cursor focus-older))
+               (send a-cursor cursor-delete))
              ;; fixme: what if we have something unstructured?
              ]
             
             [(edit-bordering-focused-dstx? a-cursor start-pos)
-             (let ([new-dstx
+             (printf "bordering~n")
+             (let ([new-dstxs
                     (parser:parse-port
                      (get-input-port-after-insert start-pos len))])
-               (send a-cursor insert-before new-dstx))
+               (dynamic-wind (lambda () (begin-dstx-edit-sequence))
+                             (lambda () (delete start-pos (+ start-pos len)))
+                             (lambda () (end-dstx-edit-sequence)))
+               (for-each (lambda (new-dstx)
+                           (send a-cursor cursor-insert-before new-dstx))
+                         new-dstxs))
              ;; fixme: what if we have something unstructured?
              ])))
       
@@ -328,9 +349,10 @@
          (lambda ()
            (let ([deletion-length
                   (- (struct:loc-pos (cursor:loc-after
-                                      (struct:cursor-loc a-cursor)))
+                                      (struct:cursor-loc a-cursor)
+                                      (cursor-dstx)))
                      (cursor-pos))])
-             (send current-text delete (cursor-pos) deletion-length #f)
+             (send current-text delete (cursor-pos) (+ (cursor-pos) deletion-length) #f)
              (set! a-cursor (cursor:cursor-delete a-cursor))
              (send current-text set-top-dstxs (cursor:cursor-toplevel-dstxs a-cursor))))
          (lambda ()
