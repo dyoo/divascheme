@@ -2,6 +2,7 @@
   (require (lib "mred.ss" "mred")
            (lib "class.ss")
            (lib "plt-match.ss")
+           (lib "list.ss")
            (planet "test.ss" ("schematics" "schemeunit.plt" 2 8))
            (planet "text-ui.ss" ("schematics" "schemeunit.plt" 2 8))
            (prefix table: (planet "table.ss" ("soegaard" "galore.plt" 3)))
@@ -19,10 +20,12 @@
     (new (dstx-text-mixin text%)))
   
   
+  ;; Remove local ids from a dstx, just for testing purposes.
   (define (strip-local-ids a-dstx)
     (dstx-deepmap (lambda (a-dstx)
                     (dstx-property-strip a-dstx))
                   a-dstx))
+  
   
   (define empty-table
     (let ()
@@ -137,10 +140,52 @@
       "inserting a fusion"
       (let* ([text (make-text-instance)]
              [cursor (send text get-dstx-cursor)])
-        (send cursor cursor-insert-after (new-atom "hello"))
+        (send cursor cursor-insert-after (new-fusion "("
+                                                     (list (new-atom "hello"))
+                                                     ")"))
         ;; Check what's on screen...
-        (check-equal? (send text get-text) "hello")
+        (check-equal? (send text get-text) "(hello)")
         ;; As well as what's in the dstx
         (check-equal? (map strip-local-ids (send text get-top-dstxs))
-                      (map strip-local-ids (list (new-space "") (new-atom "hello"))))
-        (check-true (number? (send cursor cursor-dstx-property-ref 'local-id))))))))
+                      (map strip-local-ids (list (new-space "") (new-fusion "(" (list (new-atom "hello")) ")"))))))
+     
+     
+     (test-case
+      "inserting inside a fusion"
+      (let* ([text (make-text-instance)]
+             [cursor (send text get-dstx-cursor)])
+        (send cursor cursor-insert-after (new-fusion "("
+                                                     (list (new-atom "hello"))
+                                                     ")"))
+        (send cursor focus-in)
+        (send cursor cursor-insert-after (new-space " "))
+        (send cursor cursor-insert-after (new-fusion "["
+                                                     (list (new-atom "world"))
+                                                     "]"))
+        ;; Check what's on screen...
+        (check-equal? (send text get-text) "(hello [world])")
+        ;; As well as what's in the dstx
+        (check-equal? (map strip-local-ids
+                           (send text get-top-dstxs))
+                      (map strip-local-ids
+                           (list (new-space "")
+                                 (new-fusion "("
+                                             (list (new-atom "hello")
+                                                   (new-space " ")
+                                                   (new-fusion "["
+                                                               (list (new-atom "world"))
+                                                               "]"))
+                                             ")"))))))
+     
+     (test-case
+      "inserting nonsense becomes a special atom"
+      (let* ([text (make-text-instance)])
+        (send text insert "(foo!")
+        ;; Check what's on screen...
+        (check-equal? (send text get-text) "(foo!")
+        (check-equal? (length (send text get-top-dstxs)) 2)
+        (check-equal? (first (send text get-top-dstxs))
+                      (new-space ""))
+        (let ([should-be-special (second (send text get-top-dstxs))])
+          (check-true (special-atom? should-be-special))
+          (check-true (is-a? (special-atom-content should-be-special) string-snip%))))))))

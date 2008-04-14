@@ -7,6 +7,7 @@
            (lib "plt-match.ss")
            (lib "lex.ss" "parser-tools")
            (lib "yacc.ss" "parser-tools")
+           (lib "mred.ss" "mred")
            (prefix : (lib "lex-sre.ss" "parser-tools")))
   
   ;; This is meant to be a parser for Schemeish languages.  We allow
@@ -16,7 +17,8 @@
   
   (provide/contract [parse-port (input-port? . -> . (listof dstx:dstx?))]
                     [plt-lexer (input-port? . -> . position-token?)]
-                    [pretty-print (dstx:dstx? output-port? . -> . void)])
+                    [pretty-print (dstx:dstx? output-port? . -> . void)]
+                    [open-input-text ((is-a?/c text%) natural-number/c natural-number/c . -> . input-port?)])
   
   
   
@@ -249,7 +251,7 @@
                 (dstx ((atom)
                        (dstx:new-atom $1))
                       ((special-atom)
-                       (dstx:new-special-atom $1))
+                       (dstx:new-special-atom (unbox $1)))
                       ((space)
                        (dstx:new-space $1))
                       ((prefix dstxs suffix)
@@ -294,7 +296,8 @@
                [(atom)
                 (accumulate/continue (dstx:new-atom val) acc one-shot? val k)]
                [(special-atom)
-                (accumulate/continue (dstx:new-special-atom val) acc one-shot? val k)]
+                ;; Assumption: the special was boxed.
+                (accumulate/continue (dstx:new-special-atom val) acc one-shot? (unbox val) k)]
                [(space)
                 (accumulate/continue (dstx:new-space val) acc one-shot? val k)]
                [(prefix)
@@ -342,6 +345,9 @@
            (open-input-file "~/local/plt-svn/collects/tex2page/tex2page-aux.ss")))
     (void))
   
+  
+  (define (open-input-text text start end)
+    (open-input-text-editor text start end (lambda (snip) (box snip)) #f #f))
   
   
   ;; parse-port: input-port -> (listof dstx)

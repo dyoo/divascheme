@@ -219,7 +219,7 @@
       (define (parse-between start end)
         (with-handlers ([exn:fail? (lambda (exn)
                                      (parse-between/unparsed start end))])
-          (let* ([ip (get-input-port-after-insert start end)]
+          (let* ([ip (parser:open-input-text this start end)]
                  [dstxs (parser:parse-port ip)])
             dstxs)))
       
@@ -230,7 +230,7 @@
       ;; parse something.
       (define (parse-between/unparsed start end)
         (reverse (map (lambda (a-snip)
-                        (dstx-attach-local-ids (struct:new-special-atom (box a-snip))))
+                        (dstx-attach-local-ids (struct:new-special-atom a-snip)))
                       (get-snips/rev start end))))
       
       
@@ -259,14 +259,6 @@
       (define/public (get-dstx-cursor)
         (new dstx-cursor% [text this]))
       
-      
-      ;; get-input-port-after-insert: number number -> input-port
-      ;; Helper: returns an input port to let us grab the content
-      ;; of the insertion.
-      (define (get-input-port-after-insert start len)
-        (open-input-text-editor this start (+ start len)
-                                (lambda (snip) (box snip))
-                                #f #f))
       
       (super-new)))
   
