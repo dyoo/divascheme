@@ -6,6 +6,8 @@
            "test-focus.ss"
            "test-parse-plt-scheme.ss"
            "test-dstx-text-mixin.ss")
+
+  (provide dsyntax-test-suite)
   
   (define dsyntax-test-suite
     (test-suite

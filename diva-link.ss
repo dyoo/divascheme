@@ -236,7 +236,8 @@
       (thread (lambda ()
                 (let loop ()
                   (let ([new-op (channel-get central-world-mailbox)])
-                    (set! central-world (cworld-apply-op central-world new-op)))
+                    (set! central-world
+                          (cworld-apply-operation central-world new-op)))
                   (loop))))
       
       
@@ -323,8 +324,10 @@
                                (send current-mred push-world w))))))
                     world
                     (reverse (World-imperative-actions world)))])
-               (set-current-world! (copy-struct World new-world
-                                                [World-imperative-actions empty]))))
+               #;(set-current-world! (copy-struct World new-world
+                                                  [World-imperative-actions empty]))
+               ;; fixme!
+               (void)))
            (lambda ()
              (end-edit-sequence)))))
       
