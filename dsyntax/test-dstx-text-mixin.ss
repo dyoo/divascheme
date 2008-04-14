@@ -55,6 +55,7 @@
   (define test-dstx-text-mixin
     (test-suite
      "test-dstx-text-mixin.ss"
+     
      (test-case
       "inserting a single element"
       (let* ([text (make-text-instance)]
@@ -66,6 +67,31 @@
         (check-equal? (map strip-local-ids (send text get-top-dstxs))
                       (map strip-local-ids (list (new-space "") (new-atom "hello"))))
         (check-true (number? (send cursor cursor-dstx-property-ref 'local-id)))))
+     
+     
+     (test-case
+      "deleting a single element"
+      (let* ([text (make-text-instance)]
+             [cursor (send text get-dstx-cursor)])
+        (send cursor cursor-insert-after (new-atom "hello"))
+        (send cursor cursor-delete)
+        (check-equal? (send text get-text) "")
+        (check-equal? (map strip-local-ids (send text get-top-dstxs))
+                      (map strip-local-ids (list (new-space ""))))))
+     
+     
+     (test-case
+      "deleting between two"
+      (let* ([text (make-text-instance)]
+             [cursor (send text get-dstx-cursor)])
+        (send cursor cursor-insert-after (new-atom "A"))
+        (send cursor cursor-insert-after (new-atom "B"))
+        (send cursor cursor-insert-after (new-atom "C"))
+        (send cursor focus-younger)
+        (send cursor cursor-delete)
+        (check-equal? (send text get-text) "AC")
+        (check-equal? (strip-local-ids (send cursor cursor-dstx))
+                      (strip-local-ids (new-atom "C")))))
      
      
      (test-case
@@ -92,6 +118,7 @@
                       (strip-local-ids (new-atom "hello")))))
      
      
+     
      (test-case
       "inserting two elements with insert-before"
       (let* ([text (make-text-instance)]
@@ -109,7 +136,7 @@
                                                  (new-atom "world"))))))
      
      (test-case
-      "editing a symbol at the front"
+      "manually editing a symbol at the front"
       (let* ([text (make-text-instance)]
              [cursor (send text get-dstx-cursor)])
         (send cursor cursor-insert-after (new-atom "orld"))
@@ -123,7 +150,26 @@
      
      
      (test-case
-      "editing a symbol internally"
+      "manually editing a symbol at the back"
+      (let* ([text (make-text-instance)]
+             [cursor (send text get-dstx-cursor)])
+        (send cursor cursor-insert-after (new-atom "worl"))
+        (send cursor cursor-insert-after (new-space " "))
+        (send cursor cursor-insert-after (new-space "peace"))
+        (send text insert "d" 4)
+        
+        ;; Check what's on screen...
+        (check-equal? (send text get-text) "world peace")
+        ;; As well as what's in the dstx
+        (check-equal? (map strip-local-ids (send text get-top-dstxs))
+                      (map strip-local-ids (list (new-space "")
+                                                 (new-atom "world")
+                                                 (new-space " ")
+                                                 (new-atom "peace"))))))
+     
+     
+     (test-case
+      "manually editing a symbol internally"
       (let* ([text (make-text-instance)]
              [cursor (send text get-dstx-cursor)])
         (send cursor cursor-insert-after (new-atom "wrld"))
