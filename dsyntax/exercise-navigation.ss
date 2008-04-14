@@ -3,6 +3,7 @@
            "parse-plt-scheme.ss"
            "text-support.ss"
            "simple-profile.ss"
+           "dstx-text-mixin.ss"
            (lib "etc.ss")
            (lib "list.ss")
            (lib "class.ss")
@@ -13,19 +14,25 @@
   
   (define (my-key-handler editor event)
     (local ((define a-cursor (send editor get-tree-cursor)))
+      (send a-cursor focus-pos (send editor get-start-position))
       (case (send event get-key-code)
         [(#\j)
-         (send editor set-tree-cursor (focus-predecessor a-cursor))]
+         (send a-cursor focus-predecessor)
+         (send editor show-focus)]
         [(#\l)
-         (send editor set-tree-cursor (focus-successor a-cursor))]
+         (send a-cursor focus-successor)
+         (send editor show-focus)]
         [(#\K)
-         (send editor set-tree-cursor (focus-out a-cursor))])))
+         (send a-cursor focus-out)
+         (send editor show-focus)])))
   
   
   (define my-text%
-    (class text%
+    (class (dstx-text-mixin text%)
+      (inherit set-keymap get-keymap set-position scroll-to-position get-dstx-cursor)
+      
       (super-new)
-      (inherit set-keymap get-keymap set-position scroll-to-position)
+      (define tree-cursor (get-dstx-cursor))
       (set-keymap (new keymap%))
       (send (get-keymap) add-function
             "dsyntax:test-handler" my-key-handler)
@@ -35,37 +42,23 @@
       (send (get-keymap) map-function "l" "dsyntax:test-handler")
       
       
-      (define tree
-        (call-with-text-input-port this parse-port))
-      (define tree-cursor
-        (make-toplevel-cursor tree))
-      
-      (define (refresh-tree)
-        (prof 'refresh-tree
-              (set! tree (call-with-text-input-port this parse-port))
-              (set-tree-cursor (make-toplevel-cursor tree))))
-      
       (define/override (load-file filename)
         (super load-file filename)
-        (refresh-tree))
+        (set! tree-cursor (get-dstx-cursor)))
+      
       
       (define/public (get-tree-cursor)
         tree-cursor)
       
-      (define/public (set-tree-cursor a-cursor)
-        (when a-cursor
-          (printf "~a ~a~n"
-                  (cursor-pos a-cursor)
-                  (cursor-endpos a-cursor))
-          (set! tree-cursor a-cursor)
-          (set-position (cursor-pos a-cursor)
-                        (cursor-endpos a-cursor)
-                        #f
-                        #f)
-          (scroll-to-position (cursor-pos a-cursor)
-                              #f
-                              (cursor-endpos a-cursor)
-                              'start)))))
+      (define/public (show-focus)
+        (set-position (send tree-cursor cursor-pos)
+                      (send tree-cursor cursor-endpos)
+                      #f
+                      #f)
+        (scroll-to-position (send tree-cursor cursor-pos)
+                            #f
+                            (send tree-cursor cursor-endpos)
+                            'start))))
   
   (define (test)
     (open-file (expand-user-path "~/local/plt/collects/tex2page/tex2page-aux.ss")))

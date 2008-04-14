@@ -9,6 +9,8 @@
   
   (require (lib "class.ss")
            (lib "mred.ss" "mred")
+           
+           (prefix parser: "parse-plt-scheme.ss")
            (prefix cursor: "cursor.ss")
            (prefix struct: "struct.ss"))
   
@@ -51,6 +53,7 @@
                end-edit-sequence
                in-edit-sequence?
                get-start-position
+               last-position
                erase
                insert)
       
@@ -124,6 +127,16 @@
         (void))
       
       
+      ;; load-file: string -> void
+      (define/override (load-file filename)
+        (dynamic-wind (lambda () (begin-dstx-edit-sequence))
+                      (lambda () (super load-file filename))
+                      (lambda () (end-dstx-edit-sequence)))
+        (let* ([ip (get-input-port-after-insert 0 (last-position))]
+               [dstxs (parser:parse-port ip)])
+          (set-top-dstxs dstxs)))
+      
+      
       ;; Returns a toplevel cursor into the dstx.
       ;; Operations performed with the cursor will be reflected
       ;; back on screen.
@@ -173,40 +186,47 @@
       (define/public (cursor-dstx-property-ref a-name)
         (cursor:cursor-dstx-property-ref a-cursor a-name))
       
+      (define-syntax (set-cursor/success stx)
+        (syntax-case stx ()
+          [(_ a-cursor new-cursor-val)
+           (syntax/loc stx
+             (begin (unless new-cursor-val
+                      (error 'set-cursor "movement failed"))
+                    (set! a-cursor new-cursor-val)))]))
       
       ;; Focusers
       (define/public (focus-in)
-        (set! a-cursor (cursor:focus-in a-cursor)))
+        (set-cursor/success a-cursor (cursor:focus-in a-cursor)))
       
       (define/public (focus-in/no-snap)
-        (set! a-cursor (cursor:focus-in/no-snap a-cursor)))
+        (set-cursor/success a-cursor (cursor:focus-in/no-snap a-cursor)))
       
       (define/public (focus-out)
-        (set! a-cursor (cursor:focus-out a-cursor)))
+        (set-cursor/success a-cursor (cursor:focus-out a-cursor)))
       
       (define/public (focus-older)
-        (set! a-cursor (cursor:focus-older a-cursor)))
+        (set-cursor/success a-cursor (cursor:focus-older a-cursor)))
       
       (define/public (focus-older/no-snap)
-        (set! a-cursor (cursor:focus-older/no-snap a-cursor)))
+        (set-cursor/success a-cursor (cursor:focus-older/no-snap a-cursor)))
       
       (define/public (focus-younger)
-        (set! a-cursor (cursor:focus-younger a-cursor)))
+        (set-cursor/success a-cursor (cursor:focus-younger a-cursor)))
       
       (define/public (focus-younger/no-snap)
-        (set! a-cursor (cursor:focus-younger/no-snap a-cursor)))
+        (set-cursor/success a-cursor (cursor:focus-younger/no-snap a-cursor)))
       
       (define/public (focus-successor)
-        (set! a-cursor (cursor:focus-successor a-cursor)))
+        (set-cursor/success a-cursor (cursor:focus-successor a-cursor)))
       
       (define/public (focus-predecessor)
-        (set! a-cursor (cursor:focus-predecessor a-cursor)))
+        (set-cursor/success a-cursor (cursor:focus-predecessor a-cursor)))
       
       (define/public (focus-toplevel)
-        (set! a-cursor (cursor:focus-toplevel a-cursor)))
+        (set-cursor/success a-cursor (cursor:focus-toplevel a-cursor)))
       
       (define/public (focus-pos a-pos)
-        (set! a-cursor (cursor:focus-pos a-cursor a-pos)))
+        (set-cursor/success a-cursor (cursor:focus-pos a-cursor a-pos)))
       
       
       ;; pretty-print-to-text: dstx -> void
