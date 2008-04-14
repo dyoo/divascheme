@@ -20,6 +20,7 @@
   
   (define dstx-text<%> (interface () get-top-dstxs get-dstx-cursor))
   (define dstx-cursor<%> (interface ()
+                           get-functional-cursor
                            cursor-dstx
                            cursor-line
                            cursor-col
@@ -157,6 +158,9 @@
       
       
       (define (handle-possibly-unstructured-delete start-pos len)
+        ;; Collect the fusion or toplevel that's affected.
+        ;; Delete them.
+        ;; Reparse.
         ;; Possibly unstructured edit.
         ;; fixme!
         (void))
@@ -167,11 +171,8 @@
       ;; When the text changes without explicit structured operations, we
       ;; must maintain semi-structure.
       (define (handle-possibly-unstructured-insert start-pos len)
-        ;; FIXME/TODO:
-        ;; treat an unstructured insertion as an atom with the
-        ;; 'unstructured property?
         (let ([a-cursor (get-dstx-cursor)])
-          (send a-cursor focus-pos start-pos)
+          (position-focus-on-pos a-cursor start-pos)
           ;; Delete the old, introduce the new.
           (let ([new-dstxs
                  (parse-between (send a-cursor cursor-pos)
@@ -188,6 +189,20 @@
             (repeat (length new-dstxs)
                     (send a-cursor focus-older/no-snap))
             (send a-cursor cursor-delete))))
+      
+      
+      ;; position-focus-on-pos: number -> void
+      ;; Puts focus on the dstx that will be
+      (define (position-focus-on-pos a-cursor start-pos)
+        (send a-cursor focus-pos start-pos)
+        (let ([fcursor (send a-cursor get-functional-cursor)])
+          ;; subtle: if the very previous expression is an atom, attach to it
+          ;; instead.
+          (when (and (cursor:focus-younger fcursor)
+                     (struct:atom? (struct:cursor-dstx (cursor:focus-younger fcursor)))
+                     (= (cursor:cursor-endpos (cursor:focus-younger fcursor))
+                        start-pos))
+            (send a-cursor focus-younger))))
       
       
       
@@ -276,6 +291,8 @@
       (define a-cursor
         (cursor:make-toplevel-cursor (send current-text get-top-dstxs)))
       
+      (define/public (get-functional-cursor)
+        a-cursor)
       
       ;; Getters
       (define/public (cursor-dstx)

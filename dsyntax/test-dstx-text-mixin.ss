@@ -155,7 +155,7 @@
              [cursor (send text get-dstx-cursor)])
         (send cursor cursor-insert-after (new-atom "worl"))
         (send cursor cursor-insert-after (new-space " "))
-        (send cursor cursor-insert-after (new-space "peace"))
+        (send cursor cursor-insert-after (new-atom "peace"))
         (send text insert "d" 4)
         
         ;; Check what's on screen...
@@ -166,6 +166,20 @@
                                                  (new-atom "world")
                                                  (new-space " ")
                                                  (new-atom "peace"))))))
+     
+     
+     (test-case
+      "manually editing a symbol at the back"
+      (let* ([text (make-text-instance)]
+             [cursor (send text get-dstx-cursor)])
+        (send cursor cursor-insert-after (new-atom "worl"))
+        (send text insert "d" 4)
+        ;; Check what's on screen...
+        (check-equal? (send text get-text) "world")
+        ;; As well as what's in the dstx
+        (check-equal? (map strip-local-ids (send text get-top-dstxs))
+                      (map strip-local-ids (list (new-space "")
+                                                 (new-atom "world"))))))
      
      
      (test-case
