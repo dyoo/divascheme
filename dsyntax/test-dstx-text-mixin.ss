@@ -183,9 +183,9 @@
         (send text insert "(foo!")
         ;; Check what's on screen...
         (check-equal? (send text get-text) "(foo!")
-        (check-equal? (length (send text get-top-dstxs)) 2)
-        (check-equal? (first (send text get-top-dstxs))
-                      (new-space ""))
-        (let ([should-be-special (second (send text get-top-dstxs))])
-          (check-true (special-atom? should-be-special))
-          (check-true (is-a? (special-atom-content should-be-special) string-snip%))))))))
+        (check-equal? (length (send text get-top-dstxs)) 1)
+        (let* ([should-be-special (first (send text get-top-dstxs))]
+               [snip (special-atom-content should-be-special)])
+          (check-true (is-a? snip string-snip%))
+          (check-equal? (send snip get-text 0 (send snip get-count))
+                        "(foo!")))))))

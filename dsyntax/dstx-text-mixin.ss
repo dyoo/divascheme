@@ -183,9 +183,9 @@
                           (lambda () (end-dstx-edit-sequence)))
             (for-each (lambda (new-dstx)
                         (send a-cursor cursor-insert-before new-dstx))
-                      new-dstxs)
+                      (reverse new-dstxs))
             (repeat (length new-dstxs)
-                    (send a-cursor focus-older))
+                    (send a-cursor focus-older/no-snap))
             (send a-cursor cursor-delete))))
       
       
