@@ -273,4 +273,41 @@
         (check-equal? (map strip-local-ids (send text get-top-dstxs))
                       (map strip-local-ids (list (new-space "")
                                                  (new-atom "an-at")
-                                                 (new-atom "om")))))))))
+                                                 (new-atom "om"))))))
+     
+     (test-case
+      "manually deleting some spaces in a fusion"
+      (let* ([text (make-text-instance)])
+        (send text insert "(module  foo mzscheme)")
+        (let* ([f-cursor (send (send text get-dstx-cursor) get-functional-cursor)])
+          (let ([id1 (cursor-dstx-property-ref
+                      (focus-in f-cursor)
+                      'local-id)]
+                [id2 (cursor-dstx-property-ref
+                      (focus-older (focus-in f-cursor))
+                      'local-id)]
+                [id3 (cursor-dstx-property-ref
+                      (focus-older
+                       (focus-older
+                        (focus-in f-cursor)))
+                      'local-id)])
+            (send text delete 7 8)
+            (check-equal? (send text get-text) "(module foo mzscheme")
+            (check-equal? (map strip-local-ids (send text get-top-dstxs))
+                          (map strip-local-ids
+                               (list
+                                (new-fusion "("
+                                            (list (new-atom "module")
+                                                  (new-space " ")
+                                                  (new-atom "foo")
+                                                  (new-space " ")
+                                                  (new-atom "mzscheme"))
+                                            ")"))))
+            (let ([cursor (send text get-dstx-cursor)])
+              (send cursor focus-in)
+              (check-equal? (cursor-dstx-property-ref 'local-id) id1)
+              (send cursor focus-older)
+              (check-equal? (cursor-dstx-property-ref 'local-id) id2)
+              (send cursor focus-older)
+              (check-equal? (cursor-dstx-property-ref 'local-id) id3))))
+        )))))
