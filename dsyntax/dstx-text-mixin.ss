@@ -8,8 +8,7 @@
   ; corresponding to that change, and adjust our ast accordingly.
   
   (require (lib "class.ss")
-           (lib "mred.ss" "mred")
-           (lib "plt-match.ss")
+           (lib "port.ss")
            (prefix parser: "parse-plt-scheme.ss")
            (prefix cursor: "cursor.ss")
            (prefix struct: "struct.ss"))
@@ -94,6 +93,7 @@
     (class* super% (dstx-text<%>)
       (inherit last-position
                get-text
+               insert
                delete
                split-snip
                find-snip
@@ -157,13 +157,56 @@
            (handle-possibly-unstructured-insert start-pos len)]))
       
       
+      ;; handle-possibly-unstructured-delete: number number -> void
+      ;;
       (define (handle-possibly-unstructured-delete start-pos len)
-        ;; Collect the fusion or toplevel that's affected.
-        ;; Delete them.
-        ;; Reparse.
-        ;; Possibly unstructured edit.
-        ;; fixme!
-        (void))
+        
+        ;; temporarily-fill-hole: number number -> void
+        ;; temporarily put something in the deleted text's hole
+        ;; to make textual parsing and deletion work.
+        (define (temporarily-fill-hole deleted-start deleted-end)
+          (dynamic-wind (lambda ()
+                          (begin-dstx-edit-sequence))
+                        (lambda ()
+                          (insert (make-string (- deleted-end deleted-start) #\X)
+                                  deleted-start
+                                  'same
+                                  #f))
+                        (lambda ()
+                          (end-dstx-edit-sequence))))
+        (when (> len 0)
+          (let ([a-cursor (get-dstx-cursor)])
+            (send a-cursor focus-pos start-pos)
+            (let ([deleted-start (max start-pos (send a-cursor cursor-pos))]
+                  [deleted-end (min (+ start-pos len) (send a-cursor cursor-endpos))])
+              (temporarily-fill-hole deleted-start deleted-end)
+              (let ([new-dstxs (parse-with-hole (send a-cursor cursor-pos)
+                                                deleted-start
+                                                deleted-end
+                                                (send a-cursor cursor-endpos))])
+                (for-each (lambda (a-dstx)
+                            (send a-cursor cursor-insert-after a-dstx)
+                            (send a-cursor focus-younger))
+                          (reverse new-dstxs))
+                (printf "Deleting ~s~n" (send a-cursor cursor-dstx))
+                (send a-cursor cursor-delete)
+                (handle-possibly-unstructured-delete start-pos (- len (- deleted-end deleted-start))))))))
+      
+      
+      
+      ;; deletion-spans-whole-focus? dstx-cursor number number -> boolean
+      ;; Returns true if the unstructured delete spans across the whole focused dstx.
+      (define (deletion-spans-whole-focus? a-cursor start-pos len)
+        (and (<= start-pos (send a-cursor start-pos))
+             (>= len (- (send a-cursor cursor-endpos)
+                        (send a-cursor cursor-pos)))))
+      
+      ;; deletion-overlaps-focus? dstx-cursor number number -> booelan
+      ;; Returns true if there's an overlap between the focus and the deletion.
+      (define (deletion-overlaps-focus? a-cursor start-pos len)
+        (and (<= (send a-cursor cursor-pos) start-pos)
+             (< start-pos (send a-cursor cursor-endpos))))
+      
       
       
       
@@ -171,6 +214,19 @@
       ;; When the text changes without explicit structured operations, we
       ;; must maintain semi-structure.
       (define (handle-possibly-unstructured-insert start-pos len)
+        ;; position-focus-on-pos: number -> void
+        ;; Puts focus on the dstx that will be
+        (define (position-focus-on-pos a-cursor start-pos)
+          (send a-cursor focus-pos start-pos)
+          (let ([fcursor (send a-cursor get-functional-cursor)])
+            ;; subtle: if the very previous expression is an atom, attach to it
+            ;; instead.
+            (when (and (cursor:focus-younger fcursor)
+                       (struct:atom? (struct:cursor-dstx (cursor:focus-younger fcursor)))
+                       (= (cursor:cursor-endpos (cursor:focus-younger fcursor))
+                          start-pos))
+              (send a-cursor focus-younger))))
+        
         (let ([a-cursor (get-dstx-cursor)])
           (position-focus-on-pos a-cursor start-pos)
           ;; Delete the old, introduce the new.
@@ -191,18 +247,7 @@
             (send a-cursor cursor-delete))))
       
       
-      ;; position-focus-on-pos: number -> void
-      ;; Puts focus on the dstx that will be
-      (define (position-focus-on-pos a-cursor start-pos)
-        (send a-cursor focus-pos start-pos)
-        (let ([fcursor (send a-cursor get-functional-cursor)])
-          ;; subtle: if the very previous expression is an atom, attach to it
-          ;; instead.
-          (when (and (cursor:focus-younger fcursor)
-                     (struct:atom? (struct:cursor-dstx (cursor:focus-younger fcursor)))
-                     (= (cursor:cursor-endpos (cursor:focus-younger fcursor))
-                        start-pos))
-            (send a-cursor focus-younger))))
+      
       
       
       
@@ -238,6 +283,23 @@
           (let* ([ip (parser:open-input-text this start end)]
                  [dstxs (parser:parse-port ip)])
             dstxs)))
+      
+      
+      ;; parse-with-hole: number number number number -> (listof dstx)
+      ;; Parses between [start, hole-start], [hole-end, end].
+      (define (parse-with-hole start hole-start hole-end end)
+        (with-handlers ([exn:fail? (lambda (exn)
+                                     (map (lambda (a-snip)
+                                            (dstx-attach-local-ids
+                                             (struct:new-special-atom a-snip)))
+                                          (append (reverse (get-snips/rev start hole-start))
+                                                  (reverse (get-snips/rev hole-end end)))))])
+          (let* ([ip1 (parser:open-input-text this start hole-start)]
+                 [ip2 (parser:open-input-text this hole-end end)]
+                 [ip (input-port-append #t ip1 ip2)]
+                 [dstxs (parser:parse-port ip)])
+            dstxs)))
+      
       
       
       ;; parse-between/unparsed: start end -> (listof dstx)

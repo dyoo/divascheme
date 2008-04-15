@@ -264,9 +264,12 @@
      (test-case
       "manually editing the end of an atom with delete"
       (let* ([text (make-text-instance)])
-        (send text insert "an-atom-bomb")
+        (let ([cursor (send text get-dstx-cursor)])
+          (send cursor cursor-insert-after (new-atom "an-at"))
+          (send cursor cursor-insert-after (new-atom "om-bomb")))
         (send text delete 7 12)
         (check-equal? (send text get-text) "an-atom")
         (check-equal? (map strip-local-ids (send text get-top-dstxs))
                       (map strip-local-ids (list (new-space "")
-                                                 (new-atom "an-atom")))))))))
+                                                 (new-atom "an-at")
+                                                 (new-atom "om")))))))))

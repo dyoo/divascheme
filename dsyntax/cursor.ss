@@ -489,7 +489,7 @@
                                       focus-predecessor
                                       (lambda (a-cursor)
                                         (at-or-before? a-cursor a-pos)))])
-        (cond [(and (sentinel-space? (cursor-dstx a-cursor))
+        (cond [(and (sentinel-space? (cursor-dstx new-cursor))
                     (focus-older/no-snap new-cursor))
                => identity]
               [else new-cursor]))))
