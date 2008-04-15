@@ -203,7 +203,7 @@
                       [len len])
              (when (> len 0)
                (let ([a-cursor (get-dstx-cursor)])
-                 (send a-cursor focus-pos start-pos)
+                 (send a-cursor focus-container start-pos)
                  (let ([deleted-start (max start-pos (send a-cursor cursor-pos))]
                        [deleted-end (min (+ start-pos len)
                                          (send a-cursor cursor-endpos))])
@@ -498,6 +498,9 @@
       
       (define/public (focus-pos a-pos)
         (set-cursor/success a-cursor (cursor:focus-pos a-cursor a-pos)))
+      
+      (define/public (focus-container a-pos)
+        (set-cursor/success a-cursor (cursor:focus-container a-cursor a-pos)))
       
       
       ;; pretty-print-to-text: dstx -> void
