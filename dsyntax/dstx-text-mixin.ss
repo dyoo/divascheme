@@ -249,7 +249,6 @@
         ;; Puts focus on the dstx that will be
         (define (position-focus-on-pos a-cursor start-pos)
           (send a-cursor focus-pos start-pos)
-          (printf "initial focus on ~s~n" (send a-cursor cursor-dstx))
           (let ([fcursor (send a-cursor get-functional-cursor)])
             ;; subtle: if the very previous expression is an atom, attach to it
             ;; instead.
@@ -269,7 +268,6 @@
          (lambda ()
            (let ([a-cursor (get-dstx-cursor)])
              (position-focus-on-pos a-cursor start-pos)
-             (printf "focusing ~s on ~s~n" start-pos (send a-cursor cursor-dstx))
              ;; Delete the old, introduce the new.
              (let ([new-dstxs
                     (parse-between (send a-cursor cursor-pos)

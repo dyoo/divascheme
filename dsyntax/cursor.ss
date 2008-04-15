@@ -597,4 +597,4 @@
   ;; at-end?: cursor -> boolean
   ;; Returns true if we're at the end, when there is no sucessor.
   (define (at-end? a-cursor)
-    (eqv? (focus-successor a-cursor) #f)))
+    (eqv? (focus-successor/no-snap a-cursor) #f)))

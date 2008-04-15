@@ -37,6 +37,15 @@
         (check-equal? (cursor-dstx (focus-pos a-cursor 6))
                       (new-atom "bar"))))
      
+     
+     (test-case
+      "focus-pos on a space"
+      (let ([a-cursor (make-toplevel-cursor (list (new-space " ")))])
+        (check-equal? (cursor-dstx (focus-pos a-cursor 0))
+                      (new-space " "))
+        (check-equal? (cursor-dstx (focus-pos a-cursor 1))
+                      (new-space " "))))
+     
      (test-case
       "focus-pos at an ending space"
       (let ([a-cursor (make-toplevel-cursor (list (new-atom "x") (new-space " ")))])
