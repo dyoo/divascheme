@@ -191,9 +191,13 @@
         
         ;; Check what's on screen...
         (check-equal? (send text get-text) "world")
+        (check-equal? (send text get-start-position) 2)
+        (check-equal? (send text get-end-position) 2)
         ;; As well as what's in the dstx
         (check-equal? (map strip-local-ids (send text get-top-dstxs))
                       (map strip-local-ids (list (new-space "") (new-atom "world"))))))
+     
+     
      
      
      (test-case
