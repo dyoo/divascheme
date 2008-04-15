@@ -216,7 +216,7 @@
                                          (send a-cursor cursor-endpos))])
                    (for-each (lambda (a-dstx)
                                (send a-cursor cursor-insert-after a-dstx)
-                               (send a-cursor focus-younger))
+                               (send a-cursor focus-younger/no-snap))
                              (reverse new-dstxs))
                    (send a-cursor cursor-delete)
                    (loop (- len (- deleted-end deleted-start)))))))
@@ -249,14 +249,15 @@
         ;; Puts focus on the dstx that will be
         (define (position-focus-on-pos a-cursor start-pos)
           (send a-cursor focus-pos start-pos)
+          (printf "initial focus on ~s~n" (send a-cursor cursor-dstx))
           (let ([fcursor (send a-cursor get-functional-cursor)])
             ;; subtle: if the very previous expression is an atom, attach to it
             ;; instead.
-            (when (and (cursor:focus-younger fcursor)
-                       (struct:atom? (struct:cursor-dstx (cursor:focus-younger fcursor)))
-                       (= (cursor:cursor-endpos (cursor:focus-younger fcursor))
+            (when (and (cursor:focus-younger/no-snap fcursor)
+                       (struct:atom? (struct:cursor-dstx (cursor:focus-younger/no-snap fcursor)))
+                       (= (cursor:cursor-endpos (cursor:focus-younger/no-snap fcursor))
                           start-pos))
-              (send a-cursor focus-younger))))
+              (send a-cursor focus-younger/no-snap))))
         
         (define-values
           (original-start-position original-end-position)
@@ -268,6 +269,7 @@
          (lambda ()
            (let ([a-cursor (get-dstx-cursor)])
              (position-focus-on-pos a-cursor start-pos)
+             (printf "focusing ~s on ~s~n" start-pos (send a-cursor cursor-dstx))
              ;; Delete the old, introduce the new.
              (let ([new-dstxs
                     (parse-between (send a-cursor cursor-pos)
@@ -277,10 +279,9 @@
                              (lambda () (delete start-pos (+ start-pos len)))
                              (lambda () (end-dstx-edit-sequence)))
                (for-each (lambda (new-dstx)
-                           (send a-cursor cursor-insert-before new-dstx))
+                           (send a-cursor cursor-insert-after new-dstx)
+                           (send a-cursor focus-younger/no-snap))
                          (reverse new-dstxs))
-               (repeat (length new-dstxs)
-                       (send a-cursor focus-older/no-snap))
                (send a-cursor cursor-delete)))
            
            (set-position original-start-position original-end-position #f #f 'local))

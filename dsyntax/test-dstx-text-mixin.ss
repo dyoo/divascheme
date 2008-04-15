@@ -383,7 +383,12 @@
       "simple insertion of two atoms separated by space"
       (let ([text (make-text-instance)])
         (send text insert "hello")
+        (check-equal? (map strip-local-ids (send text get-top-dstxs))
+                      (map strip-local-ids (list (new-atom "hello"))))
         (send text insert " ")
+        (check-equal? (map strip-local-ids (send text get-top-dstxs))
+                      (map strip-local-ids (list (new-atom "hello")
+                                                 (new-space " "))))
         (send text insert "world")
         (check-equal? (map strip-local-ids (send text get-top-dstxs))
                       (map strip-local-ids (list (new-atom "hello")
