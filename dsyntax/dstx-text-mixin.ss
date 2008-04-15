@@ -331,8 +331,12 @@
       (define (parse-with-hole start hole-start hole-end end)
         (with-handlers ([exn:fail? (lambda (exn)
                                      (map (lambda (a-snip)
-                                            (dstx-attach-local-ids
-                                             (struct:new-special-atom a-snip (send a-snip get-count))))
+                                            (struct:dstx-property-set
+                                             (dstx-attach-local-ids
+                                              (struct:new-special-atom
+                                               a-snip
+                                               (send a-snip get-count)))
+                                             'unparsed #t))
                                           (append (reverse (get-snips/rev start hole-start))
                                                   (reverse (get-snips/rev hole-end end)))))])
           (let* ([ip1 (parser:open-input-text this start hole-start)]
@@ -350,9 +354,13 @@
       (define (parse-between/unparsed start end)
         (let ([result
                (reverse (map (lambda (a-snip)
-                               (dstx-attach-local-ids (struct:new-special-atom
-                                                       a-snip
-                                                       (send a-snip get-count))))
+                               (struct:dstx-property-set
+                                (dstx-attach-local-ids
+                                 (struct:new-special-atom
+                                  a-snip
+                                  (send a-snip get-count)))
+                                'unparsed
+                                #t))
                              (get-snips/rev start end)))])
           result))
       
