@@ -364,6 +364,13 @@
       (define a-cursor
         (cursor:make-toplevel-cursor (send current-text get-top-dstxs)))
       
+      (define-syntax (set-cursor/success stx)
+        (syntax-case stx ()
+          [(_ a-cursor new-cursor-val)
+           (syntax/loc stx
+             (begin (unless new-cursor-val
+                      (error 'set-cursor "movement failed"))
+                    (set! a-cursor new-cursor-val)))]))
       
       ;; resync: -> void
       ;; Refresh the cursor's view of the AST, trying our best to preserve
@@ -372,22 +379,25 @@
       ;; of the AST.
       ;; Protected.
       (define/public (resync)
-        (when (not (= current-version
-                      (send current-text get-version)))
+        (when (not (= current-version (send current-text get-version)))
           (let ([old-local-id (cursor-dstx-property-ref 'local-id)]
                 [old-pos (cursor-pos)])
-            (set! a-cursor (send current-text get-top-dstxs))
-            (let ([new-cursor
-                   (cursor:focus-find-dstx
-                    a-cursor
-                    (lambda (a-dstx)
-                      (= (struct:dstx-property-ref a-dstx 'local-id)
-                         old-local-id)))])
-              (cond
-                [new-cursor
-                 (set! a-cursor new-cursor)]
-                [else
-                 (set! a-cursor (focus-pos a-cursor old-pos))])))))
+            (set! a-cursor (cursor:make-toplevel-cursor
+                            (send current-text get-top-dstxs)))
+            (cond
+              [(cursor:focus-find-dstx
+                a-cursor
+                (lambda (a-dstx)
+                  (= (struct:dstx-property-ref a-dstx 'local-id)
+                     old-local-id)))
+               =>
+               (lambda (new-cursor)
+                 (set! a-cursor new-cursor))]
+              
+              [(cursor:focus-pos a-cursor old-pos)
+               =>
+               (lambda (new-cursor)
+                 (set! a-cursor new-cursor))]))))
       
       
       (define/public (get-functional-cursor)
@@ -411,14 +421,6 @@
       
       (define/public (cursor-dstx-property-ref a-name)
         (cursor:cursor-dstx-property-ref a-cursor a-name))
-      
-      (define-syntax (set-cursor/success stx)
-        (syntax-case stx ()
-          [(_ a-cursor new-cursor-val)
-           (syntax/loc stx
-             (begin (unless new-cursor-val
-                      (error 'set-cursor "movement failed"))
-                    (set! a-cursor new-cursor-val)))]))
       
       ;; Focusers
       (define/public (focus-in)
