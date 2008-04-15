@@ -42,7 +42,9 @@
                     [focus-younger focus-function/c]
                     [focus-younger/no-snap focus-function/c]
                     [focus-successor focus-function/c]
+                    [focus-successor/no-snap focus-function/c]
                     [focus-predecessor focus-function/c]
+                    [focus-predecessor/no-snap focus-function/c]
                     [focus-toplevel focus-function/c]
                     
                     [focus-pos
@@ -417,6 +419,22 @@
                     [else (loop a-cursor)]))]
            [else #f]))]))
   
+  ;; focus-successor/no-snap: cursor -> (union cursor #f)
+  (define (focus-successor/no-snap a-cursor)
+    (cond
+      [(focus-in/no-snap a-cursor) => identity]
+      [(focus-older/no-snap a-cursor) => identity]
+      [else
+       (let loop ([a-cursor a-cursor])
+         (cond
+           [(focus-out a-cursor)
+            =>
+            (lambda (a-cursor)
+              (cond [(focus-older/no-snap a-cursor) => identity]
+                    [else (loop a-cursor)]))]
+           [else #f]))]))
+  
+  
   
   ;; focus-predecessor: cursor -> (union cursor #f)
   (define (focus-predecessor a-cursor)
@@ -431,6 +449,25 @@
                     (let find-last ([a-cursor a-cursor])
                       (cond
                         [(focus-older a-cursor) => find-last]
+                        [else (loop a-cursor)])))]
+                 [else a-cursor])))]
+      [(focus-out a-cursor) => identity]
+      [else #f]))
+  
+  
+  ;; focus-predecessor/no-snap: cursor -> (union cursor #f)
+  (define (focus-predecessor/no-snap a-cursor)
+    (cond
+      [(focus-younger/no-snap a-cursor)
+       =>
+       (lambda (a-cursor)
+         (let loop ([a-cursor a-cursor])
+           (cond [(focus-in/no-snap a-cursor)
+                  =>
+                  (lambda (a-cursor)
+                    (let find-last ([a-cursor a-cursor])
+                      (cond
+                        [(focus-older/no-snap a-cursor) => find-last]
                         [else (loop a-cursor)])))]
                  [else a-cursor])))]
       [(focus-out a-cursor) => identity]
@@ -476,17 +513,19 @@
   ;; Given a cursor and a position, refocuses the cursor at the dstx
   ;; at or immediately to the left of the cursor.  If no such syntax
   ;; exists, returns #f.
+  ;; Does not snap across whitespace, except for the special case
+  ;; of the sentinel empty-space character.
   (define (focus-pos a-cursor a-pos)
     ;; First scan forward, and then scan backward.
     (let ([cursor-forward
            (or (focus-search a-cursor
-                             focus-successor
+                             focus-successor/no-snap
                              (lambda (a-cursor)
                                (or (at-or-after? a-cursor a-pos)
                                    (at-end? a-cursor))))
                a-cursor)])
       (let ([new-cursor (focus-search cursor-forward
-                                      focus-predecessor
+                                      focus-predecessor/no-snap
                                       (lambda (a-cursor)
                                         (at-or-before? a-cursor a-pos)))])
         (cond [(and (sentinel-space? (cursor-dstx new-cursor))

@@ -301,7 +301,7 @@
           (send cursor focus-pos 7)
           (check-equal? (strip-local-ids (send cursor cursor-dstx))
                         (strip-local-ids (new-space " ")))
-          (send cursor focus-younger/no-skip)
+          (send cursor focus-younger/no-snap)
           (check-equal? (strip-local-ids (send cursor cursor-dstx))
                         (strip-local-ids (new-atom "module"))))))
      
@@ -323,7 +323,7 @@
                         (focus-in f-cursor)))
                       'local-id)])
             (send text delete 7 8)
-            (check-equal? (send text get-text) "(module foo mzscheme")
+            (check-equal? (send text get-text) "(module foo mzscheme)")
             (check-equal? (map strip-local-ids (send text get-top-dstxs))
                           (map strip-local-ids
                                (list
@@ -336,9 +336,9 @@
                                             ")"))))
             (let ([cursor (send text get-dstx-cursor)])
               (send cursor focus-in)
-              (check-equal? (cursor-dstx-property-ref 'local-id) id1)
+              (check-equal? (send cursor cursor-dstx-property-ref 'local-id) id1)
               (send cursor focus-older)
-              (check-equal? (cursor-dstx-property-ref 'local-id) id2)
+              (check-equal? (send cursor cursor-dstx-property-ref 'local-id) id2)
               (send cursor focus-older)
-              (check-equal? (cursor-dstx-property-ref 'local-id) id3))))
+              (check-equal? (send cursor cursor-dstx-property-ref 'local-id) id3))))
         )))))

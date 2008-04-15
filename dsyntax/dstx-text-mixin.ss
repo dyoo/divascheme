@@ -34,7 +34,9 @@
                            focus-younger
                            focus-younger/no-snap
                            focus-successor
+                           focus-successor/no-snap
                            focus-predecessor
+                           focus-predecessor/no-snap
                            focus-toplevel
                            focus-pos
                            cursor-insert-before
@@ -173,16 +175,12 @@
                                   #f))
                         (lambda ()
                           (end-dstx-edit-sequence))))
-        (printf "handle ~a ~a~n" start-pos len)
         (when (> len 0)
           (let ([a-cursor (get-dstx-cursor)])
             (send a-cursor focus-pos start-pos)
             (let ([deleted-start (max start-pos (send a-cursor cursor-pos))]
                   [deleted-end (min (+ start-pos len)
                                     (send a-cursor cursor-endpos))])
-              (printf "focused dstx ~s~n" (send a-cursor cursor-dstx))
-              (printf "deleted-start and end are ~a~n" (list deleted-start
-                                                             deleted-end))
               (temporarily-fill-hole deleted-start deleted-end)
               (let ([new-dstxs (parse-with-hole (send a-cursor cursor-pos)
                                                 deleted-start
@@ -411,8 +409,14 @@
       (define/public (focus-successor)
         (set-cursor/success a-cursor (cursor:focus-successor a-cursor)))
       
+      (define/public (focus-successor/no-snap)
+        (set-cursor/success a-cursor (cursor:focus-successor/no-snap a-cursor)))
+      
       (define/public (focus-predecessor)
         (set-cursor/success a-cursor (cursor:focus-predecessor a-cursor)))
+      
+      (define/public (focus-predecessor/no-snap)
+        (set-cursor/success a-cursor (cursor:focus-predecessor/no-snap a-cursor)))
       
       (define/public (focus-toplevel)
         (set-cursor/success a-cursor (cursor:focus-toplevel a-cursor)))
