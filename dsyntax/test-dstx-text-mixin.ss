@@ -312,6 +312,21 @@
      
      
      (test-case
+      "deleting a left paren destructures the elements."
+      (let ([text (make-text-instance)])
+        (send text insert "(x y z)")
+        (send text delete 0 1)
+        (check-equal? (send text get-text) "x y z")
+        (check-equal? (map strip-local-ids (send text get-top-dstxs))
+                      (map strip-local-ids
+                           (list (new-atom "x")
+                                 (new-space " ")
+                                 (new-atom "y")
+                                 (new-space " ")
+                                 (new-atom "z"))))))
+     
+     
+     (test-case
       "focus-pos"
       (let ([text (make-text-instance)])
         (send text insert "(module  foo mzscheme)")

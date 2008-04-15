@@ -23,7 +23,7 @@
         [(#\l)
          (send a-cursor focus-successor)
          (send editor show-focus)]
-        [(#\K)
+        [(#\k)
          (send a-cursor focus-out)
          (send editor show-focus)])))
   
