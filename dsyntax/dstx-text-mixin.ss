@@ -46,7 +46,7 @@
                            cursor-delete))
   
   
-  
+  ;; Macro for iterating a certain number of times.
   ;; (repeat 5 body) will repeat body five times.
   (define-syntax (repeat stx)
     (syntax-case stx ()
@@ -101,7 +101,9 @@
                delete
                split-snip
                find-snip
-               get-snip-position)
+               get-snip-position
+               begin-edit-sequence
+               end-edit-sequence)
       
       (super-new)
       
@@ -185,24 +187,32 @@
                                   #f))
                         (lambda ()
                           (end-dstx-edit-sequence))))
-        (when (> len 0)
-          (let ([a-cursor (get-dstx-cursor)])
-            (send a-cursor focus-pos start-pos)
-            (let ([deleted-start (max start-pos (send a-cursor cursor-pos))]
-                  [deleted-end (min (+ start-pos len)
-                                    (send a-cursor cursor-endpos))])
-              (temporarily-fill-hole deleted-start deleted-end)
-              (let ([new-dstxs (parse-with-hole (send a-cursor cursor-pos)
-                                                deleted-start
-                                                deleted-end
-                                                (send a-cursor cursor-endpos))])
-                (for-each (lambda (a-dstx)
-                            (send a-cursor cursor-insert-after a-dstx)
-                            (send a-cursor focus-younger))
-                          (reverse new-dstxs))
-                (send a-cursor cursor-delete)
-                (handle-possibly-unstructured-delete start-pos (- len (- deleted-end deleted-start))))))))
-      
+        (dynamic-wind
+         (lambda ()
+           (begin-edit-sequence))
+         (lambda ()
+           (let loop ([start-pos start-pos]
+                      [len len])
+             (when (> len 0)
+               (let ([a-cursor (get-dstx-cursor)])
+                 (send a-cursor focus-pos start-pos)
+                 (let ([deleted-start (max start-pos (send a-cursor cursor-pos))]
+                       [deleted-end (min (+ start-pos len)
+                                         (send a-cursor cursor-endpos))])
+                   (temporarily-fill-hole deleted-start deleted-end)
+                   (let ([new-dstxs
+                          (parse-with-hole (send a-cursor cursor-pos)
+                                           deleted-start
+                                           deleted-end
+                                           (send a-cursor cursor-endpos))])
+                     (for-each (lambda (a-dstx)
+                                 (send a-cursor cursor-insert-after a-dstx)
+                                 (send a-cursor focus-younger))
+                               (reverse new-dstxs))
+                     (send a-cursor cursor-delete)
+                     (loop start-pos (- len (- deleted-end deleted-start)))))))))
+         (lambda ()
+           (end-edit-sequence))))
       
       
       ;; deletion-spans-whole-focus? dstx-cursor number number -> boolean
@@ -237,25 +247,30 @@
                        (= (cursor:cursor-endpos (cursor:focus-younger fcursor))
                           start-pos))
               (send a-cursor focus-younger))))
-        
-        (let ([a-cursor (get-dstx-cursor)])
-          (position-focus-on-pos a-cursor start-pos)
-          ;; Delete the old, introduce the new.
-          (let ([new-dstxs
-                 (parse-between (send a-cursor cursor-pos)
-                                (+ (send a-cursor cursor-pos)
-                                   len
-                                   (- (send a-cursor cursor-endpos)
-                                      (send a-cursor cursor-pos))))])
-            (dynamic-wind (lambda () (begin-dstx-edit-sequence))
-                          (lambda () (delete start-pos (+ start-pos len)))
-                          (lambda () (end-dstx-edit-sequence)))
-            (for-each (lambda (new-dstx)
-                        (send a-cursor cursor-insert-before new-dstx))
-                      (reverse new-dstxs))
-            (repeat (length new-dstxs)
-                    (send a-cursor focus-older/no-snap))
-            (send a-cursor cursor-delete))))
+        (dynamic-wind
+         (lambda ()
+           (begin-edit-sequence))
+         (lambda ()
+           (let ([a-cursor (get-dstx-cursor)])
+             (position-focus-on-pos a-cursor start-pos)
+             ;; Delete the old, introduce the new.
+             (let ([new-dstxs
+                    (parse-between (send a-cursor cursor-pos)
+                                   (+ (send a-cursor cursor-pos)
+                                      len
+                                      (- (send a-cursor cursor-endpos)
+                                         (send a-cursor cursor-pos))))])
+               (dynamic-wind (lambda () (begin-dstx-edit-sequence))
+                             (lambda () (delete start-pos (+ start-pos len)))
+                             (lambda () (end-dstx-edit-sequence)))
+               (for-each (lambda (new-dstx)
+                           (send a-cursor cursor-insert-before new-dstx))
+                         (reverse new-dstxs))
+               (repeat (length new-dstxs)
+                       (send a-cursor focus-older/no-snap))
+               (send a-cursor cursor-delete))))
+         (lambda ()
+           (end-edit-sequence))))
       
       
       
@@ -488,7 +503,8 @@
         (let ([a-dstx (dstx-attach-local-ids a-dstx)])
           (dynamic-wind
            (lambda ()
-             (send current-text begin-dstx-edit-sequence))
+             (send current-text begin-dstx-edit-sequence)
+             (send current-text begin-edit-sequence))
            (lambda ()
              (send current-text set-position (cursor-pos) 'same #f #f 'local)
              (pretty-print-to-text a-dstx)
@@ -496,6 +512,7 @@
              (send current-text set-top-dstxs (cursor:cursor-toplevel-dstxs a-cursor))
              (set! current-version (send current-text get-version)))
            (lambda ()
+             (send current-text end-edit-sequence)
              (send current-text end-dstx-edit-sequence)))))
       
       
@@ -503,7 +520,8 @@
         (let ([a-dstx (dstx-attach-local-ids a-dstx)])
           (dynamic-wind
            (lambda ()
-             (send current-text begin-dstx-edit-sequence))
+             (send current-text begin-dstx-edit-sequence)
+             (send current-text begin-edit-sequence))
            (lambda ()
              (send current-text set-position (cursor-endpos) 'same #f #f 'local)
              (pretty-print-to-text a-dstx)
@@ -511,13 +529,15 @@
              (send current-text set-top-dstxs (cursor:cursor-toplevel-dstxs a-cursor))
              (set! current-version (send current-text get-version)))
            (lambda ()
+             (send current-text end-edit-sequence)
              (send current-text end-dstx-edit-sequence)))))
       
       
       (define/public (cursor-delete)
         (dynamic-wind
          (lambda ()
-           (send current-text begin-dstx-edit-sequence))
+           (send current-text begin-dstx-edit-sequence)
+           (send current-text begin-edit-sequence))
          (lambda ()
            (let ([deletion-length
                   (- (struct:loc-pos (cursor:loc-after
@@ -533,4 +553,5 @@
                    (cursor:cursor-toplevel-dstxs a-cursor))
              (set! current-version (send current-text get-version))))
          (lambda ()
+           (send current-text end-edit-sequence)
            (send current-text end-dstx-edit-sequence)))))))
