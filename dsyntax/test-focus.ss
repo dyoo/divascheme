@@ -52,7 +52,37 @@
         (check-equal? (cursor-dstx (focus-pos a-cursor 3))
                       (new-atom "box"))
         (check-equal? (cursor-dstx (focus-pos a-cursor 4))
-                      (new-atom "box"))))))
+                      (new-atom "box"))))
+     
+     (test-case
+      "focus-container on atoms"
+      (let* ([a-dstx (new-atom "hi")]
+             [a-cursor (make-toplevel-cursor (list a-dstx))])
+        (check-equal? (cursor-dstx (focus-container a-cursor 0))
+                      (new-atom "hi"))
+        (check-equal? (cursor-dstx (focus-container a-cursor 1))
+                      (new-atom "hi"))
+        (check-equal? (focus-container a-cursor 2)
+                      #f)))
+     
+     (test-case
+      "focus-container on fusions"
+      (let* ([a-dstx (new-fusion "("
+                                 (list (new-atom "bye"))
+                                 ")")]
+             [a-cursor (make-toplevel-cursor (list a-dstx))])
+        (check-equal? (cursor-dstx (focus-container a-cursor 0))
+                      (new-fusion "("
+                                  (list (new-atom "bye"))
+                                  ")"))
+        (check-equal? (cursor-dstx (focus-container a-cursor 1))
+                      (new-atom "bye"))
+        (check-equal? (cursor-dstx (focus-container a-cursor 2))
+                      (new-atom "bye"))
+        (check-equal? (cursor-dstx (focus-container a-cursor 3))
+                      (new-fusion "("
+                                  (list (new-atom "bye"))
+                                  ")"))))))
   
   
   (define (test)

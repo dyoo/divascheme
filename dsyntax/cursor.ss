@@ -50,6 +50,8 @@
                     [focus-find-dstx
                      (cursor? (dstx? . -> . boolean?) . -> . cursor-or-false/c)]
                     [focus-pos
+                     (cursor? natural-number/c . -> . cursor-or-false/c)]
+                    [focus-container
                      (cursor? natural-number/c . -> . cursor-or-false/c)])
   
   
@@ -540,10 +542,36 @@
                                       focus-predecessor/no-snap
                                       (lambda (a-cursor)
                                         (at-or-before? a-cursor a-pos)))])
-        (cond [(and (sentinel-space? (cursor-dstx new-cursor))
+        (cond [(and new-cursor
+                    (sentinel-space? (cursor-dstx new-cursor))
                     (focus-older/no-snap new-cursor))
                => identity]
               [else new-cursor]))))
+  
+  
+  ;; focus-container: cursor number -> (or/c cursor #f)
+  ;; Similar to focus-pos.  We look for the smallest dstx that contains
+  ;; the given position.
+  (define (focus-container a-cursor a-pos)
+    (define (after? a-cursor a-pos)
+      (> (cursor-pos a-cursor) a-pos))
+    
+    (define (between? a-cursor a-pos)
+      (and (<= (cursor-pos a-cursor) a-pos)
+           (< a-pos (cursor-endpos a-cursor))))
+    
+    ;; First scan forward, and then scan backward.
+    (let ([cursor-forward
+           (or (focus-search a-cursor
+                             focus-successor/no-snap
+                             (lambda (a-cursor)
+                               (or (after? a-cursor a-pos)
+                                   (at-end? a-cursor))))
+               a-cursor)])
+      (focus-search cursor-forward
+                    focus-predecessor/no-snap
+                    (lambda (a-cursor)
+                      (between? a-cursor a-pos)))))
   
   
   ;; sentinel-space?: dstx -> boolean
@@ -556,13 +584,14 @@
   ;; at-or-before?: cursor pos -> boolean
   ;; Returns true if the cursor is positioned at or before a-pos.
   (define (at-or-before? a-cursor a-pos)
-    (<= (loc-pos (cursor-loc a-cursor)) a-pos))
+    (<= (cursor-pos a-cursor) a-pos))
   
   
   ;; at-or-after?: cursor pos -> boolean
   ;; Returns true if the cursor is positioned at or after a-pos.
   (define (at-or-after? a-cursor a-pos)
-    (>= (loc-pos (cursor-loc a-cursor)) a-pos))
+    (>= (cursor-pos a-cursor) a-pos))
+  
   
   
   ;; at-end?: cursor -> boolean

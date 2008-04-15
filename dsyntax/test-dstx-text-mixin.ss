@@ -325,6 +325,32 @@
                                  (new-space " ")
                                  (new-atom "z"))))))
      
+     (test-case
+      "manually deleting a right paren destructures the elements."
+      (let ([text (make-text-instance)])
+        (send text insert "(x y z)")
+        (send text delete 6 7)
+        (check-equal? (send text get-text) "x y z")
+        (check-equal? (map strip-local-ids (send text get-top-dstxs))
+                      (map strip-local-ids
+                           (list (new-atom "x")
+                                 (new-space " ")
+                                 (new-atom "y")
+                                 (new-space " ")
+                                 (new-atom "z"))))))
+     
+     (test-case
+      "manually deleting an element and a right paren destructures the elements."
+      (let ([text (make-text-instance)])
+        (send text insert "(x y z)")
+        (send text delete 4 7)
+        (check-equal? (send text get-text) "x y z")
+        (check-equal? (map strip-local-ids (send text get-top-dstxs))
+                      (map strip-local-ids
+                           (list (new-atom "x")
+                                 (new-space " ")
+                                 (new-atom "y"))))))
+     
      
      (test-case
       "focus-pos"
