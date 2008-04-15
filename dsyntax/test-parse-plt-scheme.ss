@@ -46,6 +46,30 @@
   (define test-parse-plt-scheme
     (test-suite
      "test-parse-plt-scheme.ss"
+     
+     (test-case
+      "open-input-text with lparen."
+      (let ([text (new scheme:text%)])
+        (send text insert "(")
+        (let ([ip (open-input-text text 0 1)])
+          (check-equal? #\( (read-char ip))
+          (check-true (eof-object? (read-char ip))))))
+     
+     (test-case
+      "open-input-text with rparen."
+      (let ([text (new scheme:text%)])
+        (send text insert ")")
+        (let ([ip (open-input-text text 0 1)])
+          (check-equal? #\) (read-char ip))
+          (check-true (eof-object? (read-char ip))))))
+     
+     (test-case
+      "open-input-text with rparen: parse should fail"
+      (let ([text (new scheme:text%)])
+        (send text insert ")")
+        (let ([ip (open-input-text text 0 1)])
+          (check-exn exn:fail? (lambda () (parse-port ip))))))
+     
      (test-case
       "simple test of atom"
       (check-equal?
