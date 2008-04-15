@@ -1,8 +1,8 @@
 (module weak-set mzscheme
   (require (lib "contract.ss"))
   
+  ;; Weak eq? sets, using weak hash tables.
   
-  ;; Weak sets using hash tables with weakly held keys.
   (define-struct weak-set (ht))
   
   (define (new-weak-set)

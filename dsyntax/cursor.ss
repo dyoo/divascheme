@@ -47,6 +47,8 @@
                     [focus-predecessor/no-snap focus-function/c]
                     [focus-toplevel focus-function/c]
                     
+                    [focus-find-dstx
+                     (cursor? (dstx? . -> . boolean?) . -> . cursor-or-false/c)]
                     [focus-pos
                      (cursor? natural-number/c . -> . cursor-or-false/c)])
   
@@ -492,6 +494,16 @@
            (loop cursor-after-movement))]
         [else
          a-cursor])))
+  
+  
+  ;; focus-find-dstx: cursor (dstx -> boolean?) -> (or/c cursor #f)
+  ;; Refocus the cursor, based on a predicate that distinguishing between
+  ;; dstxs.
+  (define (focus-find-dstx a-cursor a-pred)
+    (focus-search (focus-toplevel a-cursor)
+                  focus-successor/no-snap
+                  (lambda (a-cursor)
+                    (a-pred (cursor-dstx a-cursor)))))
   
   
   ;; focus-search: cursor focus-function (cursor -> boolean) -> (or/c cursor #f)

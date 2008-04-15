@@ -11,7 +11,8 @@
            (lib "port.ss")
            (prefix parser: "parse-plt-scheme.ss")
            (prefix cursor: "cursor.ss")
-           (prefix struct: "struct.ss"))
+           (prefix struct: "struct.ss")
+           "weak-set.ss")
   
   
   (provide dstx-text-mixin dstx-text<%> dstx-cursor<%>)
@@ -20,6 +21,7 @@
   (define dstx-text<%> (interface () get-top-dstxs get-dstx-cursor))
   (define dstx-cursor<%> (interface ()
                            get-functional-cursor
+                           resync
                            cursor-dstx
                            cursor-line
                            cursor-col
@@ -85,8 +87,8 @@
   (define-member-name set-top-dstxs (generate-member-key))
   (define-member-name begin-dstx-edit-sequence (generate-member-key))
   (define-member-name end-dstx-edit-sequence (generate-member-key))
-  
-  
+  (define-member-name resyncronize (generate-member-key))
+  (define-member-name get-version (generate-member-key))
   
   
   ;; dstx-text-mixin: text% -> text%
@@ -101,15 +103,23 @@
                find-snip
                get-snip-position)
       
+      (super-new)
+      
       ;; top-dstxs: (listof dstx)
       ;; The toplevel dstx elements.
       (define top-dstxs '())
+      
+      (define version 0)
+      (define/public (get-version)
+        version)
+      
       
       ;; set-top-dstxs: (listof dstx) -> void
       ;; Sets the top dstxs.
       ;; Protected.
       (define/public (set-top-dstxs dstxs)
-        (set! top-dstxs dstxs))
+        (set! top-dstxs dstxs)
+        (set! version (add1 version)))
       
       ;; get-top-dstxs: -> (listof dstx)
       ;; Returns the top dstxs.
@@ -336,23 +346,49 @@
       ;; Operations performed with the cursor will be reflected
       ;; back on screen.
       (define/public (get-dstx-cursor)
-        (new dstx-cursor% [text this]))
-      
-      
-      (super-new)))
+        (new dstx-cursor% [text this]))))
   
   
   ;; a dstx-cursor% provides a mutable interface to the functions
   ;; defined in cursor.ss.  Changes made with this dstx-cursor will
   ;; reflect onto the text.
   (define dstx-cursor%
-    (class object%
+    (class* object% (dstx-cursor<%>)
       (super-new)
       
       (init text)
+      
       (define current-text text)
+      (define current-version (send text get-version))
+      
       (define a-cursor
         (cursor:make-toplevel-cursor (send current-text get-top-dstxs)))
+      
+      
+      ;; resync: -> void
+      ;; Refresh the cursor's view of the AST, trying our best to preserve
+      ;; the focus.
+      ;; When the AST is modified, we need to correct our out-of-date view
+      ;; of the AST.
+      ;; Protected.
+      (define/public (resync)
+        (when (not (= current-version
+                      (send current-text get-version)))
+          (let ([old-local-id (cursor-dstx-property-ref 'local-id)]
+                [old-pos (cursor-pos)])
+            (set! a-cursor (send current-text get-top-dstxs))
+            (let ([new-cursor
+                   (cursor:focus-find-dstx
+                    a-cursor
+                    (lambda (a-dstx)
+                      (= (struct:dstx-property-ref a-dstx 'local-id)
+                         old-local-id)))])
+              (cond
+                [new-cursor
+                 (set! a-cursor new-cursor)]
+                [else
+                 (set! a-cursor (focus-pos a-cursor old-pos))])))))
+      
       
       (define/public (get-functional-cursor)
         a-cursor)
@@ -455,7 +491,8 @@
              (send current-text set-position (cursor-pos) 'same #f #f 'local)
              (pretty-print-to-text a-dstx)
              (set! a-cursor (cursor:cursor-insert-before a-cursor a-dstx))
-             (send current-text set-top-dstxs (cursor:cursor-toplevel-dstxs a-cursor)))
+             (send current-text set-top-dstxs (cursor:cursor-toplevel-dstxs a-cursor))
+             (set! current-version (send current-text get-version)))
            (lambda ()
              (send current-text end-dstx-edit-sequence)))))
       
@@ -469,7 +506,8 @@
              (send current-text set-position (cursor-endpos) 'same #f #f 'local)
              (pretty-print-to-text a-dstx)
              (set! a-cursor (cursor:cursor-insert-after a-cursor a-dstx))
-             (send current-text set-top-dstxs (cursor:cursor-toplevel-dstxs a-cursor)))
+             (send current-text set-top-dstxs (cursor:cursor-toplevel-dstxs a-cursor))
+             (set! current-version (send current-text get-version)))
            (lambda ()
              (send current-text end-dstx-edit-sequence)))))
       
@@ -489,6 +527,8 @@
              (set! a-cursor (cursor:cursor-replace
                              a-cursor
                              (dstx-attach-local-ids (struct:cursor-dstx a-cursor))))
-             (send current-text set-top-dstxs (cursor:cursor-toplevel-dstxs a-cursor))))
+             (send current-text set-top-dstxs
+                   (cursor:cursor-toplevel-dstxs a-cursor))
+             (set! current-version (send current-text get-version))))
          (lambda ()
            (send current-text end-dstx-edit-sequence)))))))
