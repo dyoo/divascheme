@@ -248,4 +248,25 @@
                [snip (special-atom-content should-be-special)])
           (check-true (is-a? snip string-snip%))
           (check-equal? (send snip get-text 0 (send snip get-count))
-                        "(foo!")))))))
+                        "(foo!"))))
+     
+     (test-case
+      "manually editing the front of an atom with delete"
+      (let* ([text (make-text-instance)])
+        (send text insert "an-atom")
+        (send text delete 0 3)
+        (check-equal? (send text get-text) "atom")
+        (check-equal? (map strip-local-ids (send text get-top-dstxs))
+                      (map strip-local-ids (list (new-space "")
+                                                 (new-atom "atom"))))))
+     
+     
+     (test-case
+      "manually editing the end of an atom with delete"
+      (let* ([text (make-text-instance)])
+        (send text insert "an-atom-bomb")
+        (send text delete 7 12)
+        (check-equal? (send text get-text) "an-atom")
+        (check-equal? (map strip-local-ids (send text get-top-dstxs))
+                      (map strip-local-ids (list (new-space "")
+                                                 (new-atom "an-atom")))))))))
