@@ -160,7 +160,6 @@
       ;; handle-possibly-unstructured-delete: number number -> void
       ;;
       (define (handle-possibly-unstructured-delete start-pos len)
-        
         ;; temporarily-fill-hole: number number -> void
         ;; temporarily put something in the deleted text's hole
         ;; to make textual parsing and deletion work.
@@ -174,11 +173,16 @@
                                   #f))
                         (lambda ()
                           (end-dstx-edit-sequence))))
+        (printf "handle ~a ~a~n" start-pos len)
         (when (> len 0)
           (let ([a-cursor (get-dstx-cursor)])
             (send a-cursor focus-pos start-pos)
             (let ([deleted-start (max start-pos (send a-cursor cursor-pos))]
-                  [deleted-end (min (+ start-pos len) (send a-cursor cursor-endpos))])
+                  [deleted-end (min (+ start-pos len)
+                                    (send a-cursor cursor-endpos))])
+              (printf "focused dstx ~s~n" (send a-cursor cursor-dstx))
+              (printf "deleted-start and end are ~a~n" (list deleted-start
+                                                             deleted-end))
               (temporarily-fill-hole deleted-start deleted-end)
               (let ([new-dstxs (parse-with-hole (send a-cursor cursor-pos)
                                                 deleted-start

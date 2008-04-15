@@ -276,6 +276,37 @@
                                                  (new-atom "om"))))))
      
      (test-case
+      "simple parsing"
+      (let ([text (make-text-instance)])
+        (send text insert "(module  foo mzscheme)")
+        (check-equal? (map strip-local-ids (send text get-top-dstxs))
+                      (map strip-local-ids
+                           (list
+                            (new-fusion
+                             "("
+                             (list (new-atom "module")
+                                   (new-space " ")
+                                   (new-space " ")
+                                   (new-atom "foo")
+                                   (new-space " ")
+                                   (new-atom "mzscheme"))
+                             ")"))))))
+     
+     
+     (test-case
+      "focus-pos"
+      (let ([text (make-text-instance)])
+        (send text insert "(module  foo mzscheme)")
+        (let ([cursor (send text get-dstx-cursor)])
+          (send cursor focus-pos 7)
+          (check-equal? (strip-local-ids (send cursor cursor-dstx))
+                        (strip-local-ids (new-space " ")))
+          (send cursor focus-younger/no-skip)
+          (check-equal? (strip-local-ids (send cursor cursor-dstx))
+                        (strip-local-ids (new-atom "module"))))))
+     
+     
+     (test-case
       "manually deleting some spaces in a fusion"
       (let* ([text (make-text-instance)])
         (send text insert "(module  foo mzscheme)")
