@@ -38,9 +38,9 @@
       (send (get-keymap) add-function
             "dsyntax:test-handler" my-key-handler)
       (send (get-keymap) remove-grab-key-function)
-      (send (get-keymap) map-function "j" "dsyntax:test-handler")
-      (send (get-keymap) map-function "K" "dsyntax:test-handler")
-      (send (get-keymap) map-function "l" "dsyntax:test-handler")
+      (send (get-keymap) map-function "C:j" "dsyntax:test-handler")
+      (send (get-keymap) map-function "C:k" "dsyntax:test-handler")
+      (send (get-keymap) map-function "C:l" "dsyntax:test-handler")
       
       
       (define/override (load-file filename)
