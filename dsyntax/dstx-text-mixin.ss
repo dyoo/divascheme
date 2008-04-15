@@ -332,7 +332,7 @@
         (with-handlers ([exn:fail? (lambda (exn)
                                      (map (lambda (a-snip)
                                             (dstx-attach-local-ids
-                                             (struct:new-special-atom a-snip)))
+                                             (struct:new-special-atom a-snip (send a-snip get-count))))
                                           (append (reverse (get-snips/rev start hole-start))
                                                   (reverse (get-snips/rev hole-end end)))))])
           (let* ([ip1 (parser:open-input-text this start hole-start)]

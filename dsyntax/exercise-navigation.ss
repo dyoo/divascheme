@@ -25,6 +25,12 @@
          (send editor show-focus)]
         [(#\k)
          (send a-cursor focus-out)
+         (send editor show-focus)]
+        [(#\a)
+         (send a-cursor focus-younger)
+         (send editor show-focus)]
+        [(#\e)
+         (send a-cursor focus-older)
          (send editor show-focus)])))
   
   

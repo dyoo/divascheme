@@ -332,12 +332,38 @@
      
      
      (test-case
+      "manually deleting a right paren destructures the elements."
+      (let ([text (make-text-instance)])
+        (send text insert "(x)  y z")
+        (send text delete 2 3)
+        (check-equal? (send text get-text) "(x  y z")
+        (check-equal? (length (send text get-top-dstxs)) 6)
+        (check-true (special-atom? (first (send text get-top-dstxs))))
+        (check-equal? (map strip-local-ids (rest (send text get-top-dstxs)))
+                      (map strip-local-ids (list
+                                            (new-space " ")
+                                            (new-space " ")
+                                            (new-atom "y")
+                                            (new-space " ")
+                                            (new-atom "z"))))))
+     
+     
+     (test-case
       "manually deleting an element and a right paren destructures the elements."
       (let ([text (make-text-instance)])
         (send text insert "(x y z)")
         (send text delete 4 7)
         (check-equal? (send text get-text) "(x y")
         (check-equal? (length (send text get-top-dstxs)) 1)))
+     
+     
+     (test-case
+      "manually inserting a close parent should be a special."
+      (let ([text (make-text-instance)])
+        (send text insert ")")
+        (check-equal? (send text get-text) ")")
+        (check-equal? (length (send text get-top-dstxs)) 1)
+        (check-true (special-atom? (first (send text get-top-dstxs))))))
      
      
      (test-case
