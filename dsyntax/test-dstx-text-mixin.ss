@@ -187,7 +187,8 @@
       (let* ([text (make-text-instance)]
              [cursor (send text get-dstx-cursor)])
         (send cursor cursor-insert-after (new-atom "wrld"))
-        (send text insert "o" 1)
+        (send text set-position 1)
+        (send text insert "o")
         
         ;; Check what's on screen...
         (check-equal? (send text get-text) "world")
@@ -253,6 +254,19 @@
           (check-true (is-a? snip string-snip%))
           (check-equal? (send snip get-text 0 (send snip get-count))
                         "(foo!"))))
+     
+     (test-case
+      "manually adding a string"
+      (let* ([text (make-text-instance)])
+        (send text insert "\"")
+        (check-equal? (send text get-text) "\"")
+        (send text insert "h")
+        (check-equal? (send text get-text) "\"h")
+        (send text insert "i")
+        (check-equal? (send text get-text) "\"hi")
+        (send text insert "\"")
+        (check-equal? (send text get-text) "\"hi\"")))
+     
      
      (test-case
       "manually editing the front of an atom with delete"

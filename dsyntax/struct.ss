@@ -58,8 +58,11 @@
   
   ;; new-special-atom: any -> special-atom
   ;; Constructor with default empty properties and default width 1.
-  (define (new-special-atom content)
-    (make-special-atom empty-table content 1))
+  (define new-special-atom
+    (case-lambda [(content)
+                  (make-special-atom empty-table content 1)]
+                 [(content width)
+                  (make-special-atom empty-table content width)]))
   
   ;; new-space: string -> space
   ;; Constructor with default empty properties.
@@ -164,7 +167,8 @@
    [dstx-property-set (dstx? symbol? any/c . -> . dstx?)]
    
    [new-atom (string? . -> . atom?)]
-   [new-special-atom (any/c . -> . special-atom?)]
+   [new-special-atom (case-> (any/c . -> . special-atom?)
+                             (any/c number? . -> . special-atom?))]
    [new-space (string? . -> . space?)]
    [new-fusion (string? (listof dstx?) string? . -> . fusion?)]
    

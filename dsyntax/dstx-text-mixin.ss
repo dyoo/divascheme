@@ -97,6 +97,9 @@
     (class* super% (dstx-text<%>)
       (inherit last-position
                get-text
+               get-start-position
+               get-end-position
+               set-position
                insert
                delete
                split-snip
@@ -187,6 +190,11 @@
                                   #f))
                         (lambda ()
                           (end-dstx-edit-sequence))))
+        
+        (define-values
+          (original-start-position original-end-position)
+          (values (get-start-position) (get-end-position)))
+        
         (dynamic-wind
          (lambda ()
            (begin-edit-sequence))
@@ -199,6 +207,8 @@
                  (let ([deleted-start (max start-pos (send a-cursor cursor-pos))]
                        [deleted-end (min (+ start-pos len)
                                          (send a-cursor cursor-endpos))])
+                   ;; There's a bug here: I'm seeing deleted-end < deleted-start
+                   ;; in some case.
                    (temporarily-fill-hole deleted-start deleted-end)
                    (let ([new-dstxs
                           (parse-with-hole (send a-cursor cursor-pos)
@@ -210,7 +220,8 @@
                                  (send a-cursor focus-younger))
                                (reverse new-dstxs))
                      (send a-cursor cursor-delete)
-                     (loop start-pos (- len (- deleted-end deleted-start)))))))))
+                     (loop start-pos (- len (- deleted-end deleted-start))))))))
+           (set-position original-start-position original-end-position #f #f 'local))
          (lambda ()
            (end-edit-sequence))))
       
@@ -247,6 +258,11 @@
                        (= (cursor:cursor-endpos (cursor:focus-younger fcursor))
                           start-pos))
               (send a-cursor focus-younger))))
+        
+        (define-values
+          (original-start-position original-end-position)
+          (values (get-start-position) (get-end-position)))
+        
         (dynamic-wind
          (lambda ()
            (begin-edit-sequence))
@@ -256,10 +272,8 @@
              ;; Delete the old, introduce the new.
              (let ([new-dstxs
                     (parse-between (send a-cursor cursor-pos)
-                                   (+ (send a-cursor cursor-pos)
-                                      len
-                                      (- (send a-cursor cursor-endpos)
-                                         (send a-cursor cursor-pos))))])
+                                   (+ (send a-cursor cursor-endpos)
+                                      len))])
                (dynamic-wind (lambda () (begin-dstx-edit-sequence))
                              (lambda () (delete start-pos (+ start-pos len)))
                              (lambda () (end-dstx-edit-sequence)))
@@ -268,7 +282,9 @@
                          (reverse new-dstxs))
                (repeat (length new-dstxs)
                        (send a-cursor focus-older/no-snap))
-               (send a-cursor cursor-delete))))
+               (send a-cursor cursor-delete)))
+           
+           (set-position original-start-position original-end-position #f #f 'local))
          (lambda ()
            (end-edit-sequence))))
       
@@ -333,9 +349,13 @@
       ;; elements.  This is a catch-all for cases where we have no idea how to
       ;; parse something.
       (define (parse-between/unparsed start end)
-        (reverse (map (lambda (a-snip)
-                        (dstx-attach-local-ids (struct:new-special-atom a-snip)))
-                      (get-snips/rev start end))))
+        (let ([result
+               (reverse (map (lambda (a-snip)
+                               (dstx-attach-local-ids (struct:new-special-atom
+                                                       a-snip
+                                                       (send a-snip get-count))))
+                             (get-snips/rev start end)))])
+          result))
       
       
       ;; get-snips/rev: start end -> (listof snip)
@@ -387,6 +407,7 @@
                       (error 'set-cursor "movement failed"))
                     (set! a-cursor new-cursor-val)))]))
       
+      
       ;; resync: -> void
       ;; Refresh the cursor's view of the AST, trying our best to preserve
       ;; the focus.
@@ -412,7 +433,8 @@
               [(cursor:focus-pos a-cursor old-pos)
                =>
                (lambda (new-cursor)
-                 (set! a-cursor new-cursor))]))))
+                 (set! a-cursor new-cursor))])
+            (set! current-version (send current-text get-version)))))
       
       
       (define/public (get-functional-cursor)
