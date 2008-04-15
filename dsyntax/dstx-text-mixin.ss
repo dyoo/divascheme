@@ -199,28 +199,27 @@
          (lambda ()
            (begin-edit-sequence))
          (lambda ()
-           (let loop ([start-pos start-pos]
-                      [len len])
+           (define a-cursor (get-dstx-cursor))
+           (let loop ([len len])
              (when (> len 0)
-               (let ([a-cursor (get-dstx-cursor)])
-                 (send a-cursor focus-container start-pos)
-                 (let ([deleted-start (max start-pos (send a-cursor cursor-pos))]
-                       [deleted-end (min (+ start-pos len)
+               (send a-cursor focus-container start-pos)
+               (let ([deleted-start (max start-pos (send a-cursor cursor-pos))]
+                     [deleted-end (min (+ start-pos len)
+                                       (send a-cursor cursor-endpos))])
+                 ;; There's a bug here: I'm seeing deleted-end < deleted-start
+                 ;; in some case.
+                 (temporarily-fill-hole deleted-start deleted-end)
+                 (let ([new-dstxs
+                        (parse-with-hole (send a-cursor cursor-pos)
+                                         deleted-start
+                                         deleted-end
                                          (send a-cursor cursor-endpos))])
-                   ;; There's a bug here: I'm seeing deleted-end < deleted-start
-                   ;; in some case.
-                   (temporarily-fill-hole deleted-start deleted-end)
-                   (let ([new-dstxs
-                          (parse-with-hole (send a-cursor cursor-pos)
-                                           deleted-start
-                                           deleted-end
-                                           (send a-cursor cursor-endpos))])
-                     (for-each (lambda (a-dstx)
-                                 (send a-cursor cursor-insert-after a-dstx)
-                                 (send a-cursor focus-younger))
-                               (reverse new-dstxs))
-                     (send a-cursor cursor-delete)
-                     (loop start-pos (- len (- deleted-end deleted-start))))))))
+                   (for-each (lambda (a-dstx)
+                               (send a-cursor cursor-insert-after a-dstx)
+                               (send a-cursor focus-younger))
+                             (reverse new-dstxs))
+                   (send a-cursor cursor-delete)
+                   (loop (- len (- deleted-end deleted-start)))))))
            (set-position original-start-position original-end-position #f #f 'local))
          (lambda ()
            (end-edit-sequence))))

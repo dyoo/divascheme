@@ -312,44 +312,32 @@
      
      
      (test-case
-      "deleting a left paren destructures the elements."
+      "deleting a left paren destructures the elements, leaving behind a special unparsed atom."
       (let ([text (make-text-instance)])
         (send text insert "(x y z)")
         (send text delete 0 1)
-        (check-equal? (send text get-text) "x y z")
-        (check-equal? (map strip-local-ids (send text get-top-dstxs))
-                      (map strip-local-ids
-                           (list (new-atom "x")
-                                 (new-space " ")
-                                 (new-atom "y")
-                                 (new-space " ")
-                                 (new-atom "z"))))))
+        (check-equal? (send text get-text) "x y z)")
+        (check-equal? (length (send text get-top-dstxs)) 1)
+        (check-true (special-atom? (first (send text get-top-dstxs))))
+        (check-true (dstx-property-ref (first (send text get-top-dstxs)) 'unparsed))))
      
      (test-case
       "manually deleting a right paren destructures the elements."
       (let ([text (make-text-instance)])
         (send text insert "(x y z)")
         (send text delete 6 7)
-        (check-equal? (send text get-text) "x y z")
-        (check-equal? (map strip-local-ids (send text get-top-dstxs))
-                      (map strip-local-ids
-                           (list (new-atom "x")
-                                 (new-space " ")
-                                 (new-atom "y")
-                                 (new-space " ")
-                                 (new-atom "z"))))))
+        (check-equal? (send text get-text) "(x y z")
+        (check-equal? (length (send text get-top-dstxs)) 1)
+        (check-true (special-atom? (first (send text get-top-dstxs))))))
+     
      
      (test-case
       "manually deleting an element and a right paren destructures the elements."
       (let ([text (make-text-instance)])
         (send text insert "(x y z)")
         (send text delete 4 7)
-        (check-equal? (send text get-text) "x y z")
-        (check-equal? (map strip-local-ids (send text get-top-dstxs))
-                      (map strip-local-ids
-                           (list (new-atom "x")
-                                 (new-space " ")
-                                 (new-atom "y"))))))
+        (check-equal? (send text get-text) "(x y")
+        (check-equal? (length (send text get-top-dstxs)) 1)))
      
      
      (test-case
