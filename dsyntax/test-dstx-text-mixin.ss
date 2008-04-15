@@ -253,7 +253,8 @@
      (test-case
       "manually editing the front of an atom with delete"
       (let* ([text (make-text-instance)])
-        (send text insert "an-atom")
+        (let ([cursor (send text get-dstx-cursor)])
+          (send cursor cursor-insert-after (new-atom "an-atom")))
         (send text delete 0 3)
         (check-equal? (send text get-text) "atom")
         (check-equal? (map strip-local-ids (send text get-top-dstxs))

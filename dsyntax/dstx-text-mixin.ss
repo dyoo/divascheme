@@ -188,7 +188,6 @@
                             (send a-cursor cursor-insert-after a-dstx)
                             (send a-cursor focus-younger))
                           (reverse new-dstxs))
-                (printf "Deleting ~s~n" (send a-cursor cursor-dstx))
                 (send a-cursor cursor-delete)
                 (handle-possibly-unstructured-delete start-pos (- len (- deleted-end deleted-start))))))))
       
