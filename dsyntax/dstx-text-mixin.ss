@@ -273,7 +273,6 @@
                     (parse-between (send a-cursor cursor-pos)
                                    (+ (send a-cursor cursor-endpos)
                                       len))])
-               (printf "new dstxs: ~s~n" new-dstxs)
                (dynamic-wind (lambda () (begin-dstx-edit-sequence))
                              (lambda () (delete start-pos (+ start-pos len)))
                              (lambda () (end-dstx-edit-sequence)))
@@ -320,13 +319,10 @@
       ;; is unparseable, return a list containing a new fusion
       ;; marked with the property 'unparsed.
       (define (parse-between start end)
-        (printf "parse-between ~s ~s~n" start end)
-        (printf "with text being: ~s~n" (get-text start end))
         (with-handlers ([exn:fail? (lambda (exn)
                                      (parse-between/unparsed start end))])
           (let* ([ip (parser:open-input-text this start end)]
                  [dstxs (parser:parse-port ip)])
-            (printf "dstxs are ~s~n" dstxs)
             dstxs)))
       
       
@@ -352,7 +348,6 @@
       ;; elements.  This is a catch-all for cases where we have no idea how to
       ;; parse something.
       (define (parse-between/unparsed start end)
-        (printf "parse-between/unparsed ~s ~s~n" start end)
         (let ([result
                (reverse (map (lambda (a-snip)
                                (dstx-attach-local-ids (struct:new-special-atom
