@@ -231,6 +231,16 @@
      
      
      (test-case
+      "just close paren should raise exception"
+      (check-exn exn:fail? (lambda () (parse ")"))))
+     
+     
+     (test-case
+      "just open paren should raise exception"
+      (check-exn exn:fail? (lambda () (parse "("))))
+     
+     
+     (test-case
       "simple graphical symbol test"
       (call-with-graphical-snip-port parse-port))))
   

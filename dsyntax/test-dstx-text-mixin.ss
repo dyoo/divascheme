@@ -358,7 +358,7 @@
      
      
      (test-case
-      "manually inserting a close parent should be a special."
+      "manually inserting a close paren should be a special."
       (let ([text (make-text-instance)])
         (send text insert ")")
         (check-equal? (send text get-text) ")")
