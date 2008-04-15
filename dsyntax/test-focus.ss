@@ -80,9 +80,13 @@
         (check-equal? (cursor-dstx (focus-container a-cursor 2))
                       (new-atom "bye"))
         (check-equal? (cursor-dstx (focus-container a-cursor 3))
+                      (new-atom "bye"))
+        (check-equal? (cursor-dstx (focus-container a-cursor 4))
                       (new-fusion "("
                                   (list (new-atom "bye"))
-                                  ")"))))))
+                                  ")"))
+        (check-equal? (focus-container a-cursor 5)
+                      #f)))))
   
   
   (define (test)
