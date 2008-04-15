@@ -380,6 +380,35 @@
      
      
      (test-case
+      "simple insertion of two atoms separated by space"
+      (let ([text (make-text-instance)])
+        (send text insert "hello")
+        (send text insert " ")
+        (send text insert "world")
+        (check-equal? (map strip-local-ids (send text get-top-dstxs))
+                      (map strip-local-ids (list (new-atom "hello")
+                                                 (new-space " ")
+                                                 (new-atom "world"))))))
+     
+     (test-case
+      "deleting everything should get us back to the base state"
+      (let ([text (make-text-instance)])
+        (send text insert "(module  foo mzscheme)")
+        (send text delete 0 (send text last-position))
+        (check-equal? (map strip-local-ids (send text get-top-dstxs))
+                      (map strip-local-ids (list (new-space ""))))
+        (send text insert "hello")
+        (send text insert " ")
+        (send text insert "world")
+        (check-equal? (map strip-local-ids (send text get-top-dstxs))
+                      (map strip-local-ids (list (new-atom "hello")
+                                                 (new-space " ")
+                                                 (new-atom "world"))))))
+     
+     
+     
+     
+     (test-case
       "manually deleting some spaces in a fusion"
       (let* ([text (make-text-instance)])
         (send text insert "(module  foo mzscheme)")
@@ -413,5 +442,4 @@
               (send cursor focus-older)
               (check-equal? (send cursor cursor-dstx-property-ref 'local-id) id2)
               (send cursor focus-older)
-              (check-equal? (send cursor cursor-dstx-property-ref 'local-id) id3))))
-        )))))
+              (check-equal? (send cursor cursor-dstx-property-ref 'local-id) id3)))))))))

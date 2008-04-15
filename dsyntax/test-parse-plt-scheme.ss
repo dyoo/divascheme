@@ -48,6 +48,10 @@
      "test-parse-plt-scheme.ss"
      
      (test-case
+      "empty input should give us empty list."
+      (check-equal? (parse-port (open-input-string "")) '()))
+     
+     (test-case
       "open-input-text with lparen."
       (let ([text (new scheme:text%)])
         (send text insert "(")
