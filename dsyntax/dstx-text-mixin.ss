@@ -245,14 +245,53 @@
       ;; When the text changes without explicit structured operations, we
       ;; must maintain semi-structure.
       (define (handle-possibly-unstructured-insert start-pos len)
-        (define (insert-at-end-of-something? a-cursor)
-          #f)
+        ;; not-in-something? cursor
+        ;; True only if we're inserting at the very end of something
+        (define (inserting-at-end? a-cursor)
+          (let ([fcursor (send a-cursor get-functional-cursor)])
+            (cond [(cursor:focus-container fcursor start-pos)
+                   #f]
+                  [else #t])))
         
-        (define (insert-after-something a-cursor)
-          (void))
+        (define (delete-introduced-text)
+          (dynamic-wind (lambda () (begin-dstx-edit-sequence))
+                        (lambda () (delete start-pos (+ start-pos len)))
+                        (lambda () (end-dstx-edit-sequence))))
+        
+        (define (insert-at-end a-cursor)
+          (send a-cursor focus-toplevel)
+          (send a-cursor focus-oldest)
+          (let ([fcursor (send a-cursor get-functional-cursor)])
+            (cond
+              ;; subtle: if the focus is an atom, attach to it
+              ;; instead of inserting after it.
+              [(and (struct:atom? (struct:cursor-dstx fcursor))
+                    (= (cursor:cursor-endpos fcursor) start-pos))
+               ;; Delete the old, introduce the new.
+               (let ([new-dstxs
+                      (parse-between (send a-cursor cursor-pos)
+                                     (+ (send a-cursor cursor-endpos)
+                                        len))])
+                 (dynamic-wind (lambda () (begin-dstx-edit-sequence))
+                               (lambda () (delete start-pos (+ start-pos len)))
+                               (lambda () (end-dstx-edit-sequence)))
+                 (for-each (lambda (new-dstx)
+                             (send a-cursor cursor-insert-after new-dstx)
+                             (send a-cursor focus-younger/no-snap))
+                           (reverse new-dstxs))
+                 (send a-cursor cursor-delete))]
+              
+              [else
+               (let ([new-dstxs (parse-between start-pos (+ start-pos len))])
+                 (dynamic-wind (lambda () (begin-dstx-edit-sequence))
+                               (lambda () (delete start-pos (+ start-pos len)))
+                               (lambda () (end-dstx-edit-sequence)))
+                 (for-each (lambda (new-dstx)
+                             (send a-cursor cursor-insert-after new-dstx))
+                           new-dstxs))])))
         
         (define (insert-within-something a-cursor)
-          (send a-cursor focus-pos start-pos)
+          (send a-cursor focus-container start-pos)
           (let ([fcursor (send a-cursor get-functional-cursor)])
             ;; subtle: if the very previous expression is an atom, attach to it
             ;; instead.
@@ -278,16 +317,16 @@
         (define-values
           (original-start-position original-end-position)
           (values (get-start-position) (get-end-position)))
+        
         (dynamic-wind
          (lambda ()
            (begin-edit-sequence))
          (lambda ()
            (let ([a-cursor (get-dstx-cursor)])
-             (cond
-               [(insert-at-end-of-something? a-cursor)
-                (insert-after-something a-cursor)]
-               [else
-                (insert-within-something a-cursor)]))
+             (cond [(inserting-at-end? a-cursor)
+                    (insert-at-end a-cursor)]
+                   [else
+                    (insert-within-something a-cursor)]))
            
            (set-position original-start-position original-end-position #f #f 'local))
          (lambda ()
@@ -488,11 +527,17 @@
       (define/public (focus-older/no-snap)
         (set-cursor/success a-cursor (cursor:focus-older/no-snap a-cursor)))
       
+      (define/public (focus-oldest)
+        (set-cursor/success a-cursor (cursor:focus-oldest a-cursor)))
+      
       (define/public (focus-younger)
         (set-cursor/success a-cursor (cursor:focus-younger a-cursor)))
       
       (define/public (focus-younger/no-snap)
         (set-cursor/success a-cursor (cursor:focus-younger/no-snap a-cursor)))
+      
+      (define/public (focus-youngest)
+        (set-cursor/success a-cursor (cursor:focus-youngest a-cursor)))
       
       (define/public (focus-successor)
         (set-cursor/success a-cursor (cursor:focus-successor a-cursor)))
@@ -511,6 +556,9 @@
       
       (define/public (focus-pos a-pos)
         (set-cursor/success a-cursor (cursor:focus-pos a-cursor a-pos)))
+      
+      (define/public (focus-endpos a-pos)
+        (set-cursor/success a-cursor (cursor:focus-endpos a-cursor a-pos)))
       
       (define/public (focus-container a-pos)
         (set-cursor/success a-cursor (cursor:focus-container a-cursor a-pos)))

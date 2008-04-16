@@ -201,6 +201,8 @@
      
      
      
+     
+     
      (test-case
       "inserting a fusion"
       (let* ([text (make-text-instance)]
@@ -248,8 +250,8 @@
         (send text insert "(foo!")
         ;; Check what's on screen...
         (check-equal? (send text get-text) "(foo!")
-        (check-equal? (length (send text get-top-dstxs)) 1)
-        (let* ([should-be-special (first (send text get-top-dstxs))]
+        (check-equal? (length (send text get-top-dstxs)) 2)
+        (let* ([should-be-special (second (send text get-top-dstxs))]
                [snip (special-atom-content should-be-special)])
           (check-true (is-a? snip string-snip%))
           (check-equal? (send snip get-text 0 (send snip get-count))
@@ -300,6 +302,7 @@
         (check-equal? (map strip-local-ids (send text get-top-dstxs))
                       (map strip-local-ids
                            (list
+                            (new-space "")
                             (new-fusion
                              "("
                              (list (new-atom "module")
@@ -317,9 +320,10 @@
         (send text insert "(x y z)")
         (send text delete 0 1)
         (check-equal? (send text get-text) "x y z)")
-        (check-equal? (length (send text get-top-dstxs)) 1)
-        (check-true (special-atom? (first (send text get-top-dstxs))))
-        (check-true (dstx-property-ref (first (send text get-top-dstxs)) 'unparsed))))
+        (check-equal? (length (send text get-top-dstxs)) 2)
+        (check-true (special-atom? (second (send text get-top-dstxs))))
+        (check-true (dstx-property-ref (second (send text get-top-dstxs)) 'unparsed))))
+     
      
      (test-case
       "manually deleting a right paren destructures the elements."
@@ -327,8 +331,8 @@
         (send text insert "(x y z)")
         (send text delete 6 7)
         (check-equal? (send text get-text) "(x y z")
-        (check-equal? (length (send text get-top-dstxs)) 1)
-        (check-true (special-atom? (first (send text get-top-dstxs))))))
+        (check-equal? (length (send text get-top-dstxs)) 2)
+        (check-true (special-atom? (second (send text get-top-dstxs))))))
      
      
      (test-case
@@ -337,9 +341,9 @@
         (send text insert "(x)  y z")
         (send text delete 2 3)
         (check-equal? (send text get-text) "(x  y z")
-        (check-equal? (length (send text get-top-dstxs)) 6)
-        (check-true (special-atom? (first (send text get-top-dstxs))))
-        (check-equal? (map strip-local-ids (rest (send text get-top-dstxs)))
+        (check-equal? (length (send text get-top-dstxs)) 7)
+        (check-true (special-atom? (second (send text get-top-dstxs))))
+        (check-equal? (map strip-local-ids (rest (rest (send text get-top-dstxs))))
                       (map strip-local-ids (list
                                             (new-space " ")
                                             (new-space " ")
@@ -422,7 +426,6 @@
                       (map strip-local-ids (list (new-atom "hello")
                                                  (new-space " ")
                                                  (new-atom "world"))))))
-     
      
      
      
