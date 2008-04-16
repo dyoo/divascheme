@@ -287,14 +287,23 @@
       (cond
         [parent-cursor
          (match parent-cursor
-           [(struct cursor ((struct fusion (props opener _ closer))
+           [(struct cursor ((struct fusion (props opener old-children closer))
                             loc parent youngers-rev youngers-loc-rev olders))
             (let ([new-children
                    (append/rev (cursor-youngers-rev a-cursor)
                                (cons (cursor-dstx a-cursor)
                                  (cursor-olders a-cursor)))])
-              (make-cursor (make-fusion props opener new-children closer)
-                           loc parent youngers-rev youngers-loc-rev olders))])]
+              (cond
+                ;; If there has been no change in structure, leave things be.
+                [(and (= (length new-children)
+                         (length old-children))
+                      (andmap eq? new-children old-children))
+                 parent-cursor]
+                [else
+                 ;; Otherwise, reconstruct a new parent cursor.
+                 (make-cursor (make-fusion props opener new-children closer)
+                              loc parent youngers-rev youngers-loc-rev olders)])
+              )])]
         [else #f])))
   
   

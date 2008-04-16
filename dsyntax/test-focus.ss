@@ -56,6 +56,28 @@
         (check-equal? (cursor-dstx (focus-pos a-cursor 2))
                       (new-space " "))))
      
+     (test-case
+      "focus-in and focus-out, when no modifications occur, should preserve fusions."
+      (let ([a-cursor (make-toplevel-cursor
+                       (list (new-fusion "("
+                                         (list (new-atom "hello"))
+                                         ")")))])
+        (check-eq? (cursor-dstx a-cursor)
+                   (cursor-dstx (focus-out (focus-in a-cursor))))))
+     
+     (test-case
+      "focus-in and focus-out should only preserve fusions on eq?"
+      (let ([a-cursor (make-toplevel-cursor
+                       (list (new-fusion "("
+                                         (list (new-special-atom "hello"))
+                                         ")")))])
+        (check-false (eq? (cursor-dstx a-cursor)
+                          (cursor-dstx
+                           (focus-out
+                            (cursor-insert-after
+                             (cursor-delete (focus-in a-cursor))
+                             (new-special-atom "hello"))))))))
+     
      
      (test-case
       "focus-pos with structure"
