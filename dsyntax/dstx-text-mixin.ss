@@ -89,8 +89,8 @@
   (define-member-name set-top-dstxs (generate-member-key))
   (define-member-name begin-dstx-edit-sequence (generate-member-key))
   (define-member-name end-dstx-edit-sequence (generate-member-key))
-  (define-member-name resyncronize (generate-member-key))
   (define-member-name get-version (generate-member-key))
+  (define-member-name set-cursor-for-editing (generate-member-key))
   
   
   ;; dstx-text-mixin: text% -> text%
@@ -128,8 +128,9 @@
       
       ;; We keep a dstx-cursor that's used primarily for the
       ;; unstructured edit stuff.
-      (define dstx-cursor (get-dstx-cursor))
-      
+      (define cursor-for-editing (get-dstx-cursor))
+      (define/public (set-cursor-for-editing a-cursor)
+        (set! cursor-for-editing a-cursor))
       
       ;; set-top-dstxs: (listof dstx) -> void
       ;; Sets the top dstxs.
@@ -211,26 +212,26 @@
          (lambda ()
            (begin-edit-sequence))
          (lambda ()
-           (send dstx-cursor resync)
+           (send cursor-for-editing resync)
            (let loop ([len len])
              (when (> len 0)
-               (send dstx-cursor focus-container start-pos)
-               (let ([deleted-start (max start-pos (send dstx-cursor cursor-pos))]
+               (send cursor-for-editing focus-container start-pos)
+               (let ([deleted-start (max start-pos (send cursor-for-editing cursor-pos))]
                      [deleted-end (min (+ start-pos len)
-                                       (send dstx-cursor cursor-endpos))])
+                                       (send cursor-for-editing cursor-endpos))])
                  ;; There's a bug here: I'm seeing deleted-end < deleted-start
                  ;; in some case.
                  (temporarily-fill-hole deleted-start deleted-end)
                  (let ([new-dstxs
-                        (parse-with-hole (send dstx-cursor cursor-pos)
+                        (parse-with-hole (send cursor-for-editing cursor-pos)
                                          deleted-start
                                          deleted-end
-                                         (send dstx-cursor cursor-endpos))])
+                                         (send cursor-for-editing cursor-endpos))])
                    (for-each (lambda (a-dstx)
-                               (send dstx-cursor cursor-insert-after a-dstx)
-                               (send dstx-cursor focus-younger/no-snap))
+                               (send cursor-for-editing cursor-insert-after a-dstx)
+                               (send cursor-for-editing focus-younger/no-snap))
                              (reverse new-dstxs))
-                   (send dstx-cursor cursor-delete)
+                   (send cursor-for-editing cursor-delete)
                    (loop (- len (- deleted-end deleted-start)))))))
            (set-position original-start-position original-end-position #f #f 'local))
          (lambda ()
@@ -323,11 +324,11 @@
          (lambda ()
            (begin-edit-sequence))
          (lambda ()
-           (send dstx-cursor resync)
-           (cond [(inserting-at-end? dstx-cursor)
-                  (insert-at-end dstx-cursor)]
+           (send cursor-for-editing resync)
+           (cond [(inserting-at-end? cursor-for-editing)
+                  (insert-at-end cursor-for-editing)]
                  [else
-                  (insert-within-something dstx-cursor)])
+                  (insert-within-something cursor-for-editing)])
            
            (set-position original-start-position original-end-position #f #f 'local))
          (lambda ()
@@ -587,6 +588,7 @@
       
       ;; Editors
       (define/public (cursor-insert-before a-dstx)
+        (resync)
         (let ([a-dstx (dstx-attach-local-ids a-dstx)])
           (dynamic-wind
            (lambda ()
@@ -597,6 +599,7 @@
              (pretty-print-to-text a-dstx)
              (set! f-cursor (cursor:cursor-insert-before f-cursor a-dstx))
              (send current-text set-top-dstxs (cursor:cursor-toplevel-dstxs f-cursor))
+             (send current-text set-cursor-for-editing this)
              (set! current-version (send current-text get-version)))
            (lambda ()
              (send current-text end-edit-sequence)
@@ -604,6 +607,7 @@
       
       
       (define/public (cursor-insert-after a-dstx)
+        (resync)
         (let ([a-dstx (dstx-attach-local-ids a-dstx)])
           (dynamic-wind
            (lambda ()
@@ -614,6 +618,7 @@
              (pretty-print-to-text a-dstx)
              (set! f-cursor (cursor:cursor-insert-after f-cursor a-dstx))
              (send current-text set-top-dstxs (cursor:cursor-toplevel-dstxs f-cursor))
+             (send current-text set-cursor-for-editing this)
              (set! current-version (send current-text get-version)))
            (lambda ()
              (send current-text end-edit-sequence)
@@ -621,6 +626,7 @@
       
       
       (define/public (cursor-delete)
+        (resync)
         (dynamic-wind
          (lambda ()
            (send current-text begin-dstx-edit-sequence)
@@ -636,8 +642,8 @@
              (set! f-cursor (cursor:cursor-replace
                              f-cursor
                              (dstx-attach-local-ids (struct:cursor-dstx f-cursor))))
-             (send current-text set-top-dstxs
-                   (cursor:cursor-toplevel-dstxs f-cursor))
+             (send current-text set-top-dstxs (cursor:cursor-toplevel-dstxs f-cursor))
+             (send current-text set-cursor-for-editing this)
              (set! current-version (send current-text get-version))))
          (lambda ()
            (send current-text end-edit-sequence)
