@@ -258,6 +258,12 @@
                         (lambda () (delete start-pos (+ start-pos len)))
                         (lambda () (end-dstx-edit-sequence))))
         
+        (define (insert-new-dstxs-after a-cursor new-dstxs)
+          (for-each (lambda (new-dstx)
+                      (send a-cursor cursor-insert-after new-dstx)
+                      (send a-cursor focus-younger/no-snap))
+                    (reverse new-dstxs)))
+        
         (define (insert-at-end a-cursor)
           (send a-cursor focus-toplevel)
           (send a-cursor focus-oldest)
@@ -272,23 +278,13 @@
                       (parse-between (send a-cursor cursor-pos)
                                      (+ (send a-cursor cursor-endpos)
                                         len))])
-                 (dynamic-wind (lambda () (begin-dstx-edit-sequence))
-                               (lambda () (delete start-pos (+ start-pos len)))
-                               (lambda () (end-dstx-edit-sequence)))
-                 (for-each (lambda (new-dstx)
-                             (send a-cursor cursor-insert-after new-dstx)
-                             (send a-cursor focus-younger/no-snap))
-                           (reverse new-dstxs))
+                 (delete-introduced-text)
+                 (insert-new-dstxs-after a-cursor new-dstxs)
                  (send a-cursor cursor-delete))]
-              
               [else
                (let ([new-dstxs (parse-between start-pos (+ start-pos len))])
-                 (dynamic-wind (lambda () (begin-dstx-edit-sequence))
-                               (lambda () (delete start-pos (+ start-pos len)))
-                               (lambda () (end-dstx-edit-sequence)))
-                 (for-each (lambda (new-dstx)
-                             (send a-cursor cursor-insert-after new-dstx))
-                           new-dstxs))])))
+                 (delete-introduced-text)
+                 (insert-new-dstxs-after a-cursor new-dstxs))])))
         
         (define (insert-within-something a-cursor)
           (send a-cursor focus-container start-pos)
@@ -301,23 +297,16 @@
                           start-pos))
               (send a-cursor focus-younger/no-snap)))
           ;; Delete the old, introduce the new.
-          (let ([new-dstxs
-                 (parse-between (send a-cursor cursor-pos)
-                                (+ (send a-cursor cursor-endpos)
-                                   len))])
-            (dynamic-wind (lambda () (begin-dstx-edit-sequence))
-                          (lambda () (delete start-pos (+ start-pos len)))
-                          (lambda () (end-dstx-edit-sequence)))
-            (for-each (lambda (new-dstx)
-                        (send a-cursor cursor-insert-after new-dstx)
-                        (send a-cursor focus-younger/no-snap))
-                      (reverse new-dstxs))
+          (let ([new-dstxs (parse-between (send a-cursor cursor-pos)
+                                          (+ (send a-cursor cursor-endpos)
+                                             len))])
+            (delete-introduced-text)
+            (insert-new-dstxs-after a-cursor new-dstxs)
             (send a-cursor cursor-delete)))
         
         (define-values
           (original-start-position original-end-position)
           (values (get-start-position) (get-end-position)))
-        
         (dynamic-wind
          (lambda ()
            (begin-edit-sequence))
