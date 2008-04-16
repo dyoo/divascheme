@@ -52,7 +52,7 @@
         (check-equal? (cursor-dstx (focus-pos a-cursor 0))
                       (new-atom "x"))
         (check-equal? (cursor-dstx (focus-pos a-cursor 1))
-                      (new-atom "x"))
+                      (new-space " "))
         (check-equal? (cursor-dstx (focus-pos a-cursor 2))
                       (new-space " "))))
      
