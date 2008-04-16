@@ -453,9 +453,9 @@
             (check-equal? (map strip-local-ids (send text get-top-dstxs))
                           (map strip-local-ids
                                (list
+                                (new-space "")
                                 (new-fusion "("
-                                            (list (new-space "")
-                                                  (new-atom "module")
+                                            (list (new-atom "module")
                                                   (new-space " ")
                                                   (new-atom "foo")
                                                   (new-space " ")
