@@ -46,10 +46,15 @@
                     [focus-predecessor focus-function/c]
                     [focus-predecessor/no-snap focus-function/c]
                     [focus-toplevel focus-function/c]
+                    [focus-youngest focus-function/c]
+                    [focus-oldest focus-function/c]
+                    
                     
                     [focus-find-dstx
                      (cursor? (dstx? . -> . boolean?) . -> . cursor-or-false/c)]
                     [focus-pos
+                     (cursor? natural-number/c . -> . cursor-or-false/c)]
+                    [focus-endpos
                      (cursor? natural-number/c . -> . cursor-or-false/c)]
                     [focus-container
                      (cursor? natural-number/c . -> . cursor-or-false/c)])
@@ -498,6 +503,15 @@
          a-cursor])))
   
   
+  ;; focus-oldest: cursor -> cursor
+  (define (focus-oldest a-cursor)
+    (maximally-repeat-movement a-cursor focus-older/no-snap))
+  
+  ;; focus-oldest: cursor -> cursor
+  (define (focus-youngest a-cursor)
+    (maximally-repeat-movement a-cursor focus-younger/no-snap))
+  
+  
   ;; focus-find-dstx: cursor (dstx -> boolean?) -> (or/c cursor #f)
   ;; Refocus the cursor, based on a predicate that distinguishing between
   ;; dstxs.
@@ -572,6 +586,16 @@
                     focus-predecessor/no-snap
                     (lambda (a-cursor)
                       (between? a-cursor a-pos)))))
+  
+  
+  
+  ;; focus-endpos: cursor number -> (or/c cursor #f)
+  (define (focus-endpos a-cursor a-pos)
+    ;; todo: first, focus outward, then focus on successors?
+    (focus-search (focus-toplevel a-cursor)
+                  focus-successor/no-snap
+                  (lambda (a-cursor)
+                    (= (cursor-endpos a-cursor) a-pos))))
   
   
   ;; sentinel-space?: dstx -> boolean
