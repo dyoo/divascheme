@@ -8,7 +8,6 @@
            (only "move.ss"
                  get-move-after-dstx
                  after-displayed-string
-                 move-compose
                  apply-move))
   
   
