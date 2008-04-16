@@ -245,9 +245,13 @@
       ;; When the text changes without explicit structured operations, we
       ;; must maintain semi-structure.
       (define (handle-possibly-unstructured-insert start-pos len)
-        ;; position-focus-on-pos: number -> void
-        ;; Puts focus on the dstx that will be
-        (define (position-focus-on-pos a-cursor start-pos)
+        (define (insert-at-end-of-something? a-cursor)
+          #f)
+        
+        (define (insert-after-something a-cursor)
+          (void))
+        
+        (define (insert-within-something a-cursor)
           (send a-cursor focus-pos start-pos)
           (let ([fcursor (send a-cursor get-functional-cursor)])
             ;; subtle: if the very previous expression is an atom, attach to it
@@ -256,31 +260,34 @@
                        (struct:atom? (struct:cursor-dstx (cursor:focus-younger/no-snap fcursor)))
                        (= (cursor:cursor-endpos (cursor:focus-younger/no-snap fcursor))
                           start-pos))
-              (send a-cursor focus-younger/no-snap))))
+              (send a-cursor focus-younger/no-snap)))
+          ;; Delete the old, introduce the new.
+          (let ([new-dstxs
+                 (parse-between (send a-cursor cursor-pos)
+                                (+ (send a-cursor cursor-endpos)
+                                   len))])
+            (dynamic-wind (lambda () (begin-dstx-edit-sequence))
+                          (lambda () (delete start-pos (+ start-pos len)))
+                          (lambda () (end-dstx-edit-sequence)))
+            (for-each (lambda (new-dstx)
+                        (send a-cursor cursor-insert-after new-dstx)
+                        (send a-cursor focus-younger/no-snap))
+                      (reverse new-dstxs))
+            (send a-cursor cursor-delete)))
         
         (define-values
           (original-start-position original-end-position)
           (values (get-start-position) (get-end-position)))
-        
         (dynamic-wind
          (lambda ()
            (begin-edit-sequence))
          (lambda ()
            (let ([a-cursor (get-dstx-cursor)])
-             (position-focus-on-pos a-cursor start-pos)
-             ;; Delete the old, introduce the new.
-             (let ([new-dstxs
-                    (parse-between (send a-cursor cursor-pos)
-                                   (+ (send a-cursor cursor-endpos)
-                                      len))])
-               (dynamic-wind (lambda () (begin-dstx-edit-sequence))
-                             (lambda () (delete start-pos (+ start-pos len)))
-                             (lambda () (end-dstx-edit-sequence)))
-               (for-each (lambda (new-dstx)
-                           (send a-cursor cursor-insert-after new-dstx)
-                           (send a-cursor focus-younger/no-snap))
-                         (reverse new-dstxs))
-               (send a-cursor cursor-delete)))
+             (cond
+               [(insert-at-end-of-something? a-cursor)
+                (insert-after-something a-cursor)]
+               [else
+                (insert-within-something a-cursor)]))
            
            (set-position original-start-position original-end-position #f #f 'local))
          (lambda ()
