@@ -396,17 +396,14 @@
                                                  (new-atom "world"))))))
      
      (test-case
-      "inserting two s-expressions"
-      (test-case
-       "simple insertion of two atoms separated by space"
-       (let ([text (make-text-instance)])
-         (send text delete 0 (send text last-position))
-         (send text insert "[")
-         (send text insert "]")
-         (send text insert "[")
-         (send text insert "]")
-         (check-equal? (send text get-text)
-                       "[][]"))))
+      "simple insertion of two atoms separated by space"
+      (let ([text (make-text-instance)])
+        (send text delete 0 (send text last-position))
+        (send text insert "[hello]")
+        (send text insert "[")
+        (send text insert "]")
+        (check-equal? (send text get-text)
+                      "[hello][]")))
      
      
      (test-case
