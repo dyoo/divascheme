@@ -358,7 +358,7 @@
         (send text insert "(x y z)")
         (send text delete 4 7)
         (check-equal? (send text get-text) "(x y")
-        (check-equal? (length (send text get-top-dstxs)) 1)))
+        (check-equal? (length (send text get-top-dstxs)) 2)))
      
      
      (test-case
@@ -366,8 +366,8 @@
       (let ([text (make-text-instance)])
         (send text insert ")")
         (check-equal? (send text get-text) ")")
-        (check-equal? (length (send text get-top-dstxs)) 1)
-        (check-true (special-atom? (first (send text get-top-dstxs))))))
+        (check-equal? (length (send text get-top-dstxs)) 2)
+        (check-true (special-atom? (second (send text get-top-dstxs))))))
      
      
      (test-case
@@ -388,14 +388,16 @@
       (let ([text (make-text-instance)])
         (send text insert "hello")
         (check-equal? (map strip-local-ids (send text get-top-dstxs))
-                      (map strip-local-ids (list (new-atom "hello"))))
+                      (map strip-local-ids (list (new-space "") (new-atom "hello"))))
         (send text insert " ")
         (check-equal? (map strip-local-ids (send text get-top-dstxs))
-                      (map strip-local-ids (list (new-atom "hello")
+                      (map strip-local-ids (list (new-space "")
+                                                 (new-atom "hello")
                                                  (new-space " "))))
         (send text insert "world")
         (check-equal? (map strip-local-ids (send text get-top-dstxs))
-                      (map strip-local-ids (list (new-atom "hello")
+                      (map strip-local-ids (list (new-space "")
+                                                 (new-atom "hello")
                                                  (new-space " ")
                                                  (new-atom "world"))))))
      
@@ -423,7 +425,8 @@
         (send text insert " ")
         (send text insert "world")
         (check-equal? (map strip-local-ids (send text get-top-dstxs))
-                      (map strip-local-ids (list (new-atom "hello")
+                      (map strip-local-ids (list (new-space "")
+                                                 (new-atom "hello")
                                                  (new-space " ")
                                                  (new-atom "world"))))))
      
@@ -435,15 +438,15 @@
         (send text insert "(module  foo mzscheme)")
         (let* ([f-cursor (send (send text get-dstx-cursor) get-functional-cursor)])
           (let ([id1 (cursor-dstx-property-ref
-                      (focus-in f-cursor)
+                      (focus-in (focus-successor f-cursor))
                       'local-id)]
                 [id2 (cursor-dstx-property-ref
-                      (focus-older (focus-in f-cursor))
+                      (focus-older (focus-in (focus-successor f-cursor)))
                       'local-id)]
                 [id3 (cursor-dstx-property-ref
                       (focus-older
                        (focus-older
-                        (focus-in f-cursor)))
+                        (focus-in (focus-successor f-cursor))))
                       'local-id)])
             (send text delete 7 8)
             (check-equal? (send text get-text) "(module foo mzscheme)")
@@ -451,13 +454,15 @@
                           (map strip-local-ids
                                (list
                                 (new-fusion "("
-                                            (list (new-atom "module")
+                                            (list (new-space "")
+                                                  (new-atom "module")
                                                   (new-space " ")
                                                   (new-atom "foo")
                                                   (new-space " ")
                                                   (new-atom "mzscheme"))
                                             ")"))))
             (let ([cursor (send text get-dstx-cursor)])
+              (send cursor focus-successor)
               (send cursor focus-in)
               (check-equal? (send cursor cursor-dstx-property-ref 'local-id) id1)
               (send cursor focus-older)
