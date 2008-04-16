@@ -1,5 +1,6 @@
 (module move mzscheme
   (require "struct.ss"
+           "weak-memoize.ss"
            (lib "plt-match.ss")
            (lib "etc.ss")
            (lib "list.ss")
@@ -180,21 +181,6 @@
   
   
   
-  
-  ;; weak-memoize: (X -> X) -> (X -> X)
-  ;; Applies a weak memoization to see if we can speed up get-move-after-dstx.
-  (define (weak-memoize f)
-    (let ([ht (make-hash-table 'weak)])
-      (lambda (x)
-        (cond
-          [(hash-table-get ht x #f)
-           =>
-           (lambda (x)
-             x)]
-          [else
-           (let ([result (f x)])
-             (hash-table-put! ht x result)
-             result)]))))
   
   
   ;; get-move-after-dstx: dstx -> move

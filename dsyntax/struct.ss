@@ -4,6 +4,7 @@
   (require (lib "contract.ss")
            (lib "plt-match.ss")
            (lib "list.ss")
+           "weak-memoize.ss"
            (prefix table: (planet "table.ss" ("soegaard" "galore.plt" 3))))
   
   
@@ -53,8 +54,9 @@
   
   ;; new-atom: string -> atom
   ;; Constructor with default empty properties.
-  (define (new-atom content)
-    (make-atom empty-table content))
+  (define new-atom
+    (weak-memoize/equal
+     (lambda (content) (make-atom empty-table content))))
   
   ;; new-special-atom: any -> special-atom
   ;; Constructor with default empty properties and default width 1.
@@ -66,8 +68,10 @@
   
   ;; new-space: string -> space
   ;; Constructor with default empty properties.
-  (define (new-space content)
-    (make-space empty-table content))
+  (define new-space
+    (weak-memoize/equal
+     (lambda (content)
+       (make-space empty-table content))))
   
   
   ;; new-fusion: string (listof dstx?) string -> fusion
