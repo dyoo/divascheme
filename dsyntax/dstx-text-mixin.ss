@@ -11,8 +11,7 @@
            (lib "port.ss")
            (prefix parser: "parse-plt-scheme.ss")
            (prefix cursor: "cursor.ss")
-           (prefix struct: "struct.ss")
-           "weak-set.ss")
+           (prefix struct: "struct.ss"))
   
   
   (provide dstx-text-mixin dstx-text<%> dstx-cursor<%>)
@@ -21,31 +20,35 @@
   (define dstx-text<%> (interface () get-top-dstxs get-dstx-cursor))
   (define dstx-cursor<%> (interface ()
                            get-functional-cursor
-                           resync
+                           resync!
                            cursor-dstx
                            cursor-line
                            cursor-col
                            cursor-pos
                            cursor-endpos
-                           cursor-dstx-property-ref
-                           focus-in
-                           focus-in/no-snap
-                           focus-out
-                           focus-older
-                           focus-older/no-snap
-                           focus-oldest
-                           focus-younger
-                           focus-younger/no-snap
-                           focus-youngest
-                           focus-successor
-                           focus-successor/no-snap
-                           focus-predecessor
-                           focus-predecessor/no-snap
-                           focus-toplevel
-                           focus-pos
-                           cursor-insert-before
-                           cursor-insert-after
-                           cursor-delete))
+                           property-ref
+                           property-set!
+                           
+                           focus-in!
+                           focus-in/no-snap!
+                           focus-out!
+                           focus-older!
+                           focus-older/no-snap!
+                           focus-oldest!
+                           focus-younger!
+                           focus-younger/no-snap!
+                           focus-youngest!
+                           focus-successor!
+                           focus-successor/no-snap!
+                           focus-predecessor!
+                           focus-predecessor/no-snap!
+                           focus-toplevel!
+                           focus-container!
+                           focus-pos!
+                           
+                           insert-before!
+                           insert-after!
+                           delete!))
   
   
   ;; Macro for iterating a certain number of times.
@@ -212,10 +215,10 @@
          (lambda ()
            (begin-edit-sequence))
          (lambda ()
-           (send cursor-for-editing resync)
+           (send cursor-for-editing resync!)
            (let loop ([len len])
              (when (> len 0)
-               (send cursor-for-editing focus-container start-pos)
+               (send cursor-for-editing focus-container! start-pos)
                (let ([deleted-start (max start-pos (send cursor-for-editing cursor-pos))]
                      [deleted-end (min (+ start-pos len)
                                        (send cursor-for-editing cursor-endpos))])
@@ -228,10 +231,10 @@
                                          deleted-end
                                          (send cursor-for-editing cursor-endpos))])
                    (for-each (lambda (a-dstx)
-                               (send cursor-for-editing cursor-insert-after a-dstx)
-                               (send cursor-for-editing focus-younger/no-snap))
+                               (send cursor-for-editing insert-after! a-dstx)
+                               (send cursor-for-editing focus-younger/no-snap!))
                              (reverse new-dstxs))
-                   (send cursor-for-editing cursor-delete)
+                   (send cursor-for-editing delete!)
                    (loop (- len (- deleted-end deleted-start)))))))
            (set-position original-start-position original-end-position #f #f 'local))
          (lambda ()
@@ -273,13 +276,13 @@
         
         (define (insert-new-dstxs-after a-cursor new-dstxs)
           (for-each (lambda (new-dstx)
-                      (send a-cursor cursor-insert-after new-dstx)
-                      (send a-cursor focus-younger/no-snap))
+                      (send a-cursor insert-after! new-dstx)
+                      (send a-cursor focus-younger/no-snap!))
                     (reverse new-dstxs)))
         
         (define (insert-at-end a-cursor)
-          (send a-cursor focus-toplevel)
-          (send a-cursor focus-oldest)
+          (send a-cursor focus-toplevel!)
+          (send a-cursor focus-oldest!)
           (let ([fcursor (send a-cursor get-functional-cursor)])
             (cond
               ;; subtle: if the focus is an atom, attach to it
@@ -293,14 +296,14 @@
                                         len))])
                  (delete-introduced-text)
                  (insert-new-dstxs-after a-cursor new-dstxs)
-                 (send a-cursor cursor-delete))]
+                 (send a-cursor delete!))]
               [else
                (let ([new-dstxs (parse-between start-pos (+ start-pos len))])
                  (delete-introduced-text)
                  (insert-new-dstxs-after a-cursor new-dstxs))])))
         
         (define (insert-within-something a-cursor)
-          (send a-cursor focus-container start-pos)
+          (send a-cursor focus-container! start-pos)
           (let ([fcursor (send a-cursor get-functional-cursor)])
             ;; subtle: if the very previous expression is an atom, attach to it
             ;; instead.
@@ -308,14 +311,14 @@
                        (struct:atom? (struct:cursor-dstx (cursor:focus-younger/no-snap fcursor)))
                        (= (cursor:cursor-endpos (cursor:focus-younger/no-snap fcursor))
                           start-pos))
-              (send a-cursor focus-younger/no-snap)))
+              (send a-cursor focus-younger/no-snap!)))
           ;; Delete the old, introduce the new.
           (let ([new-dstxs (parse-between (send a-cursor cursor-pos)
                                           (+ (send a-cursor cursor-endpos)
                                              len))])
             (delete-introduced-text)
             (insert-new-dstxs-after a-cursor new-dstxs)
-            (send a-cursor cursor-delete)))
+            (send a-cursor delete!)))
         
         (define-values
           (original-start-position original-end-position)
@@ -324,7 +327,7 @@
          (lambda ()
            (begin-edit-sequence))
          (lambda ()
-           (send cursor-for-editing resync)
+           (send cursor-for-editing resync!)
            (cond [(inserting-at-end? cursor-for-editing)
                   (insert-at-end cursor-for-editing)]
                  [else
@@ -462,15 +465,15 @@
                     (set! a-cursor new-cursor-val)))]))
       
       
-      ;; resync: -> void
+      ;; resync!: -> void
       ;; Refresh the cursor's view of the AST, trying our best to preserve
       ;; the focus.
       ;; When the AST is modified, we need to correct our out-of-date view
       ;; of the AST.
       ;; Protected.
-      (define/public (resync)
+      (define/public (resync!)
         (when (not (= current-version (send current-text get-version)))
-          (let ([old-local-id (cursor-dstx-property-ref 'local-id)]
+          (let ([old-local-id (property-ref 'local-id)]
                 [old-pos (cursor-pos)])
             (set! f-cursor (cursor:make-toplevel-cursor
                             (send current-text get-top-dstxs)))
@@ -510,60 +513,67 @@
       (define/public (cursor-endpos)
         (cursor:cursor-endpos f-cursor))
       
-      (define/public (cursor-dstx-property-ref a-name)
+      
+      ;; Property get and set
+      (define/public (property-ref a-name)
         (cursor:property-ref f-cursor a-name))
       
+      (define/public (property-set! a-name a-val)
+        (cursor:property-set f-cursor a-name a-val))
+      
+      
       ;; Focusers
-      (define/public (focus-in)
+      (define/public (focus-in!)
         (set-cursor/success f-cursor (cursor:focus-in f-cursor)))
       
-      (define/public (focus-in/no-snap)
+      (define/public (focus-in/no-snap!)
         (set-cursor/success f-cursor (cursor:focus-in/no-snap f-cursor)))
       
-      (define/public (focus-out)
+      (define/public (focus-out!)
         (set-cursor/success f-cursor (cursor:focus-out f-cursor)))
       
-      (define/public (focus-older)
+      (define/public (focus-older!)
         (set-cursor/success f-cursor (cursor:focus-older f-cursor)))
       
-      (define/public (focus-older/no-snap)
+      (define/public (focus-older/no-snap!)
         (set-cursor/success f-cursor (cursor:focus-older/no-snap f-cursor)))
       
-      (define/public (focus-oldest)
+      (define/public (focus-oldest!)
         (set-cursor/success f-cursor (cursor:focus-oldest f-cursor)))
       
-      (define/public (focus-younger)
+      (define/public (focus-younger!)
         (set-cursor/success f-cursor (cursor:focus-younger f-cursor)))
       
-      (define/public (focus-younger/no-snap)
+      (define/public (focus-younger/no-snap!)
         (set-cursor/success f-cursor (cursor:focus-younger/no-snap f-cursor)))
       
-      (define/public (focus-youngest)
+      (define/public (focus-youngest!)
         (set-cursor/success f-cursor (cursor:focus-youngest f-cursor)))
       
-      (define/public (focus-successor)
+      (define/public (focus-successor!)
         (set-cursor/success f-cursor (cursor:focus-successor f-cursor)))
       
-      (define/public (focus-successor/no-snap)
+      (define/public (focus-successor/no-snap!)
         (set-cursor/success f-cursor (cursor:focus-successor/no-snap f-cursor)))
       
-      (define/public (focus-predecessor)
+      (define/public (focus-predecessor!)
         (set-cursor/success f-cursor (cursor:focus-predecessor f-cursor)))
       
-      (define/public (focus-predecessor/no-snap)
+      (define/public (focus-predecessor/no-snap!)
         (set-cursor/success f-cursor (cursor:focus-predecessor/no-snap f-cursor)))
       
-      (define/public (focus-toplevel)
+      (define/public (focus-toplevel!)
         (set-cursor/success f-cursor (cursor:focus-toplevel f-cursor)))
       
-      (define/public (focus-pos a-pos)
+      (define/public (focus-container! a-pos)
+        (set-cursor/success f-cursor (cursor:focus-container f-cursor a-pos)))
+      
+      (define/public (focus-pos! a-pos)
         (set-cursor/success f-cursor (cursor:focus-pos f-cursor a-pos)))
       
       (define/public (focus-endpos a-pos)
         (set-cursor/success f-cursor (cursor:focus-endpos f-cursor a-pos)))
       
-      (define/public (focus-container a-pos)
-        (set-cursor/success f-cursor (cursor:focus-container f-cursor a-pos)))
       
       
       ;; pretty-print-to-text: dstx -> void
@@ -587,8 +597,8 @@
       
       
       ;; Editors
-      (define/public (cursor-insert-before a-dstx)
-        (resync)
+      (define/public (insert-before! a-dstx)
+        (resync!)
         (let ([a-dstx (dstx-attach-local-ids a-dstx)])
           (dynamic-wind
            (lambda ()
@@ -606,8 +616,8 @@
              (send current-text end-dstx-edit-sequence)))))
       
       
-      (define/public (cursor-insert-after a-dstx)
-        (resync)
+      (define/public (insert-after! a-dstx)
+        (resync!)
         (let ([a-dstx (dstx-attach-local-ids a-dstx)])
           (dynamic-wind
            (lambda ()
@@ -625,8 +635,8 @@
              (send current-text end-dstx-edit-sequence)))))
       
       
-      (define/public (cursor-delete)
-        (resync)
+      (define/public (delete!)
+        (resync!)
         (dynamic-wind
          (lambda ()
            (send current-text begin-dstx-edit-sequence)

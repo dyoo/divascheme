@@ -60,21 +60,21 @@
       "inserting a single element"
       (let* ([text (make-text-instance)]
              [cursor (send text get-dstx-cursor)])
-        (send cursor cursor-insert-after (new-atom "hello"))
+        (send cursor insert-after! (new-atom "hello"))
         ;; Check what's on screen...
         (check-equal? (send text get-text) "hello")
         ;; As well as what's in the dstx
         (check-equal? (map strip-local-ids (send text get-top-dstxs))
                       (map strip-local-ids (list (new-space "") (new-atom "hello"))))
-        (check-true (number? (send cursor cursor-dstx-property-ref 'local-id)))))
+        (check-true (number? (send cursor property-ref 'local-id)))))
      
      
      (test-case
       "deleting a single element"
       (let* ([text (make-text-instance)]
              [cursor (send text get-dstx-cursor)])
-        (send cursor cursor-insert-after (new-atom "hello"))
-        (send cursor cursor-delete)
+        (send cursor insert-after! (new-atom "hello"))
+        (send cursor delete!)
         (check-equal? (send text get-text) "")
         (check-equal? (map strip-local-ids (send text get-top-dstxs))
                       (map strip-local-ids (list (new-space ""))))))
@@ -84,11 +84,11 @@
       "deleting between two"
       (let* ([text (make-text-instance)]
              [cursor (send text get-dstx-cursor)])
-        (send cursor cursor-insert-after (new-atom "A"))
-        (send cursor cursor-insert-after (new-atom "B"))
-        (send cursor cursor-insert-after (new-atom "C"))
-        (send cursor focus-younger)
-        (send cursor cursor-delete)
+        (send cursor insert-after! (new-atom "A"))
+        (send cursor insert-after! (new-atom "B"))
+        (send cursor insert-after! (new-atom "C"))
+        (send cursor focus-younger!)
+        (send cursor delete!)
         (check-equal? (send text get-text) "AC")
         (check-equal? (strip-local-ids (send cursor cursor-dstx))
                       (strip-local-ids (new-atom "C")))))
@@ -98,9 +98,9 @@
       "inserting two elements with insert-after"
       (let* ([text (make-text-instance)]
              [cursor (send text get-dstx-cursor)])
-        (send cursor cursor-insert-after (new-atom "hello"))
-        (send cursor cursor-insert-after (new-space " "))
-        (send cursor cursor-insert-after (new-atom "world"))
+        (send cursor insert-after! (new-atom "hello"))
+        (send cursor insert-after! (new-space " "))
+        (send cursor insert-after! (new-atom "world"))
         ;; Check what's on screen...
         (check-equal? (send text get-text) "hello world")
         ;; As well as what's in the dstx
@@ -109,11 +109,11 @@
                                                  (new-atom "hello")
                                                  (new-space " ")
                                                  (new-atom "world"))))
-        (check-true (number? (send cursor cursor-dstx-property-ref 'local-id)))
+        (check-true (number? (send cursor property-ref 'local-id)))
         (check-equal? (strip-local-ids (send cursor cursor-dstx))
                       (strip-local-ids (new-atom "world")))
-        (send cursor focus-predecessor)
-        (check-true (number? (send cursor cursor-dstx-property-ref 'local-id)))
+        (send cursor focus-predecessor!)
+        (check-true (number? (send cursor property-ref 'local-id)))
         (check-equal? (strip-local-ids (send cursor cursor-dstx))
                       (strip-local-ids (new-atom "hello")))))
      
@@ -123,9 +123,9 @@
       "inserting two elements with insert-before"
       (let* ([text (make-text-instance)]
              [cursor (send text get-dstx-cursor)])
-        (send cursor cursor-insert-after (new-atom "world"))
-        (send cursor cursor-insert-before (new-space " "))
-        (send cursor cursor-insert-before (new-atom "goodbye"))
+        (send cursor insert-after! (new-atom "world"))
+        (send cursor insert-before! (new-space " "))
+        (send cursor insert-before! (new-atom "goodbye"))
         ;; Check what's on screen...
         (check-equal? (send text get-text) "goodbye world")
         ;; As well as what's in the dstx
@@ -139,7 +139,7 @@
       "manually editing a symbol at the front"
       (let* ([text (make-text-instance)]
              [cursor (send text get-dstx-cursor)])
-        (send cursor cursor-insert-after (new-atom "orld"))
+        (send cursor insert-after! (new-atom "orld"))
         (send text insert "w" 0)
         
         ;; Check what's on screen...
@@ -153,9 +153,9 @@
       "manually editing a symbol at the back"
       (let* ([text (make-text-instance)]
              [cursor (send text get-dstx-cursor)])
-        (send cursor cursor-insert-after (new-atom "worl"))
-        (send cursor cursor-insert-after (new-space " "))
-        (send cursor cursor-insert-after (new-atom "peace"))
+        (send cursor insert-after! (new-atom "worl"))
+        (send cursor insert-after! (new-space " "))
+        (send cursor insert-after! (new-atom "peace"))
         (send text insert "d" 4)
         
         ;; Check what's on screen...
@@ -172,7 +172,7 @@
       "manually editing a symbol at the back"
       (let* ([text (make-text-instance)]
              [cursor (send text get-dstx-cursor)])
-        (send cursor cursor-insert-after (new-atom "worl"))
+        (send cursor insert-after! (new-atom "worl"))
         (send text insert "d" 4)
         ;; Check what's on screen...
         (check-equal? (send text get-text) "world")
@@ -186,7 +186,7 @@
       "manually editing a symbol internally"
       (let* ([text (make-text-instance)]
              [cursor (send text get-dstx-cursor)])
-        (send cursor cursor-insert-after (new-atom "wrld"))
+        (send cursor insert-after! (new-atom "wrld"))
         (send text set-position 1)
         (send text insert "o")
         
@@ -207,7 +207,7 @@
       "inserting a fusion"
       (let* ([text (make-text-instance)]
              [cursor (send text get-dstx-cursor)])
-        (send cursor cursor-insert-after (new-fusion "("
+        (send cursor insert-after! (new-fusion "("
                                                      (list (new-atom "hello"))
                                                      ")"))
         ;; Check what's on screen...
@@ -221,12 +221,12 @@
       "inserting inside a fusion"
       (let* ([text (make-text-instance)]
              [cursor (send text get-dstx-cursor)])
-        (send cursor cursor-insert-after (new-fusion "("
+        (send cursor insert-after! (new-fusion "("
                                                      (list (new-atom "hello"))
                                                      ")"))
-        (send cursor focus-in)
-        (send cursor cursor-insert-after (new-space " "))
-        (send cursor cursor-insert-after (new-fusion "["
+        (send cursor focus-in!)
+        (send cursor insert-after! (new-space " "))
+        (send cursor insert-after! (new-fusion "["
                                                      (list (new-atom "world"))
                                                      "]"))
         ;; Check what's on screen...
@@ -274,7 +274,7 @@
       "manually editing the front of an atom with delete"
       (let* ([text (make-text-instance)])
         (let ([cursor (send text get-dstx-cursor)])
-          (send cursor cursor-insert-after (new-atom "an-atom")))
+          (send cursor insert-after! (new-atom "an-atom")))
         (send text delete 0 3)
         (check-equal? (send text get-text) "atom")
         (check-equal? (map strip-local-ids (send text get-top-dstxs))
@@ -286,8 +286,8 @@
       "manually editing the end of an atom with delete"
       (let* ([text (make-text-instance)])
         (let ([cursor (send text get-dstx-cursor)])
-          (send cursor cursor-insert-after (new-atom "an-at"))
-          (send cursor cursor-insert-after (new-atom "om-bomb")))
+          (send cursor insert-after! (new-atom "an-at"))
+          (send cursor insert-after! (new-atom "om-bomb")))
         (send text delete 7 12)
         (check-equal? (send text get-text) "an-atom")
         (check-equal? (map strip-local-ids (send text get-top-dstxs))
@@ -375,10 +375,10 @@
       (let ([text (make-text-instance)])
         (send text insert "(module  foo mzscheme)")
         (let ([cursor (send text get-dstx-cursor)])
-          (send cursor focus-pos 7)
+          (send cursor focus-pos! 7)
           (check-equal? (strip-local-ids (send cursor cursor-dstx))
                         (strip-local-ids (new-space " ")))
-          (send cursor focus-younger/no-snap)
+          (send cursor focus-younger/no-snap!)
           (check-equal? (strip-local-ids (send cursor cursor-dstx))
                         (strip-local-ids (new-atom "module"))))))
      
@@ -462,10 +462,10 @@
                                                   (new-atom "mzscheme"))
                                             ")"))))
             (let ([cursor (send text get-dstx-cursor)])
-              (send cursor focus-successor)
-              (send cursor focus-in)
-              (check-equal? (send cursor cursor-dstx-property-ref 'local-id) id1)
-              (send cursor focus-older)
-              (check-equal? (send cursor cursor-dstx-property-ref 'local-id) id2)
-              (send cursor focus-older)
-              (check-equal? (send cursor cursor-dstx-property-ref 'local-id) id3)))))))))
+              (send cursor focus-successor!)
+              (send cursor focus-in!)
+              (check-equal? (send cursor property-ref 'local-id) id1)
+              (send cursor focus-older!)
+              (check-equal? (send cursor property-ref 'local-id) id2)
+              (send cursor focus-older!)
+              (check-equal? (send cursor property-ref 'local-id) id3)))))))))
