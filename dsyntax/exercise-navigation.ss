@@ -101,6 +101,7 @@
     (local ((define f (make-object frame% "test-navigation" #f 400 500))
             (define t (make-object my-text%))
             (define c (make-object editor-canvas% f t '(no-hscroll))))
+      (send t enable-dstx-parsing)
       (send t load-file filename)
       (send t auto-wrap #t)
       (send f show #t)

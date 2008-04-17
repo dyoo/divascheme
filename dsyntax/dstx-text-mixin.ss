@@ -126,9 +126,9 @@
       
       ;; top-dstxs: (listof dstx)
       ;; The toplevel dstx elements.
-      (define top-dstxs '())
+      (define top-dstxs (list (dstx-attach-local-ids (struct:new-space ""))))
       
-      (define parsing-enabled? #t)
+      (define parsing-enabled? #f)
       
       (define/public (dstx-parsing-enabled?)
         parsing-enabled?)
@@ -171,7 +171,7 @@
       ;; Sets the top dstxs.
       ;; Protected.
       (define/public (set-top-dstxs dstxs)
-        (set! top-dstxs dstxs)
+        (set! top-dstxs (map dstx-attach-local-ids dstxs))
         (set! version (add1 version)))
       
       ;; get-top-dstxs: -> (listof dstx)
@@ -393,12 +393,12 @@
       
       ;; load-file: string -> void
       (define/override (load-file filename)
+        (dynamic-wind (lambda () (begin-dstx-edit-sequence))
+                      (lambda () (super load-file filename))
+                      (lambda () (end-dstx-edit-sequence)))
         (cond [(not parsing-enabled?)
                (void)]
               [else
-               (dynamic-wind (lambda () (begin-dstx-edit-sequence))
-                             (lambda () (super load-file filename))
-                             (lambda () (end-dstx-edit-sequence)))
                (reparse-all-dstxs!)]))
       
       
@@ -518,7 +518,8 @@
       ;; of the AST.
       ;; Protected.
       (define/public (resync!)
-        (when (not (= current-version (send current-text get-version)))
+        (when (and (send current-text dstx-parsing-enabled?)
+                   (not (= current-version (send current-text get-version))))
           (let ([old-local-id (property-ref 'local-id)]
                 [old-pos (cursor-pos)])
             ;; If the previous set is unsound, let's go back to the
