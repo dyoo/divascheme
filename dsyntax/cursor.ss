@@ -528,16 +528,20 @@
   ;; Refocus the cursor, based on a predicate that distinguishing between
   ;; dstxs.
   (define (focus-find-dstx a-cursor a-pred)
-    (let loop ([leftward a-cursor]
-               [rightward a-cursor])
-      (cond
-        [(and leftward (a-pred (cursor-dstx leftward)))
-         leftward]
-        [(and rightward (a-pred (cursor-dstx rightward)))
-         rightward]
-        [else
-         (loop (focus-predecessor/no-snap leftward)
-               (focus-successor/no-snap rightward))])))
+    (focus-search (focus-toplevel a-cursor)
+                  focus-successor/no-snap
+                  (lambda (a-cursor)
+                    (a-pred (cursor-dstx a-cursor))))
+    #;(let loop ([leftward a-cursor]
+                 [rightward a-cursor])
+        (cond
+          [(and leftward (a-pred (cursor-dstx leftward)))
+           leftward]
+          [(and rightward (a-pred (cursor-dstx rightward)))
+           rightward]
+          [else
+           (loop (focus-predecessor/no-snap leftward)
+                 (focus-successor/no-snap rightward))])))
   
   
   ;; focus-search: cursor focus-function (cursor -> boolean) -> (or/c cursor #f)

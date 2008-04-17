@@ -136,7 +136,7 @@
       ;; Warning: do NOT expose this to the outside world.
       (define cursor-for-editing (get-dstx-cursor))
       
-      (define/public (get-cursor-for-editing a-cursor)
+      (define/public (get-cursor-for-editing)
         cursor-for-editing)
       
       (define/public (set-cursor-for-editing a-cursor)
@@ -484,7 +484,8 @@
         (when (not (= current-version (send current-text get-version)))
           (let ([old-local-id (property-ref 'local-id)]
                 [old-pos (cursor-pos)])
-            #;(set! f-cursor (send current-text get-cursor-for-editing))
+            #;(set! f-cursor
+                    (send (send current-text get-cursor-for-editing) get-functional-cursor))
             ;; If the previous set is unsound, let's go back to the
             ;; slow-but-safe option.
             (set! f-cursor (cursor:make-toplevel-cursor
