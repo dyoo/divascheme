@@ -41,15 +41,16 @@
    [focus-out focus-function/c]
    [focus-older focus-function/c]
    [focus-older/no-snap focus-function/c]
+   [focus-oldest focus-function/c]
    [focus-younger focus-function/c]
    [focus-younger/no-snap focus-function/c]
+   [focus-youngest focus-function/c]
    [focus-successor focus-function/c]
    [focus-successor/no-snap focus-function/c]
    [focus-predecessor focus-function/c]
    [focus-predecessor/no-snap focus-function/c]
    [focus-toplevel focus-function/c]
-   [focus-youngest focus-function/c]
-   [focus-oldest focus-function/c]
+   
    
    
    [focus-find-dstx
