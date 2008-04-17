@@ -59,19 +59,6 @@
                            delete!))
   
   
-  ;; Macro for iterating a certain number of times.
-  ;; (repeat 5 body) will repeat body five times.
-  (define-syntax (repeat stx)
-    (syntax-case stx ()
-      [(_ num body ...)
-       (syntax/loc stx
-         (let ([N num])
-           (let loop ([i 0])
-             (when (< i N)
-               body ...
-               (loop (add1 i))))))]))
-  
-  
   ;; next-local-id: -> number
   ;; Returns the next local clock.
   (define next-local-id
@@ -392,21 +379,25 @@
       
       
       ;; load-file: string -> void
-      (define/override
-        load-file
+      (define/override load-file
         (case-lambda
           [(filename)
-           (load-file filename 'guess #f)]
+           (general-load-file filename 'guess #t)]
           [(filename format)
-           (load-file filename format #t)]
+           (general-load-file filename format #t)]
           [(filename format show-errors?)
-           (dynamic-wind (lambda () (begin-dstx-edit-sequence))
-                         (lambda () (super load-file filename format show-errors?))
-                         (lambda () (end-dstx-edit-sequence)))
-           (cond [(not parsing-enabled?)
-                  (void)]
-                 [else
-                  (reparse-all-dstxs!)])]))
+           (general-load-file filename format show-errors?)]))
+      
+      ;; general-load-file: string symbol boolean -> void
+      (define (general-load-file filename format show-errors?)
+        (dynamic-wind (lambda () (begin-dstx-edit-sequence))
+                      (lambda () (super load-file filename format show-errors?))
+                      (lambda () (end-dstx-edit-sequence)))
+        (cond [(not parsing-enabled?)
+               (void)]
+              [else
+               (reparse-all-dstxs!)]))
+      
       
       
       ;; reparse-all-dstxs!: -> void
