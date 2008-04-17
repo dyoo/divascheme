@@ -307,7 +307,7 @@
         
         (define (delete-introduced-text)
           (dynamic-wind (lambda () (begin-dstx-edit-sequence))
-                        (lambda () (delete start-pos (+ start-pos len)))
+                        (lambda () (delete start-pos (+ start-pos len) #f))
                         (lambda () (end-dstx-edit-sequence))))
         
         (define (insert-new-dstxs-after a-cursor new-dstxs)
@@ -632,24 +632,30 @@
         (set-cursor/success f-cursor (cursor:focus-endpos f-cursor a-pos)))
       
       
-      
       ;; pretty-print-to-text: dstx -> void
-      ;; Write out the dstx content to the text
+      ;; Write out the dstx content to the text at the current position,
+      ;; not scrolling.
       (define (pretty-print-to-text a-dstx)
+        (define (insert-in-place a-thing)
+          (send current-text insert
+                a-thing
+                (send current-text get-start-position)
+                'same
+                #f))
         (cond
           [(struct:space? a-dstx)
-           (send current-text insert (struct:space-content a-dstx))]
+           (insert-in-place (struct:space-content a-dstx))]
           [(struct:atom? a-dstx)
-           (send current-text insert (struct:atom-content a-dstx))]
+           (insert-in-place (struct:atom-content a-dstx))]
           [(struct:special-atom? a-dstx)
            ;; fixme: we should see if it's a snip.
-           (send current-text insert (struct:special-atom-content a-dstx))]
+           (insert-in-place (struct:special-atom-content a-dstx))]
           [(struct:fusion? a-dstx)
-           (send current-text insert (struct:fusion-prefix a-dstx))
+           (insert-in-place (struct:fusion-prefix a-dstx))
            (for-each (lambda (sub-dstx)
                        (pretty-print-to-text sub-dstx))
                      (struct:fusion-children a-dstx))
-           (send current-text insert (struct:fusion-suffix a-dstx))]))
+           (insert-in-place (struct:fusion-suffix a-dstx))]))
       
       
       
