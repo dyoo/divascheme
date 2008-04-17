@@ -392,14 +392,21 @@
       
       
       ;; load-file: string -> void
-      (define/override (load-file filename)
-        (dynamic-wind (lambda () (begin-dstx-edit-sequence))
-                      (lambda () (super load-file filename))
-                      (lambda () (end-dstx-edit-sequence)))
-        (cond [(not parsing-enabled?)
-               (void)]
-              [else
-               (reparse-all-dstxs!)]))
+      (define/override
+        load-file
+        (case-lambda
+          [(filename)
+           (load-file filename 'guess #f)]
+          [(filename format)
+           (load-file filename format #t)]
+          [(filename format show-errors?)
+           (dynamic-wind (lambda () (begin-dstx-edit-sequence))
+                         (lambda () (super load-file filename format show-errors?))
+                         (lambda () (end-dstx-edit-sequence)))
+           (cond [(not parsing-enabled?)
+                  (void)]
+                 [else
+                  (reparse-all-dstxs!)])]))
       
       
       ;; reparse-all-dstxs!: -> void
