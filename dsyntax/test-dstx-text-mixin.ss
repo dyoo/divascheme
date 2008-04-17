@@ -17,7 +17,9 @@
     (test/text-ui test-dstx-text-mixin))
   
   (define (make-text-instance)
-    (new (dstx-text-mixin text%)))
+    (let ([instance (new (dstx-text-mixin text%))])
+      (send instance enable-dstx-parsing)
+      instance))
   
   
   ;; Remove local ids from a dstx, just for testing purposes.
