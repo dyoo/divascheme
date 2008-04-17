@@ -31,6 +31,10 @@
          (send editor show-focus)]
         [(#\e)
          (send a-cursor focus-older!)
+         (send editor show-focus)]
+        [(#\()
+         (send a-cursor insert-before! (new-fusion "(" (list (new-atom "$expr$")) ")"))
+         (send a-cursor focus-in!)
          (send editor show-focus)])))
   
   
@@ -47,7 +51,7 @@
       (send (get-keymap) map-function "C:j" "dsyntax:test-handler")
       (send (get-keymap) map-function "C:k" "dsyntax:test-handler")
       (send (get-keymap) map-function "C:l" "dsyntax:test-handler")
-      
+      (send (get-keymap) map-function "(" "dsyntax:test-handler")
       
       (define/override (load-file filename)
         (super load-file filename)

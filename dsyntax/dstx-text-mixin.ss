@@ -130,10 +130,12 @@
       (define/public (get-dstx-cursor)
         (new dstx-cursor% [text this]))
       
+      
       ;; We keep a dstx-cursor that's used primarily for the
       ;; unstructured edit stuff, and for faster synchronization
       ;; with other cursors.
       ;; Warning: do NOT expose this to the outside world.
+      ;; This is the very last used cursor that edited this window.
       (define cursor-for-editing (get-dstx-cursor))
       
       (define/public (get-cursor-for-editing)
@@ -484,12 +486,19 @@
         (when (not (= current-version (send current-text get-version)))
           (let ([old-local-id (property-ref 'local-id)]
                 [old-pos (cursor-pos)])
-            #;(set! f-cursor
-                    (send (send current-text get-cursor-for-editing) get-functional-cursor))
             ;; If the previous set is unsound, let's go back to the
             ;; slow-but-safe option.
-            (set! f-cursor (cursor:make-toplevel-cursor
-                            (send current-text get-top-dstxs)))
+            #;(set! f-cursor (cursor:make-toplevel-cursor
+                              (send current-text get-top-dstxs)))
+            (cond
+              [(eq? this (send current-text get-cursor-for-editing))
+               (set! f-cursor (cursor:make-toplevel-cursor
+                               (send current-text get-top-dstxs)))]
+              [else
+               ;; optimization: try to reuse the cursor that was last used for editing.
+               (set! f-cursor
+                     (send (send current-text get-cursor-for-editing)
+                           get-functional-cursor))])
             (cond
               [(cursor:focus-find-dstx
                 f-cursor
