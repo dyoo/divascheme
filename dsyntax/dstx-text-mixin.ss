@@ -155,10 +155,11 @@
       
       
       ;; set-top-dstxs: (listof dstx) -> void
-      ;; Sets the top dstxs.
+      ;; Sets the top dstxs.  Assumption: the dstxs is already
+      ;; colored with a local id.
       ;; Protected.
       (define/public (set-top-dstxs dstxs)
-        (set! top-dstxs (map dstx-attach-local-ids dstxs))
+        (set! top-dstxs dstxs)
         (set! version (add1 version)))
       
       ;; get-top-dstxs: -> (listof dstx)
@@ -355,7 +356,6 @@
                   (insert-at-end cursor-for-editing)]
                  [else
                   (insert-within-something cursor-for-editing)])
-           
            (set-position original-start-position original-end-position #f #f 'local))
          (lambda ()
            (end-edit-sequence))))
@@ -648,7 +648,6 @@
           [(struct:atom? a-dstx)
            (insert-in-place (struct:atom-content a-dstx))]
           [(struct:special-atom? a-dstx)
-           ;; fixme: we should see if it's a snip.
            (insert-in-place (struct:special-atom-content a-dstx))]
           [(struct:fusion? a-dstx)
            (insert-in-place (struct:fusion-prefix a-dstx))

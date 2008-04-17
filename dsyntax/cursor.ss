@@ -306,8 +306,7 @@
                 [else
                  ;; Otherwise, reconstruct a new parent cursor.
                  (make-cursor (make-fusion props opener new-children closer)
-                              loc parent youngers-rev youngers-loc-rev olders)])
-              )])]
+                              loc parent youngers-rev youngers-loc-rev olders)]))])]
         [else #f])))
   
   
@@ -498,8 +497,9 @@
   ;; focus-toplevel: cursor -> cursor
   ;; Moves the cursor to the first dstx at the toplevel.
   (define (focus-toplevel a-cursor)
-    (let ([outermost (maximally-repeat-movement a-cursor focus-out)])
-      (maximally-repeat-movement outermost focus-younger/no-snap)))
+    (time
+     (let ([outermost (maximally-repeat-movement a-cursor focus-out)])
+       (maximally-repeat-movement outermost focus-younger/no-snap))))
   
   
   ;; maximally-repeat-movement: cursor focus-function -> cursor
