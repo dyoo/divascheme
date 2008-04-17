@@ -437,13 +437,13 @@
       (let* ([text (make-text-instance)])
         (send text insert "(module  foo mzscheme)")
         (let* ([f-cursor (send (send text get-dstx-cursor) get-functional-cursor)])
-          (let ([id1 (cursor-dstx-property-ref
+          (let ([id1 (property-ref
                       (focus-in (focus-successor f-cursor))
                       'local-id)]
-                [id2 (cursor-dstx-property-ref
+                [id2 (property-ref
                       (focus-older (focus-in (focus-successor f-cursor)))
                       'local-id)]
-                [id3 (cursor-dstx-property-ref
+                [id3 (property-ref
                       (focus-older
                        (focus-older
                         (focus-in (focus-successor f-cursor))))

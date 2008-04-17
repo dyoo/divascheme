@@ -74,8 +74,8 @@
         (check-false (eq? (cursor-dstx a-cursor)
                           (cursor-dstx
                            (focus-out
-                            (cursor-insert-after
-                             (cursor-delete (focus-in a-cursor))
+                            (insert-after
+                             (delete (focus-in a-cursor))
                              (new-special-atom "hello"))))))))
      
      

@@ -449,7 +449,7 @@
       (define f-cursor
         (let ([a-cursor (cursor:make-toplevel-cursor
                          (send current-text get-top-dstxs))])
-          (cursor:cursor-replace
+          (cursor:replace
            a-cursor
            (dstx-attach-local-ids (struct:cursor-dstx a-cursor)))))
       
@@ -511,7 +511,7 @@
         (cursor:cursor-endpos f-cursor))
       
       (define/public (cursor-dstx-property-ref a-name)
-        (cursor:cursor-dstx-property-ref f-cursor a-name))
+        (cursor:property-ref f-cursor a-name))
       
       ;; Focusers
       (define/public (focus-in)
@@ -597,7 +597,7 @@
            (lambda ()
              (send current-text set-position (cursor-pos) 'same #f #f 'local)
              (pretty-print-to-text a-dstx)
-             (set! f-cursor (cursor:cursor-insert-before f-cursor a-dstx))
+             (set! f-cursor (cursor:insert-before f-cursor a-dstx))
              (send current-text set-top-dstxs (cursor:cursor-toplevel-dstxs f-cursor))
              (send current-text set-cursor-for-editing this)
              (set! current-version (send current-text get-version)))
@@ -616,7 +616,7 @@
            (lambda ()
              (send current-text set-position (cursor-endpos) 'same #f #f 'local)
              (pretty-print-to-text a-dstx)
-             (set! f-cursor (cursor:cursor-insert-after f-cursor a-dstx))
+             (set! f-cursor (cursor:insert-after f-cursor a-dstx))
              (send current-text set-top-dstxs (cursor:cursor-toplevel-dstxs f-cursor))
              (send current-text set-cursor-for-editing this)
              (set! current-version (send current-text get-version)))
@@ -638,8 +638,8 @@
                                       (cursor-dstx)))
                      (cursor-pos))])
              (send current-text delete (cursor-pos) (+ (cursor-pos) deletion-length) #f)
-             (set! f-cursor (cursor:cursor-delete f-cursor))
-             (set! f-cursor (cursor:cursor-replace
+             (set! f-cursor (cursor:delete f-cursor))
+             (set! f-cursor (cursor:replace
                              f-cursor
                              (dstx-attach-local-ids (struct:cursor-dstx f-cursor))))
              (send current-text set-top-dstxs (cursor:cursor-toplevel-dstxs f-cursor))

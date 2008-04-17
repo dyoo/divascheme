@@ -14,49 +14,52 @@
   (define cursor-or-false/c (or/c cursor? false/c))
   (define focus-function/c (cursor? . -> . cursor-or-false/c))
   
-  (provide/contract [cursor-line (cursor? . -> . natural-number/c)]
-                    [cursor-col (cursor? . -> . natural-number/c)]
-                    [cursor-pos (cursor? . -> . natural-number/c)]
-                    [cursor-endloc (cursor? . -> . loc?)]
-                    [cursor-endpos (cursor? . -> . natural-number/c)]
-                    [cursor-toplevel-dstxs (cursor? . -> . (listof dstx?))]
-                    
-                    [cursor-insert-before (cursor? dstx? . -> . cursor?)]
-                    [cursor-insert-after (cursor? dstx? . -> . cursor?)]
-                    [cursor-delete (cursor? . -> . cursor?)]
-                    [cursor-replace (cursor? dstx? . -> . cursor?)]
-                    [cursor-dstx-property-set
-                     (cursor? symbol? any/c . -> . cursor?)]
-                    [cursor-dstx-property-ref
-                     (cursor? symbol? . -> . any)]
-                    [make-toplevel-cursor ((listof dstx?) . -> . cursor?)]
-                    
-                    [loc-after (loc? dstx? . -> . loc?)]
-                    
-                    [focus-in focus-function/c]
-                    [focus-in/no-snap focus-function/c]
-                    [focus-out focus-function/c]
-                    [focus-older focus-function/c]
-                    [focus-older/no-snap focus-function/c]
-                    [focus-younger focus-function/c]
-                    [focus-younger/no-snap focus-function/c]
-                    [focus-successor focus-function/c]
-                    [focus-successor/no-snap focus-function/c]
-                    [focus-predecessor focus-function/c]
-                    [focus-predecessor/no-snap focus-function/c]
-                    [focus-toplevel focus-function/c]
-                    [focus-youngest focus-function/c]
-                    [focus-oldest focus-function/c]
-                    
-                    
-                    [focus-find-dstx
-                     (cursor? (dstx? . -> . boolean?) . -> . cursor-or-false/c)]
-                    [focus-pos
-                     (cursor? natural-number/c . -> . cursor-or-false/c)]
-                    [focus-endpos
-                     (cursor? natural-number/c . -> . cursor-or-false/c)]
-                    [focus-container
-                     (cursor? natural-number/c . -> . cursor-or-false/c)])
+  (provide/contract
+   [make-toplevel-cursor ((listof dstx?) . -> . cursor?)]
+   
+   [cursor-line (cursor? . -> . natural-number/c)]
+   [cursor-col (cursor? . -> . natural-number/c)]
+   [cursor-pos (cursor? . -> . natural-number/c)]
+   [cursor-endloc (cursor? . -> . loc?)]
+   [cursor-endpos (cursor? . -> . natural-number/c)]
+   [cursor-toplevel-dstxs (cursor? . -> . (listof dstx?))]
+   
+   [insert-before (cursor? dstx? . -> . cursor?)]
+   [insert-after (cursor? dstx? . -> . cursor?)]
+   [delete (cursor? . -> . cursor?)]
+   [replace (cursor? dstx? . -> . cursor?)]
+   [property-set
+    (cursor? symbol? any/c . -> . cursor?)]
+   [property-ref
+    (cursor? symbol? . -> . any)]
+   
+   
+   [loc-after (loc? dstx? . -> . loc?)]
+   
+   [focus-in focus-function/c]
+   [focus-in/no-snap focus-function/c]
+   [focus-out focus-function/c]
+   [focus-older focus-function/c]
+   [focus-older/no-snap focus-function/c]
+   [focus-younger focus-function/c]
+   [focus-younger/no-snap focus-function/c]
+   [focus-successor focus-function/c]
+   [focus-successor/no-snap focus-function/c]
+   [focus-predecessor focus-function/c]
+   [focus-predecessor/no-snap focus-function/c]
+   [focus-toplevel focus-function/c]
+   [focus-youngest focus-function/c]
+   [focus-oldest focus-function/c]
+   
+   
+   [focus-find-dstx
+    (cursor? (dstx? . -> . boolean?) . -> . cursor-or-false/c)]
+   [focus-pos
+    (cursor? natural-number/c . -> . cursor-or-false/c)]
+   [focus-endpos
+    (cursor? natural-number/c . -> . cursor-or-false/c)]
+   [focus-container
+    (cursor? natural-number/c . -> . cursor-or-false/c)])
   
   
   
@@ -97,7 +100,7 @@
   
   ;; cursor-insert-before: cursor dstx -> cursor
   ;; Inserts a dstx before our focus, and refocuses the cursor on the new element.
-  (define (cursor-insert-before a-cursor a-dstx)
+  (define (insert-before a-cursor a-dstx)
     (match a-cursor
       [(struct cursor (dstx loc parent youngers-rev youngers-loc-rev olders))
        (cond [(empty? youngers-rev)
@@ -120,12 +123,12 @@
                    (make-toplevel-cursor (cons a-dstx (cons dstx olders)))]))]
              [else
               (let ([pred-cursor (focus-younger/no-snap a-cursor)])
-                (cursor-insert-after pred-cursor a-dstx))])]))
+                (insert-after pred-cursor a-dstx))])]))
   
   
   ;; cursor-insert-after: cursor dstx -> cursor
   ;; Inserts a dstx after our focus, and refocuses the cursor on the new element.
-  (define (cursor-insert-after a-cursor a-dstx)
+  (define (insert-after a-cursor a-dstx)
     (match a-cursor
       [(struct cursor (dstx loc parent youngers-rev youngers-loc-rev olders))
        (let ([new-cursor (make-cursor dstx
@@ -141,7 +144,7 @@
   ;; Delete the currently focused dstx.  Focus moves to the next older dstx.  If no such
   ;; dstx exists, then focus moves to the immediate younger dstx.  Again, if that doesn't exist,
   ;; then focus moves to an automatically generated empty space.
-  (define (cursor-delete a-cursor)
+  (define (delete a-cursor)
     (match a-cursor
       [(struct cursor (dstx loc parent youngers-rev youngers-loc-rev olders))
        (cond [(empty? olders)
@@ -165,14 +168,14 @@
   
   ;; cursor-replace: cursor dstx -> cursor
   ;; Replace the currently focused dstx with the new dstx
-  (define (cursor-replace a-cursor a-new-dstx)
+  (define (replace a-cursor a-new-dstx)
     (match a-cursor
       [(struct cursor (dstx loc parent youngers-rev youngers-loc-rev olders))
        (make-cursor a-new-dstx loc parent youngers-rev youngers-loc-rev olders)]))
   
   
   ;; cursor-dstx-property-set: cursor symbol any -> cursor
-  (define (cursor-dstx-property-set a-cursor a-symbol a-value)
+  (define (property-set a-cursor a-symbol a-value)
     (match a-cursor
       [(struct cursor (dstx loc parent youngers-rev youngers-loc-rev olders))
        (let ([new-cursor
@@ -186,7 +189,7 @@
   
   ;; cursor-dstx-property-ref: cursor symbol -> any
   ;; Returns the property value of the currently focused dstx.
-  (define (cursor-dstx-property-ref a-cursor a-symbol)
+  (define (property-ref a-cursor a-symbol)
     (dstx-property-ref (cursor-dstx a-cursor) a-symbol))
   
   
