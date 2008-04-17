@@ -482,6 +482,14 @@
        a-cursor
        (dstx-attach-local-ids (struct:cursor-dstx a-cursor)))))
   
+  (define (empty-toplevel-functional-cursor)
+    (let ([f-cursor (cursor:make-toplevel-cursor '())])
+      (let ([result
+             (cursor:replace
+              f-cursor
+              (dstx-attach-local-ids (struct:cursor-dstx f-cursor)))])
+        result)))
+  
   
   ;; a dstx-cursor% provides a mutable interface to the functions
   ;; defined in cursor.ss.  Changes made with this dstx-cursor will
@@ -491,15 +499,19 @@
       (super-new)
       
       (init text)
-      
       (define current-text text)
-      (define current-version (send text get-version))
+      
+      (define current-version 0)
+      
       (define/public (get-version)
         current-version)
       
       ;; f-cursor is a functional cursor that we reassign for all the
       ;; operations here.
-      (define f-cursor (make-toplevel-functional-cursor current-text))
+      (define f-cursor (empty-toplevel-functional-cursor))
+      
+      (define (initialize)
+        (resync!))
       
       (define-syntax (set-cursor/success stx)
         (syntax-case stx ()
@@ -549,6 +561,7 @@
       
       
       (define/public (get-functional-cursor)
+        (resync!)
         f-cursor)
       
       ;; Getters
@@ -718,4 +731,6 @@
              (set! current-version (send current-text get-version))))
          (lambda ()
            (send current-text end-edit-sequence)
-           (send current-text end-dstx-edit-sequence)))))))
+           (send current-text end-dstx-edit-sequence))))
+      
+      (initialize))))

@@ -108,6 +108,18 @@
                       #f)))
      
      (test-case
+      "focus-container when the cursor is not at the beginning"
+      (let* ([a-dstx (new-fusion "(" (list (new-atom "x")
+                                           (new-space " ")
+                                          (new-atom "y"))
+                                 ")")]
+             [a-cursor (make-toplevel-cursor (list a-dstx))])
+        (check-equal? (cursor-dstx (focus-container
+                                    (focus-oldest (focus-in a-cursor)) 2))
+                      (new-space " "))))
+     
+     
+     (test-case
       "focus-container on fusions"
       (let* ([a-dstx (new-fusion "("
                                  (list (new-atom "bye"))

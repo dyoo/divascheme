@@ -465,15 +465,15 @@
         (send text insert "(module  foo mzscheme)")
         (let* ([f-cursor (send (send text get-dstx-cursor) get-functional-cursor)])
           (let ([id1 (property-ref
-                      (focus-successor f-cursor)
+                      (focus-container f-cursor 1)
                       'local-id)]
                 [id2 (property-ref
-                      (focus-older (focus-successor f-cursor))
+                      (focus-older (focus-container f-cursor 1))
                       'local-id)]
                 [id3 (property-ref
                       (focus-older
                        (focus-older
-                        (focus-successor f-cursor)))
+                        (focus-container f-cursor 1)))
                       'local-id)])
             (send text delete 7 8)
             (check-equal? (send text get-text) "(module foo mzscheme)")
@@ -489,7 +489,7 @@
                                                   (new-atom "mzscheme"))
                                             ")"))))
             (let ([cursor (send text get-dstx-cursor)])
-              (send cursor focus-successor!)
+              (send cursor focus-container! 1)
               (check-equal? (send cursor property-ref 'local-id) id1)
               (send cursor focus-older!)
               (check-equal? (send cursor property-ref 'local-id) id2)
