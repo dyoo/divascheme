@@ -371,8 +371,15 @@
         (dynamic-wind (lambda () (begin-dstx-edit-sequence))
                       (lambda () (super load-file filename))
                       (lambda () (end-dstx-edit-sequence)))
+        (reparse-all-dstxs))
+      
+      
+      ;; reparse-all-dstxs: -> void
+      ;; reparses the entire buffer.
+      (define/public (reparse-all-dstxs)
         (let* ([dstxs (parse-between 0 (last-position))])
-          (set-top-dstxs (map dstx-attach-local-ids dstxs))))
+          (set-top-dstxs (map dstx-attach-local-ids dstxs))
+          (send cursor-for-editing resync!)))
       
       
       ;; parse-between: number number -> (listof dstx)

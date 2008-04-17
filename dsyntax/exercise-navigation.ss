@@ -11,6 +11,7 @@
   
   ;; not really a test, more an interactive exercise of the
   ;; focus commands from a graphical window.
+  ;; This is almost a poor-man's DivaScheme.
   
   (define (my-key-handler editor event)
     (local ((define a-cursor (send editor get-tree-cursor)))
@@ -35,6 +36,10 @@
         [(#\()
          (send a-cursor insert-before! (new-fusion "(" (list (new-atom "$expr$")) ")"))
          (send a-cursor focus-in!)
+         (send editor show-focus)]
+        [(#\[)
+         (send a-cursor insert-before! (new-fusion "[" (list (new-atom "$expr$")) "]"))
+         (send a-cursor focus-in!)
          (send editor show-focus)])))
   
   
@@ -52,6 +57,7 @@
       (send (get-keymap) map-function "C:k" "dsyntax:test-handler")
       (send (get-keymap) map-function "C:l" "dsyntax:test-handler")
       (send (get-keymap) map-function "(" "dsyntax:test-handler")
+      (send (get-keymap) map-function "[" "dsyntax:test-handler")
       
       (define/override (load-file filename)
         (super load-file filename)

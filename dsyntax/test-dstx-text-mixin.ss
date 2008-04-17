@@ -430,7 +430,32 @@
                                                  (new-space " ")
                                                  (new-atom "world"))))))
      
-     
+     (test-case
+      "manually inserting into a fusion"
+      (let ([text (make-text-instance)])
+        (send text insert "(module foo mzscheme)")
+        (send text insert "\n  (define x 42)" 20)
+        (check-equal? (send text get-text) "(module foo mzscheme\n  (define x 42))")
+        (check-equal? (map strip-local-ids (send text get-top-dstxs))
+                      (map strip-local-ids
+                           (list
+                            (new-space "")
+                            (new-fusion "(" (list (new-atom "module")
+                                                  (new-space " ")
+                                                  (new-atom "foo")
+                                                  (new-space " ")
+                                                  (new-atom "mzscheme")
+                                                  (new-space "\n")
+                                                  (new-space " ")
+                                                  (new-space " ")
+                                                  (new-fusion "(" (list (new-atom "define")
+                                                                        (new-space " ")
+                                                                        (new-atom "x")
+                                                                        (new-space " ")
+                                                                        (new-atom "42"))
+                                                              ")"))
+                                        ")"
+                                        ))))))
      
      (test-case
       "manually deleting some spaces in a fusion"
