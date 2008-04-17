@@ -103,19 +103,19 @@
   ;; Reads a here string; adapted from the get-here-string function
   ;; from the scheme-lexer in the syntax-color collection.
   (define (get-here-string i error-k)
-    (local
-        [(define (get-offset i)
-           (let-values (((x y offset) (port-next-location i)))
-             offset))
-         
-         (define (special-read-line i)
-           (let ((next (peek-char-or-special i)))
-             (cond
-               ((or (eq? next #\newline) (not (char? next)))
-                null)
-               (else
-                (read-char i)
-                (cons next (special-read-line i))))))]
+    (let ()
+      (define (get-offset i)
+        (let-values (((x y offset) (port-next-location i)))
+          offset))
+      
+      (define (special-read-line i)
+        (let ((next (peek-char-or-special i)))
+          (cond
+            ((or (eq? next #\newline) (not (char? next)))
+             null)
+            (else
+             (read-char i)
+             (cons next (special-read-line i))))))
       (let* ((ender (list->string (special-read-line i)))
              (next-char (peek-char-or-special i)))
         (cond
@@ -139,32 +139,33 @@
   
   
   (define (get-nested-comment ip)
-    (local ((define nested-lexer
-              (begin-lifted
-                (lexer
-                 ("#|"
-                  (lambda (self i loop input-port)
-                    (cons "#|"
-                          (loop (self input-port) (add1 i)))))
-                 ("|#"
-                  (lambda (self i loop input-port)
-                    (cond
-                      [(= i 1)
-                       (list "|#")]
-                      [else
-                       (cons "|#"
-                             (loop (self input-port) (sub1 i)))])))
-                 (any-char
-                  (lambda (self i loop input-port)
-                    (cons lexeme (loop (self input-port) i))))
-                 ((eof)
-                  (lambda (self i loop input-port)
-                    (error 'get-nested-comment "expected |#")))))))
-      (apply string-append
-             (cons "#|"
-                   (let loop ([next-action (nested-lexer ip)]
-                              [depth 1])
-                     (next-action nested-lexer depth loop ip))))))
+    (define nested-lexer
+      (begin-lifted
+        (lexer
+         ("#|"
+          (lambda (self i loop input-port)
+            (cons "#|"
+                  (loop (self input-port) (add1 i)))))
+         ("|#"
+          (lambda (self i loop input-port)
+            (cond
+              [(= i 1)
+               (list "|#")]
+              [else
+               (cons "|#"
+                     (loop (self input-port) (sub1 i)))])))
+         (any-char
+          (lambda (self i loop input-port)
+            (cons lexeme (loop (self input-port) i))))
+         ((eof)
+          (lambda (self i loop input-port)
+            (error 'get-nested-comment "expected |#"))))))
+    
+    (apply string-append
+           (cons "#|"
+                 (let loop ([next-action (nested-lexer ip)]
+                            [depth 1])
+                   (next-action nested-lexer depth loop ip)))))
   
   
   ;; Eats lines, following convention to use backslash as a continuation character.
@@ -176,44 +177,44 @@
   
   
   (define plt-lexer
-    (local ((define lexer
-              (lexer-src-pos
-               ("#!"
-                (cond
-                  [(= 0 (position-offset start-pos))
-                   (token-atom
-                    (string-append "#!" (continuation-line-lexer input-port)))]
-                  
-                  [else (token-atom lexeme)]))
+    (let ([lexer
+           (lexer-src-pos
+            ("#!"
+             (cond
+               [(= 0 (position-offset start-pos))
+                (token-atom
+                 (string-append "#!" (continuation-line-lexer input-port)))]
                
-               (openers
-                (token-prefix lexeme))
-               (closers
-                (token-suffix lexeme))
-               
-               (whitespace ;; a single whitespace character
-                (token-space lexeme))
-               
-               (quoters
-                (token-quoter-prefix lexeme))
-               (pounded-atoms
-                (token-atom lexeme))
-               (pound-prefix-free-atom
-                (token-atom lexeme))
-               (line-comment
-                (token-atom lexeme))
-               (string-literal
-                (token-atom lexeme))
-               ("#<<"
-                (token-atom (get-here-string input-port
-                                             (lambda (recovery) recovery))))
-               ("#|"
-                (token-atom (get-nested-comment input-port)))
-               
-               ((special)
-                (token-special-atom lexeme))
-               
-               ((eof) (token-end lexeme)))))
+               [else (token-atom lexeme)]))
+            
+            (openers
+             (token-prefix lexeme))
+            (closers
+             (token-suffix lexeme))
+            
+            (whitespace ;; a single whitespace character
+             (token-space lexeme))
+            
+            (quoters
+             (token-quoter-prefix lexeme))
+            (pounded-atoms
+             (token-atom lexeme))
+            (pound-prefix-free-atom
+             (token-atom lexeme))
+            (line-comment
+             (token-atom lexeme))
+            (string-literal
+             (token-atom lexeme))
+            ("#<<"
+             (token-atom (get-here-string input-port
+                                          (lambda (recovery) recovery))))
+            ("#|"
+             (token-atom (get-nested-comment input-port)))
+            
+            ((special)
+             (token-special-atom lexeme))
+            
+            ((eof) (token-end lexeme)))])
       (lambda (ip)
         (lexer ip))))
   
@@ -234,81 +235,35 @@
   
   
   (define plt-parser
-    (local ((define p
-              (parser
-               (src-pos)
-               (error (lambda (tok-ok token-name token-value start-pos end-pos)
-                        (error 'plt-parser "on ~a (~s) starting at line ~a col ~a"
-                               token-name token-value
-                               (position-line start-pos)
-                               (position-col start-pos))))
-               (tokens token)
-               (start dstxs)
-               (end end)
-               (grammar
-                (dstxs (() (list))
-                       ((dstx dstxs) (cons $1 $2)))
-                (dstx ((atom)
-                       (dstx:new-atom $1))
-                      ((special-atom)
-                       (dstx:new-special-atom (unbox $1)))
-                      ((space)
-                       (dstx:new-space $1))
-                      ((prefix dstxs suffix)
-                       (dstx:new-fusion $1 $2 $3))
-                      ((quoter-prefix dstx)
-                       (dstx:new-fusion $1 (list $2) "")))))))
+    (let ([p
+           (parser
+            (src-pos)
+            (error (lambda (tok-ok token-name token-value start-pos end-pos)
+                     (error 'plt-parser "on ~a (~s) starting at line ~a col ~a"
+                            token-name token-value
+                            (position-line start-pos)
+                            (position-col start-pos))))
+            (tokens token)
+            (start dstxs)
+            (end end)
+            (grammar
+             (dstxs (() (list))
+                    ((dstx dstxs) (cons $1 $2)))
+             (dstx ((atom)
+                    (dstx:new-atom $1))
+                   ((special-atom)
+                    (dstx:new-special-atom (unbox $1)))
+                   ((space)
+                    (dstx:new-space $1))
+                   ((prefix dstxs suffix)
+                    (dstx:new-fusion $1 $2 $3))
+                   ((quoter-prefix dstx)
+                    (dstx:new-fusion $1 (list $2) "")))))])
       (lambda (f)
-        (prof 'plt-parser
-              (p f)))))
+        (p f))))
   
   
-  ;; hacky recdescent parser to let us measure performance difference
-  ;; vs autogenerated one
-  (define (plt-parser-2 f)
-    (local
-        ((define-struct identity-k ())
-         (define-struct fusion-k (val old-k acc one-shot?))
-         (define-struct quoter-k (val old-k acc one-shot?))
-         
-         (define (apply-k k dstxs suffix)
-           (match k
-             [(struct fusion-k (val old-k acc one-shot?))
-              (accumulate/continue (dstx:new-fusion val dstxs suffix) acc one-shot? val old-k)]
-             [(struct quoter-k (val old-k acc one-shot?))
-              (accumulate/continue (dstx:new-fusion val dstxs "") acc one-shot? val old-k)]
-             [(struct identity-k ())
-              dstxs]))
-         
-         (define (accumulate/continue elt acc one-shot? val k)
-           (cond
-             [one-shot?
-              (apply-k k (cons elt acc) val)]
-             [else
-              (parser (cons elt acc) k one-shot?)]))
-         
-         ;; parser: -> (listof dstx)
-         (define (parser acc k one-shot?)
-           (local ((define next-token (position-token-token (f)))
-                   (define type (token-name next-token))
-                   (define val (token-value next-token)))
-             (case type
-               [(atom)
-                (accumulate/continue (dstx:new-atom val) acc one-shot? val k)]
-               [(special-atom)
-                ;; Assumption: the special was boxed.
-                (accumulate/continue (dstx:new-special-atom val) acc one-shot? (unbox val) k)]
-               [(space)
-                (accumulate/continue (dstx:new-space val) acc one-shot? val k)]
-               [(prefix)
-                (parser '() (make-fusion-k val k acc one-shot?) #f)]
-               [(quoter-prefix)
-                (parser '() (make-quoter-k val k acc one-shot?) #t)]
-               [(end)
-                (apply-k k (reverse acc) val)]
-               [(suffix)
-                (apply-k k (reverse acc) val)]))))
-      (parser '() (make-identity-k) #f)))
+  
   
   
   ;; pretty-print: dstx output-port -> void
@@ -346,6 +301,8 @@
     (void))
   
   
+  ;; open-input-text: text% number number -> input port
+  ;; Opens a text% as an input port, treating snips as boxed specials.
   (define (open-input-text text start end)
     (open-input-text-editor text start end (lambda (snip) (box snip)) #f #f))
   
@@ -356,4 +313,4 @@
   (define (parse-port ip)
     (define (lex)
       (plt-lexer ip))
-    (plt-parser-2 lex)))
+    (plt-parser lex)))

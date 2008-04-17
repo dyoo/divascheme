@@ -187,13 +187,20 @@
       (let* ([text (make-text-instance)]
              [cursor (send text get-dstx-cursor)])
         (send cursor cursor-insert-after (new-atom "wrld"))
-        (send text insert "o" 1)
+        (send text set-position 1)
+        (send text insert "o")
         
         ;; Check what's on screen...
         (check-equal? (send text get-text) "world")
+        (check-equal? (send text get-start-position) 2)
+        (check-equal? (send text get-end-position) 2)
         ;; As well as what's in the dstx
         (check-equal? (map strip-local-ids (send text get-top-dstxs))
                       (map strip-local-ids (list (new-space "") (new-atom "world"))))))
+     
+     
+     
+     
      
      
      (test-case
@@ -243,12 +250,25 @@
         (send text insert "(foo!")
         ;; Check what's on screen...
         (check-equal? (send text get-text) "(foo!")
-        (check-equal? (length (send text get-top-dstxs)) 1)
-        (let* ([should-be-special (first (send text get-top-dstxs))]
+        (check-equal? (length (send text get-top-dstxs)) 2)
+        (let* ([should-be-special (second (send text get-top-dstxs))]
                [snip (special-atom-content should-be-special)])
           (check-true (is-a? snip string-snip%))
           (check-equal? (send snip get-text 0 (send snip get-count))
                         "(foo!"))))
+     
+     (test-case
+      "manually adding a string"
+      (let* ([text (make-text-instance)])
+        (send text insert "\"")
+        (check-equal? (send text get-text) "\"")
+        (send text insert "h")
+        (check-equal? (send text get-text) "\"h")
+        (send text insert "i")
+        (check-equal? (send text get-text) "\"hi")
+        (send text insert "\"")
+        (check-equal? (send text get-text) "\"hi\"")))
+     
      
      (test-case
       "manually editing the front of an atom with delete"
@@ -282,6 +302,7 @@
         (check-equal? (map strip-local-ids (send text get-top-dstxs))
                       (map strip-local-ids
                            (list
+                            (new-space "")
                             (new-fusion
                              "("
                              (list (new-atom "module")
@@ -291,6 +312,62 @@
                                    (new-space " ")
                                    (new-atom "mzscheme"))
                              ")"))))))
+     
+     
+     (test-case
+      "deleting a left paren destructures the elements, leaving behind a special unparsed atom."
+      (let ([text (make-text-instance)])
+        (send text insert "(x y z)")
+        (send text delete 0 1)
+        (check-equal? (send text get-text) "x y z)")
+        (check-equal? (length (send text get-top-dstxs)) 2)
+        (check-true (special-atom? (second (send text get-top-dstxs))))
+        (check-true (dstx-property-ref (second (send text get-top-dstxs)) 'unparsed))))
+     
+     
+     (test-case
+      "manually deleting a right paren destructures the elements."
+      (let ([text (make-text-instance)])
+        (send text insert "(x y z)")
+        (send text delete 6 7)
+        (check-equal? (send text get-text) "(x y z")
+        (check-equal? (length (send text get-top-dstxs)) 2)
+        (check-true (special-atom? (second (send text get-top-dstxs))))))
+     
+     
+     (test-case
+      "manually deleting a right paren destructures the elements."
+      (let ([text (make-text-instance)])
+        (send text insert "(x)  y z")
+        (send text delete 2 3)
+        (check-equal? (send text get-text) "(x  y z")
+        (check-equal? (length (send text get-top-dstxs)) 7)
+        (check-true (special-atom? (second (send text get-top-dstxs))))
+        (check-equal? (map strip-local-ids (rest (rest (send text get-top-dstxs))))
+                      (map strip-local-ids (list
+                                            (new-space " ")
+                                            (new-space " ")
+                                            (new-atom "y")
+                                            (new-space " ")
+                                            (new-atom "z"))))))
+     
+     
+     (test-case
+      "manually deleting an element and a right paren destructures the elements."
+      (let ([text (make-text-instance)])
+        (send text insert "(x y z)")
+        (send text delete 4 7)
+        (check-equal? (send text get-text) "(x y")
+        (check-equal? (length (send text get-top-dstxs)) 2)))
+     
+     
+     (test-case
+      "manually inserting a close paren should be a special."
+      (let ([text (make-text-instance)])
+        (send text insert ")")
+        (check-equal? (send text get-text) ")")
+        (check-equal? (length (send text get-top-dstxs)) 2)
+        (check-true (special-atom? (second (send text get-top-dstxs))))))
      
      
      (test-case
@@ -307,26 +384,76 @@
      
      
      (test-case
+      "simple insertion of two atoms separated by space"
+      (let ([text (make-text-instance)])
+        (send text insert "hello")
+        (check-equal? (map strip-local-ids (send text get-top-dstxs))
+                      (map strip-local-ids (list (new-space "") (new-atom "hello"))))
+        (send text insert " ")
+        (check-equal? (map strip-local-ids (send text get-top-dstxs))
+                      (map strip-local-ids (list (new-space "")
+                                                 (new-atom "hello")
+                                                 (new-space " "))))
+        (send text insert "world")
+        (check-equal? (map strip-local-ids (send text get-top-dstxs))
+                      (map strip-local-ids (list (new-space "")
+                                                 (new-atom "hello")
+                                                 (new-space " ")
+                                                 (new-atom "world"))))))
+     
+     (test-case
+      "simple insertion of two atoms separated by space"
+      (let ([text (make-text-instance)])
+        (send text delete 0 (send text last-position))
+        (send text insert "[hello]")
+        (check-equal? (send text get-text) "[hello]")
+        (send text insert "[")
+        (check-equal? (send text get-text) "[hello][")
+        (send text insert "]")
+        (check-equal? (send text get-text)
+                      "[hello][]")))
+     
+     
+     (test-case
+      "deleting everything should get us back to the base state"
+      (let ([text (make-text-instance)])
+        (send text insert "(module  foo mzscheme)")
+        (send text delete 0 (send text last-position))
+        (check-equal? (map strip-local-ids (send text get-top-dstxs))
+                      (map strip-local-ids (list (new-space ""))))
+        (send text insert "hello")
+        (send text insert " ")
+        (send text insert "world")
+        (check-equal? (map strip-local-ids (send text get-top-dstxs))
+                      (map strip-local-ids (list (new-space "")
+                                                 (new-atom "hello")
+                                                 (new-space " ")
+                                                 (new-atom "world"))))))
+     
+     
+     
+     (test-case
       "manually deleting some spaces in a fusion"
       (let* ([text (make-text-instance)])
         (send text insert "(module  foo mzscheme)")
         (let* ([f-cursor (send (send text get-dstx-cursor) get-functional-cursor)])
           (let ([id1 (cursor-dstx-property-ref
-                      (focus-in f-cursor)
+                      (focus-in (focus-successor f-cursor))
                       'local-id)]
                 [id2 (cursor-dstx-property-ref
-                      (focus-older (focus-in f-cursor))
+                      (focus-older (focus-in (focus-successor f-cursor)))
                       'local-id)]
                 [id3 (cursor-dstx-property-ref
                       (focus-older
                        (focus-older
-                        (focus-in f-cursor)))
+                        (focus-in (focus-successor f-cursor))))
                       'local-id)])
             (send text delete 7 8)
             (check-equal? (send text get-text) "(module foo mzscheme)")
             (check-equal? (map strip-local-ids (send text get-top-dstxs))
                           (map strip-local-ids
                                (list
+                                (new-space "")
                                 (new-fusion "("
                                             (list (new-atom "module")
                                                   (new-space " ")
@@ -335,10 +462,10 @@
                                                   (new-atom "mzscheme"))
                                             ")"))))
             (let ([cursor (send text get-dstx-cursor)])
+              (send cursor focus-successor)
               (send cursor focus-in)
               (check-equal? (send cursor cursor-dstx-property-ref 'local-id) id1)
               (send cursor focus-older)
               (check-equal? (send cursor cursor-dstx-property-ref 'local-id) id2)
               (send cursor focus-older)
-              (check-equal? (send cursor cursor-dstx-property-ref 'local-id) id3))))
-        )))))
+              (check-equal? (send cursor cursor-dstx-property-ref 'local-id) id3)))))))))

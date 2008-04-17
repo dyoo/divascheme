@@ -37,6 +37,48 @@
         (check-equal? (cursor-dstx (focus-pos a-cursor 6))
                       (new-atom "bar"))))
      
+     
+     (test-case
+      "focus-pos on a space"
+      (let ([a-cursor (make-toplevel-cursor (list (new-space " ")))])
+        (check-equal? (cursor-dstx (focus-pos a-cursor 0))
+                      (new-space " "))
+        (check-equal? (cursor-dstx (focus-pos a-cursor 1))
+                      (new-space " "))))
+     
+     (test-case
+      "focus-pos at an ending space"
+      (let ([a-cursor (make-toplevel-cursor (list (new-atom "x") (new-space " ")))])
+        (check-equal? (cursor-dstx (focus-pos a-cursor 0))
+                      (new-atom "x"))
+        (check-equal? (cursor-dstx (focus-pos a-cursor 1))
+                      (new-space " "))
+        (check-equal? (cursor-dstx (focus-pos a-cursor 2))
+                      (new-space " "))))
+     
+     (test-case
+      "focus-in and focus-out, when no modifications occur, should preserve fusions."
+      (let ([a-cursor (make-toplevel-cursor
+                       (list (new-fusion "("
+                                         (list (new-atom "hello"))
+                                         ")")))])
+        (check-eq? (cursor-dstx a-cursor)
+                   (cursor-dstx (focus-out (focus-in a-cursor))))))
+     
+     (test-case
+      "focus-in and focus-out should only preserve fusions on eq?"
+      (let ([a-cursor (make-toplevel-cursor
+                       (list (new-fusion "("
+                                         (list (new-special-atom "hello"))
+                                         ")")))])
+        (check-false (eq? (cursor-dstx a-cursor)
+                          (cursor-dstx
+                           (focus-out
+                            (cursor-insert-after
+                             (cursor-delete (focus-in a-cursor))
+                             (new-special-atom "hello"))))))))
+     
+     
      (test-case
       "focus-pos with structure"
       (let* ([a-dstx (new-fusion "["
@@ -52,7 +94,41 @@
         (check-equal? (cursor-dstx (focus-pos a-cursor 3))
                       (new-atom "box"))
         (check-equal? (cursor-dstx (focus-pos a-cursor 4))
-                      (new-atom "box"))))))
+                      (new-atom "box"))))
+     
+     (test-case
+      "focus-container on atoms"
+      (let* ([a-dstx (new-atom "hi")]
+             [a-cursor (make-toplevel-cursor (list a-dstx))])
+        (check-equal? (cursor-dstx (focus-container a-cursor 0))
+                      (new-atom "hi"))
+        (check-equal? (cursor-dstx (focus-container a-cursor 1))
+                      (new-atom "hi"))
+        (check-equal? (focus-container a-cursor 2)
+                      #f)))
+     
+     (test-case
+      "focus-container on fusions"
+      (let* ([a-dstx (new-fusion "("
+                                 (list (new-atom "bye"))
+                                 ")")]
+             [a-cursor (make-toplevel-cursor (list a-dstx))])
+        (check-equal? (cursor-dstx (focus-container a-cursor 0))
+                      (new-fusion "("
+                                  (list (new-atom "bye"))
+                                  ")"))
+        (check-equal? (cursor-dstx (focus-container a-cursor 1))
+                      (new-atom "bye"))
+        (check-equal? (cursor-dstx (focus-container a-cursor 2))
+                      (new-atom "bye"))
+        (check-equal? (cursor-dstx (focus-container a-cursor 3))
+                      (new-atom "bye"))
+        (check-equal? (cursor-dstx (focus-container a-cursor 4))
+                      (new-fusion "("
+                                  (list (new-atom "bye"))
+                                  ")"))
+        (check-equal? (focus-container a-cursor 5)
+                      #f)))))
   
   
   (define (test)

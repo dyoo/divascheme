@@ -8,7 +8,6 @@
            (only "move.ss"
                  get-move-after-dstx
                  after-displayed-string
-                 move-compose
                  apply-move))
   
   
@@ -46,10 +45,17 @@
                     [focus-predecessor focus-function/c]
                     [focus-predecessor/no-snap focus-function/c]
                     [focus-toplevel focus-function/c]
+                    [focus-youngest focus-function/c]
+                    [focus-oldest focus-function/c]
+                    
                     
                     [focus-find-dstx
                      (cursor? (dstx? . -> . boolean?) . -> . cursor-or-false/c)]
                     [focus-pos
+                     (cursor? natural-number/c . -> . cursor-or-false/c)]
+                    [focus-endpos
+                     (cursor? natural-number/c . -> . cursor-or-false/c)]
+                    [focus-container
                      (cursor? natural-number/c . -> . cursor-or-false/c)])
   
   
@@ -281,14 +287,23 @@
       (cond
         [parent-cursor
          (match parent-cursor
-           [(struct cursor ((struct fusion (props opener _ closer))
+           [(struct cursor ((struct fusion (props opener old-children closer))
                             loc parent youngers-rev youngers-loc-rev olders))
             (let ([new-children
                    (append/rev (cursor-youngers-rev a-cursor)
                                (cons (cursor-dstx a-cursor)
                                  (cursor-olders a-cursor)))])
-              (make-cursor (make-fusion props opener new-children closer)
-                           loc parent youngers-rev youngers-loc-rev olders))])]
+              (cond
+                ;; If there has been no change in structure, leave things be.
+                [(and (= (length new-children)
+                         (length old-children))
+                      (andmap eq? new-children old-children))
+                 parent-cursor]
+                [else
+                 ;; Otherwise, reconstruct a new parent cursor.
+                 (make-cursor (make-fusion props opener new-children closer)
+                              loc parent youngers-rev youngers-loc-rev olders)])
+              )])]
         [else #f])))
   
   
@@ -496,6 +511,15 @@
          a-cursor])))
   
   
+  ;; focus-oldest: cursor -> cursor
+  (define (focus-oldest a-cursor)
+    (maximally-repeat-movement a-cursor focus-older/no-snap))
+  
+  ;; focus-oldest: cursor -> cursor
+  (define (focus-youngest a-cursor)
+    (maximally-repeat-movement a-cursor focus-younger/no-snap))
+  
+  
   ;; focus-find-dstx: cursor (dstx -> boolean?) -> (or/c cursor #f)
   ;; Refocus the cursor, based on a predicate that distinguishing between
   ;; dstxs.
@@ -540,10 +564,46 @@
                                       focus-predecessor/no-snap
                                       (lambda (a-cursor)
                                         (at-or-before? a-cursor a-pos)))])
-        (cond [(and (sentinel-space? (cursor-dstx new-cursor))
+        (cond [(and new-cursor
+                    (sentinel-space? (cursor-dstx new-cursor))
                     (focus-older/no-snap new-cursor))
                => identity]
               [else new-cursor]))))
+  
+  
+  ;; focus-container: cursor number -> (or/c cursor #f)
+  ;; Similar to focus-pos.  We look for the smallest dstx that contains
+  ;; the given position.
+  (define (focus-container a-cursor a-pos)
+    (define (after? a-cursor a-pos)
+      (> (cursor-pos a-cursor) a-pos))
+    
+    (define (between? a-cursor a-pos)
+      (and (<= (cursor-pos a-cursor) a-pos)
+           (< a-pos (cursor-endpos a-cursor))))
+    
+    ;; First scan forward, and then scan backward.
+    (let ([cursor-forward
+           (or (focus-search a-cursor
+                             focus-successor/no-snap
+                             (lambda (a-cursor)
+                               (or (after? a-cursor a-pos)
+                                   (at-end? a-cursor))))
+               a-cursor)])
+      (focus-search cursor-forward
+                    focus-predecessor/no-snap
+                    (lambda (a-cursor)
+                      (between? a-cursor a-pos)))))
+  
+  
+  
+  ;; focus-endpos: cursor number -> (or/c cursor #f)
+  (define (focus-endpos a-cursor a-pos)
+    ;; todo: first, focus outward, then focus on successors?
+    (focus-search (focus-toplevel a-cursor)
+                  focus-successor/no-snap
+                  (lambda (a-cursor)
+                    (= (cursor-endpos a-cursor) a-pos))))
   
   
   ;; sentinel-space?: dstx -> boolean
@@ -556,16 +616,17 @@
   ;; at-or-before?: cursor pos -> boolean
   ;; Returns true if the cursor is positioned at or before a-pos.
   (define (at-or-before? a-cursor a-pos)
-    (<= (loc-pos (cursor-loc a-cursor)) a-pos))
+    (<= (cursor-pos a-cursor) a-pos))
   
   
   ;; at-or-after?: cursor pos -> boolean
   ;; Returns true if the cursor is positioned at or after a-pos.
   (define (at-or-after? a-cursor a-pos)
-    (>= (loc-pos (cursor-loc a-cursor)) a-pos))
+    (>= (cursor-pos a-cursor) a-pos))
+  
   
   
   ;; at-end?: cursor -> boolean
   ;; Returns true if we're at the end, when there is no sucessor.
   (define (at-end? a-cursor)
-    (eqv? (focus-successor a-cursor) #f)))
+    (eqv? (focus-successor/no-snap a-cursor) #f)))

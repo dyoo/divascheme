@@ -1,13 +1,15 @@
 (module move mzscheme
   (require "struct.ss"
+           "weak-memoize.ss"
            (lib "plt-match.ss")
            (lib "etc.ss")
            (lib "list.ss")
            (lib "lex.ss" "parser-tools")
            (lib "contract.ss"))
   
-  (provide current-tab-break-length
-           current-line-break-mode)
+  ;; Currently unexposed: it breaks the caching we do.
+  #;(provide current-tab-break-length
+             current-line-break-mode)
   
   
   ;; A move is one of the following:
@@ -179,39 +181,46 @@
   
   
   
+  
+  
   ;; get-move-after-dstx: dstx -> move
   ;;
   ;; Computes the move we want to apply after passing across a-dstx.
-  (define (get-move-after-dstx a-dstx)
-    (local ((define (after-atom-or-space a-str)
-              (get-move-after-displayed-string (open-input-string a-str)))
+  (define get-move-after-dstx
+    (weak-memoize
+     (lambda (a-dstx)
+       (cond
+         [(atom? a-dstx)
+          (after-atom-or-space (atom-content a-dstx))]
+         [(special-atom? a-dstx)
+          (make-move:newline&forward 0
+                                     (special-atom-width a-dstx)
+                                     (special-atom-width a-dstx))]
+         [(space? a-dstx)
+          (after-atom-or-space (space-content a-dstx))]
+         [(fusion? a-dstx)
+          (after-fusion a-dstx)]))))
+  
+  ;; after-atom-or-space: string -> move
+  (define (after-atom-or-space a-str)
+    (get-move-after-displayed-string (open-input-string a-str)))
+  
+  ;; after-fusion: fusion -> move
+  (define (after-fusion an-sexp)
+    (local ((define move-after-lparen
+              (get-move-after-displayed-string
+               (open-input-string (fusion-prefix an-sexp))))
             
-            (define (after-fusion an-sexp)
-              (local ((define move-after-lparen
-                        (get-move-after-displayed-string
-                         (open-input-string (fusion-prefix an-sexp))))
-                      
-                      (define move-before-rparen
-                        (foldl (lambda (stx previous-move)
-                                 (move-compose (get-move-after-dstx stx)
-                                               previous-move))
-                               move-after-lparen
-                               (fusion-children an-sexp)))
-                      
-                      (define move-after-rparen
-                        (move-compose (get-move-after-displayed-string
-                                       (open-input-string
-                                        (fusion-suffix an-sexp)))
-                                      move-before-rparen)))
-                move-after-rparen)))
-      (cond
-        [(atom? a-dstx)
-         (after-atom-or-space (atom-content a-dstx))]
-        [(special-atom? a-dstx)
-         (make-move:newline&forward 0
-                                    (special-atom-width a-dstx)
-                                    (special-atom-width a-dstx))]
-        [(space? a-dstx)
-         (after-atom-or-space (space-content a-dstx))]
-        [(fusion? a-dstx)
-         (after-fusion a-dstx)]))))
+            (define move-before-rparen
+              (foldl (lambda (stx previous-move)
+                       (move-compose (get-move-after-dstx stx)
+                                     previous-move))
+                     move-after-lparen
+                     (fusion-children an-sexp)))
+            
+            (define move-after-rparen
+              (move-compose (get-move-after-displayed-string
+                             (open-input-string
+                              (fusion-suffix an-sexp)))
+                            move-before-rparen)))
+      move-after-rparen)))

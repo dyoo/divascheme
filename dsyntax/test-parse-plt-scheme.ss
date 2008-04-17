@@ -46,6 +46,34 @@
   (define test-parse-plt-scheme
     (test-suite
      "test-parse-plt-scheme.ss"
+     
+     (test-case
+      "empty input should give us empty list."
+      (check-equal? (parse-port (open-input-string "")) '()))
+     
+     (test-case
+      "open-input-text with lparen."
+      (let ([text (new scheme:text%)])
+        (send text insert "(")
+        (let ([ip (open-input-text text 0 1)])
+          (check-equal? #\( (read-char ip))
+          (check-true (eof-object? (read-char ip))))))
+     
+     (test-case
+      "open-input-text with rparen."
+      (let ([text (new scheme:text%)])
+        (send text insert ")")
+        (let ([ip (open-input-text text 0 1)])
+          (check-equal? #\) (read-char ip))
+          (check-true (eof-object? (read-char ip))))))
+     
+     (test-case
+      "open-input-text with rparen: parse should fail"
+      (let ([text (new scheme:text%)])
+        (send text insert ")")
+        (let ([ip (open-input-text text 0 1)])
+          (check-exn exn:fail? (lambda () (parse-port ip))))))
+     
      (test-case
       "simple test of atom"
       (check-equal?
@@ -228,6 +256,16 @@
      (test-case
       "empty keyword"
       (check-equal? (parse "(#:)") (new-fusion "(" (list (new-atom "#:")) ")")))
+     
+     
+     (test-case
+      "just close paren should raise exception"
+      (check-exn exn:fail? (lambda () (parse ")"))))
+     
+     
+     (test-case
+      "just open paren should raise exception"
+      (check-exn exn:fail? (lambda () (parse "("))))
      
      
      (test-case
