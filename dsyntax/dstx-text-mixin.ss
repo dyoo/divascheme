@@ -93,6 +93,7 @@
   (define-member-name begin-dstx-edit-sequence (generate-member-key))
   (define-member-name end-dstx-edit-sequence (generate-member-key))
   (define-member-name get-version (generate-member-key))
+  (define-member-name get-cursor-for-editing (generate-member-key))
   (define-member-name set-cursor-for-editing (generate-member-key))
   
   
@@ -130,10 +131,18 @@
         (new dstx-cursor% [text this]))
       
       ;; We keep a dstx-cursor that's used primarily for the
-      ;; unstructured edit stuff.
+      ;; unstructured edit stuff, and for faster synchronization
+      ;; with other cursors.
+      ;; Warning: do NOT expose this to the outside world.
       (define cursor-for-editing (get-dstx-cursor))
+      
+      (define/public (get-cursor-for-editing a-cursor)
+        cursor-for-editing)
+      
       (define/public (set-cursor-for-editing a-cursor)
         (set! cursor-for-editing a-cursor))
+      
+      
       
       ;; set-top-dstxs: (listof dstx) -> void
       ;; Sets the top dstxs.
@@ -475,6 +484,9 @@
         (when (not (= current-version (send current-text get-version)))
           (let ([old-local-id (property-ref 'local-id)]
                 [old-pos (cursor-pos)])
+            #;(set! f-cursor (send current-text get-cursor-for-editing))
+            ;; If the previous set is unsound, let's go back to the
+            ;; slow-but-safe option.
             (set! f-cursor (cursor:make-toplevel-cursor
                             (send current-text get-top-dstxs)))
             (cond

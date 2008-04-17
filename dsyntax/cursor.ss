@@ -528,10 +528,16 @@
   ;; Refocus the cursor, based on a predicate that distinguishing between
   ;; dstxs.
   (define (focus-find-dstx a-cursor a-pred)
-    (focus-search (focus-toplevel a-cursor)
-                  focus-successor/no-snap
-                  (lambda (a-cursor)
-                    (a-pred (cursor-dstx a-cursor)))))
+    (let loop ([leftward a-cursor]
+               [rightward a-cursor])
+      (cond
+        [(and leftward (a-pred (cursor-dstx leftward)))
+         leftward]
+        [(and rightward (a-pred (cursor-dstx rightward)))
+         rightward]
+        [else
+         (loop (focus-predecessor/no-snap leftward)
+               (focus-successor/no-snap rightward))])))
   
   
   ;; focus-search: cursor focus-function (cursor -> boolean) -> (or/c cursor #f)
@@ -579,20 +585,6 @@
   ;; Similar to focus-pos.  We look for the smallest dstx that contains
   ;; the given position.
   (define (focus-container a-cursor a-pos)
-    (define (after? a-cursor a-pos)
-      (> (cursor-pos a-cursor) a-pos))
-    
-    (define (between? a-cursor a-pos)
-      (and (<= (cursor-pos a-cursor) a-pos)
-           (< a-pos (cursor-endpos a-cursor))))
-    
-    (define (scan-forward-after-position a-cursor a-pos)
-      (focus-search a-cursor
-                    focus-successor/no-snap
-                    (lambda (a-cursor)
-                      (or (after? a-cursor a-pos)
-                          (at-end? a-cursor)))))
-    
     (define (scan-backward-till-we-are-between a-cursor a-pos)
       (focus-search a-cursor
                     focus-predecessor/no-snap
@@ -602,6 +594,34 @@
     ;; First scan forward, and then scan backward.
     (let ([cursor-forward (scan-forward-after-position a-cursor a-pos)])
       (scan-backward-till-we-are-between cursor-forward a-pos)))
+  
+  
+  ;; after?: cursor pos -> boolean
+  ;; Returns true if the cursor is positioned after a-pos.
+  (define (after? a-cursor a-pos)
+    (> (cursor-pos a-cursor) a-pos))
+  
+  ;; after?: cursor pos -> boolean
+  ;; Returns true if the cursor is positioned before a-pos.
+  (define (between? a-cursor a-pos)
+    (and (<= (cursor-pos a-cursor) a-pos)
+         (< a-pos (cursor-endpos a-cursor))))
+  
+  ;; scan-forward-after-position: cursor number -> cursor
+  ;; Returns a new cursor that's zipped forward past a-pos.
+  (define (scan-forward-after-position a-cursor a-pos)
+    (let loop ([a-cursor a-cursor])
+      (cond
+        [(at-end? a-cursor)
+         a-cursor]
+        [(after? a-cursor a-pos)
+         a-cursor]
+        [(and (focus-older/no-snap a-cursor)
+              (< (cursor-endpos (focus-older/no-snap a-cursor)) a-pos))
+         (loop (focus-older/no-snap a-cursor))]
+        [else
+         (loop (focus-successor/no-snap a-cursor))])))
+  
   
   
   
