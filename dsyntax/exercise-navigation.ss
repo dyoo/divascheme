@@ -14,23 +14,23 @@
   
   (define (my-key-handler editor event)
     (local ((define a-cursor (send editor get-tree-cursor)))
-      (send a-cursor resync)
-      (send a-cursor focus-pos (send editor get-start-position))
+      (send a-cursor resync!)
+      (send a-cursor focus-pos! (send editor get-start-position))
       (case (send event get-key-code)
         [(#\j)
-         (send a-cursor focus-predecessor)
+         (send a-cursor focus-predecessor!)
          (send editor show-focus)]
         [(#\l)
-         (send a-cursor focus-successor)
+         (send a-cursor focus-successor!)
          (send editor show-focus)]
         [(#\k)
-         (send a-cursor focus-out)
+         (send a-cursor focus-out!)
          (send editor show-focus)]
         [(#\a)
-         (send a-cursor focus-younger)
+         (send a-cursor focus-younger!)
          (send editor show-focus)]
         [(#\e)
-         (send a-cursor focus-older)
+         (send a-cursor focus-older!)
          (send editor show-focus)])))
   
   

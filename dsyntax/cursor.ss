@@ -586,18 +586,22 @@
       (and (<= (cursor-pos a-cursor) a-pos)
            (< a-pos (cursor-endpos a-cursor))))
     
-    ;; First scan forward, and then scan backward.
-    (let ([cursor-forward
-           (or (focus-search a-cursor
-                             focus-successor/no-snap
-                             (lambda (a-cursor)
-                               (or (after? a-cursor a-pos)
-                                   (at-end? a-cursor))))
-               a-cursor)])
-      (focus-search cursor-forward
+    (define (scan-forward-after-position a-cursor a-pos)
+      (focus-search a-cursor
+                    focus-successor/no-snap
+                    (lambda (a-cursor)
+                      (or (after? a-cursor a-pos)
+                          (at-end? a-cursor)))))
+    
+    (define (scan-backward-till-we-are-between a-cursor a-pos)
+      (focus-search a-cursor
                     focus-predecessor/no-snap
                     (lambda (a-cursor)
-                      (between? a-cursor a-pos)))))
+                      (between? a-cursor a-pos))))
+    
+    ;; First scan forward, and then scan backward.
+    (let ([cursor-forward (scan-forward-after-position a-cursor a-pos)])
+      (scan-backward-till-we-are-between cursor-forward a-pos)))
   
   
   
