@@ -480,6 +480,15 @@
                    (send a-snip next))])))))
   
   
+  ;; make-toplevel-functional-cursor: text -> dstx-cursor
+  ;; Creates the toplevel cursor, ensuring that every dstx in there has a local id.
+  (define (make-toplevel-functional-cursor a-text)
+    (let ([a-cursor (cursor:make-toplevel-cursor
+                     (send a-text get-top-dstxs))])
+      (cursor:replace
+       a-cursor
+       (dstx-attach-local-ids (struct:cursor-dstx a-cursor)))))
+  
   
   ;; a dstx-cursor% provides a mutable interface to the functions
   ;; defined in cursor.ss.  Changes made with this dstx-cursor will
@@ -495,12 +504,7 @@
       
       ;; f-cursor is a functional cursor that we reassign for all the
       ;; operations here.
-      (define f-cursor
-        (let ([a-cursor (cursor:make-toplevel-cursor
-                         (send current-text get-top-dstxs))])
-          (cursor:replace
-           a-cursor
-           (dstx-attach-local-ids (struct:cursor-dstx a-cursor)))))
+      (define f-cursor (make-toplevel-functional-cursor current-text))
       
       (define-syntax (set-cursor/success stx)
         (syntax-case stx ()
@@ -524,12 +528,9 @@
                 [old-pos (cursor-pos)])
             ;; If the previous set is unsound, let's go back to the
             ;; slow-but-safe option.
-            #;(set! f-cursor (cursor:make-toplevel-cursor
-                              (send current-text get-top-dstxs)))
             (cond
               [(eq? this (send current-text get-cursor-for-editing))
-               (set! f-cursor (cursor:make-toplevel-cursor
-                               (send current-text get-top-dstxs)))]
+               (set! f-cursor (make-toplevel-functional-cursor current-text))]
               [else
                ;; optimization: try to reuse the cursor that was last used for editing.
                (set! f-cursor
