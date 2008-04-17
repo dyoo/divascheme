@@ -49,13 +49,10 @@
   ;; apply-primitive-op: cworld op -> cworld
   (define (apply-primitive-op a-cworld an-op)
     (match an-op
-      [else
-       ;; Currently, we don't know how to apply any operations yet.
-       a-cworld]
       [(struct operation:replace-world (new-world))
-         (copy-struct cworld a-cworld
-                      [cworld-world new-world]
-                      [cworld-ops (cons an-op (cworld-ops a-cworld))])]))
+       (copy-struct cworld a-cworld
+                    [cworld-world new-world]
+                    [cworld-ops (cons an-op (cworld-ops a-cworld))])]))
   
   
   

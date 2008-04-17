@@ -14,7 +14,8 @@
            (prefix preferences: "diva-preferences.ss")
            (prefix marker: "marker.ss")
            "tag-gui.ss"
-	   (lib "unit.ss")
+           "dsyntax/dstx-text-mixin.ss"
+           (lib "unit.ss")
            (lib "tool.ss" "drscheme"))
   
   
@@ -69,7 +70,9 @@
            (voice-mred-text-callback-mixin
             (marker:marker-mixin
              (diva-central-mixin
-              (text-rope-mixin super%))))))
+              (text-rope-mixin
+               (dstx-text-mixin
+                super%)))))))
         
         (define (diva-interactions-text-mixin super%)
           (diva-link:interactions-text-mixin
@@ -77,7 +80,9 @@
             (voice-mred-interactions-text-callback-mixin
              (marker:marker-mixin
               (diva-central-mixin
-               (text-rope-mixin super%)))))))
+               (text-rope-mixin
+                (dstx-text-mixin
+                 super%))))))))
         
         
         (drscheme:get/extend:extend-unit-frame diva-frame-mixin)
