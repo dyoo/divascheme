@@ -9,9 +9,9 @@
            (lib "errortrace-lib.ss" "errortrace")
            "interpreter.ss"
            "dot-processing.ss"
+           "operations.ss"
            "mred-state.ss"
            "mred-callback.ss"
-           "operations.ss"
            "command-keymap.ss"
            "insert-keymap.ss"
            "structures.ss"
@@ -227,6 +227,11 @@
         (cworld-world central-world))
       
       
+      ;; set-current-world!: World -> void
+      ;; Sets the current world to the new world.
+      (define (set-current-world! new-world)
+        (send-cworld-op (make-operation:replace-world new-world)))
+      
       
       ;; Whenever new events happen, we'll send an operation message to the central world
       ;; mailbox for processing.
@@ -236,8 +241,7 @@
       (thread (lambda ()
                 (let loop ()
                   (let ([new-op (channel-get central-world-mailbox)])
-                    (set! central-world
-                          (cworld-apply-operation central-world new-op)))
+                    (set! central-world (cworld-apply-operation central-world new-op)))
                   (loop))))
       
       
@@ -324,10 +328,8 @@
                                (send current-mred push-world w))))))
                     world
                     (reverse (World-imperative-actions world)))])
-               #;(set-current-world! (copy-struct World new-world
-                                                  [World-imperative-actions empty]))
-               ;; fixme!
-               (void)))
+               (set-current-world! (copy-struct World new-world
+                                                [World-imperative-actions empty]))))
            (lambda ()
              (end-edit-sequence)))))
       
@@ -386,7 +388,6 @@
       ;; diva-ast-put/wait+world: world ast -> void
       ;; Applies the ast on the given world.
       (define (diva-ast-put/wait+world world ast)
-        ;; fixme!  Types are no longer right.
         (push-into-mred
          (with-divascheme-handlers
           world

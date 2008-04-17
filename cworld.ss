@@ -52,7 +52,7 @@
       [else
        ;; Currently, we don't know how to apply any operations yet.
        a-cworld]
-      #;[(struct op:replace-world (new-world))
+      [(struct operation:replace-world (new-world))
          (copy-struct cworld a-cworld
                       [cworld-world new-world]
                       [cworld-ops (cons an-op (cworld-ops a-cworld))])]))
