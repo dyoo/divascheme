@@ -84,10 +84,11 @@
   
   ;; Made dstx-text-mixin and dstx-cursor friends.  The following methods
   ;; can only be called by classes defined in this module.
-  (define-member-name set-top-dstxs (generate-member-key))
+  (define-member-name parse-between (generate-member-key))
   (define-member-name begin-dstx-edit-sequence (generate-member-key))
   (define-member-name end-dstx-edit-sequence (generate-member-key))
   (define-member-name get-version (generate-member-key))
+  (define-member-name increment-version! (generate-member-key))
   (define-member-name get-cursor-for-editing (generate-member-key))
   (define-member-name set-cursor-for-editing (generate-member-key))
   
@@ -132,6 +133,10 @@
       (define/public (get-version)
         version)
       
+      (define/public (increment-version!)
+        (set! version (add1 version)))
+      
+      
       ;; Returns a toplevel cursor into the dstx.
       ;; Operations performed with the cursor will be reflected
       ;; back on screen.
@@ -153,19 +158,10 @@
         (set! cursor-for-editing a-cursor))
       
       
-      
-      ;; set-top-dstxs: (listof dstx) -> void
-      ;; Sets the top dstxs.  Assumption: the dstxs is already
-      ;; colored with a local id.
-      ;; Protected.
-      (define/public (set-top-dstxs dstxs)
-        (set! top-dstxs dstxs)
-        (set! version (add1 version)))
-      
       ;; get-top-dstxs: -> (listof dstx)
       ;; Returns the top dstxs.
       (define/public (get-top-dstxs)
-        top-dstxs)
+        (send cursor-for-editing cursor-toplevel-dstxs))
       
       ;; dstx-edit-depth: natural-number
       ;; Maintains how deeply into a begin-dstx-edit-sequence we're in.
@@ -403,21 +399,20 @@
       ;; reparse-all-dstxs!: -> void
       ;; reparses the entire buffer.
       (define/public (reparse-all-dstxs!)
-        (let* ([dstxs (parse-between 0 (last-position))])
-          (set-top-dstxs (map dstx-attach-local-ids dstxs))
-          (send cursor-for-editing resync!)))
+        (increment-version!)
+        (send cursor-for-editing resync!))
       
       
       ;; parse-between: number number -> (listof dstx)
       ;; Parse the text between start and end.  If the content
       ;; is unparseable, return a list containing a new fusion
       ;; marked with the property 'unparsed.
-      (define (parse-between start end)
+      (define/public (parse-between start end)
         (with-handlers ([exn:fail? (lambda (exn)
                                      (parse-between/unparsed start end))])
           (let* ([ip (parser:open-input-text this start end)]
                  [dstxs (parser:parse-port ip)])
-            dstxs)))
+            (map dstx-attach-local-ids dstxs))))
       
       
       ;; parse-with-hole: number number number number -> (listof dstx)
@@ -436,7 +431,7 @@
           (let* ([ip1 (parser:open-input-text this start hole-start)]
                  [ip2 (parser:open-input-text this hole-end end)]
                  [ip (input-port-append #t ip1 ip2)]
-                 [dstxs (parser:parse-port ip)])
+                 [dstxs (map dstx-attach-local-ids (parser:parse-port ip))])
             dstxs)))
       
       
@@ -481,8 +476,8 @@
   ;; make-toplevel-functional-cursor: text -> dstx-cursor
   ;; Creates the toplevel cursor, ensuring that every dstx in there has a local id.
   (define (make-toplevel-functional-cursor a-text)
-    (let ([a-cursor (cursor:make-toplevel-cursor
-                     (send a-text get-top-dstxs))])
+    (let* ([dstxs (send a-text parse-between 0 (send a-text last-position))]
+           [a-cursor (cursor:make-toplevel-cursor dstxs)])
       (cursor:replace
        a-cursor
        (dstx-attach-local-ids (struct:cursor-dstx a-cursor)))))
@@ -499,6 +494,8 @@
       
       (define current-text text)
       (define current-version (send text get-version))
+      (define/public (get-version)
+        current-version)
       
       ;; f-cursor is a functional cursor that we reassign for all the
       ;; operations here.
@@ -570,6 +567,8 @@
       (define/public (cursor-endpos)
         (cursor:cursor-endpos f-cursor))
       
+      (define/public (cursor-toplevel-dstxs)
+        (cursor:cursor-toplevel-dstxs f-cursor))
       
       ;; Property get and set
       (define/public (property-ref a-name)
@@ -670,8 +669,8 @@
              (send current-text set-position (cursor-pos) 'same #f #f 'local)
              (pretty-print-to-text a-dstx)
              (set! f-cursor (cursor:insert-before f-cursor a-dstx))
-             (send current-text set-top-dstxs (cursor:cursor-toplevel-dstxs f-cursor))
              (send current-text set-cursor-for-editing this)
+             (send current-text increment-version!)
              (set! current-version (send current-text get-version)))
            (lambda ()
              (send current-text end-edit-sequence)
@@ -689,8 +688,8 @@
              (send current-text set-position (cursor-endpos) 'same #f #f 'local)
              (pretty-print-to-text a-dstx)
              (set! f-cursor (cursor:insert-after f-cursor a-dstx))
-             (send current-text set-top-dstxs (cursor:cursor-toplevel-dstxs f-cursor))
              (send current-text set-cursor-for-editing this)
+             (send current-text increment-version!)
              (set! current-version (send current-text get-version)))
            (lambda ()
              (send current-text end-edit-sequence)
@@ -714,8 +713,8 @@
              (set! f-cursor (cursor:replace
                              f-cursor
                              (dstx-attach-local-ids (struct:cursor-dstx f-cursor))))
-             (send current-text set-top-dstxs (cursor:cursor-toplevel-dstxs f-cursor))
              (send current-text set-cursor-for-editing this)
+             (send current-text increment-version!)
              (set! current-version (send current-text get-version))))
          (lambda ()
            (send current-text end-edit-sequence)
