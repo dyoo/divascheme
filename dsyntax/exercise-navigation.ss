@@ -40,12 +40,18 @@
         [(#\[)
          (send a-cursor insert-before! (new-fusion "[" (list (new-atom "$expr$")) "]"))
          (send a-cursor focus-in!)
-         (send editor show-focus)])))
+         (send editor show-focus)]
+        [(f4)
+         (send editor toggle-dstx-parsing)])))
   
   
   (define my-text%
     (class (dstx-text-mixin text%)
-      (inherit set-keymap get-keymap set-position scroll-to-position get-dstx-cursor)
+      (inherit set-keymap get-keymap set-position scroll-to-position
+               get-dstx-cursor
+               dstx-parsing-enabled?
+               enable-dstx-parsing
+               disable-dstx-parsing)
       
       (super-new)
       (define tree-cursor (get-dstx-cursor))
@@ -58,6 +64,7 @@
       (send (get-keymap) map-function "C:l" "dsyntax:test-handler")
       (send (get-keymap) map-function "(" "dsyntax:test-handler")
       (send (get-keymap) map-function "[" "dsyntax:test-handler")
+      (send (get-keymap) map-function "f4" "dsyntax:test-handler")
       
       (define/override (load-file filename)
         (super load-file filename)
@@ -75,7 +82,16 @@
         (scroll-to-position (send tree-cursor cursor-pos)
                             #f
                             (send tree-cursor cursor-endpos)
-                            'start))))
+                            'start))
+      
+      (define/public (toggle-dstx-parsing)
+        (cond [(dstx-parsing-enabled?)
+               (printf "parsing disabled~n")
+               (disable-dstx-parsing)]
+              [else
+               (printf "parsing enabled~n")
+               (enable-dstx-parsing)]))))
+  
   
   (define (test)
     (open-file (expand-user-path "~/local/plt/collects/tex2page/tex2page-aux.ss")))

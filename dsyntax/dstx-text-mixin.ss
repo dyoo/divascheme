@@ -9,6 +9,7 @@
   
   (require (lib "class.ss")
            (lib "port.ss")
+           (lib "mred.ss" "mred")
            (prefix parser: "parse-plt-scheme.ss")
            (prefix cursor: "cursor.ss")
            (prefix struct: "struct.ss"))
@@ -17,10 +18,17 @@
   (provide dstx-text-mixin dstx-text<%> dstx-cursor<%>)
   
   
-  (define dstx-text<%> (interface () get-top-dstxs get-dstx-cursor))
+  (define dstx-text<%> (interface (editor<%>)
+                         get-top-dstxs
+                         get-dstx-cursor
+                         dstx-parsing-enabled?
+                         enable-dstx-parsing
+                         disable-dstx-parsing))
+  
   (define dstx-cursor<%> (interface ()
                            get-functional-cursor
                            resync!
+                           
                            cursor-dstx
                            cursor-line
                            cursor-col
@@ -120,6 +128,19 @@
       ;; The toplevel dstx elements.
       (define top-dstxs '())
       
+      (define parsing-enabled? #t)
+      
+      (define/public (dstx-parsing-enabled?)
+        parsing-enabled?)
+      
+      (define/public (enable-dstx-parsing)
+        (set! parsing-enabled? #t)
+        (reparse-all-dstxs!))
+      
+      (define/public (disable-dstx-parsing)
+        (set! parsing-enabled? #f))
+      
+      
       (define version 0)
       (define/public (get-version)
         version)
@@ -185,6 +206,8 @@
       (define/augment (after-delete start-pos len)
         (inner #f after-delete start-pos len)
         (cond
+          [(not parsing-enabled?)
+           (void)]
           [(in-dstx-edit-sequence?)
            (void)]
           [else
@@ -195,6 +218,8 @@
       (define/augment (after-insert start-pos len)
         (inner #f after-insert start-pos len)
         (cond
+          [(not parsing-enabled?)
+           (void)]
           [(in-dstx-edit-sequence?)
            (void)]
           [else
@@ -368,15 +393,18 @@
       
       ;; load-file: string -> void
       (define/override (load-file filename)
-        (dynamic-wind (lambda () (begin-dstx-edit-sequence))
-                      (lambda () (super load-file filename))
-                      (lambda () (end-dstx-edit-sequence)))
-        (reparse-all-dstxs))
+        (cond [(not parsing-enabled?)
+               (void)]
+              [else
+               (dynamic-wind (lambda () (begin-dstx-edit-sequence))
+                             (lambda () (super load-file filename))
+                             (lambda () (end-dstx-edit-sequence)))
+               (reparse-all-dstxs!)]))
       
       
-      ;; reparse-all-dstxs: -> void
+      ;; reparse-all-dstxs!: -> void
       ;; reparses the entire buffer.
-      (define/public (reparse-all-dstxs)
+      (define/public (reparse-all-dstxs!)
         (let* ([dstxs (parse-between 0 (last-position))])
           (set-top-dstxs (map dstx-attach-local-ids dstxs))
           (send cursor-for-editing resync!)))
