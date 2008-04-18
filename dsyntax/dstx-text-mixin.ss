@@ -669,7 +669,6 @@
            (insert-in-place (struct:fusion-suffix a-dstx))]))
       
       
-      
       ;; Editors
       (define/public (insert-before! a-dstx)
         (resync!)
@@ -680,6 +679,7 @@
              (send current-text begin-edit-sequence))
            (lambda ()
              (send current-text set-position (cursor-pos) 'same #f #f 'local)
+             #;(printf "inserting ~a~n" a-dstx)
              (pretty-print-to-text a-dstx)
              (set! f-cursor (cursor:insert-before f-cursor a-dstx))
              (send current-text set-cursor-for-editing this)
@@ -688,6 +688,7 @@
            (lambda ()
              (send current-text end-edit-sequence)
              (send current-text end-dstx-edit-sequence)))))
+      
       
       
       (define/public (insert-after! a-dstx)
@@ -699,6 +700,7 @@
              (send current-text begin-edit-sequence))
            (lambda ()
              (send current-text set-position (cursor-endpos) 'same #f #f 'local)
+             #;(printf "inserting ~a~n" a-dstx)
              (pretty-print-to-text a-dstx)
              (set! f-cursor (cursor:insert-after f-cursor a-dstx))
              (send current-text set-cursor-for-editing this)
@@ -721,6 +723,7 @@
                                       (struct:cursor-loc f-cursor)
                                       (cursor-dstx)))
                      (cursor-pos))])
+             #;(printf "Deleting ~a~n" (cursor-dstx))
              (send current-text delete (cursor-pos) (+ (cursor-pos) deletion-length) #f)
              (set! f-cursor (cursor:delete f-cursor))
              (set! f-cursor (cursor:replace

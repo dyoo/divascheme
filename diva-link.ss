@@ -42,7 +42,7 @@
     (class super%
       (inherit get-diva-central
                get-definitions-text
-               get-interactions-text)
+               #;get-interactions-text)
       (define started? #f)
       (super-new)
       
@@ -58,34 +58,34 @@
         (send this diva-panel-show)
         (send (get-definitions-text) to-command-mode)
         (send (get-definitions-text) enable-dstx-parsing)
-        (send (get-interactions-text) to-command-mode)
-        (send (get-interactions-text) enable-dstx-parsing)
+        #;(send (get-interactions-text) to-command-mode)
+        #;(send (get-interactions-text) enable-dstx-parsing)
         (set! started? #t))
       
       (define (shutdown)
         (send this diva-panel-hide)
         (send (get-definitions-text) to-normal-mode)
         (send (get-definitions-text) disable-dstx-parsing)
-        (send (get-interactions-text) to-normal-mode)
-        (send (get-interactions-text) disable-dstx-parsing)
+        #;(send (get-interactions-text) to-normal-mode)
+        #;(send (get-interactions-text) disable-dstx-parsing)
         (set! started? #f))
       
       (define (refresh-keymaps)
         (send (get-definitions-text) refresh-keymaps)
-        (send (get-interactions-text) refresh-keymaps))
+        #;(send (get-interactions-text) refresh-keymaps))
       
       (define/augment (on-tab-change from-tab to-tab)
         (inner (void) on-tab-change from-tab to-tab)
         (when started?
           (send (send from-tab get-defs) diva:-on-loss-focus)
-          (send (send from-tab get-ints) diva:-on-loss-focus)
+          #;(send (send from-tab get-ints) diva:-on-loss-focus)
           (send (send to-tab get-defs) diva:-on-loss-focus)
-          (send (send to-tab get-ints) diva:-on-loss-focus)
+          #;(send (send to-tab get-ints) diva:-on-loss-focus)
           
           (send (send from-tab get-defs) to-normal-mode)
-          (send (send from-tab get-ints) to-normal-mode)
+          #;(send (send from-tab get-ints) to-normal-mode)
           (send (send to-tab get-defs) to-command-mode)
-          (send (send to-tab get-ints) to-command-mode)))
+          #;(send (send to-tab get-ints) to-command-mode)))
       
       (define (handle-diva-central-evt evt)
         (match evt
