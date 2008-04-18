@@ -10,6 +10,7 @@
   (require (lib "class.ss")
            (lib "port.ss")
            (lib "mred.ss" "mred")
+           (lib "plt-match.ss")
            (prefix parser: "parse-plt-scheme.ss")
            (prefix cursor: "cursor.ss")
            (prefix struct: "struct.ss"))
@@ -384,21 +385,60 @@
       ;; handle-ad-hoc-insertion-in-container: cursor number number -> void
       (define (handle-ad-hoc-insertion-in-container a-cursor start-pos len)
         (send a-cursor focus-container! start-pos)
-        (let ([fcursor (send a-cursor get-functional-cursor)])
-          ;; subtle: if the very previous expression is an atom, attach to it
-          ;; instead.
-          (when (and (cursor:focus-younger/no-snap fcursor)
-                     (struct:atom? (struct:cursor-dstx (cursor:focus-younger/no-snap fcursor)))
-                     (= (cursor:cursor-endpos (cursor:focus-younger/no-snap fcursor))
-                        start-pos))
-            (send a-cursor focus-younger/no-snap!)))
-        ;; Delete the old, introduce the new.
-        (let ([new-dstxs (parse-between (send a-cursor cursor-pos)
-                                        (+ (send a-cursor cursor-endpos)
-                                           len))])
-          (delete-introduced-text start-pos len)
-          (insert-new-dstxs-after a-cursor new-dstxs)
-          (send a-cursor delete!)))
+        (match (send a-cursor cursor-dstx)
+          [(struct struct:atom (props content))
+           ;; Delete the old atom, and introduce a reparsed thing in its place
+           (let ([new-dstxs (parse-between (send a-cursor cursor-pos)
+                                           (+ (send a-cursor cursor-endpos)
+                                              len))])
+             (delete-introduced-text start-pos len)
+             (insert-new-dstxs-after a-cursor new-dstxs)
+             (send a-cursor delete!))]
+          
+          [(struct struct:special-atom (props content width))
+           ;; Delete the old, introduce the new.
+           (let ([new-dstxs (parse-between (send a-cursor cursor-pos)
+                                           (+ (send a-cursor cursor-endpos)
+                                              len))])
+             (delete-introduced-text start-pos len)
+             (insert-new-dstxs-after a-cursor new-dstxs)
+             (send a-cursor delete!))]
+          
+          ;; fixme
+          [(struct struct:space (props content))
+           ;; subtle: if the very previous expression is an atom, attach to it
+           ;; instead.
+           (let ([fcursor (send a-cursor get-functional-cursor)])
+             (when (and (cursor:focus-younger/no-snap fcursor)
+                        (struct:atom? (struct:cursor-dstx (cursor:focus-younger/no-snap fcursor)))
+                        (= (cursor:cursor-endpos (cursor:focus-younger/no-snap fcursor))
+                           start-pos))
+               (send a-cursor focus-younger/no-snap!))
+             ;; Delete the old, introduce the new.
+             (let ([new-dstxs (parse-between (send a-cursor cursor-pos)
+                                             (+ (send a-cursor cursor-endpos)
+                                                len))])
+               (delete-introduced-text start-pos len)
+               (insert-new-dstxs-after a-cursor new-dstxs)
+               (send a-cursor delete!)))]
+          
+          ;; fixme
+          [(struct struct:fusion (props prefix children suffix))
+           ;; subtle: if the very previous expression is an atom, attach to it
+           ;; instead.
+           (let ([fcursor (send a-cursor get-functional-cursor)])
+             (when (and (cursor:focus-younger/no-snap fcursor)
+                        (struct:atom? (struct:cursor-dstx (cursor:focus-younger/no-snap fcursor)))
+                        (= (cursor:cursor-endpos (cursor:focus-younger/no-snap fcursor))
+                           start-pos))
+               (send a-cursor focus-younger/no-snap!))
+             ;; Delete the old, introduce the new.
+             (let ([new-dstxs (parse-between (send a-cursor cursor-pos)
+                                             (+ (send a-cursor cursor-endpos)
+                                                len))])
+               (delete-introduced-text start-pos len)
+               (insert-new-dstxs-after a-cursor new-dstxs)
+               (send a-cursor delete!)))]))
       
       
       
