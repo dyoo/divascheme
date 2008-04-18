@@ -241,31 +241,27 @@
            (handle-possibly-unstructured-insert start-pos len)]))
       
       
+      ;; wrapper to prevent recurrence of unstructured edit handlers
+      ;; This tells the system that whatever textual changes are occuring
+      ;; internally.
+      (define (with-structured-editing thunk)
+        (dynamic-wind (lambda ()
+                        (begin-edit-sequence)
+                        (begin-dstx-edit-sequence))
+                      thunk
+                      (lambda ()
+                        (end-edit-sequence)
+                        (end-dstx-edit-sequence))))
+      
+      
       ;; handle-possibly-unstructured-delete: number number -> void
       ;;
       (define (handle-possibly-unstructured-delete start-pos len)
-        ;; temporarily-fill-hole: number number -> void
-        ;; temporarily put something in the deleted text's hole
-        ;; to make textual parsing and deletion work.
-        (define (temporarily-fill-hole deleted-start deleted-end)
-          (dynamic-wind (lambda ()
-                          (begin-dstx-edit-sequence))
-                        (lambda ()
-                          (insert (make-string (- deleted-end deleted-start) #\X)
-                                  deleted-start
-                                  'same
-                                  #f))
-                        (lambda ()
-                          (end-dstx-edit-sequence))))
-        
-        (define-values
-          (original-start-position original-end-position)
-          (values (get-start-position) (get-end-position)))
-        
-        (dynamic-wind
+        (with-structured-editing
          (lambda ()
-           (begin-edit-sequence))
-         (lambda ()
+           (define-values
+             (original-start-position original-end-position)
+             (values (get-start-position) (get-end-position)))
            (let loop ([len len])
              (when (> len 0)
                (send cursor-for-editing focus-container! start-pos)
@@ -286,9 +282,18 @@
                              (reverse new-dstxs))
                    (send cursor-for-editing delete!)
                    (loop (- len (- deleted-end deleted-start)))))))
-           (set-position original-start-position original-end-position #f #f 'local))
-         (lambda ()
-           (end-edit-sequence))))
+           (set-position original-start-position original-end-position #f #f 'local))))
+      
+      
+      ;; temporarily-fill-hole: number number -> void
+      ;; temporarily put something in the deleted text's hole
+      ;; to make textual parsing and deletion work.
+      (define (temporarily-fill-hole deleted-start deleted-end)
+        (insert (make-string (- deleted-end deleted-start) #\X)
+                deleted-start
+                'same
+                #f))
+      
       
       
       ;; deletion-spans-whole-focus? dstx-cursor number number -> boolean
@@ -314,26 +319,20 @@
         (define-values
           (original-start-position original-end-position)
           (values (get-start-position) (get-end-position)))
-        (dynamic-wind
-         (lambda ()
-           (begin-edit-sequence))
+        (with-structured-editing
          (lambda ()
            (cond [(inserting-at-buffer-end? cursor-for-editing start-pos)
                   (handle-ad-hoc-insertion-at-end cursor-for-editing start-pos len)]
                  [else
                   (handle-ad-hoc-insertion-in-container cursor-for-editing start-pos len)])
-           (set-position original-start-position original-end-position #f #f 'local))
-         (lambda ()
-           (end-edit-sequence))))
+           (set-position original-start-position original-end-position #f #f 'local))))
       
       
       ;; delete-introduced-text: number number -> void
       ;; Removes the ad-hoc inserted text without triggering a recursive call to ad-hoc
       ;; handlers.
       (define (delete-introduced-text start-pos len)
-        (dynamic-wind (lambda () (begin-dstx-edit-sequence))
-                      (lambda () (delete start-pos (+ start-pos len) #f))
-                      (lambda () (end-dstx-edit-sequence))))
+        (delete start-pos (+ start-pos len) #f))
       
       
       ;; inserting-at-buffer-end?: cursor number -> boolean
@@ -382,6 +381,7 @@
                (insert-new-dstxs-after a-cursor new-dstxs))])))
       
       
+      ;; handle-ad-hoc-insertion-in-container: cursor number number -> void
       (define (handle-ad-hoc-insertion-in-container a-cursor start-pos len)
         (send a-cursor focus-container! start-pos)
         (let ([fcursor (send a-cursor get-functional-cursor)])
@@ -445,6 +445,7 @@
       (define/public (reparse-all-dstxs!)
         (increment-version!)
         (send cursor-for-editing reparse!))
+      
       
       
       ;; parse-between: number number -> (listof dstx)
