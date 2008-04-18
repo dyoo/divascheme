@@ -436,7 +436,6 @@
         (let* ([cursor (send text get-dstx-cursor)]
                [_ (send cursor focus-container! 0)]
                [old-id (send cursor property-ref 'local-id)])
-          (send cursor resync!)
           (send text insert " " 0)
           (check-equal? (send text get-text) " [$expr$]")
           (send cursor focus-container! 1)
