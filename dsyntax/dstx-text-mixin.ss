@@ -23,7 +23,14 @@
                          get-dstx-cursor
                          dstx-parsing-enabled?
                          enable-dstx-parsing
-                         disable-dstx-parsing))
+                         disable-dstx-parsing
+                         
+                         before-structured-insert-before
+                         before-structured-insert-after
+                         before-structured-delete
+                         
+                         after-structured-insert
+                         after-structured-delete))
   
   (define dstx-cursor<%> (interface ()
                            get-functional-cursor
@@ -192,6 +199,22 @@
       
       (define/augment (on-insert start-pos len)
         (inner #f on-insert start-pos len))
+      
+      
+      (define/pubment (before-structured-insert-after a-functional-cursor a-dstx)
+        (inner #f before-structured-insert-after a-functional-cursor a-dstx))
+      
+      (define/pubment (before-structured-insert-before a-functional-cursor a-dstx)
+        (inner #f before-structured-insert-before a-functional-cursor a-dstx))
+      
+      (define/pubment (before-structured-delete a-functional-cursor)
+        (inner #f before-structured-delete a-functional-cursor))
+      
+      (define/pubment (after-structured-insert a-functional-cursor)
+        (inner #f after-structured-insert a-functional-cursor))
+      
+      (define/pubment (after-structured-delete a-functional-cursor)
+        (inner #f after-structured-delete a-functional-cursor))
       
       
       ;; after-delete: number number -> void
@@ -618,6 +641,7 @@
                       (error 'set-cursor "movement failed"))
                     (set! a-cursor new-cursor-val)))]))
       
+      
       ;; Focusers
       (define/public (focus-in!)
         (resynchronize-with-main-editing-cursor!)
@@ -743,20 +767,24 @@
       ;; Insert a dstx before the current focus.
       (define/public (insert-before! a-dstx)
         (resynchronize-with-main-editing-cursor!)
+        (send current-text before-structured-insert-before
+              (get-functional-cursor) a-dstx)
         (let ([a-dstx (dstx-attach-local-ids a-dstx)])
           (with-structured-editing
            (lambda ()
              (send current-text set-position (cursor-pos) 'same #f #f 'local)
-             #;(printf "inserting ~a~n" a-dstx)
              (pretty-print-to-text a-dstx)
              (set! f-cursor (cursor:insert-before f-cursor a-dstx))
-             (mark-this-cursor-as-up-to-date-editor!)))))
+             (mark-this-cursor-as-up-to-date-editor!)
+             (send current-text after-structured-insert f-cursor)))))
       
       
       ;; insert-after!: dstx -> void
       ;; Insert a dstx after the current focus.
       (define/public (insert-after! a-dstx)
         (resynchronize-with-main-editing-cursor!)
+        (send current-text before-structured-insert-after
+              (get-functional-cursor) a-dstx)
         (let ([a-dstx (dstx-attach-local-ids a-dstx)])
           (with-structured-editing
            (lambda ()
@@ -764,7 +792,8 @@
              #;(printf "inserting ~a~n" a-dstx)
              (pretty-print-to-text a-dstx)
              (set! f-cursor (cursor:insert-after f-cursor a-dstx))
-             (mark-this-cursor-as-up-to-date-editor!)))))
+             (mark-this-cursor-as-up-to-date-editor!)
+             (send current-text after-structured-insert f-cursor)))))
       
       
       ;; delete! -> void
@@ -772,6 +801,7 @@
       ;; oldest sibling.
       (define/public (delete!)
         (resynchronize-with-main-editing-cursor!)
+        (send current-text before-structured-delete (get-functional-cursor))
         (with-structured-editing
          (lambda ()
            (let ([deletion-length
@@ -785,4 +815,5 @@
              (set! f-cursor (cursor:replace
                              f-cursor
                              (dstx-attach-local-ids (struct:cursor-dstx f-cursor))))
-             (mark-this-cursor-as-up-to-date-editor!))))))))
+             (mark-this-cursor-as-up-to-date-editor!)
+             (send current-text after-structured-delete f-cursor))))))))

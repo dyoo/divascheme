@@ -46,9 +46,7 @@
       (table:make-ordered symbol-cmp)))
   
   
-  ;; The empty space atom is sometimes used as a sentinel, so let's
-  ;; keep one here.
-  (define empty-space-atom (make-space empty-table ""))
+  
   ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
   
   
@@ -72,6 +70,11 @@
     (weak-memoize/equal
      (lambda (content)
        (make-space empty-table content))))
+  
+  
+  ;; The empty space atom is sometimes used as a sentinel, so let's
+  ;; keep one here.
+  (define empty-space-atom (new-space ""))
   
   
   ;; new-fusion: string (listof dstx?) string -> fusion

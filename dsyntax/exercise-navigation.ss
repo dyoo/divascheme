@@ -40,6 +40,18 @@
          (send a-cursor insert-before! (new-fusion "[" (list (new-atom "$expr$")) "]"))
          (send a-cursor focus-in!)
          (send editor show-focus)]
+        [(#\')
+         (send a-cursor insert-before! (new-fusion "'"
+                                                   (list (new-atom "$expr$"))
+                                                   ""))
+         (send a-cursor focus-in!)
+         (send editor show-focus)]
+        [(#\,)
+         (send a-cursor insert-before! (new-fusion ","
+                                                   (list (new-atom "$expr$"))
+                                                   ""))
+         (send a-cursor focus-in!)
+         (send editor show-focus)]
         [(f4)
          (send editor toggle-dstx-parsing)])))
   
@@ -64,6 +76,8 @@
       (send (get-keymap) map-function "(" "dsyntax:test-handler")
       (send (get-keymap) map-function "[" "dsyntax:test-handler")
       (send (get-keymap) map-function "f4" "dsyntax:test-handler")
+      (send (get-keymap) map-function "'" "dsyntax:test-handler")
+      (send (get-keymap) map-function "," "dsyntax:test-handler")
       
       (define/override (load-file filename)
         (super load-file filename)
@@ -72,6 +86,19 @@
       
       (define/public (get-tree-cursor)
         tree-cursor)
+      
+      (define/augment (before-structured-insert-before f-cursor a-dstx)
+        (inner #f before-structured-insert-before f-cursor)
+        (printf "structured insert seen: ~s~n" (cursor-dstx f-cursor)))
+      
+      (define/augment (before-structured-insert-after f-cursor a-dstx)
+        (inner #f before-structured-insert-after f-cursor)
+        (printf "structured insert seen: ~s~n" (cursor-dstx f-cursor)))
+      
+      (define/augment (before-structured-delete f-cursor)
+        (inner #f before-structured-delete f-cursor)
+        (printf "structured delete seen~n"))
+      
       
       (define/public (show-focus)
         (set-position (send tree-cursor cursor-pos)
