@@ -237,6 +237,7 @@
           [(in-dstx-edit-sequence?)
            (void)]
           [else
+           (printf "after-delete ~a ~a~n" start-pos len)
            (handle-possibly-unstructured-delete start-pos len)]))
       
       
@@ -249,6 +250,7 @@
           [(in-dstx-edit-sequence?)
            (void)]
           [else
+           (printf "after-insert ~a ~a: ~s~n" start-pos len (send this get-text start-pos (+ start-pos len)))
            (handle-possibly-unstructured-insert start-pos len)]))
       
       
@@ -820,7 +822,7 @@
                        (send current-text get-start-position)
                        (if (string? a-thing)
                            (string-length a-thing)
-                           (send a-thing count)))
+                           (send a-thing get-count)))
                  (send current-text insert
                        a-thing
                        (send current-text get-start-position)
