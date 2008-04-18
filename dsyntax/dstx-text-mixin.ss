@@ -492,13 +492,14 @@
        a-cursor
        (dstx-attach-local-ids (struct:cursor-dstx a-cursor)))))
   
+  
+  ;; empty-toplevel-functional-cursor: -> dstx-cursor
+  ;; Creates an empty toplevel cursor.
   (define (empty-toplevel-functional-cursor)
     (let ([f-cursor (cursor:make-toplevel-cursor '())])
-      (let ([result
-             (cursor:replace
-              f-cursor
-              (dstx-attach-local-ids (struct:cursor-dstx f-cursor)))])
-        result)))
+      (cursor:replace
+       f-cursor
+       (dstx-attach-local-ids (struct:cursor-dstx f-cursor)))))
   
   
   ;; a dstx-cursor% provides a mutable interface to the functions
@@ -513,15 +514,13 @@
       
       (define current-version 0)
       
-      (define/public (get-version)
-        current-version)
-      
       ;; f-cursor is a functional cursor that we reassign for all the
       ;; operations here.
       (define f-cursor (empty-toplevel-functional-cursor))
       
       (define/public (reparse!)
-        (set! f-cursor (make-toplevel-functional-cursor current-text)))
+        (set! f-cursor (make-toplevel-functional-cursor current-text))
+        (mark-this-cursor-as-up-to-date-editor!))
       
       
       (define (reuse-editing-fcursor!)
@@ -533,9 +532,14 @@
       ;; resync!: -> void
       ;; Refresh the cursor's view of the AST, trying our best to preserve
       ;; the focus.
+      ;;
+      ;; All of the public-facing functions should first call this.
+      ;;
       ;; When the AST is modified, we need to correct our out-of-date view
       ;; of the AST.  We assume the last-editing cursor is the most up-to-date,
-      ;; although it still might be out-of-sync with the content of the text buffer.
+      ;; although it still might be out-of-sync with the content of the text buffer
+      ;; if unstructured edits are happening.
+      ;;
       ;; Protected.
       (define/public (resynchronize-with-main-editing-cursor!)
         (when (and (send current-text dstx-parsing-enabled?)
@@ -709,6 +713,7 @@
            (insert-in-place (struct:fusion-suffix a-dstx))]))
       
       
+      ;; makr-this-cursor-as-up-to-date-editor!
       ;; We tell the current text that this cursor is the one that
       ;; is most up-to-date.
       (define (mark-this-cursor-as-up-to-date-editor!)
@@ -717,50 +722,57 @@
         (set! current-version (send current-text get-version)))
       
       
+      
+      ;; with-structured-editing: (-> X) -> X
+      ;; Wraps a thunk with the necessary dynamic winds we need
+      ;; when doing structured edits.
+      (define (with-structured-editing thunk)
+        (dynamic-wind
+         (lambda ()
+           (send current-text begin-dstx-edit-sequence)
+           (send current-text begin-edit-sequence))
+         thunk
+         (lambda ()
+           (send current-text end-edit-sequence)
+           (send current-text end-dstx-edit-sequence))))
+      
+      
       ;; Editors
+      
+      ;; insert-before!: dstx -> void
+      ;; Insert a dstx before the current focus.
       (define/public (insert-before! a-dstx)
         (resynchronize-with-main-editing-cursor!)
         (let ([a-dstx (dstx-attach-local-ids a-dstx)])
-          (dynamic-wind
-           (lambda ()
-             (send current-text begin-dstx-edit-sequence)
-             (send current-text begin-edit-sequence))
+          (with-structured-editing
            (lambda ()
              (send current-text set-position (cursor-pos) 'same #f #f 'local)
              #;(printf "inserting ~a~n" a-dstx)
              (pretty-print-to-text a-dstx)
              (set! f-cursor (cursor:insert-before f-cursor a-dstx))
-             (mark-this-cursor-as-up-to-date-editor!))
-           (lambda ()
-             (send current-text end-edit-sequence)
-             (send current-text end-dstx-edit-sequence)))))
+             (mark-this-cursor-as-up-to-date-editor!)))))
       
       
-      
+      ;; insert-after!: dstx -> void
+      ;; Insert a dstx after the current focus.
       (define/public (insert-after! a-dstx)
         (resynchronize-with-main-editing-cursor!)
         (let ([a-dstx (dstx-attach-local-ids a-dstx)])
-          (dynamic-wind
-           (lambda ()
-             (send current-text begin-dstx-edit-sequence)
-             (send current-text begin-edit-sequence))
+          (with-structured-editing
            (lambda ()
              (send current-text set-position (cursor-endpos) 'same #f #f 'local)
              #;(printf "inserting ~a~n" a-dstx)
              (pretty-print-to-text a-dstx)
              (set! f-cursor (cursor:insert-after f-cursor a-dstx))
-             (mark-this-cursor-as-up-to-date-editor!))
-           (lambda ()
-             (send current-text end-edit-sequence)
-             (send current-text end-dstx-edit-sequence)))))
+             (mark-this-cursor-as-up-to-date-editor!)))))
       
       
+      ;; delete! -> void
+      ;; Delete the dstx at the current focus.  Focus moves preferably to the next
+      ;; oldest sibling.
       (define/public (delete!)
         (resynchronize-with-main-editing-cursor!)
-        (dynamic-wind
-         (lambda ()
-           (send current-text begin-dstx-edit-sequence)
-           (send current-text begin-edit-sequence))
+        (with-structured-editing
          (lambda ()
            (let ([deletion-length
                   (- (struct:loc-pos (cursor:loc-after
@@ -773,7 +785,4 @@
              (set! f-cursor (cursor:replace
                              f-cursor
                              (dstx-attach-local-ids (struct:cursor-dstx f-cursor))))
-             (mark-this-cursor-as-up-to-date-editor!)))
-         (lambda ()
-           (send current-text end-edit-sequence)
-           (send current-text end-dstx-edit-sequence)))))))
+             (mark-this-cursor-as-up-to-date-editor!))))))))
