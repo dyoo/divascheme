@@ -253,31 +253,45 @@
                           insert-text)
                   (void)]
                  [(can-insert? start-length from-end)
-                  (let ([edits (compute-minimal-edits
-                                (rope->vector (subrope from-text start-length from-end))
-                                (rope->vector insert-text)
-                                equal?)])
-                    (begin-edit-sequence)
-                    (printf "minimal edits are ~a~n" edits)
-                    (for-each (lambda (an-edit)
-                                (match an-edit
-                                  [(struct edit:insert (offset elts))
-                                   (cond [(char? (first elts))
-                                          ;; characters
-                                          (insert (apply string elts) (+ offset start-length) 'same #f)]
-                                         [else
-                                          ;; snip
-                                          (insert (send (first elts) copy) (+ offset start-length) 'same #f)])]
-                                  [(struct edit:delete (offset len))
-                                   (delete (+ offset start-length)
-                                           (+ offset start-length len)
-                                           #f)]))
-                              edits)
-                    (end-edit-sequence))
-                  ]
+                  
+                  (apply-text-changes from-text start-length from-end
+                                      insert-text)]
                  [else
                   (raise (make-voice-exn
-                          "I cannot edit the text. Text is read-only."))])))))))
+                          "I cannot edit the text. Text is read-only."))])))))
+      
+      
+      ;; apply-text-changes: rope number number rope -> void
+      (define (apply-text-changes from-text start-length from-end insert-text)
+        (dynamic-wind
+         (lambda ()
+           (begin-edit-sequence))
+         (lambda ()
+           (let ([edits (compute-minimal-edits
+                         (rope->vector (subrope from-text start-length from-end))
+                         (rope->vector insert-text)
+                         equal?)])
+             (for-each (lambda (an-edit)
+                         (match an-edit
+                           [(struct edit:insert (offset elts))
+                            (cond [(char? (first elts))
+                                   ;; characters
+                                   (insert (apply string elts)
+                                           (+ offset start-length) 'same #f)]
+                                  [else
+                                   ;; snip
+                                   (insert (send (first elts) copy)
+                                           (+ offset start-length) 'same #f)])]
+                           [(struct edit:delete (offset len))
+                            (delete (+ offset start-length)
+                                    (+ offset start-length len)
+                                    #f)]))
+                       edits)))
+         (lambda ()
+           (end-edit-sequence))))
+      ))
+  
+  
   
   
   
