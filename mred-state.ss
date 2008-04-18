@@ -2,9 +2,14 @@
   (require (lib "class.ss")
            (lib "struct.ss")
            (lib "mred.ss" "mred")
+           (lib "plt-match.ss")
+           (lib "list.ss")
+           (lib "pretty.ss")
            "utilities.ss"
            "structures.ss"
-           "rope.ss")
+           "rope.ss"
+           "long-prefix.ss"
+           "compute-minimal-edits.ss")
   
   (provide MrEd-state% MrEd-state<%>)
   
@@ -53,6 +58,7 @@
       ;;  * diva-message-init : a function to send messages to the user
       ;;  * window-text-init  : the text object of the window that MrEd-State should take care
       
+      
       (init window-text-init)
       (define window-text window-text-init)
       
@@ -67,12 +73,8 @@
       ;; get-rope: -> rope
       ;; Returns the rope content of the window.
       (define (get-rope)
-        (send window-text diva:-get-rope))
+        (send window-text get-rope))
       
-      ;; update-text: rope -> void
-      ;; Mutates the window to the rope's content.
-      (define (update-text rope)
-        (send window-text diva:-update-text rope))
       
       
       ;; STOP COLORING:          (send window-text freeze-colorer)
@@ -214,7 +216,7 @@
       ;; push-world: world -> void
       (define/public (push-world world)
         (unless (rope=? (World-rope world) (get-rope))
-          (update-text (World-rope world)))
+          (diva:-update-text (World-rope world)))
         (set-selection (World-cursor-position world) (World-selection-length world))
         (cond [(World-extension world)
                (let ([e (World-extension world)])
@@ -236,4 +238,81 @@
                (send window-text diva:-insertion-after-set-position-callback-set
                      (lambda () (void)))])
         
-        (send window-text diva-message (World-success-message world))))))
+        (send window-text diva-message (World-success-message world)))
+      
+      
+      
+      
+      
+      ;; Updates what's on screen with the input text rope
+      (define (diva:-update-text text)
+        (dynamic-wind
+         (lambda ()
+           (send window-text begin-edit-sequence))
+         (lambda ()
+           (update-text text))
+         (lambda ()
+           (send window-text end-edit-sequence))))
+      
+      
+      
+      
+      ;; update-text: rope -> void
+      ;; Given the content in to-text, we set the rope in mred-callback so that
+      ;; the post-condition is that (get-rope) should be the same as to-text
+      ;; (rope=? modulo specials).
+      (define (update-text to-text)
+        (let ([from-text (get-rope)])
+          (unless (rope=? to-text from-text)
+            (let*-values
+                ([(start-length end-length)
+                  (common-prefix&suffix-lengths (rope->vector from-text)
+                                                (rope->vector to-text)
+                                                vector-length
+                                                vector-ref
+                                                equal?)]
+                 [(from-end)
+                  (- (rope-length from-text) end-length)]
+                 [(to-end)
+                  (- (rope-length to-text) end-length)]
+                 [(insert-text) (subrope to-text start-length to-end)])
+              (cond
+                [(rope=? (subrope from-text start-length from-end)
+                         insert-text)
+                 (void)]
+                [(send window-text can-insert? start-length from-end)
+                 (apply-text-changes from-text start-length from-end
+                                     insert-text)]
+                [else
+                 (raise (make-voice-exn
+                         "I cannot edit the text. Text is read-only."))])))))
+      
+      
+      ;; apply-text-changes: rope number number rope -> void
+      ;; Applies the individual changes to get us to sync with the insert-text
+      ;; content.
+      (define (apply-text-changes from-text start-length from-end insert-text)
+        (let ([edits (compute-minimal-edits
+                      (rope->vector (subrope from-text start-length from-end))
+                      (rope->vector insert-text)
+                      equal?)])
+          (pretty-print edits)
+          (for-each (lambda (an-edit)
+                      (match an-edit
+                        [(struct edit:insert (offset elts))
+                         (cond [(char? (first elts))
+                                ;; characters
+                                (send window-text insert
+                                      (apply string elts)
+                                      (+ offset start-length) 'same #f)]
+                               [else
+                                ;; snip
+                                (send window-text insert
+                                      (send (first elts) copy)
+                                      (+ offset start-length) 'same #f)])]
+                        [(struct edit:delete (offset len))
+                         (send window-text delete
+                               (+ offset start-length)
+                               (+ offset start-length len)
+                               #f)]))
+                    edits))))))

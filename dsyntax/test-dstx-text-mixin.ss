@@ -532,4 +532,14 @@
               (send cursor focus-older!)
               (check-equal? (send cursor property-ref 'local-id) id2)
               (send cursor focus-older!)
-              (check-equal? (send cursor property-ref 'local-id) id3)))))))))
+              (check-equal? (send cursor property-ref 'local-id) id3))))))
+     
+     
+     (test-case
+      "inserting a newline"
+      (let* ([text (make-text-instance)])
+        (send text insert "(define (id x)\n  x)")
+        (send text insert "\n" 8)
+        (send text insert "  " 9)
+        (check-equal? (send text get-text)
+                      "(define \n  (id x)\n  x)"))))))

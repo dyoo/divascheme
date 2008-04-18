@@ -26,7 +26,8 @@
   
   (provide diva-link:frame-mixin)
   (provide diva-link:text-mixin)
-  (provide diva-link:interactions-text-mixin)
+  
+  
   
   ;; This file is the file which links every parts of DivaScheme into one:
   ;;  - the infrastructure
@@ -60,34 +61,24 @@
         (send this diva-panel-show)
         (send (get-definitions-text) to-command-mode)
         (send (get-definitions-text) enable-dstx-parsing)
-        #;(send (get-interactions-text) to-command-mode)
-        #;(send (get-interactions-text) enable-dstx-parsing)
         (set! started? #t))
       
       (define (shutdown)
         (send this diva-panel-hide)
         (send (get-definitions-text) to-normal-mode)
         (send (get-definitions-text) disable-dstx-parsing)
-        #;(send (get-interactions-text) to-normal-mode)
-        #;(send (get-interactions-text) disable-dstx-parsing)
         (set! started? #f))
       
       (define (refresh-keymaps)
-        (send (get-definitions-text) refresh-keymaps)
-        #;(send (get-interactions-text) refresh-keymaps))
+        (send (get-definitions-text) refresh-keymaps))
       
       (define/augment (on-tab-change from-tab to-tab)
         (inner (void) on-tab-change from-tab to-tab)
         (when started?
           (send (send from-tab get-defs) diva:-on-loss-focus)
-          #;(send (send from-tab get-ints) diva:-on-loss-focus)
           (send (send to-tab get-defs) diva:-on-loss-focus)
-          #;(send (send to-tab get-ints) diva:-on-loss-focus)
-          
           (send (send from-tab get-defs) to-normal-mode)
-          #;(send (send from-tab get-ints) to-normal-mode)
-          (send (send to-tab get-defs) to-command-mode)
-          #;(send (send to-tab get-ints) to-command-mode)))
+          (send (send to-tab get-defs) to-command-mode)))
       
       (define (handle-diva-central-evt evt)
         (match evt
@@ -417,13 +408,13 @@
       (define (check-good-syntax)
         (cond
           [(and (get-current-world)
-                (rope=? (diva:-get-rope)
+                (rope=? (get-rope)
                         (World-rope (get-current-world))))
            ;; Local optimization: if our rope is equal
            ;; to the one in the current-world, just reuse that.
            (void (World-syntax-list (get-current-world)))]
           [else
-           (void (rope-parse-syntax (diva:-get-rope)))]))
+           (void (rope-parse-syntax (get-rope)))]))
       
       
       ;; Insertion Mode
@@ -571,113 +562,4 @@
           [(start end)
            (set-position start end #f #t 'local)]
           [(start)
-           (set-position start 'same #f #t 'local)]))
-      
-      
-      
-      
-      ;; Returns the public-facing rope functions
-      (define/public (diva:-get-rope)
-        (get-rope))
-      
-      
-      ;; Updates what's on screen with the input text rope
-      (define/public (diva:-update-text text)
-        (dynamic-wind
-         (lambda () (begin-edit-sequence))
-         (lambda () (update-text text))
-         (lambda () (end-edit-sequence))))
-      
-      ;; update-text: rope -> void
-      ;; Given the content in to-text, we set the rope in mred-callback so that
-      ;; the post-condition is that (get-rope) should be the same as to-text
-      ;; (rope=? modulo specials).
-      (define (update-text to-text)
-        (let ([from-text (diva:-get-rope)])
-          (unless (rope=? to-text from-text)
-            (let*-values
-                ([(start-length end-length)
-                  (common-prefix&suffix-lengths (rope->vector from-text)
-                                                (rope->vector to-text)
-                                                vector-length
-                                                vector-ref
-                                                equal?)]
-                 [(from-end)
-                  (- (rope-length from-text) end-length)]
-                 [(to-end)
-                  (- (rope-length to-text) end-length)]
-                 [(insert-text) (subrope to-text start-length to-end)])
-              (cond
-                [(rope=? (subrope from-text start-length from-end)
-                         insert-text)
-                 (void)]
-                [(can-insert? start-length from-end)
-                 
-                 (apply-text-changes from-text start-length from-end
-                                     insert-text)]
-                [else
-                 (raise (make-voice-exn
-                         "I cannot edit the text. Text is read-only."))])))))
-      
-      
-      ;; apply-text-changes: rope number number rope -> void
-      (define (apply-text-changes from-text start-length from-end insert-text)
-        (let ([edits (compute-minimal-edits
-                      (rope->vector (subrope from-text start-length from-end))
-                      (rope->vector insert-text)
-                      equal?)])
-          (for-each (lambda (an-edit)
-                      (match an-edit
-                        [(struct edit:insert (offset elts))
-                         (cond [(char? (first elts))
-                                ;; characters
-                                (insert (apply string elts)
-                                        (+ offset start-length) 'same #f)]
-                               [else
-                                ;; snip
-                                (insert (send (first elts) copy)
-                                        (+ offset start-length) 'same #f)])]
-                        [(struct edit:delete (offset len))
-                         (delete (+ offset start-length)
-                                 (+ offset start-length len)
-                                 #f)]))
-                    edits)))))
-  
-  
-  
-  
-  
-  ;; diva-link:interactions-text-mixin: diva-link:text -> diva-link:interactions-text
-  ;; One additional layer on top of interactions.  Interactions are
-  ;; slightly weird because they do REPL stuff.
-  (define (diva-link:interactions-text-mixin super%)
-    (class super%
-      (super-new)
-      (inherit get-start-position
-               get-end-position
-               submit-to-port?
-               diva:-on-loss-focus)
-      
-      (define/augment (on-submit)
-        (inner (void) on-submit))
-      
-      ;; The following is extremely ugly, but has to be done: whenever
-      ;; the user presses enter, framework/private/text.ss will call
-      ;; on-local-char and interpose an on-submit if we're sending
-      ;; something to the interaction repl.  We must turn insert mode off
-      ;; before that happens, or our state gets messed up.
-      (define/override (on-local-char key)
-        (let ([start (get-start-position)]
-              [end (get-end-position)]
-              [code (send key get-key-code)])
-          (cond
-            [(not (or (eq? code 'numpad-enter)
-                      (equal? code #\return)
-                      (equal? code #\newline)))
-             (super on-local-char key)]
-            [(and (= start end)
-                  (submit-to-port? key))
-             (diva:-on-loss-focus)
-             (super on-local-char key)]
-            [else
-             (super on-local-char key)]))))))
+           (set-position start 'same #f #t 'local)])))))

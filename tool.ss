@@ -6,7 +6,6 @@
            (lib "class.ss")
            "diva-panel.ss"
            "diva-link.ss"
-           "mred-callback.ss"
            "diva-central.ss"
            "diva-file-menu.ss"
            "gui/text-rope-mixin.ss"
