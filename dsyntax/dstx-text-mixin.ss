@@ -195,6 +195,7 @@
               [(in-dstx-edit-sequence?)
                (void)]
               [else
+               (send cursor-for-editing resync!)
                (set! fcursor-before-edit
                      (send cursor-for-editing get-functional-cursor))]))
       
@@ -423,6 +424,7 @@
       ;; reparses the entire buffer.
       (define/public (reparse-all-dstxs!)
         (increment-version!)
+        (send cursor-for-editing reparse!)
         (send cursor-for-editing resync!))
       
       
@@ -537,39 +539,36 @@
       ;; operations here.
       (define f-cursor (empty-toplevel-functional-cursor))
       
-      (define (initialize)
-        (resync!))
+      (define/public (reparse!)
+        (set! f-cursor (make-toplevel-functional-cursor current-text)))
       
-      (define-syntax (set-cursor/success stx)
-        (syntax-case stx ()
-          [(_ a-cursor new-cursor-val)
-           (syntax/loc stx
-             (begin (unless new-cursor-val
-                      (error 'set-cursor "movement failed"))
-                    (set! a-cursor new-cursor-val)))]))
+      
+      (define (reuse-editing-fcursor!)
+        (set! f-cursor
+              (send (send current-text get-cursor-for-editing)
+                    get-functional-cursor)))
       
       
       ;; resync!: -> void
       ;; Refresh the cursor's view of the AST, trying our best to preserve
       ;; the focus.
       ;; When the AST is modified, we need to correct our out-of-date view
-      ;; of the AST.
+      ;; of the AST.  We assume the last-editing cursor is the most up-to-date,
+      ;; although it still might be out-of-sync with the content of the text buffer.
       ;; Protected.
       (define/public (resync!)
         (when (and (send current-text dstx-parsing-enabled?)
                    (not (= current-version (send current-text get-version))))
-          (let ([old-local-id (property-ref 'local-id)]
-                [old-pos (cursor-pos)])
+          (let ([old-local-id (cursor:property-ref f-cursor 'local-id)]
+                [old-pos (cursor:cursor-pos f-cursor)])
             ;; If the previous set is unsound, let's go back to the
             ;; slow-but-safe option.
             (cond
               [(eq? this (send current-text get-cursor-for-editing))
-               (set! f-cursor (make-toplevel-functional-cursor current-text))]
+               (void)]
               [else
                ;; optimization: try to reuse the cursor that was last used for editing.
-               (set! f-cursor
-                     (send (send current-text get-cursor-for-editing)
-                           get-functional-cursor))])
+               (reuse-editing-fcursor!)])
             (cond
               [(cursor:focus-find-dstx
                 f-cursor
@@ -593,81 +592,114 @@
       
       ;; Getters
       (define/public (cursor-dstx)
+        (resync!)
         (struct:cursor-dstx f-cursor))
       
       (define/public (cursor-line)
+        (resync!)
         (cursor:cursor-line f-cursor))
       
       (define/public (cursor-col)
+        (resync!)
         (cursor:cursor-col f-cursor))
       
       (define/public (cursor-pos)
+        (resync!)
         (cursor:cursor-pos f-cursor))
       
       (define/public (cursor-endpos)
+        (resync!)
         (cursor:cursor-endpos f-cursor))
       
       (define/public (cursor-toplevel-dstxs)
+        (resync!)
         (cursor:cursor-toplevel-dstxs f-cursor))
       
       ;; Property get and set
       (define/public (property-ref a-name)
+        (resync!)
         (cursor:property-ref f-cursor a-name))
       
       (define/public (property-set! a-name a-val)
+        (resync!)
         (cursor:property-set f-cursor a-name a-val))
       
       
+      (define-syntax (set-cursor/success stx)
+        (syntax-case stx ()
+          [(_ a-cursor new-cursor-val)
+           (syntax/loc stx
+             (begin (unless new-cursor-val
+                      (error 'set-cursor "movement failed"))
+                    (set! a-cursor new-cursor-val)))]))
+      
       ;; Focusers
       (define/public (focus-in!)
+        (resync!)
         (set-cursor/success f-cursor (cursor:focus-in f-cursor)))
       
       (define/public (focus-in/no-snap!)
+        (resync!)
         (set-cursor/success f-cursor (cursor:focus-in/no-snap f-cursor)))
       
       (define/public (focus-out!)
+        (resync!)
         (set-cursor/success f-cursor (cursor:focus-out f-cursor)))
       
       (define/public (focus-older!)
+        (resync!)
         (set-cursor/success f-cursor (cursor:focus-older f-cursor)))
       
       (define/public (focus-older/no-snap!)
+        (resync!)
         (set-cursor/success f-cursor (cursor:focus-older/no-snap f-cursor)))
       
       (define/public (focus-oldest!)
+        (resync!)
         (set-cursor/success f-cursor (cursor:focus-oldest f-cursor)))
       
       (define/public (focus-younger!)
+        (resync!)
         (set-cursor/success f-cursor (cursor:focus-younger f-cursor)))
       
       (define/public (focus-younger/no-snap!)
+        (resync!)
         (set-cursor/success f-cursor (cursor:focus-younger/no-snap f-cursor)))
       
       (define/public (focus-youngest!)
+        (resync!)
         (set-cursor/success f-cursor (cursor:focus-youngest f-cursor)))
       
       (define/public (focus-successor!)
+        (resync!)
         (set-cursor/success f-cursor (cursor:focus-successor f-cursor)))
       
       (define/public (focus-successor/no-snap!)
+        (resync!)
         (set-cursor/success f-cursor (cursor:focus-successor/no-snap f-cursor)))
       
       (define/public (focus-predecessor!)
+        (resync!)
         (set-cursor/success f-cursor (cursor:focus-predecessor f-cursor)))
       
       (define/public (focus-predecessor/no-snap!)
+        (resync!)
         (set-cursor/success f-cursor (cursor:focus-predecessor/no-snap f-cursor)))
       
       (define/public (focus-toplevel!)
+        (resync!)
         (set-cursor/success f-cursor (cursor:focus-toplevel f-cursor)))
       
       (define/public (focus-container! a-pos)
+        (resync!)
         (set-cursor/success f-cursor (cursor:focus-container f-cursor a-pos)))
       
       (define/public (focus-pos! a-pos)
+        (resync!)
         (set-cursor/success f-cursor (cursor:focus-pos f-cursor a-pos)))
       
       (define/public (focus-endpos a-pos)
+        (resync!)
         (set-cursor/success f-cursor (cursor:focus-endpos f-cursor a-pos)))
       
       
@@ -761,6 +793,4 @@
              (set! current-version (send current-text get-version))))
          (lambda ()
            (send current-text end-edit-sequence)
-           (send current-text end-dstx-edit-sequence))))
-      
-      (initialize))))
+           (send current-text end-dstx-edit-sequence)))))))
