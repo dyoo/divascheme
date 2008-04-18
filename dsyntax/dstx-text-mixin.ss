@@ -149,8 +149,6 @@
       ;; Warning: do NOT expose this to the outside world.
       ;; This is the very last used cursor that edited this window.
       (define cursor-for-editing (get-dstx-cursor))
-      (define fcursor-before-edit
-        (send cursor-for-editing get-functional-cursor))
       
       (define/public (get-cursor-for-editing)
         cursor-for-editing)
@@ -187,24 +185,12 @@
         (> dstx-edit-depth 0))
       
       
-      ;; Maybe save fcursor before edit
-      (define (maybe-save-fcursor-before-edit)
-        (cond [(not parsing-enabled?)
-               (void)]
-              [(in-dstx-edit-sequence?)
-               (void)]
-              [else
-               (set! fcursor-before-edit
-                     (send cursor-for-editing get-functional-cursor))]))
-      
       
       (define/augment (on-delete start-pos len)
-        (maybe-save-fcursor-before-edit)
         (inner #f on-delete start-pos len))
       
       
       (define/augment (on-insert start-pos len)
-        (maybe-save-fcursor-before-edit)
         (inner #f on-insert start-pos len))
       
       
