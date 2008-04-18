@@ -431,30 +431,43 @@
                       (send a-cursor delete!))]
                    
                    [else
-                    (let ([new-dstxs (parse-between start-pos
-                                                    (+ start-pos len))])
+                    (let ([new-dstxs (parse-between start-pos (+ start-pos len))])
                       (delete-introduced-text start-pos len)
                       (insert-new-dstxs-before a-cursor new-dstxs))]))]
           
-          ;; fixme
           [(struct struct:fusion (props prefix children suffix))
-           ;; subtle: if the very previous expression is an atom, attach to it
-           ;; instead.
            (let ([fcursor (send a-cursor get-functional-cursor)])
-             (when (and (cursor:focus-younger/no-snap fcursor)
-                        (struct:atom? (struct:cursor-dstx (cursor:focus-younger/no-snap fcursor)))
-                        (= (cursor:cursor-endpos (cursor:focus-younger/no-snap fcursor))
-                           start-pos))
-               (send a-cursor focus-younger/no-snap!))
-             ;; Delete the old, introduce the new.
-             (let ([new-dstxs (parse-between (send a-cursor cursor-pos)
-                                             (+ (send a-cursor cursor-endpos)
-                                                len))])
-               (delete-introduced-text start-pos len)
-               (insert-new-dstxs-after a-cursor new-dstxs)
-               (send a-cursor delete!)))]))
-      
-      
+             (cond
+               ;; if they're appending to an immediate atom preceding us,
+               ;; do the editing operation.
+               [(and (cursor:focus-younger/no-snap fcursor)
+                     (struct:atom? (struct:cursor-dstx (cursor:focus-younger/no-snap fcursor)))
+                     (= (cursor:cursor-endpos (cursor:focus-younger/no-snap fcursor))
+                        start-pos))
+                (let ([new-dstxs (parse-between (send a-cursor cursor-pos)
+                                                (+ (send a-cursor cursor-endpos)
+                                                   len))])
+                  (delete-introduced-text start-pos len)
+                  (send a-cursor focus-younger/no-snap!)
+                  (insert-new-dstxs-after a-cursor new-dstxs)
+                  (send a-cursor delete!))]
+               
+               ;; If their insertion is at the last child of this fusion, add them
+               ;; as a child of us, after our previous oldest element.
+               [(and (cursor:focus-oldest (cursor:focus-in/no-snap fcursor))
+                     (= (cursor:cursor-endpos (cursor:focus-oldest (cursor:focus-in/no-snap fcursor)))
+                        start-pos))
+                (let ([new-dstxs (parse-between start-pos (+ start-pos len))])
+                  (delete-introduced-text start-pos len)
+                  (send a-cursor focus-in/no-snap!)
+                  (send a-cursor focus-oldest!)
+                  (insert-new-dstxs-after a-cursor new-dstxs))]
+               
+               ;; otherwise, just parse the new structure and insert before us.
+               [else
+                (let ([new-dstxs (parse-between start-pos (+ start-pos len))])
+                  (delete-introduced-text start-pos len)
+                  (insert-new-dstxs-before a-cursor new-dstxs))]))]))
       
       
       
