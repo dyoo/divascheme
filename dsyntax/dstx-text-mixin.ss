@@ -25,9 +25,9 @@
                          enable-dstx-parsing
                          disable-dstx-parsing
                          
-                         before-structured-insert-before
-                         before-structured-insert-after
-                         before-structured-delete
+                         on-structured-insert-before
+                         on-structured-insert-after
+                         on-structured-delete
                          
                          after-structured-insert
                          after-structured-delete))
@@ -201,14 +201,14 @@
         (inner #f on-insert start-pos len))
       
       
-      (define/pubment (before-structured-insert-after a-functional-cursor a-dstx)
-        (inner #f before-structured-insert-after a-functional-cursor a-dstx))
+      (define/pubment (on-structured-insert-after a-functional-cursor a-dstx)
+        (inner #f on-structured-insert-after a-functional-cursor a-dstx))
       
-      (define/pubment (before-structured-insert-before a-functional-cursor a-dstx)
-        (inner #f before-structured-insert-before a-functional-cursor a-dstx))
+      (define/pubment (on-structured-insert-before a-functional-cursor a-dstx)
+        (inner #f on-structured-insert-before a-functional-cursor a-dstx))
       
-      (define/pubment (before-structured-delete a-functional-cursor)
-        (inner #f before-structured-delete a-functional-cursor))
+      (define/pubment (on-structured-delete a-functional-cursor)
+        (inner #f on-structured-delete a-functional-cursor))
       
       (define/pubment (after-structured-insert a-functional-cursor)
         (inner #f after-structured-insert a-functional-cursor))
@@ -767,7 +767,7 @@
       ;; Insert a dstx before the current focus.
       (define/public (insert-before! a-dstx)
         (resynchronize-with-main-editing-cursor!)
-        (send current-text before-structured-insert-before
+        (send current-text on-structured-insert-before
               (get-functional-cursor) a-dstx)
         (let ([a-dstx (dstx-attach-local-ids a-dstx)])
           (with-structured-editing
@@ -783,7 +783,7 @@
       ;; Insert a dstx after the current focus.
       (define/public (insert-after! a-dstx)
         (resynchronize-with-main-editing-cursor!)
-        (send current-text before-structured-insert-after
+        (send current-text on-structured-insert-after
               (get-functional-cursor) a-dstx)
         (let ([a-dstx (dstx-attach-local-ids a-dstx)])
           (with-structured-editing
@@ -801,7 +801,7 @@
       ;; oldest sibling.
       (define/public (delete!)
         (resynchronize-with-main-editing-cursor!)
-        (send current-text before-structured-delete (get-functional-cursor))
+        (send current-text on-structured-delete (get-functional-cursor))
         (with-structured-editing
          (lambda ()
            (let ([deletion-length
