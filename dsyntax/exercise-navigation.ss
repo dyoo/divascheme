@@ -88,15 +88,15 @@
         tree-cursor)
       
       (define/augment (on-structured-insert-before f-cursor a-dstx)
-        (inner #f on-structured-insert-before f-cursor)
+        (inner (void) on-structured-insert-before f-cursor)
         (printf "structured insert seen: ~s~n" (cursor-dstx f-cursor)))
       
       (define/augment (on-structured-insert-after f-cursor a-dstx)
-        (inner #f on-structured-insert-after f-cursor)
+        (inner (void) on-structured-insert-after f-cursor)
         (printf "structured insert seen: ~s~n" (cursor-dstx f-cursor)))
       
       (define/augment (on-structured-delete f-cursor)
-        (inner #f on-structured-delete f-cursor)
+        (inner (void) on-structured-delete f-cursor)
         (printf "structured delete seen~n"))
       
       

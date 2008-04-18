@@ -1,11 +1,19 @@
 (module dstx-text-mixin mzscheme
+  
+  ;
   ; Provides a text mixin that keeps track of an ast and allows
   ; insertions and deletions.
   ;
   ; Each element of the ast is marked with a 'local-id property.
+  ; This is used to uniquely identify nodes in the dstx tree.
   ;
-  ; When text is modified behind our back, we generate the operation
-  ; corresponding to that change, and adjust our ast accordingly.
+  ; The invariant we're trying to maintain is that the cursor that
+  ; represents our structured view is up to date with what's on screen,
+  ; except in the moment when unstructured edits happen.  The hard
+  ; work here is turning those unstructured edits into an equivalent
+  ; sequence of structured operations.
+  ;
+  
   
   (require (lib "class.ss")
            (lib "port.ss")
@@ -26,6 +34,8 @@
                          enable-dstx-parsing
                          disable-dstx-parsing
                          
+                         decorate-new-dstx
+                         
                          on-structured-insert-before
                          on-structured-insert-after
                          on-structured-delete
@@ -36,6 +46,7 @@
   (define dstx-cursor<%> (interface ()
                            get-functional-cursor
                            
+                           cursor-toplevel-dstxs
                            cursor-dstx
                            cursor-line
                            cursor-col
@@ -121,7 +132,7 @@
       
       ;; top-dstxs: (listof dstx)
       ;; The toplevel dstx elements.
-      (define top-dstxs (list (dstx-attach-local-ids (struct:new-space ""))))
+      (define top-dstxs (list (decorate-new-dstx (struct:new-space ""))))
       
       (define parsing-enabled? #f)
       
@@ -193,34 +204,33 @@
         (> dstx-edit-depth 0))
       
       
-      
-      (define/augment (on-delete start-pos len)
-        (inner #f on-delete start-pos len))
-      
-      
-      (define/augment (on-insert start-pos len)
-        (inner #f on-insert start-pos len))
-      
+      ;; decorate-new-dstx: dstx -> dstx
+      ;; Add some properties to any new dstx introduced into the text.
+      ;; By default, we attach local ids.  Augment this to add additional
+      ;; properties.
+      (define/pubment (decorate-new-dstx a-dstx)
+        (let ([decorated-dstx (dstx-attach-local-ids a-dstx)])
+          (inner decorated-dstx decorate-new-dstx decorated-dstx)))
       
       (define/pubment (on-structured-insert-after a-functional-cursor a-dstx)
-        (inner #f on-structured-insert-after a-functional-cursor a-dstx))
+        (inner (void) on-structured-insert-after a-functional-cursor a-dstx))
       
       (define/pubment (on-structured-insert-before a-functional-cursor a-dstx)
-        (inner #f on-structured-insert-before a-functional-cursor a-dstx))
+        (inner (void) on-structured-insert-before a-functional-cursor a-dstx))
       
       (define/pubment (on-structured-delete a-functional-cursor)
-        (inner #f on-structured-delete a-functional-cursor))
+        (inner (void) on-structured-delete a-functional-cursor))
       
       (define/pubment (after-structured-insert a-functional-cursor)
-        (inner #f after-structured-insert a-functional-cursor))
+        (inner (void) after-structured-insert a-functional-cursor))
       
       (define/pubment (after-structured-delete a-functional-cursor)
-        (inner #f after-structured-delete a-functional-cursor))
+        (inner (void) after-structured-delete a-functional-cursor))
       
       
       ;; after-delete: number number -> void
       (define/augment (after-delete start-pos len)
-        (inner #f after-delete start-pos len)
+        (inner (void) after-delete start-pos len)
         (cond
           [(not parsing-enabled?)
            (void)]
@@ -232,7 +242,7 @@
       
       ;; after-insert: number number -> void
       (define/augment (after-insert start-pos len)
-        (inner #f after-insert start-pos len)
+        (inner (void) after-insert start-pos len)
         (cond
           [(not parsing-enabled?)
            (void)]
@@ -524,7 +534,7 @@
                                      (parse-between/unparsed start end))])
           (let* ([ip (parser:open-input-text this start end)]
                  [dstxs (parser:parse-port ip)])
-            (map dstx-attach-local-ids dstxs))))
+            (map (lambda (a-dstx) (decorate-new-dstx a-dstx)) dstxs))))
       
       
       ;; parse-with-hole: number number number number -> (listof dstx)
@@ -532,11 +542,8 @@
       (define (parse-with-hole start hole-start hole-end end)
         (with-handlers ([exn:fail? (lambda (exn)
                                      (map (lambda (a-snip)
-                                            #;(printf "parse-with-hole: the parse broke on ~s + ~s~n"
-                                                      (get-text start hole-start)
-                                                    (get-text hole-end end))
                                             (struct:dstx-property-set
-                                             (dstx-attach-local-ids
+                                             (decorate-new-dstx
                                               (struct:new-special-atom
                                                a-snip
                                                (send a-snip get-count)))
@@ -546,7 +553,8 @@
           (let* ([ip1 (parser:open-input-text this start hole-start)]
                  [ip2 (parser:open-input-text this hole-end end)]
                  [ip (input-port-append #t ip1 ip2)]
-                 [dstxs (map dstx-attach-local-ids (parser:parse-port ip))])
+                 [dstxs (map (lambda (a-dstx) (decorate-new-dstx a-dstx))
+                             (parser:parse-port ip))])
             dstxs)))
       
       
@@ -556,11 +564,10 @@
       ;; elements.  This is a catch-all for cases where we have no idea how to
       ;; parse something.
       (define (parse-between/unparsed start end)
-        #;(printf "parse-between/unparsed: the parse broke on ~s~n" (get-text start end))
         (let ([result
                (reverse (map (lambda (a-snip)
                                (struct:dstx-property-set
-                                (dstx-attach-local-ids
+                                (decorate-new-dstx
                                  (struct:new-special-atom
                                   a-snip
                                   (send a-snip get-count)))
@@ -589,23 +596,23 @@
                    (send a-snip next))])))))
   
   
-  ;; make-toplevel-functional-cursor: text -> dstx-cursor
+  ;; make-toplevel-functional-cursor: dstx-text<%> -> dstx-cursor
   ;; Creates the toplevel cursor, ensuring that every dstx in there has a local id.
   (define (make-toplevel-functional-cursor a-text)
     (let* ([dstxs (send a-text parse-between 0 (send a-text last-position))]
            [a-cursor (cursor:make-toplevel-cursor dstxs)])
       (cursor:replace
        a-cursor
-       (dstx-attach-local-ids (struct:cursor-dstx a-cursor)))))
+       (send a-text decorate-new-dstx (struct:cursor-dstx a-cursor)))))
   
   
-  ;; empty-toplevel-functional-cursor: -> dstx-cursor
+  ;; empty-toplevel-functional-cursor: dstx-text<%> -> dstx-cursor
   ;; Creates an empty toplevel cursor.
-  (define (empty-toplevel-functional-cursor)
+  (define (empty-toplevel-functional-cursor a-text)
     (let ([f-cursor (cursor:make-toplevel-cursor '())])
       (cursor:replace
        f-cursor
-       (dstx-attach-local-ids (struct:cursor-dstx f-cursor)))))
+       (send a-text decorate-new-dstx (struct:cursor-dstx f-cursor)))))
   
   
   ;; a dstx-cursor% provides a mutable interface to the functions
@@ -622,7 +629,7 @@
       
       ;; f-cursor is a functional cursor that we reassign for all the
       ;; operations here.
-      (define f-cursor (empty-toplevel-functional-cursor))
+      (define f-cursor (empty-toplevel-functional-cursor current-text))
       
       (define/public (reparse!)
         (set! f-cursor (make-toplevel-functional-cursor current-text))
@@ -852,7 +859,7 @@
         (resynchronize-with-main-editing-cursor!)
         (send current-text on-structured-insert-before
               (get-functional-cursor) a-dstx)
-        (let ([a-dstx (dstx-attach-local-ids a-dstx)])
+        (let ([a-dstx (send current-text decorate-new-dstx a-dstx)])
           (with-structured-editing
            (lambda ()
              (send current-text set-position (cursor-pos) 'same #f #f 'local)
@@ -868,7 +875,7 @@
         (resynchronize-with-main-editing-cursor!)
         (send current-text on-structured-insert-after
               (get-functional-cursor) a-dstx)
-        (let ([a-dstx (dstx-attach-local-ids a-dstx)])
+        (let ([a-dstx (send current-text decorate-new-dstx a-dstx)])
           (with-structured-editing
            (lambda ()
              (send current-text set-position (cursor-endpos) 'same #f #f 'local)
@@ -897,6 +904,6 @@
              (set! f-cursor (cursor:delete f-cursor))
              (set! f-cursor (cursor:replace
                              f-cursor
-                             (dstx-attach-local-ids (struct:cursor-dstx f-cursor))))
+                             (send current-text decorate-new-dstx (struct:cursor-dstx f-cursor))))
              (mark-this-cursor-as-up-to-date-editor!)
              (send current-text after-structured-delete f-cursor))))))))
