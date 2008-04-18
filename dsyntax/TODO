@@ -1,0 +1,13 @@
+TODO
+
+* Add more focusing methods.
+
+* Update documentation.
+
+* Make dstx-text-mixin work in the presence of text that its not
+  allowed to modify (i.e. the interaction window)
+
+* Turn exercise-navigation into a lightweight DivaScheme for demo
+  purposes.
+
+* Rename "toplevel" methods to "top" for brevity.
