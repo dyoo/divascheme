@@ -128,11 +128,6 @@
     (class (apply-callback-mixins super%)
       (inherit get-top-level-window
                get-keymap
-               get-canvas
-               
-               can-insert?
-               insert
-               delete
                
                get-rope ;; We assume we'll get this text-rope-mixin
                

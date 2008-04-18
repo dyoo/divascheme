@@ -115,12 +115,12 @@
   ;; Adds in some functionality specific to dstx maintenance.
   (define (dstx-text-mixin super%)
     (class* super% (dstx-text<%>)
-      (inherit last-position
-               get-text
-               get-start-position
+      (inherit get-start-position
                get-end-position
                set-position
+               can-insert?
                insert
+               can-delete?
                delete
                split-snip
                find-snip
@@ -300,10 +300,14 @@
       ;; temporarily put something in the deleted text's hole
       ;; to make textual parsing and deletion work.
       (define (temporarily-fill-hole deleted-start deleted-end)
-        (insert (make-string (- deleted-end deleted-start) #\X)
-                deleted-start
-                'same
-                #f))
+        (cond [(can-insert? deleted-start (- deleted-end deleted-start))
+               (insert (make-string (- deleted-end deleted-start) #\X)
+                       deleted-start
+                       'same
+                       #f)]
+              [else
+               ;; fixme: we need to take some drastic action!
+               (error 'temporarily-fill-hole)]))
       
       
       
@@ -343,7 +347,12 @@
       ;; Removes the ad-hoc inserted text without triggering a recursive call to ad-hoc
       ;; handlers.
       (define (delete-introduced-text start-pos len)
-        (delete start-pos (+ start-pos len) #f))
+        (cond
+          [(can-delete? start-pos len)
+           (delete start-pos (+ start-pos len) #f)]
+          [else
+           ;; fixme: we have to do something here!
+           (error 'delete-introduced-text)]))
       
       
       ;; inserting-at-buffer-end?: cursor number -> boolean
@@ -807,11 +816,19 @@
       ;; not scrolling.
       (define (pretty-print-to-text a-dstx)
         (define (insert-in-place a-thing)
-          (send current-text insert
-                a-thing
-                (send current-text get-start-position)
-                'same
-                #f))
+          (cond [(send current-text can-insert?
+                       (send current-text get-start-position)
+                       (if (string? a-thing)
+                           (string-length a-thing)
+                           (send a-thing count)))
+                 (send current-text insert
+                       a-thing
+                       (send current-text get-start-position)
+                       'same
+                       #f)]
+                [else
+                 ;; fixme: If this happens, we have to do something!
+                 (error 'pretty-print-to-text)]))
         (cond
           [(struct:space? a-dstx)
            (insert-in-place (struct:space-content a-dstx))]
@@ -900,7 +917,12 @@
                                       (cursor-dstx)))
                      (cursor-pos))])
              #;(printf "Deleting ~a~n" (cursor-dstx))
-             (send current-text delete (cursor-pos) (+ (cursor-pos) deletion-length) #f)
+             (cond [(send current-text can-delete? (cursor-pos) deletion-length)
+                    (send current-text delete
+                          (cursor-pos) (+ (cursor-pos) deletion-length) #f)]
+                   [else
+                    ;; fixme: I've got to do something here!
+                    (error 'delete!)])
              (set! f-cursor (cursor:delete f-cursor))
              (set! f-cursor (cursor:replace
                              f-cursor
