@@ -258,22 +258,21 @@
                                 (rope->vector insert-text)
                                 equal?)])
                     (begin-edit-sequence)
-                    (with-handlers ((exn:fail? (lambda (exn)
-                                                 (printf "~a~n" exn))))
-                      (for-each (lambda (an-edit)
-                                  (match an-edit
-                                    [(struct edit:insert (offset elts))
-                                     (cond [(char? (first elts))
-                                            ;; characters
-                                            (insert (apply string elts) (+ offset start-length) 'same #f)]
-                                           [else
-                                            ;; snip
-                                            (insert (send (first elts) copy) (+ offset start-length) 'same #f)])]
-                                    [(struct edit:delete (offset len))
-                                     (delete (+ offset start-length)
-                                             (+ offset start-length len)
-                                             #f)]))
-                                edits))
+                    (printf "minimal edits are ~a~n" edits)
+                    (for-each (lambda (an-edit)
+                                (match an-edit
+                                  [(struct edit:insert (offset elts))
+                                   (cond [(char? (first elts))
+                                          ;; characters
+                                          (insert (apply string elts) (+ offset start-length) 'same #f)]
+                                         [else
+                                          ;; snip
+                                          (insert (send (first elts) copy) (+ offset start-length) 'same #f)])]
+                                  [(struct edit:delete (offset len))
+                                   (delete (+ offset start-length)
+                                           (+ offset start-length len)
+                                           #f)]))
+                              edits)
                     (end-edit-sequence))
                   ]
                  [else
