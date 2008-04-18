@@ -218,10 +218,10 @@
       ;; TEXT STUFFS
       ;;
       
-      (inherit can-insert? insert delete begin-edit-sequence end-edit-sequence)
+      (inherit can-insert? insert delete begin-edit-sequence end-edit-sequence get-rope)
       
       (define/public (diva:-get-rope)
-        (send this get-rope))
+        (get-rope))
       
       (define/public (diva:-update-text text)
         (dynamic-wind
@@ -234,7 +234,7 @@
       ;; the post-condition is that (get-rope) should be the same as to-text
       ;; (rope=? modulo specials).
       (define (update-text to-text)
-        (let ([from-text (send this diva:-get-rope)])
+        (let ([from-text (diva:-get-rope)])
           (unless (rope=? to-text from-text)
             (let*-values
                 ([(start-length end-length)
