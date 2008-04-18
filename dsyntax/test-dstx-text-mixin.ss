@@ -158,16 +158,26 @@
         (send cursor insert-after! (new-atom "worl"))
         (send cursor insert-after! (new-space " "))
         (send cursor insert-after! (new-atom "peace"))
-        (send text insert "d" 4)
-        
-        ;; Check what's on screen...
-        (check-equal? (send text get-text) "world peace")
-        ;; As well as what's in the dstx
-        (check-equal? (map strip-local-ids (send text get-top-dstxs))
-                      (map strip-local-ids (list (new-space "")
-                                                 (new-atom "world")
-                                                 (new-space " ")
-                                                 (new-atom "peace"))))))
+        (let-values ([(id0 id1 id2 id3)
+                      (apply values (map (lambda (a-dstx) (dstx-property-ref a-dstx 'local-id))
+                                         (send cursor cursor-toplevel-dstxs)))])
+          (send text insert "d" 4)
+          
+          ;; Check what's on screen...
+          (check-equal? (send text get-text) "world peace")
+          ;; As well as what's in the dstx
+          (check-equal? (map strip-local-ids (send text get-top-dstxs))
+                        (map strip-local-ids (list (new-space "")
+                                                   (new-atom "world")
+                                                   (new-space " ")
+                                                   (new-atom "peace"))))
+          (let-values ([(new-id0 new-id1 new-id2 new-id3)
+                        (apply values (map (lambda (a-dstx) (dstx-property-ref a-dstx 'local-id))
+                                           (send cursor cursor-toplevel-dstxs)))])
+            (check-equal? id0 new-id0)
+            (check-false (equal? id1 new-id1))
+            (check-equal? id2 new-id2)
+            (check-equal? id3 new-id3)))))
      
      
      (test-case

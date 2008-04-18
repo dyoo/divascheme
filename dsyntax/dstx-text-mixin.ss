@@ -355,6 +355,15 @@
                     (send a-cursor focus-younger/no-snap!))
                   (reverse new-dstxs)))
       
+      ;; insert-new-dstxs-before: cursor (listof dstx) -> void
+      ;; Insert a sequence of dstxs before the current focus, preserving
+      ;; original focus.
+      (define (insert-new-dstxs-before a-cursor new-dstxs)
+        (for-each (lambda (new-dstx)
+                    (send a-cursor insert-before! new-dstx)
+                    (send a-cursor focus-older/no-snap!))
+                  new-dstxs))
+      
       
       ;; handle-ad-hoc-insertion-at-end: cursor number number -> void
       ;; Given an ad-hoc insertion at the end of the buffer, account
@@ -404,23 +413,28 @@
              (insert-new-dstxs-after a-cursor new-dstxs)
              (send a-cursor delete!))]
           
-          ;; fixme
           [(struct struct:space (props content))
-           ;; subtle: if the very previous expression is an atom, attach to it
-           ;; instead.
+           ;; Subtle: if the very previous expression is an atom, update that
+           ;; atom and reparse it.
+           ;; Otherwise, do an insert-before, preserving existing dstxs.
            (let ([fcursor (send a-cursor get-functional-cursor)])
-             (when (and (cursor:focus-younger/no-snap fcursor)
-                        (struct:atom? (struct:cursor-dstx (cursor:focus-younger/no-snap fcursor)))
-                        (= (cursor:cursor-endpos (cursor:focus-younger/no-snap fcursor))
-                           start-pos))
-               (send a-cursor focus-younger/no-snap!))
-             ;; Delete the old, introduce the new.
-             (let ([new-dstxs (parse-between (send a-cursor cursor-pos)
-                                             (+ (send a-cursor cursor-endpos)
-                                                len))])
-               (delete-introduced-text start-pos len)
-               (insert-new-dstxs-after a-cursor new-dstxs)
-               (send a-cursor delete!)))]
+             (cond [(and (cursor:focus-younger/no-snap fcursor)
+                         (struct:atom? (struct:cursor-dstx (cursor:focus-younger/no-snap fcursor)))
+                         (= (cursor:cursor-endpos (cursor:focus-younger/no-snap fcursor))
+                            start-pos))
+                    (send a-cursor focus-younger/no-snap!)
+                    (let ([new-dstxs (parse-between (send a-cursor cursor-pos)
+                                                    (+ (send a-cursor cursor-endpos)
+                                                       len))])
+                      (delete-introduced-text start-pos len)
+                      (insert-new-dstxs-after a-cursor new-dstxs)
+                      (send a-cursor delete!))]
+                   
+                   [else
+                    (let ([new-dstxs (parse-between start-pos
+                                                    (+ start-pos len))])
+                      (delete-introduced-text start-pos len)
+                      (insert-new-dstxs-before a-cursor new-dstxs))]))]
           
           ;; fixme
           [(struct struct:fusion (props prefix children suffix))
