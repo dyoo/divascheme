@@ -177,7 +177,44 @@
         (check-equal? (cursor-dstx (focus-container a-cursor 8))
                       (cursor-dstx a-cursor))
         (check-equal? (focus-container a-cursor 9)
-                      #f)))))
+                      #f)))
+     
+     
+     (test-case
+      "focus-container on nested fusions, when we've got more content at the end."
+      (let* ([a-dstx (new-fusion
+                      "("
+                      (list (new-fusion
+                             "("
+                             (list (new-fusion
+                                    "("
+                                    (list (new-fusion
+                                           "("
+                                           (list (new-atom "d"))
+                                           ")"))
+                                    ")"))
+                             ")"))
+                      ")")]
+             [a-cursor (focus-oldest (make-toplevel-cursor (list a-dstx (new-atom "last"))))])
+        (check-equal? (cursor-dstx (focus-container a-cursor 0)) a-dstx)
+        (check-equal? (cursor-dstx (focus-container a-cursor 1))
+                      (cursor-dstx (focus-in (focus-toplevel a-cursor))))
+        (check-equal? (cursor-dstx (focus-container a-cursor 2))
+                      (cursor-dstx (focus-in (focus-in (focus-toplevel a-cursor)))))
+        (check-equal? (cursor-dstx (focus-container a-cursor 3))
+                      (cursor-dstx (focus-in (focus-in (focus-in (focus-toplevel a-cursor))))))
+        (check-equal? (cursor-dstx (focus-container a-cursor 4))
+                      (cursor-dstx (focus-in (focus-in (focus-in (focus-in (focus-toplevel a-cursor)))))))
+        (check-equal? (cursor-dstx (focus-container a-cursor 5))
+                      (cursor-dstx (focus-in (focus-in (focus-in (focus-toplevel a-cursor))))))
+        (check-equal? (cursor-dstx (focus-container a-cursor 6))
+                      (cursor-dstx (focus-in (focus-in (focus-toplevel a-cursor)))))
+        (check-equal? (cursor-dstx (focus-container a-cursor 7))
+                      (cursor-dstx (focus-in (focus-toplevel a-cursor))))
+        (check-equal? (cursor-dstx (focus-container a-cursor 8))
+                      (cursor-dstx (focus-toplevel a-cursor)))
+        (check-equal? (cursor-dstx (focus-container a-cursor 9))
+                      (new-atom "last"))))))
   
   
   (define (test)
