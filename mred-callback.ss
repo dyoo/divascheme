@@ -2,10 +2,13 @@
   (require (lib "etc.ss")
            (lib "class.ss")
            (lib "mred.ss" "mred")
+           (lib "plt-match.ss")
+           (lib "list.ss")
            "utilities.ss"
            "long-prefix.ss"
            "rope.ss"
-           "gui/text-rope-mixin.ss")
+           "gui/text-rope-mixin.ss"
+           "compute-minimal-edits.ss")
   
   ;; Here we are defining mixins for text% and canvas% classes
   ;; whose instanciations would be handled by a mred-state%.
@@ -215,7 +218,7 @@
       ;; TEXT STUFFS
       ;;
       
-      (inherit can-insert? delete begin-edit-sequence end-edit-sequence)
+      (inherit can-insert? insert delete begin-edit-sequence end-edit-sequence)
       
       (define/public (diva:-get-rope)
         (send this get-rope))
@@ -250,11 +253,29 @@
                           insert-text)
                   (void)]
                  [(can-insert? start-length from-end)
-                  (begin-edit-sequence)
-                  (delete start-length from-end #f)
-                  (send this set-position start-length 'same #f #f 'local)
-                  (insert-rope-in-text this insert-text)
-                  (end-edit-sequence)]
+                  (let ([edits (compute-minimal-edits
+                                (rope->vector (subrope from-text start-length from-end))
+                                (rope->vector insert-text)
+                                equal?)])
+                    (begin-edit-sequence)
+                    (with-handlers ((exn:fail? (lambda (exn)
+                                                 (printf "~a~n" exn))))
+                      (for-each (lambda (an-edit)
+                                  (match an-edit
+                                    [(struct edit:insert (offset elts))
+                                     (cond [(char? (first elts))
+                                            ;; characters
+                                            (insert (apply string elts) (+ offset start-length) 'same #f)]
+                                           [else
+                                            ;; snip
+                                            (insert (send (first elts) copy) (+ offset start-length) 'same #f)])]
+                                    [(struct edit:delete (offset len))
+                                     (delete (+ offset start-length)
+                                             (+ offset start-length len)
+                                             #f)]))
+                                edits))
+                    (end-edit-sequence))
+                  ]
                  [else
                   (raise (make-voice-exn
                           "I cannot edit the text. Text is read-only."))])))))))
