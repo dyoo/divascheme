@@ -15,7 +15,6 @@
   
   (define (my-key-handler editor event)
     (local ((define a-cursor (send editor get-tree-cursor)))
-      (send a-cursor resync!)
       (send a-cursor focus-pos! (send editor get-start-position))
       (case (send event get-key-code)
         [(#\j)
