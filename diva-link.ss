@@ -60,13 +60,13 @@
       (define (startup)
         (send this diva-panel-show)
         (send (get-definitions-text) to-command-mode)
-        (send (get-definitions-text) enable-dstx-parsing)
+        #;(send (get-definitions-text) enable-dstx-parsing)
         (set! started? #t))
       
       (define (shutdown)
         (send this diva-panel-hide)
         (send (get-definitions-text) to-normal-mode)
-        (send (get-definitions-text) disable-dstx-parsing)
+        #;(send (get-definitions-text) disable-dstx-parsing)
         (set! started? #f))
       
       (define (refresh-keymaps)
