@@ -8,6 +8,7 @@
            (lib "plt-match.ss")
            (lib "errortrace-lib.ss" "errortrace")
            "interpreter.ss"
+           "long-prefix.ss"
            "dot-processing.ss"
            "operations.ss"
            "mred-state.ss"
@@ -19,6 +20,7 @@
            "diva-central.ss" 
            "rope.ss"
            "cworld.ss"
+           "compute-minimal-edits.ss"
            "gui/clipboard.ss"
            (prefix preferences: "diva-preferences.ss"))
   
@@ -136,9 +138,15 @@
       (inherit get-top-level-window
                get-keymap
                get-canvas
+               
+               can-insert?
+               insert
+               delete
+               
+               get-rope ;; We assume we'll get this text-rope-mixin
+               
                begin-edit-sequence
                end-edit-sequence
-               diva:-get-rope ;; from mred-callback mixin
                
                diva:-set-on-loss-focus
                diva:-on-loss-focus
@@ -563,7 +571,77 @@
           [(start end)
            (set-position start end #f #t 'local)]
           [(start)
-           (set-position start 'same #f #t 'local)]))))
+           (set-position start 'same #f #t 'local)]))
+      
+      
+      
+      
+      ;; Returns the public-facing rope functions
+      (define/public (diva:-get-rope)
+        (get-rope))
+      
+      
+      ;; Updates what's on screen with the input text rope
+      (define/public (diva:-update-text text)
+        (dynamic-wind
+         (lambda () (begin-edit-sequence))
+         (lambda () (update-text text))
+         (lambda () (end-edit-sequence))))
+      
+      ;; update-text: rope -> void
+      ;; Given the content in to-text, we set the rope in mred-callback so that
+      ;; the post-condition is that (get-rope) should be the same as to-text
+      ;; (rope=? modulo specials).
+      (define (update-text to-text)
+        (let ([from-text (diva:-get-rope)])
+          (unless (rope=? to-text from-text)
+            (let*-values
+                ([(start-length end-length)
+                  (common-prefix&suffix-lengths (rope->vector from-text)
+                                                (rope->vector to-text)
+                                                vector-length
+                                                vector-ref
+                                                equal?)]
+                 [(from-end)
+                  (- (rope-length from-text) end-length)]
+                 [(to-end)
+                  (- (rope-length to-text) end-length)]
+                 [(insert-text) (subrope to-text start-length to-end)])
+              (cond
+                [(rope=? (subrope from-text start-length from-end)
+                         insert-text)
+                 (void)]
+                [(can-insert? start-length from-end)
+                 
+                 (apply-text-changes from-text start-length from-end
+                                     insert-text)]
+                [else
+                 (raise (make-voice-exn
+                         "I cannot edit the text. Text is read-only."))])))))
+      
+      
+      ;; apply-text-changes: rope number number rope -> void
+      (define (apply-text-changes from-text start-length from-end insert-text)
+        (let ([edits (compute-minimal-edits
+                      (rope->vector (subrope from-text start-length from-end))
+                      (rope->vector insert-text)
+                      equal?)])
+          (for-each (lambda (an-edit)
+                      (match an-edit
+                        [(struct edit:insert (offset elts))
+                         (cond [(char? (first elts))
+                                ;; characters
+                                (insert (apply string elts)
+                                        (+ offset start-length) 'same #f)]
+                               [else
+                                ;; snip
+                                (insert (send (first elts) copy)
+                                        (+ offset start-length) 'same #f)])]
+                        [(struct edit:delete (offset len))
+                         (delete (+ offset start-length)
+                                 (+ offset start-length len)
+                                 #f)]))
+                    edits)))))
   
   
   
