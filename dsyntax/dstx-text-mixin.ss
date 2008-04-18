@@ -311,65 +311,6 @@
       ;; When the text changes without explicit structured operations, we
       ;; must maintain semi-structure.
       (define (handle-possibly-unstructured-insert start-pos len)
-        ;; not-in-something? cursor
-        ;; True only if we're inserting at the very end of something
-        (define (inserting-at-end? a-cursor)
-          (let ([fcursor (send a-cursor get-functional-cursor)])
-            (cond [(cursor:focus-container fcursor start-pos)
-                   #f]
-                  [else #t])))
-        
-        (define (delete-introduced-text)
-          (dynamic-wind (lambda () (begin-dstx-edit-sequence))
-                        (lambda () (delete start-pos (+ start-pos len) #f))
-                        (lambda () (end-dstx-edit-sequence))))
-        
-        (define (insert-new-dstxs-after a-cursor new-dstxs)
-          (for-each (lambda (new-dstx)
-                      (send a-cursor insert-after! new-dstx)
-                      (send a-cursor focus-younger/no-snap!))
-                    (reverse new-dstxs)))
-        
-        (define (insert-at-end a-cursor)
-          (send a-cursor focus-toplevel!)
-          (send a-cursor focus-oldest!)
-          (let ([fcursor (send a-cursor get-functional-cursor)])
-            (cond
-              ;; subtle: if the focus is an atom, attach to it
-              ;; instead of inserting after it.
-              [(and (struct:atom? (struct:cursor-dstx fcursor))
-                    (= (cursor:cursor-endpos fcursor) start-pos))
-               ;; Delete the old, introduce the new.
-               (let ([new-dstxs
-                      (parse-between (send a-cursor cursor-pos)
-                                     (+ (send a-cursor cursor-endpos)
-                                        len))])
-                 (delete-introduced-text)
-                 (insert-new-dstxs-after a-cursor new-dstxs)
-                 (send a-cursor delete!))]
-              [else
-               (let ([new-dstxs (parse-between start-pos (+ start-pos len))])
-                 (delete-introduced-text)
-                 (insert-new-dstxs-after a-cursor new-dstxs))])))
-        
-        (define (insert-within-something a-cursor)
-          (send a-cursor focus-container! start-pos)
-          (let ([fcursor (send a-cursor get-functional-cursor)])
-            ;; subtle: if the very previous expression is an atom, attach to it
-            ;; instead.
-            (when (and (cursor:focus-younger/no-snap fcursor)
-                       (struct:atom? (struct:cursor-dstx (cursor:focus-younger/no-snap fcursor)))
-                       (= (cursor:cursor-endpos (cursor:focus-younger/no-snap fcursor))
-                          start-pos))
-              (send a-cursor focus-younger/no-snap!)))
-          ;; Delete the old, introduce the new.
-          (let ([new-dstxs (parse-between (send a-cursor cursor-pos)
-                                          (+ (send a-cursor cursor-endpos)
-                                             len))])
-            (delete-introduced-text)
-            (insert-new-dstxs-after a-cursor new-dstxs)
-            (send a-cursor delete!)))
-        
         (define-values
           (original-start-position original-end-position)
           (values (get-start-position) (get-end-position)))
@@ -377,13 +318,87 @@
          (lambda ()
            (begin-edit-sequence))
          (lambda ()
-           (cond [(inserting-at-end? cursor-for-editing)
-                  (insert-at-end cursor-for-editing)]
+           (cond [(inserting-at-buffer-end? cursor-for-editing start-pos)
+                  (handle-ad-hoc-insertion-at-end cursor-for-editing start-pos len)]
                  [else
-                  (insert-within-something cursor-for-editing)])
+                  (handle-ad-hoc-insertion-in-container cursor-for-editing start-pos len)])
            (set-position original-start-position original-end-position #f #f 'local))
          (lambda ()
            (end-edit-sequence))))
+      
+      
+      ;; delete-introduced-text: number number -> void
+      ;; Removes the ad-hoc inserted text without triggering a recursive call to ad-hoc
+      ;; handlers.
+      (define (delete-introduced-text start-pos len)
+        (dynamic-wind (lambda () (begin-dstx-edit-sequence))
+                      (lambda () (delete start-pos (+ start-pos len) #f))
+                      (lambda () (end-dstx-edit-sequence))))
+      
+      
+      ;; inserting-at-buffer-end?: cursor number -> boolean
+      ;; True only if we're inserting at the very end of something.
+      ;; The only time that happens is if focus-container fails.
+      (define (inserting-at-buffer-end? a-cursor insert-start-pos)
+        (let ([fcursor (send a-cursor get-functional-cursor)])
+          (cond [(cursor:focus-container fcursor insert-start-pos)
+                 #f]
+                [else #t])))
+      
+      
+      ;; insert-new-dstxs-after: cursor (listof dstx) -> void
+      ;; Insert the sequence of dstxs after the current focus, preserving
+      ;; original focus.
+      (define (insert-new-dstxs-after a-cursor new-dstxs)
+        (for-each (lambda (new-dstx)
+                    (send a-cursor insert-after! new-dstx)
+                    (send a-cursor focus-younger/no-snap!))
+                  (reverse new-dstxs)))
+      
+      
+      ;; handle-ad-hoc-insertion-at-end: cursor number number -> void
+      ;; Given an ad-hoc insertion at the end of the buffer, account
+      ;; for that and adjust our structures accordingly.
+      (define (handle-ad-hoc-insertion-at-end a-cursor start-pos len)
+        (send a-cursor focus-toplevel!)
+        (send a-cursor focus-oldest!)
+        (let ([fcursor (send a-cursor get-functional-cursor)])
+          (cond
+            ;; subtle: if the focus is an atom, attach to it
+            ;; instead of inserting after it.
+            [(and (struct:atom? (struct:cursor-dstx fcursor))
+                  (= (cursor:cursor-endpos fcursor) start-pos))
+             ;; Delete the old, introduce the new.
+             (let ([new-dstxs
+                    (parse-between (send a-cursor cursor-pos)
+                                   (+ (send a-cursor cursor-endpos)
+                                      len))])
+               (delete-introduced-text start-pos len)
+               (insert-new-dstxs-after a-cursor new-dstxs)
+               (send a-cursor delete!))]
+            [else
+             (let ([new-dstxs (parse-between start-pos (+ start-pos len))])
+               (delete-introduced-text start-pos len)
+               (insert-new-dstxs-after a-cursor new-dstxs))])))
+      
+      
+      (define (handle-ad-hoc-insertion-in-container a-cursor start-pos len)
+        (send a-cursor focus-container! start-pos)
+        (let ([fcursor (send a-cursor get-functional-cursor)])
+          ;; subtle: if the very previous expression is an atom, attach to it
+          ;; instead.
+          (when (and (cursor:focus-younger/no-snap fcursor)
+                     (struct:atom? (struct:cursor-dstx (cursor:focus-younger/no-snap fcursor)))
+                     (= (cursor:cursor-endpos (cursor:focus-younger/no-snap fcursor))
+                        start-pos))
+            (send a-cursor focus-younger/no-snap!)))
+        ;; Delete the old, introduce the new.
+        (let ([new-dstxs (parse-between (send a-cursor cursor-pos)
+                                        (+ (send a-cursor cursor-endpos)
+                                           len))])
+          (delete-introduced-text start-pos len)
+          (insert-new-dstxs-after a-cursor new-dstxs)
+          (send a-cursor delete!)))
       
       
       
