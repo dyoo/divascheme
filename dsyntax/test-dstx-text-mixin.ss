@@ -417,6 +417,34 @@
      
      
      (test-case
+      "inserting in front of an empty fusion shouldn't affect the fusion's id"
+      (let ([text (make-text-instance)])
+        (send text insert "()")
+        (let* ([cursor (send text get-dstx-cursor)]
+               [_ (send cursor focus-container! 0)]
+               [old-id (send cursor property-ref 'local-id)])
+          (send text insert " " 0)
+          (check-equal? (send text get-text) " ()")
+          (send cursor focus-container! 1)
+          (check-equal? (send cursor property-ref 'local-id)
+                        old-id))))
+     
+     (test-case
+      "inserting in front of a nonempty fusion shouldn't affect the fusion's id"
+      (let ([text (make-text-instance)])
+        (send text insert "[$expr$]")
+        (let* ([cursor (send text get-dstx-cursor)]
+               [_ (send cursor focus-container! 0)]
+               [old-id (send cursor property-ref 'local-id)])
+          (send text insert " " 0)
+          (check-equal? (send text get-text) " [$expr$]")
+          (send cursor focus-container! 1)
+          (check-equal? (strip-local-ids (send cursor cursor-dstx))
+                        (strip-local-ids (new-fusion "[" (list (new-atom "$expr$")) "]")))
+          (check-equal? (send cursor property-ref 'local-id)
+                        old-id))))
+     
+     (test-case
       "deleting everything should get us back to the base state"
       (let ([text (make-text-instance)])
         (send text insert "(module  foo mzscheme)")

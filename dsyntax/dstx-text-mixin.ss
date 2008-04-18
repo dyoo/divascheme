@@ -420,8 +420,8 @@
       (define (parse-with-hole start hole-start hole-end end)
         (with-handlers ([exn:fail? (lambda (exn)
                                      (map (lambda (a-snip)
-                                            (printf "parse-with-hole: the parse broke on ~s + ~s~n"
-                                                    (get-text start hole-start)
+                                            #;(printf "parse-with-hole: the parse broke on ~s + ~s~n"
+                                                      (get-text start hole-start)
                                                     (get-text hole-end end))
                                             (struct:dstx-property-set
                                              (dstx-attach-local-ids
@@ -444,7 +444,7 @@
       ;; elements.  This is a catch-all for cases where we have no idea how to
       ;; parse something.
       (define (parse-between/unparsed start end)
-        (printf "parse-between/unparsed: the parse broke on ~s~n" (get-text start end))
+        #;(printf "parse-between/unparsed: the parse broke on ~s~n" (get-text start end))
         (let ([result
                (reverse (map (lambda (a-snip)
                                (struct:dstx-property-set
@@ -683,7 +683,7 @@
              (send current-text begin-edit-sequence))
            (lambda ()
              (send current-text set-position (cursor-pos) 'same #f #f 'local)
-             (printf "inserting ~a~n" a-dstx)
+             #;(printf "inserting ~a~n" a-dstx)
              (pretty-print-to-text a-dstx)
              (set! f-cursor (cursor:insert-before f-cursor a-dstx))
              (send current-text set-cursor-for-editing this)
@@ -704,7 +704,7 @@
              (send current-text begin-edit-sequence))
            (lambda ()
              (send current-text set-position (cursor-endpos) 'same #f #f 'local)
-             (printf "inserting ~a~n" a-dstx)
+             #;(printf "inserting ~a~n" a-dstx)
              (pretty-print-to-text a-dstx)
              (set! f-cursor (cursor:insert-after f-cursor a-dstx))
              (send current-text set-cursor-for-editing this)
@@ -727,7 +727,7 @@
                                       (struct:cursor-loc f-cursor)
                                       (cursor-dstx)))
                      (cursor-pos))])
-             (printf "Deleting ~a~n" (cursor-dstx))
+             #;(printf "Deleting ~a~n" (cursor-dstx))
              (send current-text delete (cursor-pos) (+ (cursor-pos) deletion-length) #f)
              (set! f-cursor (cursor:delete f-cursor))
              (set! f-cursor (cursor:replace
