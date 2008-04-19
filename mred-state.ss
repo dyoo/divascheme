@@ -288,6 +288,9 @@
       ;; Applies the individual changes to get us to sync with the insert-text
       ;; content.
       (define (apply-text-changes from-text start-length from-end insert-text)
+        (printf "apply-text-changes: deleting ~s~n"
+                (send window-text get-text start-length from-end))
+        (printf "apply-text-changes: inserting ~s~n" (rope->string insert-text))
         (send window-text delete start-length from-end #f)
         (send window-text set-position start-length 'same #f #f 'local)
         (insert-rope-in-text window-text insert-text)))))

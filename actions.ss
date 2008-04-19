@@ -408,9 +408,9 @@
          (define (apply-template template symbol/false)
            (let ([format-string (cond [(and symbol/false
                                             (string-prefix? "#<<" (symbol->string symbol/false)))
-                                       " ~a"]
+                                       "~a"]
                                       [else
-                                       " ~a "])])
+                                       "~a"])])
              (string->rope
               (format format-string (if template
                                         (shape-paren (and square? 'Square) template)
@@ -459,15 +459,15 @@
                                              (add1 (modulo template-number number-of-templates))
                                              number-of-templates)))])
                     (values text world template))))])))
-      
-      (let-values ([(text world template)
+      (let-values ([(text expanded-world template)
                     (get-expanded-text&world)])
         (let* ([world
                 (print-mem*
                  'command-indent/selection
                  (indent/selection
                   (replace/selection
-                   (dedouble-ellipsis world) text)))])
+                   (dedouble-ellipsis expanded-world) text)))])
+          (printf "command: I replaced the selection with ~s~n" (rope->string text))
           (if template
               (holder world)
               (step-to-the-right world))))))
