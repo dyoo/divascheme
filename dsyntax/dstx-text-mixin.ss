@@ -389,25 +389,15 @@
       (define (handle-ad-hoc-insertion-at-end a-cursor start-pos len)
         (send a-cursor focus-toplevel!)
         (send a-cursor focus-oldest!)
-        (let ([fcursor (send a-cursor get-functional-cursor)])
-          (cond
-            ;; subtle: if the focus is an atom, attach to it
-            ;; instead of inserting after it.
-            [(and (struct:atom? (struct:cursor-dstx fcursor))
-                  (= (cursor:cursor-endpos fcursor) start-pos)
-                  (not (all-whitespace-between? start-pos (+ start-pos len))))
-             ;; Delete the old, introduce the new.
-             (let ([new-dstxs
-                    (parse-between (send a-cursor cursor-pos)
-                                   (+ (send a-cursor cursor-endpos)
-                                      len))])
-               (delete-introduced-text start-pos len)
-               (insert-new-dstxs-after a-cursor new-dstxs)
-               (send a-cursor delete!))]
-            [else
-             (let ([new-dstxs (parse-between start-pos (+ start-pos len))])
-               (delete-introduced-text start-pos len)
-               (insert-new-dstxs-after a-cursor new-dstxs))])))
+        (cond
+          ;; subtle: if the focus is on an atom, do some special
+          ;; processing.
+          [(dstx-atomic? (send a-cursor cursor-dstx))
+           (insert-on-focused-atom a-cursor start-pos len)]
+          [else
+           (let ([new-dstxs (parse-between start-pos (+ start-pos len))])
+             (delete-introduced-text start-pos len)
+             (insert-new-dstxs-after a-cursor new-dstxs))]))
       
       
       ;; dstx-atomic?: dstx -> boolean
