@@ -328,11 +328,7 @@
                            (rope-append a-rope (string->rope closer))]
                           [else a-rope])))
             (let ([spaced-rope
-                   (rope-append (if pending-open closed-rope
-                                    (rope-append (string->rope " ")
-                                                 closed-rope))
-                                (string->rope " "))])
-              (printf "eval-text: about to evaluate: ~a~n" (rope->string spaced-rope))
+                   (rope-append closed-rope (string->rope " "))])
               (consume-text world-at-beginning-of-insert
                             pending-open spaced-rope)
               (begin-symbol-insertion/nothing-pending))))))
