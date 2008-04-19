@@ -41,7 +41,9 @@
                          on-structured-delete
                          
                          after-structured-insert
-                         after-structured-delete))
+                         after-structured-delete
+                         
+                         get-dstx-cursor-class))
   
   (define dstx-cursor<%> (interface ()
                            get-functional-cursor
@@ -155,11 +157,17 @@
         (set! version (add1 version)))
       
       
+      ;; dstx-cursors constructed by this text will
+      ;; have the following class.
+      (define/pubment (get-dstx-cursor-class base-class)
+        (inner base-class get-dstx-cursor-class base-class))
+      
+      
       ;; Returns a toplevel cursor into the dstx.
       ;; Operations performed with the cursor will be reflected
       ;; back on screen.
       (define/public (get-dstx-cursor)
-        (new dstx-cursor% [text this]))
+        (new (get-dstx-cursor-class dstx-cursor%) [text this]))
       
       
       ;; We keep a dstx-cursor that's used primarily for the
