@@ -95,8 +95,13 @@
   
   
   ;; dstx-property-ref: dstx symbol -> any
-  (define (dstx-property-ref a-dstx a-sym)
-    (table:lookup a-sym (dstx-properties a-dstx)))
+  ;; Looks up a property.  If the lookup fails, calls the fail thunk
+  (define dstx-property-ref
+    (case-lambda
+      [(a-dstx a-sym fail-f)
+       (table:lookup a-sym (dstx-properties a-dstx) fail-f)]
+      [(a-dstx a-sym)
+       (table:lookup a-sym (dstx-properties a-dstx))]))
   
   
   ;; dstx-property-set: dstx symbol any -> dstx
@@ -170,7 +175,8 @@
             [suffix string?])]
    
    [dstx-property-names (dstx? . -> . (listof symbol?))]
-   [dstx-property-ref (dstx? symbol? . -> . any)]
+   [dstx-property-ref (case-> (dstx? symbol? . -> . any)
+                              (dstx? symbol? (-> any) . -> . any))]
    [dstx-property-set (dstx? symbol? any/c . -> . dstx?)]
    
    [new-atom (string? . -> . atom?)]

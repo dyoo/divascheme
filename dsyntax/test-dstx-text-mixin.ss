@@ -588,4 +588,17 @@
         (send text insert "c" 3)
         (send a-cursor focus-in!)
         (check-equal? (strip-local-ids (send a-cursor cursor-dstx))
-                      (strip-local-ids (new-atom "abc"))))))))
+                      (strip-local-ids (new-atom "abc")))))
+     
+     
+     (test-case
+      "inserting a string piecemeal will eventually parse."
+      (let* ([text (make-text-instance)]
+             [a-cursor (send text get-dstx-cursor)])
+        (send text insert "\"")
+        (send text insert "a")
+        (send text insert "b")
+        (send text insert "c")
+        (send text insert "\"")
+        (check-equal? (strip-local-ids (send a-cursor cursor-dstx))
+                      (strip-local-ids (new-atom "\"abc\""))))))))

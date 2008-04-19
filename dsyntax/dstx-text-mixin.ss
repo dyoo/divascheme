@@ -417,42 +417,45 @@
             (struct:special-atom? a-dstx)))
       
       
+      ;; Assuming focus is currently on the atom, do the insert that
+      ;; best preserves the atom.  We don't try to preserve if
+      ;; the focused atom is a special unparsed atom, though.
+      (define (insert-on-focused-atom a-cursor start-pos len)
+        (cond
+          ;; If we're adding whitespace before us, just add it before us.
+          [(and (= start-pos (send a-cursor cursor-pos))
+                (not (special-atom-unparsed? (send a-cursor cursor-dstx)))
+                (all-whitespace-between? start-pos (+ start-pos len)))
+           (let ([new-dstxs (parse-between start-pos (+ start-pos len))])
+             (delete-introduced-text start-pos len)
+             (insert-new-dstxs-before a-cursor new-dstxs))]
+          
+          ;; And if the whitespace is after us, do a similar thing.
+          [(and (= start-pos (send a-cursor cursor-endpos))
+                (not (special-atom-unparsed? (send a-cursor cursor-dstx)))
+                (all-whitespace-between? start-pos (+ start-pos len)))
+           (let ([new-dstxs (parse-between start-pos (+ start-pos len))])
+             (delete-introduced-text start-pos len)
+             (insert-new-dstxs-after a-cursor new-dstxs))]
+          
+          ;; Otherwise, delete the old atom, and introduce a reparsed thing in its place
+          [else
+           (let ([new-dstxs (parse-between (send a-cursor cursor-pos)
+                                           (+ (send a-cursor cursor-endpos)
+                                              len))])
+             (delete-introduced-text start-pos len)
+             (insert-new-dstxs-after a-cursor new-dstxs)
+             (send a-cursor delete!))]))
+      
       ;; handle-ad-hoc-insertion-in-container: cursor number number -> void
       (define (handle-ad-hoc-insertion-in-container a-cursor start-pos len)
-        ;; Assuming focus is currently on the atom, do the insert that
-        ;; best preserves the atom.
-        (define (insert-on-focused-atom)
-          (cond
-            ;; If we're adding whitespace before us, just add it before us.
-            [(and (= start-pos (send a-cursor cursor-pos))
-                  (all-whitespace-between? start-pos (+ start-pos len)))
-             (let ([new-dstxs (parse-between start-pos (+ start-pos len))])
-               (delete-introduced-text start-pos len)
-               (insert-new-dstxs-before a-cursor new-dstxs))]
-            
-            ;; And if the whitespace is after us, do a similar thing.
-            [(and (= start-pos (send a-cursor cursor-endpos))
-                  (all-whitespace-between? start-pos (+ start-pos len)))
-             (let ([new-dstxs (parse-between start-pos (+ start-pos len))])
-               (delete-introduced-text start-pos len)
-               (insert-new-dstxs-after a-cursor new-dstxs))]
-            
-            ;; Otherwise, delete the old atom, and introduce a reparsed thing in its place
-            [else
-             (let ([new-dstxs (parse-between (send a-cursor cursor-pos)
-                                             (+ (send a-cursor cursor-endpos)
-                                                len))])
-               (delete-introduced-text start-pos len)
-               (insert-new-dstxs-after a-cursor new-dstxs)
-               (send a-cursor delete!))]))
-        
         (send a-cursor focus-container! start-pos)
         (match (send a-cursor cursor-dstx)
           [(struct struct:atom (props content))
-           (insert-on-focused-atom)]
+           (insert-on-focused-atom a-cursor start-pos len)]
           
           [(struct struct:special-atom (props content width))
-           (insert-on-focused-atom)]
+           (insert-on-focused-atom a-cursor start-pos len)]
           
           [(struct struct:space (props content))
            ;; Subtle: if the very previous expression is an atom, the insert is at its end,
@@ -464,7 +467,7 @@
                          (= (cursor:cursor-endpos (cursor:focus-younger/no-snap fcursor))
                             start-pos))
                     (send a-cursor focus-younger/no-snap!)
-                    (insert-on-focused-atom)]
+                    (insert-on-focused-atom a-cursor start-pos len)]
                    [else
                     (let ([new-dstxs (parse-between start-pos (+ start-pos len))])
                       (delete-introduced-text start-pos len)
@@ -480,7 +483,7 @@
                      (= (cursor:cursor-endpos (cursor:focus-younger/no-snap fcursor))
                         start-pos))
                 (send a-cursor focus-younger/no-snap!)
-                (insert-on-focused-atom)]
+                (insert-on-focused-atom a-cursor start-pos len)]
                
                ;; If their insertion is at the last child of this fusion, add them
                ;; as a child of us, after our previous oldest element.
@@ -491,7 +494,7 @@
                   [(dstx-atomic? (struct:cursor-dstx (cursor:focus-oldest (cursor:focus-in/no-snap fcursor))))
                    (send a-cursor focus-in/no-snap!)
                    (send a-cursor focus-oldest!)
-                   (insert-on-focused-atom)]
+                   (insert-on-focused-atom a-cursor start-pos len)]
                   [else
                    (let ([new-dstxs (parse-between start-pos (+ start-pos len))])
                      (delete-introduced-text start-pos len)
@@ -554,6 +557,10 @@
         (increment-version!)
         (send cursor-for-editing reparse!))
       
+      
+      ;; Returns true if this atom is special and unparsed
+      (define (special-atom-unparsed? a-dstx)
+        (struct:dstx-property-ref a-dstx 'unparsed (lambda () #f)))
       
       
       ;; parse-between: number number -> (listof dstx)
