@@ -5,7 +5,6 @@
            (lib "list.ss")
            (planet "test.ss" ("schematics" "schemeunit.plt" 2 8))
            (planet "text-ui.ss" ("schematics" "schemeunit.plt" 2 8))
-           (prefix table: (planet "table.ss" ("soegaard" "galore.plt" 3)))
            "struct.ss"
            "cursor.ss"
            "dstx-text-mixin.ss")
@@ -29,29 +28,18 @@
                   a-dstx))
   
   
-  (define empty-table
-    (let ()
-      ;; symbol-cmp: symbol symbol -> (or/c -1 0 1)
-      (define (symbol-cmp sym-1 sym-2)
-        (let ([s1 (symbol->string sym-1)]
-              [s2 (symbol->string sym-2)])
-          (cond
-            [(string<? s1 s2) -1]
-            [(string>? s1 s2) 1]
-            [else 0])))
-      (table:make-ordered symbol-cmp)))
   
   
   (define (dstx-property-strip a-dstx)
     (match a-dstx
       [(struct atom (_ content))
-       (make-atom empty-table content)]
+       (new-atom content)]
       [(struct special-atom (_ content width))
-       (make-special-atom empty-table content width)]
+       (new-special-atom content width)]
       [(struct space (_ content))
-       (make-space empty-table content)]
+       (new-space content)]
       [(struct fusion (_ prefix children suffix))
-       (make-fusion empty-table prefix children suffix)]))
+       (new-fusion prefix children suffix)]))
   
   
   (define test-dstx-text-mixin
