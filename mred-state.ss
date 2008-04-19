@@ -1,15 +1,11 @@
 (module mred-state mzscheme
   (require (lib "class.ss")
            (lib "struct.ss")
-           (lib "mred.ss" "mred")
-           (lib "plt-match.ss")
-           (lib "list.ss")
-           (lib "pretty.ss")
            "utilities.ss"
            "structures.ss"
            "rope.ss"
            "long-prefix.ss"
-           "compute-minimal-edits.ss")
+           "gui/text-rope-mixin.ss")
   
   (provide MrEd-state% MrEd-state<%>)
   
@@ -292,27 +288,6 @@
       ;; Applies the individual changes to get us to sync with the insert-text
       ;; content.
       (define (apply-text-changes from-text start-length from-end insert-text)
-        (let ([edits (compute-minimal-edits
-                      (rope->vector (subrope from-text start-length from-end))
-                      (rope->vector insert-text)
-                      equal?)])
-          (pretty-print edits)
-          (for-each (lambda (an-edit)
-                      (match an-edit
-                        [(struct edit:insert (offset elts))
-                         (cond [(char? (first elts))
-                                ;; characters
-                                (send window-text insert
-                                      (apply string elts)
-                                      (+ offset start-length) 'same #f)]
-                               [else
-                                ;; snip
-                                (send window-text insert
-                                      (send (first elts) copy)
-                                      (+ offset start-length) 'same #f)])]
-                        [(struct edit:delete (offset len))
-                         (send window-text delete
-                               (+ offset start-length)
-                               (+ offset start-length len)
-                               #f)]))
-                    edits))))))
+        (send window-text delete start-length from-end #f)
+        (send window-text set-position start-length 'same #f #f 'local)
+        (insert-rope-in-text window-text insert-text)))))
