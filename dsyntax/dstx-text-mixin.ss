@@ -237,7 +237,6 @@
           [(in-dstx-edit-sequence?)
            (void)]
           [else
-           (printf "after-delete ~a ~a~n" start-pos len)
            (handle-possibly-unstructured-delete start-pos len)]))
       
       
@@ -250,7 +249,7 @@
           [(in-dstx-edit-sequence?)
            (void)]
           [else
-           (printf "after-insert ~a ~a: ~s~n" start-pos len (send this get-text start-pos (+ start-pos len)))
+           #;(printf "after-insert ~a ~a: ~s~n" start-pos len (send this get-text start-pos (+ start-pos len)))
            (handle-possibly-unstructured-insert start-pos len)]))
       
       
@@ -275,14 +274,12 @@
            (define-values
              (original-start-position original-end-position)
              (values (get-start-position) (get-end-position)))
+           
            (let loop ([len len])
              (when (> len 0)
                (send cursor-for-editing focus-container! start-pos)
                (let ([deleted-start (max start-pos (send cursor-for-editing cursor-pos))]
-                     [deleted-end (min (+ start-pos len)
-                                       (send cursor-for-editing cursor-endpos))])
-                 ;; There's a bug here: I'm seeing deleted-end < deleted-start
-                 ;; in some case.
+                     [deleted-end (min (+ start-pos len) (send cursor-for-editing cursor-endpos))])
                  (temporarily-fill-hole deleted-start deleted-end)
                  (let ([new-dstxs
                         (parse-with-hole (send cursor-for-editing cursor-pos)
@@ -459,12 +456,14 @@
           [(struct struct:fusion (props prefix children suffix))
            (let ([fcursor (send a-cursor get-functional-cursor)])
              (cond
-               ;; if they're appending to an immediate atom preceding us,
+               ;; if they're appending non-whitespace to an immediate atom preceding us,
                ;; do the editing operation.
                [(and (cursor:focus-younger/no-snap fcursor)
                      (struct:atom? (struct:cursor-dstx (cursor:focus-younger/no-snap fcursor)))
                      (= (cursor:cursor-endpos (cursor:focus-younger/no-snap fcursor))
-                        start-pos))
+                        start-pos)
+                     (not (all-whitespace-between? start-pos (+ start-pos len))))
+                (send a-cursor focus-younger/no-snap!)
                 (let ([new-dstxs (parse-between (send a-cursor cursor-pos)
                                                 (+ (send a-cursor cursor-endpos)
                                                    len))])
@@ -491,6 +490,11 @@
                   (insert-new-dstxs-before a-cursor new-dstxs))]))]))
       
       
+      ;; all-whitespace-between?: number number -> boolean
+      ;; Returns true if everything between the start-pos and end-pos is
+      ;; whitespace.
+      (define (all-whitespace-between? start-pos end-pos)
+        (andmap struct:space? (parse-between start-pos end-pos)))
       
       
       ;; edit-within-focused-dstx? dstx-cursor number -> boolean

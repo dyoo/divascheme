@@ -549,8 +549,12 @@
       "deleting a space, then inserting a newline"
       (let* ([text (make-text-instance)])
         (send text insert "(define (id x)\n  x)")
-        (send text delete 7 1)
+        (send text delete 7 8)
+        (check-equal? (send text get-text)
+                      "(define(id x)\n  x)")
         (send text insert "\n" 7)
+        (check-equal? (send text get-text)
+                      "(define\n(id x)\n  x)")
         (send text insert " " 1)
         (check-equal? (send text get-text)
                       "( define\n(id x)\n  x)"))))))
