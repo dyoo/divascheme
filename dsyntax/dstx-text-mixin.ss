@@ -411,35 +411,44 @@
       
       ;; handle-ad-hoc-insertion-in-container: cursor number number -> void
       (define (handle-ad-hoc-insertion-in-container a-cursor start-pos len)
+        
+        (define (do-atom-stuff)
+          (cond
+            ;; If we're adding whitespace, just add it before us.
+            [(and (= start-pos (send a-cursor cursor-pos))
+                  (all-whitespace-between? start-pos (+ start-pos len)))
+             (let ([new-dstxs (parse-between start-pos (+ start-pos len))])
+               (delete-introduced-text start-pos len)
+               (insert-new-dstxs-before a-cursor new-dstxs))]
+            
+            ;; Otherwise, delete the old atom, and introduce a reparsed thing in its place
+            [else
+             (let ([new-dstxs (parse-between (send a-cursor cursor-pos)
+                                             (+ (send a-cursor cursor-endpos)
+                                                len))])
+               (delete-introduced-text start-pos len)
+               (insert-new-dstxs-after a-cursor new-dstxs)
+               (send a-cursor delete!))]))
+        
         (send a-cursor focus-container! start-pos)
+        
         (match (send a-cursor cursor-dstx)
           [(struct struct:atom (props content))
-           ;; Delete the old atom, and introduce a reparsed thing in its place
-           (let ([new-dstxs (parse-between (send a-cursor cursor-pos)
-                                           (+ (send a-cursor cursor-endpos)
-                                              len))])
-             (delete-introduced-text start-pos len)
-             (insert-new-dstxs-after a-cursor new-dstxs)
-             (send a-cursor delete!))]
+           (do-atom-stuff)]
           
           [(struct struct:special-atom (props content width))
-           ;; Delete the old, introduce the new.
-           (let ([new-dstxs (parse-between (send a-cursor cursor-pos)
-                                           (+ (send a-cursor cursor-endpos)
-                                              len))])
-             (delete-introduced-text start-pos len)
-             (insert-new-dstxs-after a-cursor new-dstxs)
-             (send a-cursor delete!))]
+           (do-atom-stuff)]
           
           [(struct struct:space (props content))
-           ;; Subtle: if the very previous expression is an atom, update that
-           ;; atom and reparse it.
+           ;; Subtle: if the very previous expression is an atom, and the insertion
+           ;; was not whitespace, then update that atom and reparse it.
            ;; Otherwise, do an insert-before, preserving existing dstxs.
            (let ([fcursor (send a-cursor get-functional-cursor)])
              (cond [(and (cursor:focus-younger/no-snap fcursor)
                          (struct:atom? (struct:cursor-dstx (cursor:focus-younger/no-snap fcursor)))
                          (= (cursor:cursor-endpos (cursor:focus-younger/no-snap fcursor))
-                            start-pos))
+                            start-pos)
+                         (not (all-whitespace-between? start-pos (+ start-pos len))))
                     (send a-cursor focus-younger/no-snap!)
                     (let ([new-dstxs (parse-between (send a-cursor cursor-pos)
                                                     (+ (send a-cursor cursor-endpos)

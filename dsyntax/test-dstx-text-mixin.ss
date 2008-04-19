@@ -557,4 +557,22 @@
                       "(define\n(id x)\n  x)")
         (send text insert " " 1)
         (check-equal? (send text get-text)
-                      "( define\n(id x)\n  x)"))))))
+                      "( define\n(id x)\n  x)")))
+     
+     (test-case
+      "inserting a space in front of an atom doesn't change the atom"
+      (let* ([text (make-text-instance)])
+        (send text insert "lambda")
+        (let-values ([(id0 id1)
+                      (apply values
+                             (map (lambda (a-dstx)
+                                    (dstx-property-ref a-dstx 'local-id))
+                                  (send text get-top-dstxs)))])
+          (send text insert " " 0)
+          (let-values ([(new-id0 new-id1 new-id2)
+                        (apply values
+                               (map (lambda (a-dstx)
+                                      (dstx-property-ref a-dstx 'local-id))
+                                    (send text get-top-dstxs)))])
+            (check-equal? id0 new-id0)
+            (check-equal? id1 new-id2))))))))
