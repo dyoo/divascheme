@@ -394,7 +394,8 @@
             ;; subtle: if the focus is an atom, attach to it
             ;; instead of inserting after it.
             [(and (struct:atom? (struct:cursor-dstx fcursor))
-                  (= (cursor:cursor-endpos fcursor) start-pos))
+                  (= (cursor:cursor-endpos fcursor) start-pos)
+                  (not (all-whitespace-between? start-pos (+ start-pos len))))
              ;; Delete the old, introduce the new.
              (let ([new-dstxs
                     (parse-between (send a-cursor cursor-pos)
@@ -440,8 +441,8 @@
            (do-atom-stuff)]
           
           [(struct struct:space (props content))
-           ;; Subtle: if the very previous expression is an atom, and the insertion
-           ;; was not whitespace, then update that atom and reparse it.
+           ;; Subtle: if the very previous expression is an atom, the insert is at its end,
+           ;; and the insertion was not whitespace, then update that atom and reparse it.
            ;; Otherwise, do an insert-before, preserving existing dstxs.
            (let ([fcursor (send a-cursor get-functional-cursor)])
              (cond [(and (cursor:focus-younger/no-snap fcursor)
