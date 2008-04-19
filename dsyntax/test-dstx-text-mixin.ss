@@ -575,4 +575,17 @@
                                       (dstx-property-ref a-dstx 'local-id))
                                     (send text get-top-dstxs)))])
             (check-equal? id0 new-id0)
-            (check-equal? id1 new-id2))))))))
+            (check-equal? id1 new-id2)))))
+     
+     
+     (test-case
+      "inserting single characters in an empty fusion should get us a single atom."
+      (let* ([text (make-text-instance)]
+             [a-cursor (send text get-dstx-cursor)])
+        (send text insert "[]")
+        (send text insert "a" 1)
+        (send text insert "b" 2)
+        (send text insert "c" 3)
+        (send a-cursor focus-in!)
+        (check-equal? (strip-local-ids (send a-cursor cursor-dstx))
+                      (strip-local-ids (new-atom "abc"))))))))
