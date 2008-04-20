@@ -79,6 +79,22 @@
                            delete!))
   
   
+  ;; This makes dstx-text-mixin and dstx-cursor friends.  The following methods
+  ;; can only be called by classes defined in this module.
+  (define-member-name parse-between (generate-member-key))
+  (define-member-name begin-dstx-edit-sequence (generate-member-key))
+  (define-member-name end-dstx-edit-sequence (generate-member-key))
+  (define-member-name get-version (generate-member-key))
+  (define-member-name increment-version! (generate-member-key))
+  (define-member-name get-cursor-for-editing (generate-member-key))
+  (define-member-name set-cursor-for-editing (generate-member-key))
+  
+  ;; Cursor methods.
+  (define-member-name insert-before!/sync-with-text (generate-member-key))
+  (define-member-name insert-after!/sync-with-text (generate-member-key))
+  (define-member-name delete!/sync-with-text (generate-member-key))
+  
+  
   ;; next-local-id: -> number
   ;; Returns the next local clock.
   (define next-local-id
@@ -102,15 +118,7 @@
   
   
   
-  ;; Made dstx-text-mixin and dstx-cursor friends.  The following methods
-  ;; can only be called by classes defined in this module.
-  (define-member-name parse-between (generate-member-key))
-  (define-member-name begin-dstx-edit-sequence (generate-member-key))
-  (define-member-name end-dstx-edit-sequence (generate-member-key))
-  (define-member-name get-version (generate-member-key))
-  (define-member-name increment-version! (generate-member-key))
-  (define-member-name get-cursor-for-editing (generate-member-key))
-  (define-member-name set-cursor-for-editing (generate-member-key))
+  
   
   
   ;; dstx-text-mixin: text% -> text%
@@ -377,7 +385,7 @@
       ;; original focus.
       (define (insert-new-dstxs-after a-cursor new-dstxs)
         (for-each (lambda (new-dstx)
-                    (send a-cursor insert-after! new-dstx)
+                    (send a-cursor insert-after!/sync-with-text new-dstx #f)
                     (send a-cursor focus-younger/no-snap!))
                   (reverse new-dstxs)))
       
@@ -386,7 +394,7 @@
       ;; original focus.
       (define (insert-new-dstxs-before a-cursor new-dstxs)
         (for-each (lambda (new-dstx)
-                    (send a-cursor insert-before! new-dstx)
+                    (send a-cursor insert-before!/sync-with-text new-dstx #f)
                     (send a-cursor focus-older/no-snap!))
                   new-dstxs))
       
@@ -404,7 +412,6 @@
            (insert-on-focused-atom a-cursor start-pos len)]
           [else
            (let ([new-dstxs (parse-between start-pos (+ start-pos len))])
-             (delete-introduced-text start-pos len)
              (insert-new-dstxs-after a-cursor new-dstxs))]))
       
       
@@ -425,7 +432,6 @@
                 (not (special-atom-unparsed? (send a-cursor cursor-dstx)))
                 (all-whitespace-between? start-pos (+ start-pos len)))
            (let ([new-dstxs (parse-between start-pos (+ start-pos len))])
-             (delete-introduced-text start-pos len)
              (insert-new-dstxs-before a-cursor new-dstxs))]
           
           ;; And if the whitespace is after us, do a similar thing.
@@ -433,7 +439,6 @@
                 (not (special-atom-unparsed? (send a-cursor cursor-dstx)))
                 (all-whitespace-between? start-pos (+ start-pos len)))
            (let ([new-dstxs (parse-between start-pos (+ start-pos len))])
-             (delete-introduced-text start-pos len)
              (insert-new-dstxs-after a-cursor new-dstxs))]
           
           ;; Otherwise, delete the old atom, and introduce a reparsed thing in its place
@@ -441,9 +446,8 @@
            (let ([new-dstxs (parse-between (send a-cursor cursor-pos)
                                            (+ (send a-cursor cursor-endpos)
                                               len))])
-             (delete-introduced-text start-pos len)
              (insert-new-dstxs-after a-cursor new-dstxs)
-             (send a-cursor delete!))]))
+             (send a-cursor delete!/sync-with-text #f))]))
       
       ;; handle-ad-hoc-insertion-in-container: cursor number number -> void
       (define (handle-ad-hoc-insertion-in-container a-cursor start-pos len)
@@ -468,7 +472,6 @@
                     (insert-on-focused-atom a-cursor start-pos len)]
                    [else
                     (let ([new-dstxs (parse-between start-pos (+ start-pos len))])
-                      (delete-introduced-text start-pos len)
                       (insert-new-dstxs-before a-cursor new-dstxs))]))]
           
           [(struct struct:fusion (props prefix children suffix))
@@ -495,7 +498,6 @@
                    (insert-on-focused-atom a-cursor start-pos len)]
                   [else
                    (let ([new-dstxs (parse-between start-pos (+ start-pos len))])
-                     (delete-introduced-text start-pos len)
                      (send a-cursor focus-in/no-snap!)
                      (send a-cursor focus-oldest!)
                      (insert-new-dstxs-after a-cursor new-dstxs))])]
@@ -503,7 +505,6 @@
                ;; otherwise, just parse the new structure and insert before us.
                [else
                 (let ([new-dstxs (parse-between start-pos (+ start-pos len))])
-                  (delete-introduced-text start-pos len)
                   (insert-new-dstxs-before a-cursor new-dstxs))]))]))
       
       
@@ -900,14 +901,23 @@
       ;; insert-before!: dstx -> void
       ;; Insert a dstx before the current focus.
       (define/public (insert-before! a-dstx)
+        (insert-before!/sync-with-text a-dstx #t))
+      
+      
+      ;; insert-before!/sync-with-text: cursor boolean -> void
+      ;; Inserts a dstx before the current focus.  If sync? is false,
+      ;; doesn't reflect textual change to the current-text.
+      ;; Protected.
+      (define/public (insert-before!/sync-with-text a-dstx sync?)
         (resynchronize-with-main-editing-cursor!)
         (send current-text on-structured-insert-before
               (get-functional-cursor) a-dstx)
         (let ([a-dstx (send current-text decorate-new-dstx a-dstx)])
           (with-structured-editing
            (lambda ()
-             (send current-text set-position (cursor-pos) 'same #f #f 'local)
-             (pretty-print-to-text a-dstx)
+             (when sync?
+               (send current-text set-position (cursor-pos) 'same #f #f 'local)
+               (pretty-print-to-text a-dstx))
              (set! f-cursor (cursor:insert-before f-cursor a-dstx))
              (mark-this-cursor-as-up-to-date-editor!)
              (send current-text after-structured-insert f-cursor)))))
@@ -916,15 +926,23 @@
       ;; insert-after!: dstx -> void
       ;; Insert a dstx after the current focus.
       (define/public (insert-after! a-dstx)
+        (insert-after!/sync-with-text a-dstx #t))
+      
+      
+      ;; insert-after!/sync-with-text: dstx boolean -> void
+      ;; Insert a dstx after the current focus.  If sync is false,
+      ;; doesn't keep in sync with current-text.
+      ;; Protected.
+      (define/public (insert-after!/sync-with-text a-dstx sync?)
         (resynchronize-with-main-editing-cursor!)
         (send current-text on-structured-insert-after
               (get-functional-cursor) a-dstx)
         (let ([a-dstx (send current-text decorate-new-dstx a-dstx)])
           (with-structured-editing
            (lambda ()
-             (send current-text set-position (cursor-endpos) 'same #f #f 'local)
-             #;(printf "inserting ~a~n" a-dstx)
-             (pretty-print-to-text a-dstx)
+             (when sync?
+               (send current-text set-position (cursor-endpos) 'same #f #f 'local)
+               (pretty-print-to-text a-dstx))
              (set! f-cursor (cursor:insert-after f-cursor a-dstx))
              (mark-this-cursor-as-up-to-date-editor!)
              (send current-text after-structured-insert f-cursor)))))
@@ -934,6 +952,15 @@
       ;; Delete the dstx at the current focus.  Focus moves preferably to the next
       ;; oldest sibling.
       (define/public (delete!)
+        (delete!/sync-with-text #t))
+      
+      
+      ;; delete!/sync-with-text: boolean -> void
+      ;; Delete the dstx at the current focus.  Focus moves preferably to the next
+      ;; oldest sibling.
+      ;; If sync is false, does not keep current-text in sync.
+      ;; Protected.
+      (define/public (delete!/sync-with-text sync?)
         (resynchronize-with-main-editing-cursor!)
         (send current-text on-structured-delete (get-functional-cursor))
         (with-structured-editing
@@ -943,16 +970,20 @@
                                       (struct:cursor-loc f-cursor)
                                       (cursor-dstx)))
                      (cursor-pos))])
-             #;(printf "Deleting ~a~n" (cursor-dstx))
-             (cond [(send current-text can-delete? (cursor-pos) deletion-length)
-                    (send current-text delete
-                          (cursor-pos) (+ (cursor-pos) deletion-length) #f)]
-                   [else
-                    ;; fixme: I've got to do something here!
-                    (error 'delete!)])
+             (when sync?
+               (cond [(send current-text can-delete? (cursor-pos) deletion-length)
+                      (send current-text delete
+                            (cursor-pos) (+ (cursor-pos) deletion-length) #f)]
+                     [else
+                      ;; fixme: I've got to do something here!
+                      (error 'delete!)]))
              (set! f-cursor (cursor:delete f-cursor))
              (set! f-cursor (cursor:replace
                              f-cursor
-                             (send current-text decorate-new-dstx (struct:cursor-dstx f-cursor))))
+                             (send current-text
+                                   decorate-new-dstx
+                                   (struct:cursor-dstx f-cursor))))
              (mark-this-cursor-as-up-to-date-editor!)
-             (send current-text after-structured-delete f-cursor))))))))
+             (send current-text after-structured-delete f-cursor)))))
+      
+      )))
