@@ -208,13 +208,17 @@
       (let* ([text (make-text-instance)]
              [cursor (send text get-dstx-cursor)])
         (send cursor insert-after! (new-fusion "("
-                                                     (list (new-atom "hello"))
-                                                     ")"))
+                                               (list (new-atom "hello"))
+                                               ")"))
         ;; Check what's on screen...
         (check-equal? (send text get-text) "(hello)")
         ;; As well as what's in the dstx
         (check-equal? (map strip-local-ids (send text get-toplevel-dstxs))
-                      (map strip-local-ids (list (new-space "") (new-fusion "(" (list (new-atom "hello")) ")"))))))
+                      (map strip-local-ids
+                           (list (new-space "")
+                                 (new-fusion "("
+                                             (list (new-atom "hello"))
+                                             ")"))))))
      
      
      (test-case
@@ -222,8 +226,8 @@
       (let* ([text (make-text-instance)]
              [cursor (send text get-dstx-cursor)])
         (send cursor insert-after! (new-fusion "("
-                                                     (list (new-atom "hello"))
-                                                     ")"))
+                                               (list (new-atom "hello"))
+                                               ")"))
         (send cursor focus-in!)
         (send cursor insert-after! (new-space " "))
         (send cursor insert-after! (new-fusion "["
@@ -267,7 +271,10 @@
         (send text insert "i")
         (check-equal? (send text get-text) "\"hi")
         (send text insert "\"")
-        (check-equal? (send text get-text) "\"hi\"")))
+        (check-equal? (send text get-text) "\"hi\"")
+        (check-equal? (map strip-local-ids (send text get-toplevel-dstxs))
+                      (map strip-local-ids (list (new-space "")
+                                                 (new-atom "\"hi\""))))))
      
      
      (test-case
@@ -358,7 +365,10 @@
         (send text insert "(x y z)")
         (send text delete 4 7)
         (check-equal? (send text get-text) "(x y")
-        (check-equal? (length (send text get-toplevel-dstxs)) 2)))
+        (check-equal? (length (send text get-toplevel-dstxs)) 2)
+        ;; fixme: this test is insufficient.  We need to see that
+        ;; we got a chunk of special-atom string snips at this point.
+        ))
      
      
      (test-case
@@ -402,7 +412,7 @@
                                                  (new-atom "world"))))))
      
      (test-case
-      "simple insertion of two atoms separated by space"
+      "simple insertion of two fusions, one added at once, and the other piecemeal"
       (let ([text (make-text-instance)])
         (send text delete 0 (send text last-position))
         (send text insert "[hello]")
@@ -411,7 +421,16 @@
         (check-equal? (send text get-text) "[hello][")
         (send text insert "]")
         (check-equal? (send text get-text)
-                      "[hello][]")))
+                      "[hello][]")
+        (check-equal? (map strip-local-ids (send text get-toplevel-dstxs))
+                      (map strip-local-ids
+                           (list (new-space "")
+                                 (new-fusion "["
+                                             (list (new-atom "hello"))
+                                             "]")
+                                 (new-fusion "["
+                                             (list)
+                                             "]"))))))
      
      
      (test-case
@@ -530,7 +549,29 @@
         (send text insert "\n" 8)
         (send text insert "  " 9)
         (check-equal? (send text get-text)
-                      "(define \n  (id x)\n  x)")))
+                      "(define \n  (id x)\n  x)")
+        (check-equal? (map strip-local-ids
+                           (send text get-toplevel-dstxs))
+                      (map strip-local-ids
+                           (list (new-space "")
+                                 (new-fusion "("
+                                             (list
+                                              (new-atom "define")
+                                              (new-space " ")
+                                              (new-space "\n")
+                                              (new-space " ")
+                                              (new-space " ")
+                                              (new-fusion "("
+                                                          (list (new-atom "id")
+                                                                (new-space " ")
+                                                                (new-atom "x"))
+                                                          ")"
+                                                          )
+                                              (new-space "\n")
+                                              (new-space " ")
+                                              (new-space " ")
+                                              (new-atom "x"))
+                                             ")"))))))
      
      
      (test-case
@@ -540,12 +581,72 @@
         (send text delete 7 8)
         (check-equal? (send text get-text)
                       "(define(id x)\n  x)")
+        (check-equal? (map strip-local-ids
+                           (send text get-toplevel-dstxs))
+                      (map strip-local-ids
+                           (list (new-space "")
+                                 (new-fusion "("
+                                             (list
+                                              (new-atom "define")
+                                              (new-fusion "("
+                                                          (list (new-atom "id")
+                                                                (new-space " ")
+                                                                (new-atom "x"))
+                                                          ")"
+                                                          )
+                                              (new-space "\n")
+                                              (new-space " ")
+                                              (new-space " ")
+                                              (new-atom "x"))
+                                             ")"))))
+        
         (send text insert "\n" 7)
         (check-equal? (send text get-text)
                       "(define\n(id x)\n  x)")
+        (check-equal? (map strip-local-ids
+                           (send text get-toplevel-dstxs))
+                      (map strip-local-ids
+                           (list (new-space "")
+                                 (new-fusion "("
+                                             (list
+                                              (new-atom "define")
+                                              (new-space "\n")
+                                              (new-fusion "("
+                                                          (list (new-atom "id")
+                                                                (new-space " ")
+                                                                (new-atom "x"))
+                                                          ")"
+                                                          )
+                                              (new-space "\n")
+                                              (new-space " ")
+                                              (new-space " ")
+                                              (new-atom "x"))
+                                             ")"))))
+        
+        
         (send text insert " " 1)
         (check-equal? (send text get-text)
-                      "( define\n(id x)\n  x)")))
+                      "( define\n(id x)\n  x)")
+        (check-equal? (map strip-local-ids
+                           (send text get-toplevel-dstxs))
+                      (map strip-local-ids
+                           (list (new-space "")
+                                 (new-fusion "("
+                                             (list
+                                              (new-space " ")
+                                              (new-atom "define")
+                                              (new-space "\n")
+                                              (new-fusion "("
+                                                          (list (new-atom "id")
+                                                                (new-space " ")
+                                                                (new-atom "x"))
+                                                          ")"
+                                                          )
+                                              (new-space "\n")
+                                              (new-space " ")
+                                              (new-space " ")
+                                              (new-atom "x"))
+                                             ")"))))))
      
      (test-case
       "inserting a space in front of an atom doesn't change the atom"
