@@ -31,7 +31,7 @@
   
   ;; indent-range: symbol number world text% (World -> World) (World -> World) -> World
   (define (indent-range mark len a-world a-text update-world-fn update-mred-fn)
-    (let* ([new-pos (max 0 (sub1 (world-marker-position a-text mark)))]
+    (let* ([new-pos (max 0 (sub1 (world-marker-position a-world mark)))]
            [new-end-pos (min (string-length (send a-text get-text))
                              (+ new-pos len))])
       (send a-text tabify-selection new-pos new-end-pos)

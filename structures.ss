@@ -570,8 +570,7 @@
    
    
    
-   [queue-imperative-operation
-    (World? (World? any/c world-fn/c (World? . -> . void?) . -> . World?) . -> . World?)]
+   [queue-imperative-operation (World? imperative-op? . -> . World?)]
    
    [world-new-marker
     ((World? number?) . ->* . (World? symbol?))]

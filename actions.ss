@@ -332,7 +332,9 @@
     (print-mem
      'dedouble-ellipsis
      (lambda ()
-       (with-handlers ([voice-exn? (lambda args world)])
+       (with-handlers ([voice-exn? (lambda (exn)
+                                     (printf "dedouble-ellipsis: ~a~n" exn)
+                                     world)])
          (let ([stxy (find-siblings-ellipsis (World-cursor-position world) (World-syntax-list world))])
            (unless stxy (raise (make-voice-exn "unable to find the next placeholder")))
            (let* ([stx (first stxy)]

@@ -346,19 +346,18 @@
              ;; into our window text.
              (send current-mred push-world world)
              
-             (set-current-world! (copy-struct World world (World-imperative-operations empty)))
              ;; We then apply the other imperative actions:
-             #;(let
-                   ([new-world
-                     (foldl
-                      (lambda (op world)
-                        (with-divascheme-handlers
-                         world
-                         (lambda ()
-                           (apply-imperative-op op
-                                                world this
-                                                (lambda (w)
-                                                  (send current-mred pull-world w))
+             (let
+                 ([new-world
+                   (foldl
+                    (lambda (op world)
+                      (with-divascheme-handlers
+                       world
+                       (lambda ()
+                         (apply-imperative-op op
+                                              world this
+                                              (lambda (w)
+                                                (send current-mred pull-world w))
                                               (lambda (w)
                                                 (send current-mred push-world w))))))
                     world
@@ -380,14 +379,17 @@
          (lambda () 
            (with-handlers ([voice-exn?
                             (lambda (exn)
+                              (printf "exception: ~s~n" exn)
                               (error-message (voice-exn-message exn))
                               default-world-on-exn)]
                            [voice-exn/world?
                             (lambda (exn)
+                              (printf "exception: ~s~n" exn)
                               (error-message (voice-exn/world-message exn))
                               (voice-exn/world-world exn))]
                            [(lambda args true)
                             (lambda (exn)
+                              (printf "exception: ~s~n" exn)
                               (error-exn exn)
                               default-world-on-exn)])
              (thunk)))
@@ -399,17 +401,19 @@
       ;; interpreter/imperative: ast world -> world
       ;; Evaluate the given ast and the world, and returns the new state of the world.
       (define (interpreter/imperative ast world)
-        (match (interpreter ast world)
-          ;; The command may refer to another file path, in which
-          ;; case we have to do some tab/frame stuff.
-          [(struct SwitchWorld (path inner-ast))
-           (let ([frame (handler:edit-file path)])
-             (when (eq? this (send frame get-editor))
-               (push-into-mred (pull-from-mred)))
-             (send (send frame get-editor) diva-ast-put inner-ast))
-           (pull-from-mred)]
-          [new-world
-           new-world]))
+        (let ([new-world (interpreter ast world)])
+          (printf "interpreter/imperative: got a new world~n")
+          (match new-world
+            ;; The command may refer to another file path, in which
+            ;; case we have to do some tab/frame stuff.
+            [(struct SwitchWorld (path inner-ast))
+             (let ([frame (handler:edit-file path)])
+               (when (eq? this (send frame get-editor))
+                 (push-into-mred (pull-from-mred)))
+               (send (send frame get-editor) diva-ast-put inner-ast))
+             (pull-from-mred)]
+            [new-world
+             new-world])))
       
       
       ;; diva-ast-put: ast -> void
