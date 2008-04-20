@@ -3,7 +3,9 @@
            (lib "etc.ss")
            (lib "list.ss")
            (lib "contract.ss")
+           (lib "struct.ss")
            (only (lib "1.ss" "srfi") last find)
+           "structures.ss"
            "utilities.ss"
            "templates.ss")
   
@@ -100,6 +102,51 @@
   ;; positions-within-least-common-parent has such an unusual signature that I
   ;; think it needs fixing.
   (provide positions-within-least-common-parent)
+  
+  
+  
+  
+  
+  
+  (provide with-selection-extension)
+  (define (with-selection-extension world fn)
+    (define (uw-pos int/stx) (if (syntax? int/stx)
+                                 (syntax-position int/stx)
+                                 int/stx))
+    (define (uw-end-pos int/stx) (if (syntax? int/stx)
+                                     (+ (syntax-position int/stx)
+                                        (syntax-span int/stx))
+                                     int/stx))
+    
+    (let* ([saved-extension (World-extension world)]
+           
+           [new-world (copy-struct World world
+                                   [World-extension #f]
+                                   [World-cursor-position (extension-puck (World-extension world))]
+                                   [World-selection-length (extension-puck-length (World-extension world))])]
+           
+           [new-position (fn new-world)]
+           
+           [new-extension (copy-struct extension saved-extension
+                                       [extension-puck (World-cursor-position new-position)]
+                                       [extension-puck-length (World-selection-length new-position)])])
+      
+      (let*-values
+          ([(p1 p2) (positions-within-least-common-parent
+                     (extension-base new-extension)
+                     (extension-puck new-extension)
+                     (World-syntax-list new-position))]
+           [(p1 p2) (if (< (uw-pos p1) (uw-pos p2)) (values p1 p2) (values p2 p1))])
+        
+        (copy-struct World new-position
+                     [World-extension new-extension]
+                     [World-cursor-position (uw-pos p1)]
+                     [World-selection-length (- (uw-end-pos p2) (uw-pos p1))]))))
+  
+  
+  
+  
+  
   
   
   (define voice-debug false)

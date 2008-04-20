@@ -339,7 +339,11 @@
            (lambda ()
              (begin-edit-sequence))
            (lambda ()
+             ;; This pushes through the initial changes in the world's content
+             ;; into our window text.
              (send current-mred push-world world)
+             
+             ;; We then apply the other imperative actions:
              (let
                  ([new-world
                    (foldl

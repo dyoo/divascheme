@@ -166,10 +166,27 @@
   (define world-fn/c (World? . -> . World?))
   
   
-  ;; queue-imperative-action: World (world window -> world) -> World
+  
+  ;; Imperative operations are applied to bring the old
+  ;; world's state to the new world's state.
+  (define-struct imperative-op ())
+  
+  ;; op:indent-range: indent the region starting from the mark
+  (define-struct (imperative-op:indent-range imperative-op) (mark len))
+  
+  ;; imperative-op:flash-last-sexp: flash the preceding s-exp
+  ;; Fixme: this should be using a mark!
+  (define-struct (imperative-op:flash-last-sexp imperative-op) ())
+  
+  ;; imperative-op:move-cursor-position: moves the cursor in some direction
+  (define-struct (imperative-op:move-cursor-position imperative-op) (direction))
+  
+  
+  
+  ;; queue-imperative-operation: World (world window [fixme: other stuff] -> world) -> World
   ;; Adds an imperative action that will be evaluated at the end of
   ;; evaluation.
-  (define (queue-imperative-action world fn)
+  (define (queue-imperative-operation world fn)
     (copy-struct World world
                  [World-imperative-actions
                   (cons fn (World-imperative-actions world))]))
@@ -299,6 +316,7 @@
        (set-World-syntax-list/lazy! a-world
                                     (rope-parse-syntax (World-rope a-world)))
        (World-syntax-list/lazy a-world)]))
+  
   
   
   
@@ -540,7 +558,20 @@
    [World-mark
     (World? . -> . (or/c false/c rope?))]
    
-   [queue-imperative-action (World? (World? any/c world-fn/c (World? . -> . void?) . -> . World?) . -> . World?)]
+   
+   [struct imperative-op ()]
+   [struct (imperative-op:indent-range imperative-op)
+           ([mark symbol?]
+            [len natural-number/c])]
+   [struct (imperative-op:flash-last-sexp imperative-op)
+           ()]
+   [struct (imperative-op:move-cursor-position imperative-op)
+           ([direction
+             (one-of/c 'home 'end 'right 'left 'up 'down)])]
+   
+   
+   [queue-imperative-operation
+    (World? (World? any/c world-fn/c (World? . -> . void?) . -> . World?) . -> . World?)]
    
    [world-new-marker
     ((World? number?) . ->* . (World? symbol?))]

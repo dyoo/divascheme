@@ -212,7 +212,7 @@
           (eval-Extend-Selection world)]
          [(struct Verb ((struct Command ('Stop-Extend-Selection)) #f #f))
           world]))) ;; Automatically turns extension off since this is not a motion command
-    ) ;; TODO
+    )
   
   
   ;; is-motion-ast?: ast -> boolean
@@ -224,39 +224,7 @@
       [else #f]))
   
   
-  (define (with-selection-extension world fn)
-    (define (uw-pos int/stx) (if (syntax? int/stx)
-                                 (syntax-position int/stx)
-                                 int/stx))
-    (define (uw-end-pos int/stx) (if (syntax? int/stx)
-                                     (+ (syntax-position int/stx)
-                                        (syntax-span int/stx))
-                                     int/stx))
-    
-    (let* ([saved-extension (World-extension world)]
-           
-           [new-world (copy-struct World world
-                                   [World-extension #f]
-                                   [World-cursor-position (extension-puck (World-extension world))]
-                                   [World-selection-length (extension-puck-length (World-extension world))])]
-           
-           [new-position (fn new-world)]
-           
-           [new-extension (copy-struct extension saved-extension
-                                       [extension-puck (World-cursor-position new-position)]
-                                       [extension-puck-length (World-selection-length new-position)])])
-      
-      (let*-values
-          ([(p1 p2) (positions-within-least-common-parent
-                     (extension-base new-extension)
-                     (extension-puck new-extension)
-                     (World-syntax-list new-position))]
-           [(p1 p2) (if (< (uw-pos p1) (uw-pos p2)) (values p1 p2) (values p2 p1))])
-        
-        (copy-struct World new-position
-                     [World-extension new-extension]
-                     [World-cursor-position (uw-pos p1)]
-                     [World-selection-length (- (uw-end-pos p2) (uw-pos p1))]))))
+  
   
   (define (world-clear world)
     (copy-struct World world
@@ -779,25 +747,9 @@
   
   
   (define (eval-line-motion world direction)
-    (queue-imperative-action 
+    (queue-imperative-operation
      (world-clear world)
-     (lambda (world window update-world-fn update-mred-fn)
-       (define (callback world)
-         (send window diva:-insertion-after-set-position-callback-set (lambda () ()))
-         (send window set-position (pos->index (World-cursor-position world))
-               'same #f #f 'default) ;; this may be the puck or the selection
-         (send window move-position direction)
-         (send window diva:-insertion-after-set-position-callback-reset)
-         (let ([b (box 0)])
-           (send window get-position b)
-           (copy-struct World world
-                        [World-cursor-position (index->syntax-pos (unbox b))]
-                        [World-selection-length 0])))
-       (let ([w (if (World-extension world)
-                    (with-selection-extension world callback)
-                    (callback world))])
-         (update-mred-fn w)
-         w))))
+     (make-imperative-op:move-cursor-position direction)))
   
   
   

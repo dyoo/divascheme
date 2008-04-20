@@ -169,14 +169,10 @@
       (error 'indent/pos+len))
     
     (let-values ([(world mark) (world-new-marker world pos)])
-      (queue-imperative-action
+      (queue-imperative-operation
        world
-       (lambda (world window update-world-fn update-mred-fn)
-         (let* ([new-pos (max 0 (sub1 (world-marker-position world mark)))]
-                [new-end-pos (min (string-length (send window get-text))
-                                  (+ new-pos len))])
-           (send window tabify-selection new-pos new-end-pos)
-           (world-clear-marker (update-world-fn world) mark))))))
+       (make-imperative-op:indent-range mark len))))
+  
   
   ;; indent/selection : World -> World
   (define (indent/selection world)
@@ -188,11 +184,11 @@
   ;; cleanup-text/pos+len
   (define (cleanup-text/pos+len world pos len)
     (local
-        ((define (get-line-oriented-start-and-end start-pos end-pos)
-           (let* ([start-pos
-                   (line-pos (World-rope world) start-pos)]
-                  [start-pos
-                   (cond [(find-pos start-pos (World-syntax-list world))
+      ((define (get-line-oriented-start-and-end start-pos end-pos)
+         (let* ([start-pos
+                 (line-pos (World-rope world) start-pos)]
+                [start-pos
+                 (cond [(find-pos start-pos (World-syntax-list world))
                           => syntax-position]
                          [else start-pos])]
                   [end-pos
@@ -302,22 +298,6 @@
   
   ;; close : World -> World
   (define (close world)
-    ;; flash-last-sexp!: world text% -> world
-    ;;
-    (define (flash-last-sexp! world window update-world-fn update-mred-fn)
-      (let ([pos (send window get-backward-sexp (send window get-start-position))])
-        ;; We queue-callback this up since the highlighting fights with
-        ;; insertion mode otherwise, plus this is a low-priority item.
-        (queue-callback
-         (lambda ()
-           (when (and pos
-                      (send window get-forward-sexp pos)
-                      (open-paren?
-                       (string-ref (send window get-text pos (add1 pos)) 0)))
-             (send window flash-on pos (send window get-forward-sexp pos))))
-         #f)
-        world))
-    
     (let*-values
         ([(stxy) (find-siblings-ellipsis (World-cursor-position world)
                                          (World-syntax-list world))]
@@ -334,7 +314,9 @@
                  (if (join-ellipsis/stx? sty)
                      (anti-join/cursor world)
                      world))))])
-      (queue-imperative-action new-world flash-last-sexp!)))
+      (queue-imperative-operation
+       new-world
+       (make-imperative-op:flash-last-sexp))))
   
   
   ;; update-ellipsis : World syntax -> World
