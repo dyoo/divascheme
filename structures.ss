@@ -181,6 +181,9 @@
   ;; imperative-op:move-cursor-position: moves the cursor in some direction
   (define-struct (imperative-op:move-cursor-position imperative-op) (direction))
   
+  ;; imperative-op:transpose: transposes the s-expression at world cursor position.
+  (define-struct (imperative-op:transpose imperative-op) (original-world))
+  
   
   
   ;; queue-imperative-operation: World (world window [fixme: other stuff] -> world) -> World
@@ -563,11 +566,12 @@
    [struct (imperative-op:indent-range imperative-op)
            ([mark symbol?]
             [len natural-number/c])]
-   [struct (imperative-op:flash-last-sexp imperative-op)
-           ()]
+   [struct (imperative-op:flash-last-sexp imperative-op) ()]
    [struct (imperative-op:move-cursor-position imperative-op)
            ([direction
              (one-of/c 'home 'end 'right 'left 'up 'down)])]
+   [struct (imperative-op:transpose imperative-op) ([original-world World?])]
+   
    
    
    [queue-imperative-operation

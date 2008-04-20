@@ -21,7 +21,9 @@
       [(struct imperative-op:flash-last-sexp ())
        (flash-last-sexp a-world a-text update-world-fn update-mred-fn)]
       [(struct imperative-op:move-cursor-position (direction))
-       (move-cursor-position direction a-world a-text update-world-fn update-mred-fn)]))
+       (move-cursor-position direction a-world a-text update-world-fn update-mred-fn)]
+      [(struct imperative-op:transpose (original-world))
+       (transpose original-world a-world a-text update-world-fn update-mred-fn)]))
   
   
   
@@ -80,6 +82,14 @@
                  (callback world))])
       (update-mred-fn w)
       w))
+  
+  
+  ;; transpose: world text% (World -> World) (World -> World) -> World
+  (define (transpose original-world world window update-world-fn update-mred-fn)
+    (send window transpose-sexp (pos->index (World-cursor-position world)))
+    (copy-struct World (update-world-fn world)
+                 [World-cancel original-world]
+                 [World-undo original-world]))
   
   
   
