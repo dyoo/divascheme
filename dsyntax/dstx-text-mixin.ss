@@ -318,19 +318,6 @@
                          #f #f 'local))))
       
       
-      ;; temporarily-fill-hole: number number -> void
-      ;; temporarily put something in the deleted text's hole
-      ;; to make textual parsing and deletion work.
-      (define (temporarily-fill-hole deleted-start deleted-end)
-        (cond [(can-insert? deleted-start (- deleted-end deleted-start))
-               (insert (make-string (- deleted-end deleted-start) #\X)
-                       deleted-start
-                       'same
-                       #f)]
-              [else
-               ;; fixme: we need to take some drastic action!
-               (error 'temporarily-fill-hole)]))
-      
       
       
       ;; deletion-spans-whole-focus? dstx-cursor number number -> boolean
