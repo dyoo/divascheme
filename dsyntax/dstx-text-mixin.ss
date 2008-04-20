@@ -140,9 +140,6 @@
       
       (super-new)
       
-      ;; top-dstxs: (listof dstx)
-      ;; The toplevel dstx elements.
-      (define top-dstxs (list (decorate-new-dstx (struct:new-space ""))))
       
       (define parsing-enabled? #f)
       
