@@ -21,6 +21,7 @@
            "cworld.ss"
            "dsyntax/dsyntax.ss"
            "gui/clipboard.ss"
+           "imperative-operations.ss"
            (prefix preferences: "diva-preferences.ss"))
   
   (provide diva-link:frame-mixin)
@@ -331,9 +332,11 @@
           (error 'push-into-mred))
         (with-handlers ([voice-exn?
                          (lambda (exn)
+                           (printf "~a~n" exn)
                            (error-message (voice-exn-message exn)))]
                         [(lambda args true)
                          (lambda (exn)
+                           (printf "~a~n" exn)
                            (error-exn exn))])
           (dynamic-wind
            (lambda ()
@@ -343,25 +346,28 @@
              ;; into our window text.
              (send current-mred push-world world)
              
+             (set-current-world! (copy-struct World world (World-imperative-operations empty)))
              ;; We then apply the other imperative actions:
-             (let
-                 ([new-world
-                   (foldl
-                    (lambda (fn world)
-                      (with-divascheme-handlers
-                       world
-                       (lambda ()
-                         (fn world this
-                             (lambda (w)
-                               (send current-mred pull-world w))
-                             (lambda (w)
-                               (send current-mred push-world w))))))
+             #;(let
+                   ([new-world
+                     (foldl
+                      (lambda (op world)
+                        (with-divascheme-handlers
+                         world
+                         (lambda ()
+                           (apply-imperative-op op
+                                                world this
+                                                (lambda (w)
+                                                  (send current-mred pull-world w))
+                                              (lambda (w)
+                                                (send current-mred push-world w))))))
                     world
-                    (reverse (World-imperative-actions world)))])
+                    (reverse (World-imperative-operations world)))])
                (set-current-world! (copy-struct World new-world
-                                                [World-imperative-actions empty]))))
+                                                [World-imperative-operations empty]))))
            (lambda ()
              (end-edit-sequence)))))
+      
       
       
       ;; with-divascheme-handlers: world (-> world) -> world

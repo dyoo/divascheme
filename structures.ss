@@ -62,7 +62,7 @@
                         again
                         success-message
                         extension
-                        imperative-actions
+                        imperative-operations
                         markers
                         path) ;; read-only
     )
@@ -191,8 +191,8 @@
   ;; evaluation.
   (define (queue-imperative-operation world fn)
     (copy-struct World world
-                 [World-imperative-actions
-                  (cons fn (World-imperative-actions world))]))
+                 [World-imperative-operations
+                  (cons fn (World-imperative-operations world))]))
   
   
   
@@ -518,11 +518,7 @@
                   [again (or/c false/c Protocol-Syntax-Tree?)]
                   [success-message string?]
                   [extension (or/c false/c extension?)]
-                  [imperative-actions (listof
-                                       (World? (is-a?/c text%)
-                                               (World? . -> . World?)
-                                               (World? . -> . any)
-                                               . -> . World?))]
+                  [imperative-operations (listof imperative-op?)]
                   [markers (listof Marker?)]
                   [path (or/c false/c path-string?)])]
    
