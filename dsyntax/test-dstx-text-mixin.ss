@@ -54,7 +54,7 @@
         ;; Check what's on screen...
         (check-equal? (send text get-text) "hello")
         ;; As well as what's in the dstx
-        (check-equal? (map strip-local-ids (send text get-top-dstxs))
+        (check-equal? (map strip-local-ids (send text get-toplevel-dstxs))
                       (map strip-local-ids (list (new-space "") (new-atom "hello"))))
         (check-true (number? (send cursor property-ref 'local-id)))))
      
@@ -66,7 +66,7 @@
         (send cursor insert-after! (new-atom "hello"))
         (send cursor delete!)
         (check-equal? (send text get-text) "")
-        (check-equal? (map strip-local-ids (send text get-top-dstxs))
+        (check-equal? (map strip-local-ids (send text get-toplevel-dstxs))
                       (map strip-local-ids (list (new-space ""))))))
      
      
@@ -94,7 +94,7 @@
         ;; Check what's on screen...
         (check-equal? (send text get-text) "hello world")
         ;; As well as what's in the dstx
-        (check-equal? (map strip-local-ids (send text get-top-dstxs))
+        (check-equal? (map strip-local-ids (send text get-toplevel-dstxs))
                       (map strip-local-ids (list (new-space "")
                                                  (new-atom "hello")
                                                  (new-space " ")
@@ -119,7 +119,7 @@
         ;; Check what's on screen...
         (check-equal? (send text get-text) "goodbye world")
         ;; As well as what's in the dstx
-        (check-equal? (map strip-local-ids (send text get-top-dstxs))
+        (check-equal? (map strip-local-ids (send text get-toplevel-dstxs))
                       (map strip-local-ids (list (new-space "")
                                                  (new-atom "goodbye")
                                                  (new-space " ")
@@ -135,7 +135,7 @@
         ;; Check what's on screen...
         (check-equal? (send text get-text) "world")
         ;; As well as what's in the dstx
-        (check-equal? (map strip-local-ids (send text get-top-dstxs))
+        (check-equal? (map strip-local-ids (send text get-toplevel-dstxs))
                       (map strip-local-ids (list (new-space "") (new-atom "world"))))))
      
      
@@ -154,7 +154,7 @@
           ;; Check what's on screen...
           (check-equal? (send text get-text) "world peace")
           ;; As well as what's in the dstx
-          (check-equal? (map strip-local-ids (send text get-top-dstxs))
+          (check-equal? (map strip-local-ids (send text get-toplevel-dstxs))
                         (map strip-local-ids (list (new-space "")
                                                    (new-atom "world")
                                                    (new-space " ")
@@ -177,7 +177,7 @@
         ;; Check what's on screen...
         (check-equal? (send text get-text) "world")
         ;; As well as what's in the dstx
-        (check-equal? (map strip-local-ids (send text get-top-dstxs))
+        (check-equal? (map strip-local-ids (send text get-toplevel-dstxs))
                       (map strip-local-ids (list (new-space "")
                                                  (new-atom "world"))))))
      
@@ -195,7 +195,7 @@
         (check-equal? (send text get-start-position) 2)
         (check-equal? (send text get-end-position) 2)
         ;; As well as what's in the dstx
-        (check-equal? (map strip-local-ids (send text get-top-dstxs))
+        (check-equal? (map strip-local-ids (send text get-toplevel-dstxs))
                       (map strip-local-ids (list (new-space "") (new-atom "world"))))))
      
      
@@ -213,7 +213,7 @@
         ;; Check what's on screen...
         (check-equal? (send text get-text) "(hello)")
         ;; As well as what's in the dstx
-        (check-equal? (map strip-local-ids (send text get-top-dstxs))
+        (check-equal? (map strip-local-ids (send text get-toplevel-dstxs))
                       (map strip-local-ids (list (new-space "") (new-fusion "(" (list (new-atom "hello")) ")"))))))
      
      
@@ -233,7 +233,7 @@
         (check-equal? (send text get-text) "(hello [world])")
         ;; As well as what's in the dstx
         (check-equal? (map strip-local-ids
-                           (send text get-top-dstxs))
+                           (send text get-toplevel-dstxs))
                       (map strip-local-ids
                            (list (new-space "")
                                  (new-fusion "("
@@ -250,8 +250,8 @@
         (send text insert "(foo!")
         ;; Check what's on screen...
         (check-equal? (send text get-text) "(foo!")
-        (check-equal? (length (send text get-top-dstxs)) 2)
-        (let* ([should-be-special (second (send text get-top-dstxs))]
+        (check-equal? (length (send text get-toplevel-dstxs)) 2)
+        (let* ([should-be-special (second (send text get-toplevel-dstxs))]
                [snip (special-atom-content should-be-special)])
           (check-true (is-a? snip string-snip%))
           (check-equal? (send snip get-text 0 (send snip get-count))
@@ -277,7 +277,7 @@
           (send cursor insert-after! (new-atom "an-atom")))
         (send text delete 0 3)
         (check-equal? (send text get-text) "atom")
-        (check-equal? (map strip-local-ids (send text get-top-dstxs))
+        (check-equal? (map strip-local-ids (send text get-toplevel-dstxs))
                       (map strip-local-ids (list (new-space "")
                                                  (new-atom "atom"))))))
      
@@ -290,7 +290,7 @@
           (send cursor insert-after! (new-atom "om-bomb")))
         (send text delete 7 12)
         (check-equal? (send text get-text) "an-atom")
-        (check-equal? (map strip-local-ids (send text get-top-dstxs))
+        (check-equal? (map strip-local-ids (send text get-toplevel-dstxs))
                       (map strip-local-ids (list (new-space "")
                                                  (new-atom "an-at")
                                                  (new-atom "om"))))))
@@ -299,7 +299,7 @@
       "simple parsing"
       (let ([text (make-text-instance)])
         (send text insert "(module  foo mzscheme)")
-        (check-equal? (map strip-local-ids (send text get-top-dstxs))
+        (check-equal? (map strip-local-ids (send text get-toplevel-dstxs))
                       (map strip-local-ids
                            (list
                             (new-space "")
@@ -320,9 +320,9 @@
         (send text insert "(x y z)")
         (send text delete 0 1)
         (check-equal? (send text get-text) "x y z)")
-        (check-equal? (length (send text get-top-dstxs)) 2)
-        (check-true (special-atom? (second (send text get-top-dstxs))))
-        (check-true (dstx-property-ref (second (send text get-top-dstxs)) 'unparsed))))
+        (check-equal? (length (send text get-toplevel-dstxs)) 2)
+        (check-true (special-atom? (second (send text get-toplevel-dstxs))))
+        (check-true (dstx-property-ref (second (send text get-toplevel-dstxs)) 'unparsed))))
      
      
      (test-case
@@ -331,8 +331,8 @@
         (send text insert "(x y z)")
         (send text delete 6 7)
         (check-equal? (send text get-text) "(x y z")
-        (check-equal? (length (send text get-top-dstxs)) 2)
-        (check-true (special-atom? (second (send text get-top-dstxs))))))
+        (check-equal? (length (send text get-toplevel-dstxs)) 2)
+        (check-true (special-atom? (second (send text get-toplevel-dstxs))))))
      
      
      (test-case
@@ -341,9 +341,9 @@
         (send text insert "(x)  y z")
         (send text delete 2 3)
         (check-equal? (send text get-text) "(x  y z")
-        (check-equal? (length (send text get-top-dstxs)) 7)
-        (check-true (special-atom? (second (send text get-top-dstxs))))
-        (check-equal? (map strip-local-ids (rest (rest (send text get-top-dstxs))))
+        (check-equal? (length (send text get-toplevel-dstxs)) 7)
+        (check-true (special-atom? (second (send text get-toplevel-dstxs))))
+        (check-equal? (map strip-local-ids (rest (rest (send text get-toplevel-dstxs))))
                       (map strip-local-ids (list
                                             (new-space " ")
                                             (new-space " ")
@@ -358,7 +358,7 @@
         (send text insert "(x y z)")
         (send text delete 4 7)
         (check-equal? (send text get-text) "(x y")
-        (check-equal? (length (send text get-top-dstxs)) 2)))
+        (check-equal? (length (send text get-toplevel-dstxs)) 2)))
      
      
      (test-case
@@ -366,8 +366,8 @@
       (let ([text (make-text-instance)])
         (send text insert ")")
         (check-equal? (send text get-text) ")")
-        (check-equal? (length (send text get-top-dstxs)) 2)
-        (check-true (special-atom? (second (send text get-top-dstxs))))))
+        (check-equal? (length (send text get-toplevel-dstxs)) 2)
+        (check-true (special-atom? (second (send text get-toplevel-dstxs))))))
      
      
      (test-case
@@ -387,15 +387,15 @@
       "simple insertion of two atoms separated by space"
       (let ([text (make-text-instance)])
         (send text insert "hello")
-        (check-equal? (map strip-local-ids (send text get-top-dstxs))
+        (check-equal? (map strip-local-ids (send text get-toplevel-dstxs))
                       (map strip-local-ids (list (new-space "") (new-atom "hello"))))
         (send text insert " ")
-        (check-equal? (map strip-local-ids (send text get-top-dstxs))
+        (check-equal? (map strip-local-ids (send text get-toplevel-dstxs))
                       (map strip-local-ids (list (new-space "")
                                                  (new-atom "hello")
                                                  (new-space " "))))
         (send text insert "world")
-        (check-equal? (map strip-local-ids (send text get-top-dstxs))
+        (check-equal? (map strip-local-ids (send text get-toplevel-dstxs))
                       (map strip-local-ids (list (new-space "")
                                                  (new-atom "hello")
                                                  (new-space " ")
@@ -447,12 +447,12 @@
       (let ([text (make-text-instance)])
         (send text insert "(module  foo mzscheme)")
         (send text delete 0 (send text last-position))
-        (check-equal? (map strip-local-ids (send text get-top-dstxs))
+        (check-equal? (map strip-local-ids (send text get-toplevel-dstxs))
                       (map strip-local-ids (list (new-space ""))))
         (send text insert "hello")
         (send text insert " ")
         (send text insert "world")
-        (check-equal? (map strip-local-ids (send text get-top-dstxs))
+        (check-equal? (map strip-local-ids (send text get-toplevel-dstxs))
                       (map strip-local-ids (list (new-space "")
                                                  (new-atom "hello")
                                                  (new-space " ")
@@ -464,7 +464,7 @@
         (send text insert "(module foo mzscheme)")
         (send text insert "\n  (define x 42)" 20)
         (check-equal? (send text get-text) "(module foo mzscheme\n  (define x 42))")
-        (check-equal? (map strip-local-ids (send text get-top-dstxs))
+        (check-equal? (map strip-local-ids (send text get-toplevel-dstxs))
                       (map strip-local-ids
                            (list
                             (new-space "")
@@ -503,7 +503,7 @@
                       'local-id)])
             (send text delete 7 8)
             (check-equal? (send text get-text) "(module foo mzscheme)")
-            (check-equal? (map strip-local-ids (send text get-top-dstxs))
+            (check-equal? (map strip-local-ids (send text get-toplevel-dstxs))
                           (map strip-local-ids
                                (list
                                 (new-space "")
@@ -555,13 +555,13 @@
                       (apply values
                              (map (lambda (a-dstx)
                                     (dstx-property-ref a-dstx 'local-id))
-                                  (send text get-top-dstxs)))])
+                                  (send text get-toplevel-dstxs)))])
           (send text insert " " 0)
           (let-values ([(new-id0 new-id1 new-id2)
                         (apply values
                                (map (lambda (a-dstx)
                                       (dstx-property-ref a-dstx 'local-id))
-                                    (send text get-top-dstxs)))])
+                                    (send text get-toplevel-dstxs)))])
             (check-equal? id0 new-id0)
             (check-equal? id1 new-id2)))))
      

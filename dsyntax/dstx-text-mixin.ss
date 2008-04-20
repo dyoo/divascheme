@@ -28,8 +28,11 @@
   
   
   (define dstx-text<%> (interface (editor<%>)
-                         get-top-dstxs
+                         get-toplevel-dstxs
+                         
+                         get-dstx-cursor-class
                          get-dstx-cursor
+                         
                          dstx-parsing-enabled?
                          enable-dstx-parsing
                          disable-dstx-parsing
@@ -39,11 +42,8 @@
                          on-structured-insert-before
                          on-structured-insert-after
                          on-structured-delete
-                         
                          after-structured-insert
-                         after-structured-delete
-                         
-                         get-dstx-cursor-class))
+                         after-structured-delete))
   
   (define dstx-cursor<%> (interface ()
                            get-functional-cursor
@@ -182,16 +182,19 @@
       ;; This is the very last used cursor that edited this window.
       (define cursor-for-editing (get-dstx-cursor))
       
+      ;; Protected.
       (define/public (get-cursor-for-editing)
         cursor-for-editing)
       
+      ;; Protected.
       (define/public (set-cursor-for-editing a-cursor)
         (set! cursor-for-editing a-cursor))
       
       
-      ;; get-top-dstxs: -> (listof dstx)
+      
+      ;; get-toplevel-dstxs: -> (listof dstx)
       ;; Returns the top dstxs.
-      (define/public (get-top-dstxs)
+      (define/public (get-toplevel-dstxs)
         (send cursor-for-editing cursor-toplevel-dstxs))
       
       ;; dstx-edit-depth: natural-number
