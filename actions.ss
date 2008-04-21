@@ -387,7 +387,7 @@
     (local
         (
          
-         ;; apply-template
+         ;; apply-template: template (or/c symbol #f) -> rope
          (define (apply-template template symbol/false)
            (let ([format-string (cond [(and symbol/false
                                             (string-prefix? "#<<" (symbol->string symbol/false)))
@@ -430,8 +430,8 @@
                                                open?
                                                template/magic-wrap?)])
                   (let* ([text (apply-template template symbol/false)]
-                         [text (cond
-                                 [(cursor-position-is-quoted? world)
+                         #;[text (cond
+                                   [(cursor-position-is-quoted? world)
                                   (subrope text 1)]
                                  [else text])]
                          [world (if (<= number-of-templates 1)
@@ -450,6 +450,7 @@
                  (indent/selection
                   (replace/selection
                    (dedouble-ellipsis expanded-world) text)))])
+          
           (printf "command: I replaced the selection with ~s~n" (rope->string text))
           (if template
               (holder world)
