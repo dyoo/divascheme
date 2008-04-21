@@ -203,23 +203,11 @@
          ;; cleanup-text/between: World pos -> World
          ;; This function eats all the extra white-space between start-pos and
          ;; end-pos.
-         (define (cleanup-text/between world start-pos end-pos)
-           (let* ([start-index (pos->index start-pos)]
-                  [end-index (pos->index end-pos)]
-                  [line (subrope (World-rope world) start-index end-index)]
-                  [len (rope-length line)])
-             (let-values ([(clean-line lst)
-                           (cleanup-whitespace line start-index
-                                               (list (World-selection-index world)
-                                                     (World-selection-end-index world)
-                                                     (World-mark-index world)
-                                                     (World-mark-end-index world)))])
-               (let ([new-world (world-replace-rope world start-index clean-line len)])
-                 (mark/pos+len (select/pos+len new-world
-                                               (index->pos (first lst))
-                                               (- (second lst) (first lst)))
-                               (index->pos (third lst))
-                               (- (fourth lst) (third lst))))))))
+       (define (cleanup-text/between world start-pos end-pos)
+         (queue-imperative-operation
+          world
+          (make-imperative-op:cleanup-range
+           start-pos end-pos))))
       
       (let*-values ([(start-pos end-pos)
                      (get-line-oriented-start-and-end pos (+ pos len))]
@@ -239,12 +227,10 @@
   (define (insert world pos a-rope)
     (let ([len (rope-length a-rope)]
           [new-world (world-insert-rope world (pos->index pos) a-rope)])
-      (recompute-mark/insert
-       (recompute-selection/insert new-world pos len) pos len)
       ;; Disabling cleanup for now.
-      #;(cleanup-text/pos+len
-         (recompute-mark/insert
-          (recompute-selection/insert new-world pos len) pos len) pos len)))
+      (cleanup-text/pos+len
+       (recompute-mark/insert
+        (recompute-selection/insert new-world pos len) pos len) pos len)))
   
   
   ;; delete/stx : World syntax -> World
@@ -256,14 +242,10 @@
     (if (= len 0)
         world
         (let ([new-world (world-delete-rope world (pos->index pos) len)])
-          (recompute-mark/delete
-           (recompute-selection/delete
-            new-world pos len) pos len)
-          ;; Disabling cleanup for now.
-          #;(cleanup-text/pos+len
-             (recompute-mark/delete
-              (recompute-selection/delete
-               new-world pos len) pos len) pos 0))))
+          (cleanup-text/pos+len
+           (recompute-mark/delete
+            (recompute-selection/delete
+             new-world pos len) pos len) pos 0))))
   
   ;; delete/selection : World -> World
   (define (delete/selection world)
@@ -285,16 +267,11 @@
                                (World-cursor-index world)
                                a-rope
                                (World-selection-length world))])
-      (recompute-mark/replace
-       (select/len new-world len)
-       (World-cursor-position world)
-       (World-selection-length world)
-       len)
-      #;(cleanup-text/selection (recompute-mark/replace
-                                 (select/len new-world len)
-                                 (World-cursor-position world)
-                                 (World-selection-length world)
-                                 len))))
+      (cleanup-text/selection (recompute-mark/replace
+                               (select/len new-world len)
+                               (World-cursor-position world)
+                               (World-selection-length world)
+                               len))))
   
   ;; close : World -> World
   (define (close world)
