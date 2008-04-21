@@ -173,6 +173,7 @@
     (define (begin-symbol-insertion)
       (let ([left-point (send editor get-start-position)]
             [right-point (send editor get-end-position)])
+        
         (define (prepare-insertion-point!)
           (if need-space-before
               (begin-symbol (add1 left-point) (add1 left-point))
@@ -191,19 +192,21 @@
             (send editor insert " ")
             (send editor diva:set-selection-position
                   (max (sub1 (send editor get-end-position)) 0)))
+          
           (set-insert&delete-callbacks))
         
-        (set! need-space-before
-              (and (not (= 0 left-point))
-                   (not (paren-or-space?
-                         (send editor get-character (sub1 left-point))))))
-        
-        (set! need-space-after
-              (and (not (= (send editor last-position) right-point))
-                   (not (paren-or-space?
-                         (send editor get-character right-point)))))
-        (prepare-insertion-point!)
-        (fill-highlight!)))
+        (begin
+          (set! need-space-before
+                (and (not (= 0 left-point))
+                     (not (paren-or-space?
+                           (send editor get-character (sub1 left-point))))))
+          
+          (set! need-space-after
+                (and (not (= (send editor last-position) right-point))
+                     (not (paren-or-space?
+                           (send editor get-character right-point)))))
+          (prepare-insertion-point!)
+          (fill-highlight!))))
     
     (define (paren-or-space? ch)
       (and (or (char-whitespace? ch)
