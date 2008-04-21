@@ -4,6 +4,9 @@
            (lib "mred.ss" "mred")
            (lib "class.ss")
            (lib "struct.ss")
+           (lib "list.ss")
+           "cleanup-whitespace.ss"
+           "rope.ss"
            "utilities.ss"
            "traversal.ss"
            "structures.ss"
@@ -29,6 +32,9 @@
       
       [(struct imperative-op:transpose (original-world))
        (transpose original-world a-world a-text update-world-fn update-mred-fn)]
+      
+      [(struct imperative-op:cleanup-range (start-pos end-pos))
+       (cleanup-range start-pos end-pos a-world a-text update-world-fn update-mred-fn)]
       
       [(struct imperative-op:delete-range (start-pos end-pos))
        (delete-range start-pos end-pos a-world a-text
@@ -106,8 +112,7 @@
   
   
   ;; delete-range: number number world text% (World->World) (World -> void) -> World
-  (define (delete-range start-pos end-pos world a-text
-                        update-world-fn update-mred-fn)
+  (define (delete-range start-pos end-pos world a-text update-world-fn update-mred-fn)
     (send a-text delete start-pos end-pos #f)
     world)
   
@@ -117,6 +122,65 @@
     (send a-text set-position a-pos 'same #f #f 'local)
     (insert-rope-in-text a-text a-rope)
     world)
+  
+  
+  
+  ;; cleanup-text-between: number number world text% (World -> World) (World -> void) -> World
+  (define (cleanup-range start-pos end-pos world a-text update-world-fn update-mred-fn)
+    (let* ([start-index (pos->index start-pos)]
+           [end-index (pos->index end-pos)]
+           [line (subrope (World-rope world) start-index end-index)]
+           [len (rope-length line)])
+      (let-values ([(clean-line lst)
+                    (cleanup-whitespace line start-index
+                                        (list (World-selection-index world)
+                                              (World-selection-end-index world)
+                                              (World-mark-index world)
+                                              (World-mark-end-index world)))])
+        (let* ([new-world
+                (world-replace-rope world start-index clean-line len)]
+               [new-world
+                (mark/pos+len (select/pos+len new-world
+                                              (index->pos (first lst))
+                                              (- (second lst) (first lst)))
+                              (index->pos (third lst))
+                              (- (fourth lst) (third lst)))])
+          ;; fixme: don't use update-mred-fn, but rather do the minimal whitespace
+          ;; changes we need.
+          (update-mred-fn new-world)
+          new-world))))
+  
+  
+  ;; fixme: eliminate copy-and-paste from actions.ss!
+  
+  ;; mark/pos+len : World pos non-negative-integer -> World
+  (define (mark/pos+len world pos len)
+    (mark/pos (mark/len world len) pos))
+  
+  ;; mark/len : World non-negative-integer -> World
+  (define (mark/len world len)
+    (copy-struct World world
+                 [World-mark-length len]))
+  
+  ;; mark/pos : World pos -> World
+  (define (mark/pos world pos)
+    (copy-struct World world
+                 [World-mark-position pos]))
+  
+  ;; select/pos+len : World pos non-negative-integer -> World
+  (define (select/pos+len world pos len)
+    (select/pos (select/len world len) pos))
+  
+  ;; select/pos : World pos -> World
+  (define (select/pos world pos)
+    (copy-struct World world
+                 [World-cursor-position pos]))
+  
+  ;; select/len : World non-negative-integer -> World
+  (define (select/len world len)
+    (copy-struct World world
+                 [World-selection-length len]))
+  
   
   
   
