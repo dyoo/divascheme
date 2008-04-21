@@ -69,9 +69,14 @@
     ;; Before interpreting a command, we'd like to restore the
     ;; editor state before coming into insert mode, so that it
     ;; syncs up with what's in the World.
-    (define (restore-editor-to-pre-state! a-world)
-      ;; todo: restore the prestate more efficiently.
-      (send editor set-rope (World-rope a-world)))
+    (define (restore-editor-to-pre-state!)
+      (cond
+        [pending-open
+         (send editor set-rope
+               (World-rope (Pending-world pending-open)))]
+        [else
+         (send editor set-rope
+               (World-rope world-at-beginning-of-insert))]))
     
     
     ;; consume-text: World Pending rope -> void
@@ -79,9 +84,9 @@
     ;; The templating system forces us to consider if the insertion
     ;; is based on the sequence (Open X) or just regular X.
     (define (consume-text world pending-open a-rope)
+      (restore-editor-to-pre-state!)
       (cond
         [pending-open
-         (restore-editor-to-pre-state! (Pending-world pending-open))
          ;; possible templating with open parens
          (interpret! (Pending-world pending-open)
                      (make-Verb (make-Command (Pending-symbol pending-open))
@@ -90,7 +95,6 @@
                                  (make-Rope-Noun a-rope))))]
         [else
          ;; possible templating without open parens
-         (restore-editor-to-pre-state! world)
          (interpret! world
                      (make-Verb (make-InsertRope-Cmd a-rope)
                                 false
@@ -98,7 +102,7 @@
     
     
     (define (consume-cmd world symbol)
-      (restore-editor-to-pre-state! world)
+      (restore-editor-to-pre-state!)
       (interpret! world (make-Verb (make-Command symbol) false false)))
     
     
@@ -198,20 +202,17 @@
         (begin
           (set! need-space-before
                 (and (not (= 0 left-point))
-                     (not (paren-or-space?
+                     (not (char-whitespace?
                            (send editor get-character (sub1 left-point))))))
           
           (set! need-space-after
                 (and (not (= (send editor last-position) right-point))
-                     (not (paren-or-space?
+                     (not (char-whitespace?
                            (send editor get-character right-point)))))
           (prepare-insertion-point!)
           (fill-highlight!))))
     
-    (define (paren-or-space? ch)
-      (and (or (char-whitespace? ch)
-               (member ch '(#\( #\) #\[ #\] #\{ #\})))
-           #t))
+    
     
     
     (define (begin-symbol start-position end-position)
@@ -442,7 +443,7 @@
     
     (define (revert&exit)
       #;(printf "revert&exit~n")
-      (restore-editor-to-pre-state! world-at-beginning-of-insert)
+      (restore-editor-to-pre-state!)
       (set-world world-at-beginning-of-insert)
       (exit))
     
@@ -451,7 +452,7 @@
           (revert&exit)
           (begin
             (eval-text)
-            #;(set-world world-at-beginning-of-insert)
+            (set-world world-at-beginning-of-insert)
             (exit))))
     
     

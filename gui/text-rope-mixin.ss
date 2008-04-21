@@ -42,6 +42,8 @@
           (set-position start-pos 'same #f #f 'local)
           (insert-rope-in-text this insert-text))
         
+        (printf "rope is being set to ~s~n" (rope->string to-rope))
+        
         (unless (rope=? to-rope (get-rope))
           (let*-values
               ([(start-length end-length)
@@ -62,7 +64,9 @@
               [(can-insert? start-length from-end)
                (apply-rope-replacement start-length from-end insert-text)]
               [else
-               (error "I can't edit the text.  Text is read-only.")]))))
+               (error "I can't edit the text.  Text is read-only.")])))
+        
+        (printf "text is now: ~s~n" (rope->string (get-rope))))
       
       
       
