@@ -41,7 +41,7 @@
     (define magic-options-lst false)
     (define magic-option-base false)
     
-    (define selection-text-before-insert (string->rope ""))
+    (define selection-rope-before-insert (string->rope ""))
     (define left-edge-of-insert (send editor get-start-position))
     (define right-edge-of-insert (send editor get-start-position))
     (define need-space-before #f)
@@ -72,6 +72,11 @@
       (printf "restore-editor-to-pre-state!~n")
       (printf "window text is: ~s~n" (send editor get-text))
       (printf " world text is: ~s~n" (rope->string (World-rope a-world)))
+      (printf "selection before was: ~s~n"
+              (rope->string selection-rope-before-insert))
+      (printf "need-space-before: ~s~n" need-space-before)
+      (printf "need-space-after: ~s~n" need-space-after)
+      
       (printf "window text = world-text?: ~a~n"
               (string=? (send editor get-text)
                         (rope->string (World-rope a-world))))
@@ -85,7 +90,7 @@
     (define (consume-text world pending-open a-rope)
       (cond
         [pending-open
-         (restore-editor-to-pre-state! pending-open)
+         (restore-editor-to-pre-state! (Pending-world pending-open))
          ;; possible templating with open parens
          (interpret! (Pending-world pending-open)
                      (make-Verb (make-Command (Pending-symbol pending-open))
@@ -156,6 +161,11 @@
              (set-world (action:select/stx world stx/false))
              (set! need-space-before #f)
              (set! need-space-after #f)
+             (set! selection-rope-before-insert
+                   (read-subrope-in-text editor
+                                         (send editor get-start-position)
+                                         (- (send editor get-end-position)
+                                            (send editor get-start-position))))
              (begin-symbol (send editor get-start-position)
                            (send editor get-end-position))
              (send editor diva:set-selection-position
@@ -176,6 +186,11 @@
               (begin-symbol (add1 left-point) (add1 left-point))
               (begin-symbol left-point left-point))
           (unset-insert&delete-callbacks)
+          (set! selection-rope-before-insert
+                (read-subrope-in-text editor
+                                      (send editor get-start-position)
+                                      (- (send editor get-end-position)
+                                         (send editor get-start-position))))
           (unless (empty-selection?)
             (send editor delete))
           (when need-space-before
@@ -425,6 +440,7 @@
     
     (define (revert&exit)
       (printf "revert&exit~n")
+      (restore-editor-to-pre-state! world-at-beginning-of-insert)
       (set-world world-at-beginning-of-insert)
       (exit))
     
@@ -433,7 +449,7 @@
           (revert&exit)
           (begin
             (eval-text)
-            (set-world world-at-beginning-of-insert)
+            #;(set-world world-at-beginning-of-insert)
             (exit))))
     
     
