@@ -43,6 +43,9 @@
     
     (define left-edge-of-insert (send editor get-start-position))
     (define right-edge-of-insert (send editor get-start-position))
+    (define need-space-before #f)
+    (define need-space-after #f)
+    
     
     (define clear-highlight (lambda () (void)))
     (define insert-keymap #f)
@@ -56,7 +59,9 @@
       ;; Hooking up the other callbacks
       (set-on-focus-lost consume&exit)
       (unset-insert&delete-callbacks)
-      (if edit? (begin-symbol-edit) (begin-symbol-insertion))
+      (if edit?
+          (begin-symbol-edit)
+          (begin-symbol-insertion))
       (when cmd (eval-cmd cmd)))
     
     
@@ -66,6 +71,8 @@
     ;; The templating system forces us to consider if the insertion
     ;; is based on the sequence (Open X) or just regular X.
     (define (consume-text world pending-open a-rope)
+      (printf "consume-text: window text is: ~s~n"
+              (send editor get-text))
       (if pending-open
           ;; possible templating with open parens
           (interpret! (Pending-world pending-open)
@@ -132,6 +139,8 @@
           [stx/false
            (let ([original-pos (send editor get-end-position)])
              (set-world (action:select/stx world stx/false))
+             (set! need-space-before #f)
+             (set! need-space-after #f)
              (begin-symbol (send editor get-start-position)
                            (send editor get-end-position))
              (send editor diva:set-selection-position
@@ -146,36 +155,36 @@
     
     
     (define (begin-symbol-insertion)
-      (define left-point (send editor get-start-position))
-      
-      (define need-space-before
-        (and (not (= 0 left-point))
-             (not (eq? #\space
-                       (send editor get-character (sub1 left-point))))))
-      
-      (define need-space-after
-        (or (= (string-length (send editor get-text))
-               left-point)
-            (not (eq? #\space
-                      (send editor get-character (add1 left-point))))))
-      
-      (define (prepare-insertion-point!)
-        (if need-space-before
-            (begin-symbol (add1 left-point) (add1 left-point))
-            (begin-symbol left-point left-point))
-        (unset-insert&delete-callbacks)
-        (unless (empty-selection?)
-          (send editor delete))
-        (when need-space-before
-          (send editor insert " "))
-        (when need-space-after
-          (send editor insert " ")
-          (send editor diva:set-selection-position
-                (max (sub1 (send editor get-end-position)) 0)))
-        (set-insert&delete-callbacks))
-      
-      (prepare-insertion-point!)
-      (fill-highlight!))
+      (let ([left-point (send editor get-start-position)])
+        (define (prepare-insertion-point!)
+          (if need-space-before
+              (begin-symbol (add1 left-point) (add1 left-point))
+              (begin-symbol left-point left-point))
+          (unset-insert&delete-callbacks)
+          (unless (empty-selection?)
+            (send editor delete))
+          (when need-space-before
+            (send editor insert " "))
+          (when need-space-after
+            (send editor insert " ")
+            (send editor diva:set-selection-position
+                  (max (sub1 (send editor get-end-position)) 0)))
+          (set-insert&delete-callbacks))
+        
+        (set! need-space-before
+              (and (not (= 0 left-point))
+                   (not (eq? #\space
+                             (send editor get-character (sub1 left-point))))))
+        
+        (set! need-space-after
+              (or (= (string-length (send editor get-text))
+                     left-point)
+                  (not (eq? #\space
+                            (send editor get-character (add1 left-point))))))
+        
+        (prepare-insertion-point!)
+        (fill-highlight!)))
+    
     
     
     (define (begin-symbol start-position end-position)

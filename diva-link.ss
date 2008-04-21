@@ -271,15 +271,15 @@
       
       
       (define/augment (on-structured-insert-before a-fcursor a-dstx)
-        (printf "structured insert-before of ~s~n" a-dstx)
+        #;(printf "structured insert-before of ~s~n" a-dstx)
         (inner (void) on-structured-insert-before a-fcursor a-dstx))
       
       (define/augment (on-structured-insert-after a-fcursor a-dstx)
-        (printf "structured insert-after of ~s~n" a-dstx)
+        #;(printf "structured insert-after of ~s~n" a-dstx)
         (inner (void) on-structured-insert-after a-fcursor a-dstx))
       
       (define/augment (on-structured-delete a-fcursor)
-        (printf "structured insert-delete of ~s~n" (cursor-dstx a-fcursor))
+        #;(printf "structured insert-delete of ~s~n" (cursor-dstx a-fcursor))
         (inner (void) on-structured-delete a-fcursor))
       
       (define/augment (after-structured-insert a-fcursor)
@@ -485,6 +485,19 @@
                                  
                                  ;; interpreter
                                  (lambda (world ast)
+                                   (printf "diva-link: about to interpret ~s.~n" ast)
+                                   (printf "World text is: ~s~n"
+                                           (rope->string (World-rope world)))
+                                   (printf "selection is on [~a, ~a] ~s~n"
+                                           (World-cursor-position world)
+                                           (World-selection-end-position world)
+                                           (rope->string
+                                            (subrope (World-rope world)
+                                                     (sub1
+                                                      (World-cursor-position world))
+                                                     (sub1
+                                                      (World-selection-end-position
+                                                       world)))))
                                    (diva-ast-put/wait+world world ast))
                                  
                                  on-exit ;; post-exit-hook
