@@ -41,6 +41,7 @@
     (define magic-options-lst false)
     (define magic-option-base false)
     
+    (define selection-text-before-insert (string->rope ""))
     (define left-edge-of-insert (send editor get-start-position))
     (define right-edge-of-insert (send editor get-start-position))
     (define need-space-before #f)
@@ -64,6 +65,17 @@
           (begin-symbol-insertion))
       (when cmd (eval-cmd cmd)))
     
+    ;; Before interpreting a command, we'd like to restore the
+    ;; editor state before coming into insert mode, so that it
+    ;; syncs up with what's in the World.
+    (define (restore-editor-to-pre-state! a-world)
+      (printf "restore-editor-to-pre-state!~n")
+      (printf "window text is: ~s~n" (send editor get-text))
+      (printf " world text is: ~s~n" (rope->string (World-rope a-world)))
+      (printf "window text = world-text?: ~a~n"
+              (string=? (send editor get-text)
+                        (rope->string (World-rope a-world))))
+      (void))
     
     
     ;; consume-text: World Pending rope -> void
@@ -71,25 +83,28 @@
     ;; The templating system forces us to consider if the insertion
     ;; is based on the sequence (Open X) or just regular X.
     (define (consume-text world pending-open a-rope)
-      (printf "consume-text: window text is: ~s~n"
-              (send editor get-text))
-      (if pending-open
-          ;; possible templating with open parens
-          (interpret! (Pending-world pending-open)
-                      (make-Verb (make-Command (Pending-symbol pending-open))
-                                 false
-                                 (make-WhatN
-                                  (make-Rope-Noun a-rope))))
-          
-          ;; possible templating without open parens
-          (interpret! world
-                      (make-Verb (make-InsertRope-Cmd a-rope)
-                                 false
-                                 false))))
+      (cond
+        [pending-open
+         (restore-editor-to-pre-state! pending-open)
+         ;; possible templating with open parens
+         (interpret! (Pending-world pending-open)
+                     (make-Verb (make-Command (Pending-symbol pending-open))
+                                false
+                                (make-WhatN
+                                 (make-Rope-Noun a-rope))))]
+        [else
+         ;; possible templating without open parens
+         (restore-editor-to-pre-state! world)
+         (interpret! world
+                     (make-Verb (make-InsertRope-Cmd a-rope)
+                                false
+                                false))]))
     
     
     (define (consume-cmd world symbol)
+      (restore-editor-to-pre-state! world)
       (interpret! world (make-Verb (make-Command symbol) false false)))
+    
     
     (define (insert-color)
       (preferences:get 'framework:paren-match-color))
@@ -409,6 +424,7 @@
     
     
     (define (revert&exit)
+      (printf "revert&exit~n")
       (set-world world-at-beginning-of-insert)
       (exit))
     
