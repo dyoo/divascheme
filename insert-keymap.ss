@@ -70,6 +70,7 @@
     ;; editor state before coming into insert mode, so that it
     ;; syncs up with what's in the World.
     (define (restore-editor-to-pre-state! a-world)
+      ;; todo: restore the prestate more efficiently.
       (send editor set-rope (World-rope a-world)))
     
     
@@ -170,7 +171,8 @@
     
     
     (define (begin-symbol-insertion)
-      (let ([left-point (send editor get-start-position)])
+      (let ([left-point (send editor get-start-position)]
+            [right-point (send editor get-end-position)])
         (define (prepare-insertion-point!)
           (if need-space-before
               (begin-symbol (add1 left-point) (add1 left-point))
@@ -193,18 +195,20 @@
         
         (set! need-space-before
               (and (not (= 0 left-point))
-                   (not (eq? #\space
-                             (send editor get-character (sub1 left-point))))))
+                   (not (paren-or-space?
+                         (send editor get-character (sub1 left-point))))))
         
         (set! need-space-after
-              (or (= (string-length (send editor get-text))
-                     left-point)
-                  (not (eq? #\space
-                            (send editor get-character (add1 left-point))))))
-        
+              (and (not (= (send editor last-position) right-point))
+                   (not (paren-or-space?
+                         (send editor get-character right-point)))))
         (prepare-insertion-point!)
         (fill-highlight!)))
     
+    (define (paren-or-space? ch)
+      (and (or (char-whitespace? ch)
+               (member ch '(#\( #\) #\[ #\] #\{ #\})))
+           #t))
     
     
     (define (begin-symbol start-position end-position)
@@ -358,8 +362,13 @@
                           [else a-rope])))
             (let ([spaced-rope
                    (rope-append
-                    (string->rope " ")
-                    (rope-append closed-rope (string->rope " ")))])
+                    (if need-space-before
+                        (string->rope " ")
+                        (string->rope ""))
+                    (rope-append closed-rope
+                                 (if need-space-after
+                                     (string->rope " ")
+                                     (string->rope ""))))])
               (consume-text world-at-beginning-of-insert
                             pending-open spaced-rope)
               (begin-symbol-insertion/nothing-pending))))))
