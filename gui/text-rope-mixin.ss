@@ -73,25 +73,26 @@
         ;; content.
         (define (apply-text-changes from-text start-length from-end insert-text)
           (let ([edits (compute-minimal-edits
-                        (rope->vector (subrope from-text start-length from-end))
+                        (rope->vector from-text)
                         (rope->vector insert-text)
                         equal?)])
+            (printf "minimal edits: ~a~n" edits)
             (for-each (lambda (an-edit)
                         (match an-edit
-                        [(struct edit:insert (offset elts))
-                         (cond [(char? (first elts))
-                                ;; characters
-                                (insert (apply string elts)
-                                        (+ offset start-length) 'same #f)]
-                               [else
-                                ;; snip
-                                (insert (send (first elts) copy)
-                                        (+ offset start-length) 'same #f)])]
-                        [(struct edit:delete (offset len))
-                         (delete (+ offset start-length)
-                                 (+ offset start-length len)
-                                 #f)]))
-                    edits)))
+                          [(struct edit:insert (offset elts))
+                           (cond [(char? (first elts))
+                                  ;; characters
+                                  (insert (apply string elts)
+                                          (+ offset start-length) 'same #f)]
+                                 [else
+                                  ;; snip
+                                  (insert (send (first elts) copy)
+                                          (+ offset start-length) 'same #f)])]
+                          [(struct edit:delete (offset len))
+                           (delete (+ offset start-length)
+                                   (+ offset start-length len)
+                                   #f)]))
+                      edits)))
         
         (unless (rope=? to-rope (get-rope))
           (let*-values

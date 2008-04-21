@@ -127,7 +127,8 @@
   
   ;; cleanup-text-between: number number world text% (World -> World) (World -> void) -> World
   (define (cleanup-range start-pos end-pos world a-text update-world-fn update-mred-fn)
-    (let* ([start-index (pos->index start-pos)]
+    (let* ([world (update-world-fn world)]
+           [start-index (pos->index start-pos)]
            [end-index (pos->index end-pos)]
            [line (subrope (World-rope world) start-index end-index)]
            [len (rope-length line)])
@@ -147,7 +148,8 @@
                               (- (fourth lst) (third lst)))])
           ;; fixme: don't use update-mred-fn, but rather do the minimal whitespace
           ;; changes we need.
-          (update-mred-fn new-world)
+          (send a-text set-rope/minimal-edits (World-rope new-world))
+          (update-mred-fn (update-world-fn new-world))
           new-world))))
   
   
