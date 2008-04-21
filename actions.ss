@@ -427,8 +427,6 @@
                  (indent/selection
                   (replace/selection
                    (dedouble-ellipsis expanded-world) text)))])
-          
-          (printf "command: I replaced the selection with ~s~n" (rope->string text))
           (if template
               (holder world)
               (step-to-the-right world))))))

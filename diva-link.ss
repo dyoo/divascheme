@@ -485,19 +485,6 @@
                                  
                                  ;; interpreter
                                  (lambda (world ast)
-                                   (printf "diva-link: about to interpret ~s.~n" ast)
-                                   (printf "World text is: ~s~n"
-                                           (rope->string (World-rope world)))
-                                   (printf "selection is on [~a, ~a] ~s~n"
-                                           (World-cursor-position world)
-                                           (World-selection-end-position world)
-                                           (rope->string
-                                            (subrope (World-rope world)
-                                                     (sub1
-                                                      (World-cursor-position world))
-                                                     (sub1
-                                                      (World-selection-end-position
-                                                       world)))))
                                    (diva-ast-put/wait+world world ast))
                                  
                                  on-exit ;; post-exit-hook

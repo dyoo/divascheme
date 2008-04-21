@@ -76,7 +76,6 @@
                         (rope->vector from-text)
                         (rope->vector insert-text)
                         equal?)])
-            (printf "minimal edits: ~a~n" edits)
             (for-each (lambda (an-edit)
                         (match an-edit
                           [(struct edit:insert (offset elts))
@@ -115,9 +114,7 @@
                (apply-text-changes (subrope (get-rope) start-length from-end)
                                    start-length from-end insert-text)]
               [else
-               (error "I can't edit the text.  Text is read-only.")])))
-        
-        (printf "text is now: ~s~n" (rope->string (get-rope))))
+               (error "I can't edit the text.  Text is read-only.")]))))
       
       
       
