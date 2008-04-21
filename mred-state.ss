@@ -213,7 +213,7 @@
       (define/public (push-world world)
         (with-edit-sequence
          (lambda ()
-           (update-text (get-rope) (World-rope world))))
+           (send window-text set-rope (World-rope world))))
         (set-selection (World-cursor-position world) (World-selection-length world))
         (cond [(World-extension world)
                (let ([e (World-extension world)])
@@ -244,43 +244,4 @@
            (send window-text begin-edit-sequence))
          f
          (lambda ()
-           (send window-text end-edit-sequence))))
-      
-      
-      
-      ;; update-text: rope rope -> void
-      ;; Given the content in to-text, we set the rope so that
-      ;; postcondition-wise, (get-rope) should be the same as to-text
-      ;; (rope=? modulo specials).
-      (define (update-text from-rope to-rope)
-        (unless (rope=? to-rope from-rope)
-          (let*-values
-              ([(start-length end-length)
-                (common-prefix&suffix-lengths (rope->vector from-rope)
-                                              (rope->vector to-rope)
-                                              vector-length
-                                              vector-ref
-                                              equal?)]
-               [(from-end)
-                (- (rope-length from-rope) end-length)]
-               [(to-end)
-                (- (rope-length to-rope) end-length)]
-               [(insert-text) (subrope to-rope start-length to-end)])
-            (cond
-              [(rope=? (subrope from-rope start-length from-end)
-                       insert-text)
-               (void)]
-              [(send window-text can-insert? start-length from-end)
-               (apply-rope-replacement start-length from-end insert-text)]
-              [else
-               (raise (make-voice-exn
-                       "I cannot edit the text. Text is read-only."))]))))
-      
-      
-      ;; apply-rope-replacement: rope number number rope -> void
-      ;; Applies the individual changes to get us to sync with the insert-text
-      ;; content.
-      (define (apply-rope-replacement start-pos end-pos insert-text)
-        (send window-text delete start-pos end-pos #f)
-        (send window-text set-position start-pos 'same #f #f 'local)
-        (insert-rope-in-text window-text insert-text)))))
+           (send window-text end-edit-sequence)))))))

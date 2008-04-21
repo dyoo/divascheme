@@ -65,38 +65,12 @@
           (begin-symbol-insertion))
       (when cmd (eval-cmd cmd)))
     
+    
     ;; Before interpreting a command, we'd like to restore the
     ;; editor state before coming into insert mode, so that it
     ;; syncs up with what's in the World.
     (define (restore-editor-to-pre-state! a-world)
-      #;(printf "restore-editor-to-pre-state!~n")
-      ;; subtle: left-edge and right-edge will change as we
-      ;; insert and delete, so let's
-      ;; hold onto their stable values here:
-      (let ([left left-edge-of-insert]
-            [right right-edge-of-insert])
-        (when need-space-after
-          (send editor delete (add1 right) 'back))
-        (send editor delete left right #f)
-        (when need-space-before
-          (send editor delete left 'back #f))
-        (let ([start-pos (send editor get-start-position)])
-          (insert-rope-in-text editor selection-rope-before-insert)
-          (send editor diva:set-selection-position start-pos
-                (+ start-pos (rope-length selection-rope-before-insert)))))
-      
-      
-      (unless (string=? (send editor get-text)
-                        (rope->string (World-rope a-world)))
-        (printf "~n*****~n")
-        (printf "mismatch!~n")
-        (printf "window text is: ~s~n" (send editor get-text))
-        (printf " world text is: ~s~n" (rope->string (World-rope a-world)))
-        (printf "selection before was: ~s~n"
-                (rope->string selection-rope-before-insert))
-        (printf "need-space-before: ~s~n" need-space-before)
-        (printf "need-space-after: ~s~n" need-space-after)
-        (printf "*****~n~n")))
+      (send editor set-rope (World-rope a-world)))
     
     
     ;; consume-text: World Pending rope -> void

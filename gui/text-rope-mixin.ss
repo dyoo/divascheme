@@ -7,7 +7,8 @@
            (lib "lex.ss" "parser-tools")
            (lib "contract.ss")
            (lib "plt-match.ss")
-           "../rope.ss")
+           "../rope.ss"
+           "../long-prefix.ss")
   
   
   
@@ -17,13 +18,56 @@
                end-edit-sequence
                get-start-position
                erase
-               insert)
+               delete
+               set-position
+               insert
+               can-insert?)
       (define rope rope-empty)
       
       ;; get-rope: -> rope
       ;; Returns the rope reflected by the text.
       (define/public (get-rope)
         rope)
+      
+      
+      ;; set-rope: rope -> void
+      ;; Given the content in to-text, we do changes to the text to reflect
+      ;; that rope.
+      (define/public (set-rope to-rope)
+        ;; apply-rope-replacement: rope number number rope -> void
+        ;; Applies the individual changes to get us to sync with the insert-text
+        ;; content.
+        (define (apply-rope-replacement start-pos end-pos insert-text)
+          (delete start-pos end-pos #f)
+          (set-position start-pos 'same #f #f 'local)
+          (insert-rope-in-text this insert-text))
+        
+        (unless (rope=? to-rope (get-rope))
+          (let*-values
+              ([(start-length end-length)
+                (common-prefix&suffix-lengths (rope->vector (get-rope))
+                                              (rope->vector to-rope)
+                                              vector-length
+                                              vector-ref
+                                              equal?)]
+               [(from-end)
+                (- (rope-length (get-rope)) end-length)]
+               [(to-end)
+                (- (rope-length to-rope) end-length)]
+               [(insert-text) (subrope to-rope start-length to-end)])
+            (cond
+              [(rope=? (subrope (get-rope) start-length from-end)
+                       insert-text)
+               (void)]
+              [(can-insert? start-length from-end)
+               (apply-rope-replacement start-length from-end insert-text)]
+              [else
+               (error "I can't edit the text.  Text is read-only.")]))))
+      
+      
+      
+      
+      
       
       ;; Arbitrary constant for rebalancing the rope.
       ;; disabled for now: rope.plt should handle this for us.
