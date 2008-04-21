@@ -166,23 +166,31 @@
   (define world-fn/c (World? . -> . World?))
   
   
+  ;; FIXME: any imperative operation that uses raw positions should
+  ;; really use markers, since those are more stable.
   
   ;; Imperative operations are applied to bring the old
   ;; world's state to the new world's state.
   (define-struct imperative-op ())
   
-  ;; op:indent-range: indent the region starting from the mark
+  ;; op:indent-range: indent the region starting from the mark.
   (define-struct (imperative-op:indent-range imperative-op) (mark len))
   
-  ;; imperative-op:flash-last-sexp: flash the preceding s-exp
+  ;; imperative-op:flash-last-sexp: flash the preceding s-exp.
   ;; Fixme: this should be using a mark!
   (define-struct (imperative-op:flash-last-sexp imperative-op) ())
   
-  ;; imperative-op:move-cursor-position: moves the cursor in some direction
+  ;; imperative-op:move-cursor-position: moves the cursor in some direction.
   (define-struct (imperative-op:move-cursor-position imperative-op) (direction))
   
   ;; imperative-op:transpose: transposes the s-expression at world cursor position.
   (define-struct (imperative-op:transpose imperative-op) (original-world))
+  
+  ;; imperative-op:delete-range: delete the range of text.
+  (define-struct (imperative-op:delete-range imperative-op) (start-pos end-pos))
+  
+  ;; imperative-op:insert-rope: insert the rope at the given position.
+  (define-struct (imperative-op:insert-rope imperative-op) (rope pos))
   
   
   
@@ -566,8 +574,14 @@
    [struct (imperative-op:move-cursor-position imperative-op)
            ([direction
              (one-of/c 'home 'end 'right 'left 'up 'down)])]
-   [struct (imperative-op:transpose imperative-op) ([original-world World?])]
-   
+   [struct (imperative-op:transpose imperative-op)
+           ([original-world World?])]
+   [struct (imperative-op:delete-range imperative-op)
+           ([start-pos natural-number/c]
+            [end-pos natural-number/c])]
+   [struct (imperative-op:insert-rope imperative-op)
+           ([rope rope?]
+            [pos natural-number/c])]
    
    
    [queue-imperative-operation (World? imperative-op? . -> . World?)]

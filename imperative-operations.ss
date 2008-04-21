@@ -6,7 +6,8 @@
            (lib "struct.ss")
            "utilities.ss"
            "traversal.ss"
-           "structures.ss")
+           "structures.ss"
+           "gui/text-rope-mixin.ss")
   
   ;; We may want to put this in mred-state...
   
@@ -18,18 +19,29 @@
     (match an-op
       [(struct imperative-op:indent-range (mark len))
        (indent-range mark len a-world a-text update-world-fn update-mred-fn)]
+      
       [(struct imperative-op:flash-last-sexp ())
        (flash-last-sexp a-world a-text update-world-fn update-mred-fn)]
+      
       [(struct imperative-op:move-cursor-position (direction))
-       (move-cursor-position direction a-world a-text update-world-fn update-mred-fn)]
+       (move-cursor-position
+        direction a-world a-text update-world-fn update-mred-fn)]
+      
       [(struct imperative-op:transpose (original-world))
-       (transpose original-world a-world a-text update-world-fn update-mred-fn)]))
+       (transpose original-world a-world a-text update-world-fn update-mred-fn)]
+      
+      [(struct imperative-op:delete-range (start-pos end-pos))
+       (delete-range start-pos end-pos a-world a-text
+                     update-world-fn update-mred-fn)]
+      
+      [(struct imperative-op:insert-rope (rope pos))
+       (do-insert-rope rope pos a-world a-text update-world-fn update-mred-fn)]))
   
   
   
   
   
-  ;; indent-range: symbol number world text% (World -> World) (World -> World) -> World
+  ;; indent-range: symbol number world text% (World -> World) (World -> void) -> World
   (define (indent-range mark len a-world a-text update-world-fn update-mred-fn)
     (let* ([new-pos (max 0 (sub1 (world-marker-position a-world mark)))]
            [new-end-pos (min (string-length (send a-text get-text))
@@ -38,7 +50,7 @@
       (world-clear-marker (update-world-fn a-world) mark)))
   
   
-  ;; indent-range: world text (World -> World) (World -> World) -> World
+  ;; indent-range: world text (World -> World) (World -> void) -> World
   (define (flash-last-sexp world window update-world-fn update-mred-fn)
     (let ([pos (send window get-backward-sexp (send window get-start-position))])
       ;; We queue-callback this up since the highlighting fights with
@@ -64,7 +76,7 @@
   
   
   
-  ;; move-cursor-position: direction world text% (World -> World) (World -> World) -> World
+  ;; move-cursor-position: direction world text% (World -> World) (World -> void) -> World
   (define (move-cursor-position direction world window
                                 update-world-fn update-mred-fn)
     (define (callback world)
@@ -85,12 +97,26 @@
       w))
   
   
-  ;; transpose: world text% (World -> World) (World -> World) -> World
+  ;; transpose: world text% (World -> World) (World -> void) -> World
   (define (transpose original-world world window update-world-fn update-mred-fn)
     (send window transpose-sexp (pos->index (World-cursor-position world)))
     (copy-struct World (update-world-fn world)
                  [World-cancel original-world]
                  [World-undo original-world]))
+  
+  
+  ;; delete-range: number number world text% (World->World) (World -> void) -> World
+  (define (delete-range start-pos end-pos world a-text
+                        update-world-fn update-mred-fn)
+    (send a-text delete start-pos end-pos #f)
+    world)
+  
+  
+  ;; insert-rope: rope number World text% (World -> World) (World -> void) -> World
+  (define (do-insert-rope a-rope a-pos world a-text update-world-fn update-mred-fn)
+    (send a-text set-position a-pos 'same #f #f 'local)
+    (insert-rope-in-text a-text a-rope)
+    world)
   
   
   
