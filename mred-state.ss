@@ -211,8 +211,9 @@
       ;; Pushes changes from the world back into the stateful text%.
       ;; push-world: world -> void
       (define/public (push-world world)
-        (unless (rope=? (World-rope world) (get-rope))
-          (diva:-update-text (World-rope world)))
+        (with-edit-sequence
+         (lambda ()
+           (update-text (get-rope) (World-rope world))))
         (set-selection (World-cursor-position world) (World-selection-length world))
         (cond [(World-extension world)
                (let ([e (World-extension world)])
@@ -237,57 +238,49 @@
         (send window-text diva-message (World-success-message world)))
       
       
-      
-      
-      
-      ;; Updates what's on screen with the input text rope
-      (define (diva:-update-text text)
+      (define (with-edit-sequence f)
         (dynamic-wind
          (lambda ()
            (send window-text begin-edit-sequence))
-         (lambda ()
-           (update-text text))
+         f
          (lambda ()
            (send window-text end-edit-sequence))))
       
       
       
-      
-      ;; update-text: rope -> void
-      ;; Given the content in to-text, we set the rope in mred-callback so that
-      ;; the post-condition is that (get-rope) should be the same as to-text
+      ;; update-text: rope rope -> void
+      ;; Given the content in to-text, we set the rope so that
+      ;; postcondition-wise, (get-rope) should be the same as to-text
       ;; (rope=? modulo specials).
-      (define (update-text to-text)
-        (let ([from-text (get-rope)])
-          (unless (rope=? to-text from-text)
-            (let*-values
-                ([(start-length end-length)
-                  (common-prefix&suffix-lengths (rope->vector from-text)
-                                                (rope->vector to-text)
-                                                vector-length
-                                                vector-ref
-                                                equal?)]
-                 [(from-end)
-                  (- (rope-length from-text) end-length)]
-                 [(to-end)
-                  (- (rope-length to-text) end-length)]
-                 [(insert-text) (subrope to-text start-length to-end)])
-              (cond
-                [(rope=? (subrope from-text start-length from-end)
-                         insert-text)
-                 (void)]
-                [(send window-text can-insert? start-length from-end)
-                 (apply-text-changes from-text start-length from-end
-                                     insert-text)]
-                [else
-                 (raise (make-voice-exn
-                         "I cannot edit the text. Text is read-only."))])))))
+      (define (update-text from-rope to-rope)
+        (unless (rope=? to-rope from-rope)
+          (let*-values
+              ([(start-length end-length)
+                (common-prefix&suffix-lengths (rope->vector from-rope)
+                                              (rope->vector to-rope)
+                                              vector-length
+                                              vector-ref
+                                              equal?)]
+               [(from-end)
+                (- (rope-length from-rope) end-length)]
+               [(to-end)
+                (- (rope-length to-rope) end-length)]
+               [(insert-text) (subrope to-rope start-length to-end)])
+            (cond
+              [(rope=? (subrope from-rope start-length from-end)
+                       insert-text)
+               (void)]
+              [(send window-text can-insert? start-length from-end)
+               (apply-rope-replacement start-length from-end insert-text)]
+              [else
+               (raise (make-voice-exn
+                       "I cannot edit the text. Text is read-only."))]))))
       
       
-      ;; apply-text-changes: rope number number rope -> void
+      ;; apply-rope-replacement: rope number number rope -> void
       ;; Applies the individual changes to get us to sync with the insert-text
       ;; content.
-      (define (apply-text-changes from-text start-length from-end insert-text)
-        (send window-text delete start-length from-end #f)
-        (send window-text set-position start-length 'same #f #f 'local)
+      (define (apply-rope-replacement start-pos end-pos insert-text)
+        (send window-text delete start-pos end-pos #f)
+        (send window-text set-position start-pos 'same #f #f 'local)
         (insert-rope-in-text window-text insert-text)))))

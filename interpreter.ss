@@ -72,7 +72,6 @@
   
   ;; eval-Protocol-Syntax-Tree : World ast -> (union World SwitchWorld)
   (define (eval-Protocol-Syntax-Tree world ast)
-    (printf "in eval-protocol-syntax-tree~n")
     (print-mem*
      'eval-Protocol-Syntax-Tree
      (let* ([world (match ast

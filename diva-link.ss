@@ -270,7 +270,6 @@
           (queue-callback callback)))
       
       
-      
       (define/augment (on-structured-insert-before a-fcursor a-dstx)
         (printf "structured insert-before of ~s~n" a-dstx)
         (inner (void) on-structured-insert-before a-fcursor a-dstx))
@@ -354,8 +353,6 @@
                       (with-divascheme-handlers
                        world
                        (lambda ()
-                         (when (not world)
-                           (error 'push-into-mred "illegal situation!"))
                          (apply-imperative-op
                           op
                           world this
@@ -405,7 +402,6 @@
       ;; Evaluate the given ast and the world, and returns the new state of the world.
       (define (interpreter/imperative ast world)
         (let ([new-world (interpreter ast world)])
-          (printf "interpreter/imperative: got a new world~n")
           (match new-world
             ;; The command may refer to another file path, in which
             ;; case we have to do some tab/frame stuff.
