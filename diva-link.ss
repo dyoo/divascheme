@@ -354,12 +354,15 @@
                       (with-divascheme-handlers
                        world
                        (lambda ()
-                         (apply-imperative-op op
-                                              world this
-                                              (lambda (w)
-                                                (send current-mred pull-world w))
-                                              (lambda (w)
-                                                (send current-mred push-world w))))))
+                         (when (not world)
+                           (error 'push-into-mred "illegal situation!"))
+                         (apply-imperative-op
+                          op
+                          world this
+                          (lambda (w)
+                            (send current-mred pull-world w))
+                          (lambda (w)
+                            (send current-mred push-world w))))))
                     world
                     (reverse (World-imperative-operations world)))])
                (set-current-world! (copy-struct World new-world
@@ -461,7 +464,7 @@
            (to-insert-mode edit? on-entry on-exit #f)]
           [(edit? on-entry on-exit cmd)
            (with-divascheme-handlers
-            #f
+            (pull-from-mred)
             (lambda ()
               (on-entry)
               ;; Currently, we're ignoring the return value of make-insert-mode.
@@ -548,7 +551,7 @@
       (define/public (to-command-mode)
         (install-command-keymap)
         (with-divascheme-handlers
-         #f
+         (pull-from-mred)
          (lambda ()
            (check-good-syntax))))
       

@@ -65,7 +65,8 @@
   
   
   ;; move-cursor-position: direction world text% (World -> World) (World -> World) -> World
-  (define (move-cursor-position direction world window update-world-fn update-mred-fn)
+  (define (move-cursor-position direction world window
+                                update-world-fn update-mred-fn)
     (define (callback world)
       (send window diva:-insertion-after-set-position-callback-set (lambda () ()))
       (send window set-position (pos->index (World-cursor-position world))
@@ -94,14 +95,9 @@
   
   
   (provide/contract
-   
-   #;[struct (op:insert-rope op) ([rope rope?]
-                                  [a-pos natural-number/c])]
-   #;[struct (op:delete-range op) ([start-pos natural-number/c]
-                                   [end-pos natural-number/c])]
    [apply-imperative-op (imperative-op?
                          World?
                          (is-a?/c text%)
-                         (World? . -> . World?)
-                         (World? . -> . World?)
+                         (World? . -> . World?) ;; pull-from-mred
+                         (World? . -> . any) ;; push-into-mred
                          . -> . World?)]))
