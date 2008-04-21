@@ -7,6 +7,8 @@
            (lib "lex.ss" "parser-tools")
            (lib "contract.ss")
            (lib "plt-match.ss")
+           (lib "list.ss")
+           "../compute-minimal-edits.ss"
            "../rope.ss"
            "../long-prefix.ss")
   
@@ -41,9 +43,6 @@
           (delete start-pos end-pos #f)
           (set-position start-pos 'same #f #f 'local)
           (insert-rope-in-text this insert-text))
-        
-        (printf "rope is being set to ~s~n" (rope->string to-rope))
-        
         (unless (rope=? to-rope (get-rope))
           (let*-values
               ([(start-length end-length)
@@ -64,9 +63,61 @@
               [(can-insert? start-length from-end)
                (apply-rope-replacement start-length from-end insert-text)]
               [else
+               (error "I can't edit the text.  Text is read-only.")]))))
+      
+      
+      
+      (define/public (set-rope/minimal-edits to-rope)
+        ;; apply-text-changes: rope number number rope -> void
+        ;; Applies the individual changes to get us to sync with the insert-text
+        ;; content.
+        (define (apply-text-changes from-text start-length from-end insert-text)
+          (let ([edits (compute-minimal-edits
+                        (rope->vector (subrope from-text start-length from-end))
+                        (rope->vector insert-text)
+                        equal?)])
+            (for-each (lambda (an-edit)
+                        (match an-edit
+                        [(struct edit:insert (offset elts))
+                         (cond [(char? (first elts))
+                                ;; characters
+                                (insert (apply string elts)
+                                        (+ offset start-length) 'same #f)]
+                               [else
+                                ;; snip
+                                (insert (send (first elts) copy)
+                                        (+ offset start-length) 'same #f)])]
+                        [(struct edit:delete (offset len))
+                         (delete (+ offset start-length)
+                                 (+ offset start-length len)
+                                 #f)]))
+                    edits)))
+        
+        (unless (rope=? to-rope (get-rope))
+          (let*-values
+              ([(start-length end-length)
+                (common-prefix&suffix-lengths (rope->vector (get-rope))
+                                              (rope->vector to-rope)
+                                              vector-length
+                                              vector-ref
+                                              equal?)]
+               [(from-end)
+                (- (rope-length (get-rope)) end-length)]
+               [(to-end)
+                (- (rope-length to-rope) end-length)]
+               [(insert-text) (subrope to-rope start-length to-end)])
+            (cond
+              [(rope=? (subrope (get-rope) start-length from-end)
+                       insert-text)
+               (void)]
+              [(can-insert? start-length from-end)
+               (apply-text-changes (subrope (get-rope) start-length from-end)
+                                   start-length from-end insert-text)]
+              [else
                (error "I can't edit the text.  Text is read-only.")])))
         
         (printf "text is now: ~s~n" (rope->string (get-rope))))
+      
       
       
       
