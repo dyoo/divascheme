@@ -145,6 +145,33 @@
       (super-instantiate ())
       
       
+      (define -in-insert-mode? #f)
+      
+      (define/public (set-in-insert-mode b)
+        (set! -in-insert-mode? b))
+      
+      (define/public (in-insert-mode?)
+        -in-insert-mode?)
+      
+      
+      ;; decorate-new-dstx: dstx -> dstx
+      ;; When we see new dstxs being created, mark them with the 'from-insert-mode
+      ;; property if we're currently in insert-mode.
+      (define/augment (decorate-new-dstx a-dstx)
+        (let ([new-dstx
+               (cond
+                 [(in-insert-mode?)
+                  (dstx-deepmap (lambda (a-dstx)
+                                  (dstx-property-set a-dstx 'from-insert-mode #t))
+                                a-dstx)]
+                 [else
+                  a-dstx])])
+          (inner a-dstx decorate-new-dstx a-dstx)))
+      
+      
+      
+      
+      
       ;; When the user changes editor modes (such as from Scheme to text mode),
       ;; we have to reinstall our keymap, because that editor mode has its own
       ;; keymap.  Concretely, switching between text and editor modes screws
@@ -217,6 +244,8 @@
         (make-object MrEd-state% this))
       
       (define current-world (send current-mred pull-world (make-fresh-world)))
+      
+      
       
       ;; get-current-world: -> World
       ;; Returns the current world state.

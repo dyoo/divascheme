@@ -54,6 +54,7 @@
     
     (define (initialize!)
       ;; Keymap stuff.
+      (send editor set-in-insert-mode #t)
       (set! insert-keymap (make-insert-keymap))
       (send (send editor get-keymap) chain-to-keymap insert-keymap #t)
       
@@ -64,6 +65,18 @@
           (begin-symbol-edit)
           (begin-symbol-insertion))
       (when cmd (eval-cmd cmd)))
+    
+    
+    ;; do-interpretation: world Protocol-Syntax-tree -> void
+    (define (do-interpretation world ast)
+      (restore-editor-to-pre-state!)
+      (dynamic-wind (lambda ()
+                      (send editor set-in-insert-mode #f))
+                    (lambda ()
+                      (interpret! world ast))
+                    (lambda ()
+                      (send editor set-in-insert-mode #t))))
+    
     
     
     ;; Before interpreting a command, we'd like to restore the
@@ -84,26 +97,27 @@
     ;; The templating system forces us to consider if the insertion
     ;; is based on the sequence (Open X) or just regular X.
     (define (consume-text world pending-open a-rope)
-      (restore-editor-to-pre-state!)
       (cond
         [pending-open
          ;; possible templating with open parens
-         (interpret! (Pending-world pending-open)
-                     (make-Verb (make-Command (Pending-symbol pending-open))
-                                false
-                                (make-WhatN
-                                 (make-Rope-Noun a-rope))))]
+         (do-interpretation (Pending-world pending-open)
+                         (make-Verb (make-Command (Pending-symbol pending-open))
+                                    false
+                                    (make-WhatN
+                                     (make-Rope-Noun a-rope))))]
         [else
          ;; possible templating without open parens
-         (interpret! world
-                     (make-Verb (make-InsertRope-Cmd a-rope)
-                                false
-                                false))]))
+         (do-interpretation world
+                         (make-Verb (make-InsertRope-Cmd a-rope)
+                                    false
+                                    false)
+                         )]))
     
     
     (define (consume-cmd world symbol)
-      (restore-editor-to-pre-state!)
-      (interpret! world (make-Verb (make-Command symbol) false false)))
+      (do-interpretation world (make-Verb (make-Command symbol) false false)))
+    
+    
     
     
     (define (insert-color)
@@ -442,7 +456,6 @@
     
     
     (define (revert&exit)
-      #;(printf "revert&exit~n")
       (restore-editor-to-pre-state!)
       (set-world world-at-beginning-of-insert)
       (exit))
@@ -462,6 +475,7 @@
       (clear-highlight)
       (set-on-focus-lost (lambda () (void)))
       (unset-insert&delete-callbacks)
+      (send editor set-in-insert-mode #f)
       (post-exit-hook))
     
     

@@ -237,8 +237,11 @@
       (define/pubment (on-structured-delete a-functional-cursor)
         (inner (void) on-structured-delete a-functional-cursor))
       
-      (define/pubment (after-structured-insert a-functional-cursor)
-        (inner (void) after-structured-insert a-functional-cursor))
+      (define/pubment (after-structured-insert-before a-functional-cursor)
+        (inner (void) after-structured-insert-before a-functional-cursor))
+      
+      (define/pubment (after-structured-insert-after a-functional-cursor)
+        (inner (void) after-structured-insert-after a-functional-cursor))
       
       (define/pubment (after-structured-delete a-functional-cursor)
         (inner (void) after-structured-delete a-functional-cursor))
@@ -858,7 +861,7 @@
                (pretty-print-to-text a-dstx))
              (set! f-cursor (cursor:insert-before f-cursor a-dstx))
              (mark-this-cursor-as-up-to-date-editor!)
-             (send current-text after-structured-insert f-cursor)))))
+             (send current-text after-structured-insert-before f-cursor)))))
       
       
       ;; insert-after!: dstx -> void
@@ -883,7 +886,7 @@
                (pretty-print-to-text a-dstx))
              (set! f-cursor (cursor:insert-after f-cursor a-dstx))
              (mark-this-cursor-as-up-to-date-editor!)
-             (send current-text after-structured-insert f-cursor)))))
+             (send current-text after-structured-insert-after f-cursor)))))
       
       
       ;; delete! -> void
