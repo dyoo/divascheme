@@ -482,6 +482,8 @@
                              [Before ()])
   
   
+  ;; A location is either an absolute position,
+  ;; or relative to some thing.
   (define-datatype Location
     [Pos (p eol)]
     [Loc (where what)])
@@ -501,9 +503,13 @@
   
   
   (define-datatype Protocol-Syntax-Tree
-    [Verb (content location what)])
-  (provide-datatype/contract Protocol-Syntax-Tree
-                             [Verb (Verb-Content? (or/c false/c Location?) (or/c false/c What?))])
+    [Verb (content location what)]
+    [No-op ()])
+  
+  (provide-datatype/contract
+   Protocol-Syntax-Tree
+   [Verb (Verb-Content? (or/c false/c Location?) (or/c false/c What?))]
+   [No-op ()])
   
   
   
