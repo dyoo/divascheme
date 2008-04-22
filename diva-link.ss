@@ -277,26 +277,6 @@
           (queue-callback callback)))
       
       
-      (define/augment (on-structured-insert-before a-fcursor a-dstx)
-        #;(printf "structured insert-before of ~s~n" a-dstx)
-        (inner (void) on-structured-insert-before a-fcursor a-dstx))
-      
-      (define/augment (on-structured-insert-after a-fcursor a-dstx)
-        #;(printf "structured insert-after of ~s~n" a-dstx)
-        (inner (void) on-structured-insert-after a-fcursor a-dstx))
-      
-      (define/augment (on-structured-delete a-fcursor)
-        #;(printf "structured insert-delete of ~s~n" (cursor-dstx a-fcursor))
-        (inner (void) on-structured-delete a-fcursor))
-      
-      (define/augment (after-structured-insert a-fcursor)
-        (inner (void) after-structured-insert a-fcursor))
-      
-      (define/augment (after-structured-delete a-fcursor)
-        (inner (void) after-structured-delete a-fcursor))
-      
-      
-      
       
       
       

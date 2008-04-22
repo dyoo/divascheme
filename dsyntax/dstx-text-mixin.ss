@@ -42,7 +42,8 @@
                          on-structured-insert-before
                          on-structured-insert-after
                          on-structured-delete
-                         after-structured-insert
+                         after-structured-insert-before
+                         after-structured-insert-after
                          after-structured-delete))
   
   (define dstx-cursor<%> (interface ()
