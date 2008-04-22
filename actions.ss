@@ -183,38 +183,9 @@
   
   ;; cleanup-text/pos+len
   (define (cleanup-text/pos+len world pos len)
-    (local
-      ((define (get-line-oriented-start-and-end start-pos end-pos)
-         (let* ([start-pos
-                 (line-pos (World-rope world) start-pos)]
-                [start-pos
-                 (cond [(find-pos start-pos (World-syntax-list world))
-                          => syntax-position]
-                         [else start-pos])]
-                  [end-pos
-                   (line-end-pos (World-rope world) end-pos)]
-                  [end-pos
-                   (cond [(find-pos end-pos (World-syntax-list world))
-                          => syntax-end-position]
-                         [else end-pos])])
-             (values start-pos end-pos)))
-         
-         
-         ;; cleanup-text/between: World pos -> World
-         ;; This function eats all the extra white-space between start-pos and
-         ;; end-pos.
-       (define (cleanup-text/between world start-pos end-pos)
-         (queue-imperative-operation
-          world
-          (make-imperative-op:cleanup/pos start-pos))))
-      
-      (let*-values ([(start-pos end-pos)
-                     (values (pos->index pos)
-                             (+ (pos->index pos) len))
-                     #;(get-line-oriented-start-and-endpos (+ poslen))]
-                    [(new-world)
-                     (cleanup-text/between world start-pos end-pos)])
-        (indent/pos+len new-world start-pos (- end-pos start-pos)))))
+    (queue-imperative-operation
+     world
+     (make-imperative-op:cleanup/pos (pos->index pos))))
   
   
   

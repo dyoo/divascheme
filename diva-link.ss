@@ -360,7 +360,7 @@
                             (send current-mred pull-world w))
                           (lambda (w)
                             (send current-mred push-world w))))))
-                    world
+                    (copy-struct World world [World-imperative-operations empty])
                     (reverse (World-imperative-operations world)))])
                (set-current-world! (copy-struct World new-world
                                                 [World-imperative-operations empty]))))
