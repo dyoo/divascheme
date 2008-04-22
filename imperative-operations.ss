@@ -128,6 +128,7 @@
   
   ;; cleanup-text-between: number number world text% (World -> World) (World -> void) -> World
   (define (cleanup-range start-pos end-pos world a-text update-world-fn update-mred-fn)
+    (update-mred-fn (update-world-fn world))
     (let ([cursor (send (send a-text get-dstx-cursor) get-functional-cursor)])
       (cond
         [(or (not (focus-container cursor start-pos))
