@@ -18,7 +18,6 @@
            "utilities.ss"
            "diva-central.ss" 
            "rope.ss"
-           "cworld.ss"
            "dsyntax/dsyntax.ss"
            "gui/clipboard.ss"
            "imperative-operations.ss"
@@ -166,6 +165,7 @@
       
       
       
+      ;; Messaging
       
       ;; diva-label: string -> void
       ;; Displays a label.
@@ -195,12 +195,14 @@
         (and str (diva-message str)))
       
       
-      
       ;; diva-question: string string (-> void) (string -> void) -> void
       ;; Asks a question.  If cancelled, calls the cancel callback.  Otherwise,
       ;; calls the answer callback with the provided string.
       (define (diva-question question default cancel answer)
         (send (get-top-level-window) diva-question question default cancel answer))
+      
+      
+      
       
       
       ;;
@@ -213,40 +215,15 @@
       (define current-mred
         (make-object MrEd-state% this))
       
-      
-      ;; Central world stuff
-      (define central-world
-        (new-cworld (send current-mred pull-world (make-fresh-world))))
-      
+      (define current-world (send current-mred pull-world (make-fresh-world)))
       
       ;; get-current-world: -> World
       ;; Returns the current world state.
       (define/public (get-current-world)
-        (cworld-world central-world))
+        current-world)
       
-      
-      ;; set-current-world!: World -> void
-      ;; Sets the current world to the new world.
-      (define (set-current-world! new-world)
-        (send-cworld-op (make-operation:replace-world new-world)))
-      
-      
-      ;; Whenever new events happen, we'll send an operation message to the central world
-      ;; mailbox for processing.
-      (define central-world-mailbox (make-channel))
-      
-      ;; A thread will run to process events in the order we receive them.
-      (thread (lambda ()
-                (let loop ()
-                  (let ([new-op (channel-get central-world-mailbox)])
-                    (set! central-world (cworld-apply-operation central-world new-op)))
-                  (loop))))
-      
-      
-      ;; send-cworld-op: op -> void
-      ;; Sends a new message to the cworld.
-      (define/public (send-cworld-op an-op)
-        (channel-put central-world-mailbox an-op))
+      (define (set-current-world! a-world)
+        (set! current-world a-world))
       
       
       
@@ -299,6 +276,27 @@
       
       
       ;; INTERPRETATION
+      
+      
+      ;; queue-for-interpretation: ast -> void
+      ;; Add a command ast to be interpreted.  In the meantime, we return immediately.
+      ;; The command will be eventually run in the main gui thread.
+      (define/public (queue-for-interpretation! an-ast)
+        (channel-put command-mailbox an-ast))
+      
+      ;; Whenever new events happen, we'll send an operation message to the central world
+      ;; mailbox for processing.
+      (define command-mailbox (make-channel))
+      
+      ;; A thread will run to process new operations
+      (thread (lambda ()
+                (let loop ()
+                  (let ([new-ast (channel-get command-mailbox)])
+                    (push-callback
+                     (lambda ()
+                       (diva-ast-put/wait+world (pull-from-mred) new-ast))))
+                  (loop))))
+      
       
       ;; pull-from-mred: -> world
       ;; Pulls a new world from mred into us.
@@ -409,23 +407,18 @@
              (let ([frame (handler:edit-file path)])
                (when (eq? this (send frame get-editor))
                  (push-into-mred (pull-from-mred)))
-               (send (send frame get-editor) diva-ast-put inner-ast))
+               (send (send frame get-editor) queue-for-interpretation! inner-ast))
              (pull-from-mred)]
             [new-world
              new-world])))
       
       
-      ;; diva-ast-put: ast -> void
-      ;; Schedules an evaluation of the ast command using push-callback.
-      (define/public (diva-ast-put ast)
-        (push-callback
-         (lambda ()
-           (let ([world (pull-from-mred)])
-             (diva-ast-put/wait+world world ast)))))
-      
       
       ;; diva-ast-put/wait+world: world ast -> void
       ;; Applies the ast on the given world.
+      ;; This assumes that we are currently in the gui thread.  Do not call
+      ;; this function directly unless we know we're in the gui event thread.
+      ;; TODO: add defensive check for this condition.
       (define (diva-ast-put/wait+world world ast)
         (push-into-mred
          (with-divascheme-handlers
