@@ -1,7 +1,8 @@
 (module marker mzscheme
   (require (lib "class.ss")
            (lib "list.ss")
-           (lib "mred.ss" "mred")) 
+           (lib "mred.ss" "mred")
+           "weak-set.ss")
   
   ;; Implementation of emacs marks as an editor text% mixin.
   ;; Markers provide a position into the text%.
@@ -21,28 +22,24 @@
       (mixin (text-interface%) (text-interface%)
         (super-new)
         
-        (define boxed-markers empty)
+        (define boxed-markers (new-weak-set))
         
         (define/public (add-marker! pos)
           (let ([new-marker (make-marker pos)])
-            (set! boxed-markers (cons (make-weak-box new-marker) boxed-markers))
+            (weak-set-add! boxed-markers new-marker)
             new-marker))
         
         (define/augment (on-insert start len)
           (inner void on-insert start len)
-          (set! boxed-markers (map/filter-weak
-                       (lambda (m)
-                         (adjust-for-insert! start len m)
-                         m)
-                       boxed-markers)))
+          (weak-set-for-each boxed-markers
+                             (lambda (m)
+                               (adjust-for-insert! start len m))))
         
         (define/augment (on-delete start len)
           (inner void on-delete start len)
-          (set! boxed-markers (map/filter-weak
-                       (lambda (m)
-                         (adjust-for-delete! start len m)
-                         m)
-                       boxed-markers))))))
+          (weak-set-for-each boxed-markers
+                             (lambda (m)
+                               (adjust-for-delete! start len m)))))))
   
   
   (define (adjust-for-delete! start length mark)
@@ -57,25 +54,6 @@
     (when (< start (marker-pos mark))
       (set-marker-pos! mark (+ (marker-pos mark) length))))
   
-  
-  ;; map/filter-weak: (listof (weak-box-of X)) -> (listof (weak-box-of X))
-  ;; maps a function across a list of weak boxes.   Any boxes that turn
-  ;; into dead ones will be filtered out.
-  (define (map/filter-weak f l)
-    (reverse
-     (foldl
-      (lambda (x acc)
-        (let ([val (weak-box-value x)])
-          (if val
-              (let ([result (f val)])
-                (if (eq? result val)
-                    (cons x acc)
-                    (cons (make-weak-box result)
-                          acc)))
-              acc)))
-      empty
-      l)))
-    
   
   ;; quick-and-dirty tests
   (define (tests)
