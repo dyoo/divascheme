@@ -210,8 +210,11 @@
            start-pos end-pos))))
       
       (let*-values ([(start-pos end-pos)
-                     (get-line-oriented-start-and-end pos (+ pos len))]
-                    [(new-world) (cleanup-text/between world start-pos end-pos)])
+                     (values (pos->index pos)
+                             (+ (pos->index pos) len))
+                     #;(get-line-oriented-start-and-endpos (+ poslen))]
+                    [(new-world)
+                     (cleanup-text/between world start-pos end-pos)])
         (indent/pos+len new-world start-pos (- end-pos start-pos)))))
   
   

@@ -5,6 +5,7 @@
            (lib "class.ss")
            (lib "struct.ss")
            (lib "list.ss")
+           "dsyntax/dsyntax.ss"
            "cleanup-whitespace.ss"
            "rope.ss"
            "utilities.ss"
@@ -127,30 +128,47 @@
   
   ;; cleanup-text-between: number number world text% (World -> World) (World -> void) -> World
   (define (cleanup-range start-pos end-pos world a-text update-world-fn update-mred-fn)
-    (let* ([world (update-world-fn world)]
-           [start-index (pos->index start-pos)]
-           [end-index (pos->index end-pos)]
-           [line (subrope (World-rope world) start-index end-index)]
-           [len (rope-length line)])
-      (let-values ([(clean-line lst)
-                    (cleanup-whitespace line start-index
-                                        (list (World-selection-index world)
-                                              (World-selection-end-index world)
-                                              (World-mark-index world)
-                                              (World-mark-end-index world)))])
-        (let* ([new-world
-                (world-replace-rope world start-index clean-line len)]
-               [new-world
-                (mark/pos+len (select/pos+len new-world
-                                              (index->pos (first lst))
-                                              (- (second lst) (first lst)))
-                              (index->pos (third lst))
-                              (- (fourth lst) (third lst)))])
-          ;; fixme: don't use update-mred-fn, but rather do the minimal whitespace
-          ;; changes we need.
-          (send a-text set-rope/minimal-edits (World-rope new-world))
-          (update-mred-fn (update-world-fn new-world))
-          new-world))))
+    (let ([cursor (send (send a-text get-dstx-cursor) get-functional-cursor)])
+      (cond
+        [(or (not (focus-container cursor start-pos))
+             (space? (cursor-dstx (focus-container cursor start-pos))))
+         world]
+        [else
+         (let* ([start-index (if (and (focus-container cursor start-pos)
+                                      (focus-out
+                                       (focus-container cursor start-pos)))
+                                 (cursor-pos (focus-out
+                                              (focus-container cursor start-pos)))
+                                 (cursor-pos (focus-container cursor start-pos)))]
+                [end-index (if (focus-container cursor start-index)
+                               (cursor-endpos (focus-container cursor start-index))
+                               (send a-text last-position))]
+                [line (subrope (World-rope world) start-index end-index)]
+                [len (rope-length line)])
+           (let-values ([(clean-line lst)
+                         (cleanup-whitespace line start-index
+                                             (list (World-selection-index world)
+                                                   (World-selection-end-index world)
+                                                   (World-mark-index world)
+                                                   (World-mark-end-index world)))])
+             (let* ([new-world
+                     (world-replace-rope world start-index clean-line len)]
+                    [new-world
+                     (mark/pos+len (select/pos+len new-world
+                                                   (index->pos (first lst))
+                                                   (- (second lst) (first lst)))
+                                   (index->pos (third lst))
+                                   (- (fourth lst) (third lst)))])
+               (printf "cleanup affected ~s to ~s~n"
+                       (rope->string line)
+                       (rope->string clean-line))
+               ;; fixme: don't use update-mred-fn, but rather do the minimal whitespace
+               ;; changes we need.
+               (send a-text set-rope/minimal-edits (World-rope new-world))
+               (send a-text tabify-selection start-index (+ start-index len))
+               (update-mred-fn (update-world-fn new-world))
+               new-world)))])))
+  
   
   
   ;; fixme: eliminate copy-and-paste from actions.ss!
