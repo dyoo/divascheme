@@ -20,6 +20,7 @@
            "rope.ss"
            "dsyntax/dsyntax.ss"
            "gui/clipboard.ss"
+           (lib "async-channel.ss")
            "imperative-operations.ss"
            (prefix preferences: "diva-preferences.ss"))
   
@@ -282,16 +283,16 @@
       ;; Add a command ast to be interpreted.  In the meantime, we return immediately.
       ;; The command will be eventually run in the main gui thread.
       (define/public (queue-for-interpretation! an-ast)
-        (channel-put command-mailbox an-ast))
+        (async-channel-put command-mailbox an-ast))
       
       ;; Whenever new events happen, we'll send an operation message to the central world
       ;; mailbox for processing.
-      (define command-mailbox (make-channel))
+      (define command-mailbox (make-async-channel))
       
       ;; A thread will run to process new operations
       (thread (lambda ()
                 (let loop ()
-                  (let ([new-ast (channel-get command-mailbox)])
+                  (let ([new-ast (async-channel-get command-mailbox)])
                     (push-callback
                      (lambda ()
                        (diva-ast-put/wait+world (pull-from-mred) new-ast))))
