@@ -135,9 +135,14 @@
          world]
         [else
          (let* ([container (focus-container cursor start-pos)]
-                [before (focus-predecessor container)]
-                [after (focus-successor container)])
+                [outer (focus-out container)]
+                [before (focus-younger container)]
+                [after (focus-older container)])
            (cond
+             [outer
+              (cleanup/between (cursor-pos outer)
+                               (cursor-endpos outer)
+                               world a-text update-world-fn update-mred-fn)]
              [(and before after)
               (cleanup/between (cursor-pos before)
                                (cursor-endpos after)
