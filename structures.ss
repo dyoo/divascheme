@@ -187,7 +187,7 @@
   (define-struct (imperative-op:transpose imperative-op) (original-world))
   
   ;; imperative-op:cleanup-range: cleans up the whitespace betwen start-pos and end-pos.
-  (define-struct (imperative-op:cleanup-range imperative-op) (start-pos end-pos))
+  (define-struct (imperative-op:cleanup/pos imperative-op) (pos))
   
   ;; imperative-op:delete-range: delete the range of text.
   (define-struct (imperative-op:delete-range imperative-op) (start-pos end-pos))
@@ -579,9 +579,8 @@
              (one-of/c 'home 'end 'right 'left 'up 'down)])]
    [struct (imperative-op:transpose imperative-op)
            ([original-world World?])]
-   [struct (imperative-op:cleanup-range imperative-op)
-           ([start-pos natural-number/c]
-            [end-pos natural-number/c])]
+   [struct (imperative-op:cleanup/pos imperative-op)
+           ([pos natural-number/c])]
    [struct (imperative-op:delete-range imperative-op)
            ([start-pos natural-number/c]
             [end-pos natural-number/c])]

@@ -34,8 +34,8 @@
       [(struct imperative-op:transpose (original-world))
        (transpose original-world a-world a-text update-world-fn update-mred-fn)]
       
-      [(struct imperative-op:cleanup-range (start-pos end-pos))
-       (cleanup-range start-pos end-pos a-world a-text update-world-fn update-mred-fn)]
+      [(struct imperative-op:cleanup/pos ( pos ))
+       (cleanup/pos pos a-world a-text update-world-fn update-mred-fn)]
       
       [(struct imperative-op:delete-range (start-pos end-pos))
        (delete-range start-pos end-pos a-world a-text
@@ -127,7 +127,7 @@
   
   
   ;; cleanup-text-between: number number world text% (World -> World) (World -> void) -> World
-  (define (cleanup-range start-pos end-pos world a-text update-world-fn update-mred-fn)
+  (define (cleanup/pos start-pos  world a-text update-world-fn update-mred-fn)
     (update-mred-fn (update-world-fn world))
     (let ([cursor (send (send a-text get-dstx-cursor) get-functional-cursor)])
       (cond

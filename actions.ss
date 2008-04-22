@@ -206,8 +206,7 @@
        (define (cleanup-text/between world start-pos end-pos)
          (queue-imperative-operation
           world
-          (make-imperative-op:cleanup-range
-           start-pos end-pos))))
+          (make-imperative-op:cleanup/pos start-pos))))
       
       (let*-values ([(start-pos end-pos)
                      (values (pos->index pos)
