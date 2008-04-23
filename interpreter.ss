@@ -21,20 +21,7 @@
     (Protocol-Syntax-Tree? World? . -> . (or/c World? SwitchWorld?))])
   
   
-  ;; Provided elements to perform the tests.
-  (provide eval-Protocol-Syntax-Tree
-           inc-what-distance
-           dec-what-distance
-           inc-Loc-distance
-           dec-Loc-distance
-           revert-cursor
-           make-make-metric
-           make-metric-w/world)
   
-  (define diva-debug? false)
-  (define (diva-printf text . args)
-    (when diva-debug?
-      (apply printf text args)))
   
   (define max-undo-count 50)
   
@@ -44,7 +31,7 @@
   (define (interpreter ast world)
     (print-mem
      'interpreter
-     (lambda () (diva-printf "Interpreter was called with tree: ~a~n" ast)
+     (lambda ()
        (interpreter/extension world ast))))
   
   
@@ -625,11 +612,9 @@
            [what-base     (eval-Loc world make-metric-f loc-base loc/false)]
            [rank/false (with-handlers ([voice-exn? (lambda (exn) (raise (make-voice-exn "nothing to select")))])
                          (eval-What/select world make-metric-f what-base what))]
-           [_ (diva-printf "RANK: ~a~n" rank/false)]
-           [what          (if rank/false
-                              (inc-what-distance what rank/false)
-                              what)])
-      (diva-printf "HERE: ~a~n" what)
+           [what (if rank/false
+                     (inc-what-distance what rank/false)
+                     what)])
       (if rank/false
           (eval-Search world make-metric-f (index->syntax-pos 0) false what)
           (eval-Search world make-metric-f loc-base loc/false what))))

@@ -79,13 +79,16 @@
     (define (restore-editor-to-pre-state!)
       (with-insert-mode-flag
        (lambda ()
-         (cond
-           [pending-open
-            (send editor set-rope
-                  (World-rope (Pending-world pending-open)))]
-           [else
-            (send editor set-rope
-                  (World-rope world-at-beginning-of-insert))]))))
+         (let ([world (cond
+                        [pending-open
+                         (Pending-world pending-open)]
+                        [else
+                         world-at-beginning-of-insert])])
+           (send editor set-rope (World-rope world))
+           (let ([index (pos->index (World-cursor-position world))])
+             (send editor diva:set-selection-position
+                   index
+                   (+ index (World-selection-length world))))))))
     
     
     ;; consume-text: World Pending rope -> void
