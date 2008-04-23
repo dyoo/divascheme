@@ -109,10 +109,10 @@
          (do-interpretation world
                          (make-Verb (make-InsertRope-Cmd a-rope)
                                     false
-                                    false)
-                         )]))
+                                    false))]))
     
-    
+    ;; consume-cmd: World symbol -> void
+    ;; Evaluates a symbol as a command.
     (define (consume-cmd world symbol)
       (do-interpretation world (make-Verb (make-Command symbol) false false)))
     

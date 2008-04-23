@@ -15,18 +15,18 @@
       (super-new)
       
       (define/augment (on-structured-insert-before a-fcursor a-dstx)
-        (when (not (in-insert-mode?))
-          (printf "structured insert-before of ~s~n" a-dstx))
+        #;(when (not (in-insert-mode?))
+            (printf "structured insert-before of ~s~n" a-dstx))
         (inner (void) on-structured-insert-before a-fcursor))
       
       (define/augment (on-structured-insert-after a-fcursor a-dstx)
-        (when (not (in-insert-mode?))
-          (printf "structured insert-after of ~s~n" a-dstx))
+        #;(when (not (in-insert-mode?))
+            (printf "structured insert-after of ~s~n" a-dstx))
         (inner (void) on-structured-insert-after a-fcursor))
       
       (define/augment (on-structured-delete a-fcursor)
-        (when (not (in-insert-mode?))
-          (printf "structured delete of ~s~n" (cursor-dstx a-fcursor)))
+        #;(when (not (in-insert-mode?))
+            (printf "structured delete of ~s~n" (cursor-dstx a-fcursor)))
         (inner (void) on-structured-delete a-fcursor))
       
       
