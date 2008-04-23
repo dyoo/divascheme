@@ -161,13 +161,12 @@
         (let ([new-dstx
                (cond
                  [(in-insert-mode?)
-                  (printf "special decoration of ~s~n" a-dstx)
                   (dstx-deepmap (lambda (a-dstx)
                                   (dstx-property-set a-dstx 'from-insert-mode #t))
                                 a-dstx)]
                  [else
                   a-dstx])])
-          (inner a-dstx decorate-new-dstx a-dstx)))
+          (inner new-dstx decorate-new-dstx new-dstx)))
       
       
       

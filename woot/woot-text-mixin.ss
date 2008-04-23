@@ -22,12 +22,10 @@
       
       (define/augment (on-structured-insert-after a-fcursor a-dstx)
         (when (not (dstx-from-insert-mode? a-dstx))
-          (printf "structured insert-after of ~s~n" (cursor-dstx a-fcursor)))
+          (printf "structured insert-after of ~s~n" a-dstx))
         (inner (void) on-structured-insert-after a-fcursor))
       
       (define/augment (on-structured-delete a-fcursor)
-        (when (not (in-insert-mode?))
-          (printf "structured delete~n"))
         (inner (void) on-structured-delete a-fcursor))
       
       (define/augment (after-structured-insert-before a-fcursor)
@@ -51,4 +49,5 @@
   ;; dstx-from-insert-mode?: dstx -> boolean
   ;; Returns true if we saw a structure in insert-mode.
   (define (dstx-from-insert-mode? a-dstx)
-    (dstx-property-ref a-dstx 'in-insert-mode (lambda () #f))))
+    (dstx-property-ref a-dstx 'from-insert-mode (lambda ()
+                                                  #f))))

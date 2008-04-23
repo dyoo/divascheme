@@ -54,7 +54,6 @@
     
     (define (initialize!)
       ;; Keymap stuff.
-      (send editor set-in-insert-mode #t)
       (set! insert-keymap (make-insert-keymap))
       (send (send editor get-keymap) chain-to-keymap insert-keymap #t)
       
@@ -70,12 +69,7 @@
     ;; do-interpretation: world Protocol-Syntax-tree -> void
     (define (do-interpretation world ast)
       (restore-editor-to-pre-state!)
-      (dynamic-wind (lambda ()
-                      (send editor set-in-insert-mode #f))
-                    (lambda ()
-                      (interpret! world ast))
-                    (lambda ()
-                      (send editor set-in-insert-mode #t))))
+      (interpret! world ast))
     
     
     
@@ -457,12 +451,7 @@
     
     (define (revert&exit)
       (restore-editor-to-pre-state!)
-      (dynamic-wind (lambda ()
-                      (send editor set-in-insert-mode #f))
-                    (lambda ()
-                      (set-world world-at-beginning-of-insert))
-                    (lambda ()
-                      (send editor set-in-insert-mode #t)))
+      (set-world world-at-beginning-of-insert)
       
       (exit))
     
@@ -471,12 +460,7 @@
           (revert&exit)
           (begin
             (eval-text)
-            (dynamic-wind (lambda ()
-                            (send editor set-in-insert-mode #f))
-                          (lambda ()
-                            (set-world world-at-beginning-of-insert))
-                          (lambda ()
-                            (send editor set-in-insert-mode #t)))
+            (set-world world-at-beginning-of-insert)
             (exit))))
     
     
@@ -486,7 +470,6 @@
       (clear-highlight)
       (set-on-focus-lost (lambda () (void)))
       (unset-insert&delete-callbacks)
-      (send editor set-in-insert-mode #f)
       (post-exit-hook))
     
     
