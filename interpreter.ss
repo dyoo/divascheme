@@ -4,6 +4,7 @@
            (lib "plt-match.ss")
            (lib "class.ss")
            (lib "struct.ss")
+           (lib "contract.ss")
            (only (lib "1.ss" "srfi") last circular-list partition find)
            "traversal.ss"
            "structures.ss"
@@ -14,16 +15,12 @@
            "tag-reader.ss"
            "rope.ss")
   
-  ;; This file provides an interpreter for the DivaLanguage,
-  ;; that is this is a pure function, without any state, completely stateless,
-  ;; which takes an ast (Abstract Syntax Tree) of the DivaLanguage and returns
-  ;; a function which takes a World and returns a new World whose differences are conforms to the semantics to the abstract syntax tree.
-  ;; Also, the returned function can raise an exception if there's something wrong:
-  ;;  `next' asked when no context
-  ;;  or something really bad due to a bug.
-  (provide interpreter)
-
-
+  ;; This file provides an interpreter for the DivaLanguage.
+  (provide/contract
+   [interpreter
+    (Protocol-Syntax-Tree? World? . -> . (or/c World? SwitchWorld?))])
+  
+  
   ;; Provided elements to perform the tests.
   (provide eval-Protocol-Syntax-Tree
            inc-what-distance
@@ -54,6 +51,17 @@
   ;; interpreter/extension: World ast -> (union World SwitchWorld)
   ;; Apply the interpreter, maintaining selection information.
   (define (interpreter/extension world ast)
+    
+    ;; annotate-success-message: (union World SwitchWorld) -> (union World SwitchWorld)
+    (define (annotate-success-message a-world)
+      (cond [(and (World? a-world)
+                  (World-extension a-world)
+                  (equal? (World-success-message a-world) ""))
+             (copy-struct World a-world
+                          [World-success-message "extending selection..."])]
+            [else
+             a-world]))
+    
     (let ([new-world
            (if (World-extension world)
                (if (is-motion-ast? ast)
@@ -62,12 +70,7 @@
                                 (eval-Protocol-Syntax-Tree world ast)
                                 [World-extension false]))
                (eval-Protocol-Syntax-Tree world ast))])
-      
-      (if (and (World-extension new-world)
-               (equal? (World-success-message new-world) ""))
-          (copy-struct World new-world
-                       [World-success-message "extending selection..."])
-          new-world)))
+      (annotate-success-message new-world)))
   
   
   ;; eval-Protocol-Syntax-Tree : World ast -> (union World SwitchWorld)

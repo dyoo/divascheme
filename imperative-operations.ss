@@ -37,12 +37,12 @@
       [(struct imperative-op:cleanup/pos (pos))
        (cleanup/pos pos a-world a-text update-world-fn update-mred-fn)]
       
-      [(struct imperative-op:delete-range (start-pos end-pos))
-       (delete-range start-pos end-pos a-world a-text
+      #;[(struct imperative-op:delete-range (start-pos end-pos))
+         (delete-range start-pos end-pos a-world a-text
                      update-world-fn update-mred-fn)]
       
-      [(struct imperative-op:insert-rope (rope pos))
-       (do-insert-rope rope pos a-world a-text update-world-fn update-mred-fn)]))
+      #;[(struct imperative-op:insert-rope (rope pos))
+         (do-insert-rope rope pos a-world a-text update-world-fn update-mred-fn)]))
   
   
   
@@ -113,14 +113,14 @@
   
   
   ;; delete-range: number number world text% (World->World) (World -> void) -> World
-  (define (delete-range start-pos end-pos world a-text update-world-fn update-mred-fn)
-    (send a-text delete start-pos end-pos #f)
+  #;(define (delete-range start-pos end-pos world a-text update-world-fn update-mred-fn)
+      (send a-text delete start-pos end-pos #f)
     world)
   
   
   ;; insert-rope: rope number World text% (World -> World) (World -> void) -> World
-  (define (do-insert-rope a-rope a-pos world a-text update-world-fn update-mred-fn)
-    (send a-text set-position a-pos 'same #f #f 'local)
+  #;(define (do-insert-rope a-rope a-pos world a-text update-world-fn update-mred-fn)
+      (send a-text set-position a-pos 'same #f #f 'local)
     (insert-rope-in-text a-text a-rope)
     world)
   
