@@ -488,7 +488,6 @@
                                  
                                  ;; interpreter
                                  (lambda (world ast)
-                                   (printf "interpret! sees ~a~n" (in-insert-mode?))
                                    (diva-ast-put/wait+world world ast))
                                  
                                  on-exit ;; post-exit-hook

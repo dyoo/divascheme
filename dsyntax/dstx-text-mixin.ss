@@ -244,8 +244,8 @@
       (define/pubment (after-structured-insert-after a-functional-cursor)
         (inner (void) after-structured-insert-after a-functional-cursor))
       
-      (define/pubment (after-structured-delete a-functional-cursor)
-        (inner (void) after-structured-delete a-functional-cursor))
+      (define/pubment (after-structured-delete a-functional-cursor deleted-dstx)
+        (inner (void) after-structured-delete a-functional-cursor deleted-dstx))
       
       
       ;; after-delete: number number -> void
@@ -904,26 +904,28 @@
       ;; Protected.
       (define/public (delete!/sync-with-text sync?)
         (resynchronize-with-main-editing-cursor!)
-        (send current-text on-structured-delete (get-functional-cursor))
-        (with-structured-editing
-         (lambda ()
-           (let ([deletion-length
-                  (- (struct:loc-pos (cursor:loc-after
-                                      (struct:cursor-loc f-cursor)
-                                      (cursor-dstx)))
-                     (cursor-pos))])
-             (when sync?
-               (cond [(send current-text can-delete? (cursor-pos) deletion-length)
-                      (send current-text delete
-                            (cursor-pos) (+ (cursor-pos) deletion-length) #f)]
-                     [else
-                      ;; fixme: I've got to do something here!
-                      (error 'delete!)]))
-             (set! f-cursor (cursor:delete f-cursor))
-             (set! f-cursor (cursor:replace
-                             f-cursor
-                             (send current-text
-                                   decorate-new-dstx
-                                   (struct:cursor-dstx f-cursor))))
-             (mark-this-cursor-as-up-to-date-editor!)
-             (send current-text after-structured-delete f-cursor))))))))
+        (let ([deleted-dstx (cursor-dstx)])
+          (send current-text on-structured-delete (get-functional-cursor))
+          (with-structured-editing
+           (lambda ()
+             (let ([deletion-length
+                    (- (struct:loc-pos (cursor:loc-after
+                                        (struct:cursor-loc f-cursor)
+                                        (cursor-dstx)))
+                       (cursor-pos))])
+               (when sync?
+                 (cond [(send current-text can-delete? (cursor-pos) deletion-length)
+                        (send current-text delete
+                              (cursor-pos) (+ (cursor-pos) deletion-length) #f)]
+                       [else
+                        ;; fixme: I've got to do something here!
+                        (error 'delete!)]))
+               (set! f-cursor (cursor:delete f-cursor))
+               (set! f-cursor (cursor:replace
+                               f-cursor
+                               (send current-text
+                                     decorate-new-dstx
+                                     (struct:cursor-dstx f-cursor))))
+               (mark-this-cursor-as-up-to-date-editor!)
+               (send current-text after-structured-delete f-cursor deleted-dstx)))))))))
+  

@@ -134,8 +134,9 @@
       (send editor get-text left-edge-of-insert (send editor get-start-position)))
     
     (define (set-text text)
-      (send editor insert text left-edge-of-insert (send editor get-start-position) true))
-    
+      (with-insert-mode-flag 
+       (lambda () 
+         (send editor insert text left-edge-of-insert (send editor get-start-position) true))))
     
     (define (set-insert&delete-callbacks)
       (set-after-insert-callback on-insert)
