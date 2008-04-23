@@ -26,6 +26,7 @@
                  [markers (map add1 markers)]
                  [acc '()]
                  [count-deleted-chars 0])
+        
         (local ((define tok (position-token-token pos-tok))
                 (define start-pos 
                   (- (position-offset (position-token-start-pos pos-tok)) 
@@ -104,7 +105,6 @@
                                                      (token-value tok)))))]
                     [else
                      (leave-preserved #f #f)])))
-          
           (case (token-name tok)
             [(atom)
              (handle-atom)]
