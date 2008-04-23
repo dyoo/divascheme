@@ -488,7 +488,9 @@
                                  
                                  ;; interpreter
                                  (lambda (world ast)
-                                   (diva-ast-put/wait+world world ast))
+                                   (set-in-insert-mode #f)
+                                   (diva-ast-put/wait+world world ast)
+                                   (set-in-insert-mode #t))
                                  
                                  on-exit ;; post-exit-hook
                                  cmd ;; cmd
@@ -514,6 +516,7 @@
                 (define was-button-enabled? #t)
                 
                 (define (on-entry)
+                  (set-in-insert-mode #t)  
                   (diva-label "DivaScheme: insertion mode")
                   (diva-message "")
                   
@@ -524,6 +527,7 @@
                     (send (get-check-syntax-button) enable #f)))
                 
                 (define (on-exit)
+                  (set-in-insert-mode #f) 
                   (diva-label "DivaScheme: command mode")
                   (when (get-check-syntax-button)
                     (send (get-check-syntax-button) enable was-button-enabled?))))
