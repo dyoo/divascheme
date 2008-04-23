@@ -18,10 +18,10 @@ Quick example
 > (require "dsyntax.ss")
 > (define a-cursor
     (let* ([a-cursor (make-toplevel-cursor '())]
-           [a-cursor (cursor-insert-after a-cursor (new-atom "hello"))]
-           [a-cursor (cursor-insert-after a-cursor (new-atom "this"))]
-           [a-cursor (cursor-insert-after a-cursor (new-atom "is"))]
-           [a-cursor (cursor-insert-after a-cursor 
+           [a-cursor (insert-after a-cursor (new-atom "hello"))]
+           [a-cursor (insert-after a-cursor (new-atom "this"))]
+           [a-cursor (insert-after a-cursor (new-atom "is"))]
+           [a-cursor (insert-after a-cursor 
                                           (new-fusion "("
                                                       (list (new-atom "a") 
                                                             (new-atom "test"))
@@ -262,11 +262,22 @@ Moves focus to the non-space successor, assuming a depth-first traversal.
 Moves focus to the non-space predecessor, assuming a depth-first traversal.
 
 
+> focus-container: cursor number -> (union cursor #f)
+
+Move focus to the enclosing dstx object of the given position.
+Returns false only if the position is outside all dstxs.
+
+
+> focus-find-dstx: cursor (dstx -> boolean) -> (union cursor #f)
+
+Use the predicate to find the dstx.  Search starts from the cursor and
+spreads outward toward the successors and predecessors.
+
+
 > focus-pos: cursor number -> (union cursor #f)
 
 > focus-line: cursor number -> (union cursor #f)
 
-> focus-line&col: cursor number number -> (union cursor #f)
 
 
 
@@ -274,11 +285,11 @@ _editing_
 
 All editing is done through cursors.
 
-> cursor-insert-before: cursor dstx -> cursor
+> insert-before: cursor dstx -> cursor
 Inserts before the current focus.  Focus moves to the new element.
 
 
-> cursor-insert-after: cursor dstx -> cursor
+> insert-after: cursor dstx -> cursor
 Inserts after the current focus.  Focus moves to the new element.
 
 
