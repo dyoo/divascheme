@@ -181,7 +181,7 @@
                (closers
                 (token-suffix lexeme))
                
-               ((repetition 1 +inf.0 whitespace)
+               (whitespace
                 (token-space lexeme))
                
                (quoters

@@ -14,6 +14,7 @@
            (prefix marker: "marker.ss")
            "tag-gui.ss"
            "dsyntax/dstx-text-mixin.ss"
+           "woot/woot-text-mixin.ss"
            (lib "unit.ss")
            (lib "tool.ss" "drscheme"))
   
@@ -65,12 +66,13 @@
           (diva-central-mixin super%))
         
         (define (diva-definitions-text-mixin super%)
-          (diva-link:text-mixin
-           (marker:marker-mixin
-            (diva-central-mixin
-             (text-rope-mixin
-              (dstx-text-mixin
-               super%))))))
+          (woot-text-mixin
+           (diva-link:text-mixin
+            (marker:marker-mixin
+             (diva-central-mixin
+              (text-rope-mixin
+               (dstx-text-mixin
+                super%)))))))
         
         
         (drscheme:get/extend:extend-unit-frame diva-frame-mixin)

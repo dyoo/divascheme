@@ -57,7 +57,9 @@
            [(or meta-down? control-down?)
             no-further-dispatch-needed]
            [(printable-char? key-code)
+            (send editor set-in-insert-mode #t)
             (send editor insert key-code)
+            (send editor set-in-insert-mode #f)
             no-further-dispatch-needed]
            [else
             more-dispatch-needed]))]

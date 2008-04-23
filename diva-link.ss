@@ -18,9 +18,9 @@
            "utilities.ss"
            "diva-central.ss" 
            "rope.ss"
-           "cworld.ss"
            "dsyntax/dsyntax.ss"
            "gui/clipboard.ss"
+           (lib "async-channel.ss")
            "imperative-operations.ss"
            (prefix preferences: "diva-preferences.ss"))
   
@@ -145,6 +145,33 @@
       (super-instantiate ())
       
       
+      (define -in-insert-mode? #f)
+      
+      (define/public (set-in-insert-mode b)
+        (set! -in-insert-mode? b))
+      
+      (define/public (in-insert-mode?)
+        -in-insert-mode?)
+      
+      
+      ;; decorate-new-dstx: dstx -> dstx
+      ;; When we see new dstxs being created, mark them with the 'from-insert-mode
+      ;; property if we're currently in insert-mode.
+      (define/augment (decorate-new-dstx a-dstx)
+        (let ([new-dstx
+               (cond
+                 [(in-insert-mode?)
+                  (dstx-deepmap (lambda (a-dstx)
+                                  (dstx-property-set a-dstx 'from-insert-mode #t))
+                                a-dstx)]
+                 [else
+                  a-dstx])])
+          (inner new-dstx decorate-new-dstx new-dstx)))
+      
+      
+      
+      
+      
       ;; When the user changes editor modes (such as from Scheme to text mode),
       ;; we have to reinstall our keymap, because that editor mode has its own
       ;; keymap.  Concretely, switching between text and editor modes screws
@@ -166,6 +193,7 @@
       
       
       
+      ;; Messaging
       
       ;; diva-label: string -> void
       ;; Displays a label.
@@ -195,12 +223,14 @@
         (and str (diva-message str)))
       
       
-      
       ;; diva-question: string string (-> void) (string -> void) -> void
       ;; Asks a question.  If cancelled, calls the cancel callback.  Otherwise,
       ;; calls the answer callback with the provided string.
       (define (diva-question question default cancel answer)
         (send (get-top-level-window) diva-question question default cancel answer))
+      
+      
+      
       
       
       ;;
@@ -213,40 +243,17 @@
       (define current-mred
         (make-object MrEd-state% this))
       
+      (define current-world (send current-mred pull-world (make-fresh-world)))
       
-      ;; Central world stuff
-      (define central-world
-        (new-cworld (send current-mred pull-world (make-fresh-world))))
       
       
       ;; get-current-world: -> World
       ;; Returns the current world state.
       (define/public (get-current-world)
-        (cworld-world central-world))
+        current-world)
       
-      
-      ;; set-current-world!: World -> void
-      ;; Sets the current world to the new world.
-      (define (set-current-world! new-world)
-        (send-cworld-op (make-operation:replace-world new-world)))
-      
-      
-      ;; Whenever new events happen, we'll send an operation message to the central world
-      ;; mailbox for processing.
-      (define central-world-mailbox (make-channel))
-      
-      ;; A thread will run to process events in the order we receive them.
-      (thread (lambda ()
-                (let loop ()
-                  (let ([new-op (channel-get central-world-mailbox)])
-                    (set! central-world (cworld-apply-operation central-world new-op)))
-                  (loop))))
-      
-      
-      ;; send-cworld-op: op -> void
-      ;; Sends a new message to the cworld.
-      (define/public (send-cworld-op an-op)
-        (channel-put central-world-mailbox an-op))
+      (define (set-current-world! a-world)
+        (set! current-world a-world))
       
       
       
@@ -270,26 +277,6 @@
           (queue-callback callback)))
       
       
-      (define/augment (on-structured-insert-before a-fcursor a-dstx)
-        #;(printf "structured insert-before of ~s~n" a-dstx)
-        (inner (void) on-structured-insert-before a-fcursor a-dstx))
-      
-      (define/augment (on-structured-insert-after a-fcursor a-dstx)
-        #;(printf "structured insert-after of ~s~n" a-dstx)
-        (inner (void) on-structured-insert-after a-fcursor a-dstx))
-      
-      (define/augment (on-structured-delete a-fcursor)
-        #;(printf "structured insert-delete of ~s~n" (cursor-dstx a-fcursor))
-        (inner (void) on-structured-delete a-fcursor))
-      
-      (define/augment (after-structured-insert a-fcursor)
-        (inner (void) after-structured-insert a-fcursor))
-      
-      (define/augment (after-structured-delete a-fcursor)
-        (inner (void) after-structured-delete a-fcursor))
-      
-      
-      
       
       
       
@@ -299,6 +286,27 @@
       
       
       ;; INTERPRETATION
+      
+      
+      ;; queue-for-interpretation: ast -> void
+      ;; Add a command ast to be interpreted.  In the meantime, we return immediately.
+      ;; The command will be eventually run in the main gui thread.
+      (define/public (queue-for-interpretation! an-ast)
+        (async-channel-put command-mailbox an-ast))
+      
+      ;; Whenever new events happen, we'll send an operation message to the central world
+      ;; mailbox for processing.
+      (define command-mailbox (make-async-channel))
+      
+      ;; A thread will run to process new operations
+      (thread (lambda ()
+                (let loop ()
+                  (let ([new-ast (async-channel-get command-mailbox)])
+                    (push-callback
+                     (lambda ()
+                       (diva-ast-put/wait+world (pull-from-mred) new-ast))))
+                  (loop))))
+      
       
       ;; pull-from-mred: -> world
       ;; Pulls a new world from mred into us.
@@ -409,23 +417,18 @@
              (let ([frame (handler:edit-file path)])
                (when (eq? this (send frame get-editor))
                  (push-into-mred (pull-from-mred)))
-               (send (send frame get-editor) diva-ast-put inner-ast))
+               (send (send frame get-editor) queue-for-interpretation! inner-ast))
              (pull-from-mred)]
             [new-world
              new-world])))
       
       
-      ;; diva-ast-put: ast -> void
-      ;; Schedules an evaluation of the ast command using push-callback.
-      (define/public (diva-ast-put ast)
-        (push-callback
-         (lambda ()
-           (let ([world (pull-from-mred)])
-             (diva-ast-put/wait+world world ast)))))
-      
       
       ;; diva-ast-put/wait+world: world ast -> void
       ;; Applies the ast on the given world.
+      ;; This assumes that we are currently in the gui thread.  Do not call
+      ;; this function directly unless we know we're in the gui event thread.
+      ;; TODO: add defensive check for this condition.
       (define (diva-ast-put/wait+world world ast)
         (push-into-mred
          (with-divascheme-handlers

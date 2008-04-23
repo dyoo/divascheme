@@ -74,20 +74,19 @@
   (define (eval-Protocol-Syntax-Tree world ast)
     (print-mem*
      'eval-Protocol-Syntax-Tree
-     (let* ([world (match ast
-                     [(struct Verb ((struct Command ('Again)) #f #f)) world]
-                     [_ (copy-struct World world
-                                     [World-again ast])])]
+     (let* ([world (record-again-in-world world ast)]
             [world (trim-undos world max-undo-count)])
        (match ast
+         [(struct Verb ((struct InsertRope-Cmd (rope)) loc #f))
+          (eval-InsertRope world rope loc 0 0 false 'Normal)]
+         
+         [(struct No-op ())
+          (eval-No-op world)]
          
          [(struct Verb ((struct Command ('Open)) loc what))
           (eval-Open false world loc what 0 0 false 'Normal)]
          [(struct Verb ((struct Command ('Open-Square)) loc what))
           (eval-Open true world loc what 0 0 false 'Normal)]
-         [(struct Verb ((struct InsertRope-Cmd (rope)) loc #f))
-          (eval-InsertRope world rope loc 0 0 false 'Normal)]
-         
          [(struct Verb ((struct Command ('Close)) #f #f))
           (eval-Close world)]
          
@@ -210,9 +209,18 @@
          
          [(struct Verb ((struct Command ('Extend-Selection)) #f #f))
           (eval-Extend-Selection world)]
+         
+         ;; Automatically turns extension off since this is not a motion command
          [(struct Verb ((struct Command ('Stop-Extend-Selection)) #f #f))
-          world]))) ;; Automatically turns extension off since this is not a motion command
-    )
+          world]))))
+  
+  
+  
+  (define (record-again-in-world world ast)
+    (match ast
+      [(struct Verb ((struct Command ('Again)) #f #f)) world]
+      [_ (copy-struct World world
+                      [World-again ast])]))
   
   
   ;; is-motion-ast?: ast -> boolean
@@ -261,6 +269,11 @@
                                            [World-cancel sub-cancel]))])])
              (hash-table-put! dealt-with world result)
              result)))))))
+  
+  
+  (define (eval-No-op world)
+    (printf "I see a no-op!~n")
+    world)
   
   
   ;; eval-Loc : World (pos -> metric) pos (union Loc false) -> pos
