@@ -1,10 +1,5 @@
 (module woot mzscheme
-<<<<<<< HEAD:woot/woot.ss
   (require (lib "struct.ss"))
-=======
-  (require (lib "struct.ss")
-           (lib "plt-match.ss"))
->>>>>>> c558343f5a973730bc479274e5bdf4efd4db7738:woot/woot.ss
   
   ;;
   ;; TYPES
@@ -23,15 +18,8 @@
   ))
   
   (define-struct atom (
-<<<<<<< HEAD:woot/woot.ss
     id ; id
-=======
->>>>>>> c558343f5a973730bc479274e5bdf4efd4db7738:woot/woot.ss
     contents ; string
-<<<<<<< HEAD:woot/woot.ss
-=======
-    id ; id
->>>>>>> c558343f5a973730bc479274e5bdf4efd4db7738:woot/woot.ss
   ))
   
   (define-struct tomb-d (
