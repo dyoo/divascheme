@@ -161,6 +161,7 @@
         (let ([new-dstx
                (cond
                  [(in-insert-mode?)
+                  (printf "special decoration of ~s~n" a-dstx)
                   (dstx-deepmap (lambda (a-dstx)
                                   (dstx-property-set a-dstx 'from-insert-mode #t))
                                 a-dstx)]
@@ -488,6 +489,7 @@
                                  
                                  ;; interpreter
                                  (lambda (world ast)
+                                   (printf "interpret! sees ~a~n" (in-insert-mode?))
                                    (diva-ast-put/wait+world world ast))
                                  
                                  on-exit ;; post-exit-hook

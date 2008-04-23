@@ -457,7 +457,13 @@
     
     (define (revert&exit)
       (restore-editor-to-pre-state!)
-      (set-world world-at-beginning-of-insert)
+      (dynamic-wind (lambda ()
+                      (send editor set-in-insert-mode #f))
+                    (lambda ()
+                      (set-world world-at-beginning-of-insert))
+                    (lambda ()
+                      (send editor set-in-insert-mode #t)))
+      
       (exit))
     
     (define (consume&exit)
@@ -465,7 +471,12 @@
           (revert&exit)
           (begin
             (eval-text)
-            (set-world world-at-beginning-of-insert)
+            (dynamic-wind (lambda ()
+                            (send editor set-in-insert-mode #f))
+                          (lambda ()
+                            (set-world world-at-beginning-of-insert))
+                          (lambda ()
+                            (send editor set-in-insert-mode #t)))
             (exit))))
     
     
