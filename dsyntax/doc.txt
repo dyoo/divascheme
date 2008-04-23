@@ -43,6 +43,21 @@ Quick example
 
 
 
+Another example
+---------------
+
+> (require "dstx-text-mixin.ss")
+> (define my-text (new (dstx-text-mixin text%)))
+> (define c (send my-text get-dstx-cursor))
+> (send c insert-after! (new-atom "hello"))
+> (send c insert-after! (new-space " "))
+> (send c insert-after! (new-atom "world"))
+> (send my-text get-text)
+"hello world"
+> (send c focus-container 3)
+> (send c cursor-dstx)
+#(struct:atom #(struct:object:table-from-set% ...) "hello")
+
 
 API
 ---

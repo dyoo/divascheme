@@ -6,7 +6,6 @@
            (lib "class.ss")
            "diva-panel.ss"
            "diva-link.ss"
-           "mred-callback.ss"
            "diva-central.ss"
            "diva-file-menu.ss"
            "gui/text-rope-mixin.ss"
@@ -14,7 +13,8 @@
            (prefix preferences: "diva-preferences.ss")
            (prefix marker: "marker.ss")
            "tag-gui.ss"
-	   (lib "unit.ss")
+           "dsyntax/dstx-text-mixin.ss"
+           (lib "unit.ss")
            (lib "tool.ss" "drscheme"))
   
   
@@ -66,24 +66,16 @@
         
         (define (diva-definitions-text-mixin super%)
           (diva-link:text-mixin
-           (voice-mred-text-callback-mixin
-            (marker:marker-mixin
-             (diva-central-mixin
-              (text-rope-mixin super%))))))
-        
-        (define (diva-interactions-text-mixin super%)
-          (diva-link:interactions-text-mixin
-           (diva-link:text-mixin
-            (voice-mred-interactions-text-callback-mixin
-             (marker:marker-mixin
-              (diva-central-mixin
-               (text-rope-mixin super%)))))))
+           (marker:marker-mixin
+            (diva-central-mixin
+             (text-rope-mixin
+              (dstx-text-mixin
+               super%))))))
         
         
         (drscheme:get/extend:extend-unit-frame diva-frame-mixin)
         (drscheme:get/extend:extend-definitions-canvas diva-definitions-canvas-mixin)
         (drscheme:get/extend:extend-definitions-text diva-definitions-text-mixin)
-        (drscheme:get/extend:extend-interactions-text diva-interactions-text-mixin)
         
         (preferences:install-diva-central-handler shared-diva-central)
         (preferences:add-preference-panel shared-diva-central)))

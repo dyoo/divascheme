@@ -1,10 +1,11 @@
 (module mred-state mzscheme
   (require (lib "class.ss")
            (lib "struct.ss")
-           (lib "mred.ss" "mred")
            "utilities.ss"
            "structures.ss"
-           "rope.ss")
+           "rope.ss"
+           "long-prefix.ss"
+           "gui/text-rope-mixin.ss")
   
   (provide MrEd-state% MrEd-state<%>)
   
@@ -53,6 +54,7 @@
       ;;  * diva-message-init : a function to send messages to the user
       ;;  * window-text-init  : the text object of the window that MrEd-State should take care
       
+      
       (init window-text-init)
       (define window-text window-text-init)
       
@@ -67,12 +69,8 @@
       ;; get-rope: -> rope
       ;; Returns the rope content of the window.
       (define (get-rope)
-        (send window-text diva:-get-rope))
+        (send window-text get-rope))
       
-      ;; update-text: rope -> void
-      ;; Mutates the window to the rope's content.
-      (define (update-text rope)
-        (send window-text diva:-update-text rope))
       
       
       ;; STOP COLORING:          (send window-text freeze-colorer)
@@ -213,8 +211,9 @@
       ;; Pushes changes from the world back into the stateful text%.
       ;; push-world: world -> void
       (define/public (push-world world)
-        (unless (rope=? (World-rope world) (get-rope))
-          (update-text (World-rope world)))
+        (with-edit-sequence
+         (lambda ()
+           (send window-text set-rope (World-rope world))))
         (set-selection (World-cursor-position world) (World-selection-length world))
         (cond [(World-extension world)
                (let ([e (World-extension world)])
@@ -236,4 +235,13 @@
                (send window-text diva:-insertion-after-set-position-callback-set
                      (lambda () (void)))])
         
-        (send window-text diva-message (World-success-message world))))))
+        (send window-text diva-message (World-success-message world)))
+      
+      
+      (define (with-edit-sequence f)
+        (dynamic-wind
+         (lambda ()
+           (send window-text begin-edit-sequence))
+         f
+         (lambda ()
+           (send window-text end-edit-sequence)))))))

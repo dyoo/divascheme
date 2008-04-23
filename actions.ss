@@ -169,14 +169,10 @@
       (error 'indent/pos+len))
     
     (let-values ([(world mark) (world-new-marker world pos)])
-      (queue-imperative-action
+      (queue-imperative-operation
        world
-       (lambda (world window update-world-fn update-mred-fn)
-         (let* ([new-pos (max 0 (sub1 (world-marker-position world mark)))]
-                [new-end-pos (min (string-length (send window get-text))
-                                  (+ new-pos len))])
-           (send window tabify-selection new-pos new-end-pos)
-           (world-clear-marker (update-world-fn world) mark))))))
+       (make-imperative-op:indent-range mark len))))
+  
   
   ;; indent/selection : World -> World
   (define (indent/selection world)
@@ -187,48 +183,9 @@
   
   ;; cleanup-text/pos+len
   (define (cleanup-text/pos+len world pos len)
-    (local
-        ((define (get-line-oriented-start-and-end start-pos end-pos)
-           (let* ([start-pos
-                   (line-pos (World-rope world) start-pos)]
-                  [start-pos
-                   (cond [(find-pos start-pos (World-syntax-list world))
-                          => syntax-position]
-                         [else start-pos])]
-                  [end-pos
-                   (line-end-pos (World-rope world) end-pos)]
-                  [end-pos
-                   (cond [(find-pos end-pos (World-syntax-list world))
-                          => syntax-end-position]
-                         [else end-pos])])
-             (values start-pos end-pos)))
-         
-         
-         ;; cleanup-text/between: World pos -> World
-         ;; This function eats all the extra white-space between start-pos and
-         ;; end-pos.
-         (define (cleanup-text/between world start-pos end-pos)
-           (let* ([start-index (pos->index start-pos)]
-                  [end-index (pos->index end-pos)]
-                  [line (subrope (World-rope world) start-index end-index)]
-                  [len (rope-length line)])
-             (let-values ([(clean-line lst)
-                           (cleanup-whitespace line start-index
-                                               (list (World-selection-index world)
-                                                     (World-selection-end-index world)
-                                                     (World-mark-index world)
-                                                     (World-mark-end-index world)))])
-               (let ([new-world (world-replace-rope world start-index clean-line len)])
-                 (mark/pos+len (select/pos+len new-world
-                                               (index->pos (first lst))
-                                               (- (second lst) (first lst)))
-                               (index->pos (third lst))
-                               (- (fourth lst) (third lst))))))))
-      
-      (let*-values ([(start-pos end-pos)
-                     (get-line-oriented-start-and-end pos (+ pos len))]
-                    [(new-world) (cleanup-text/between world start-pos end-pos)])
-        (indent/pos+len new-world start-pos (- end-pos start-pos)))))
+    (queue-imperative-operation
+     world
+     (make-imperative-op:cleanup/pos (pos->index pos))))
   
   
   
@@ -243,6 +200,7 @@
   (define (insert world pos a-rope)
     (let ([len (rope-length a-rope)]
           [new-world (world-insert-rope world (pos->index pos) a-rope)])
+      ;; Disabling cleanup for now.
       (cleanup-text/pos+len
        (recompute-mark/insert
         (recompute-selection/insert new-world pos len) pos len) pos len)))
@@ -290,22 +248,6 @@
   
   ;; close : World -> World
   (define (close world)
-    ;; flash-last-sexp!: world text% -> world
-    ;;
-    (define (flash-last-sexp! world window update-world-fn update-mred-fn)
-      (let ([pos (send window get-backward-sexp (send window get-start-position))])
-        ;; We queue-callback this up since the highlighting fights with
-        ;; insertion mode otherwise, plus this is a low-priority item.
-        (queue-callback
-         (lambda ()
-           (when (and pos
-                      (send window get-forward-sexp pos)
-                      (open-paren?
-                       (string-ref (send window get-text pos (add1 pos)) 0)))
-             (send window flash-on pos (send window get-forward-sexp pos))))
-         #f)
-        world))
-    
     (let*-values
         ([(stxy) (find-siblings-ellipsis (World-cursor-position world)
                                          (World-syntax-list world))]
@@ -322,7 +264,9 @@
                  (if (join-ellipsis/stx? sty)
                      (anti-join/cursor world)
                      world))))])
-      (queue-imperative-action new-world flash-last-sexp!)))
+      (queue-imperative-operation
+       new-world
+       (make-imperative-op:flash-last-sexp))))
   
   
   ;; update-ellipsis : World syntax -> World
@@ -338,7 +282,8 @@
     (print-mem
      'dedouble-ellipsis
      (lambda ()
-       (with-handlers ([voice-exn? (lambda args world)])
+       (with-handlers ([voice-exn? (lambda (exn)
+                                     world)])
          (let ([stxy (find-siblings-ellipsis (World-cursor-position world) (World-syntax-list world))])
            (unless stxy (raise (make-voice-exn "unable to find the next placeholder")))
            (let* ([stx (first stxy)]
@@ -392,13 +337,13 @@
     (local
         (
          
-         ;; apply-template
+         ;; apply-template: template (or/c symbol #f) -> rope
          (define (apply-template template symbol/false)
            (let ([format-string (cond [(and symbol/false
                                             (string-prefix? "#<<" (symbol->string symbol/false)))
-                                       " ~a"]
+                                       "~a"]
                                       [else
-                                       " ~a "])])
+                                       "~a"])])
              (string->rope
               (format format-string (if template
                                         (shape-paren (and square? 'Square) template)
@@ -435,8 +380,8 @@
                                                open?
                                                template/magic-wrap?)])
                   (let* ([text (apply-template template symbol/false)]
-                         [text (cond
-                                 [(cursor-position-is-quoted? world)
+                         #;[text (cond
+                                   [(cursor-position-is-quoted? world)
                                   (subrope text 1)]
                                  [else text])]
                          [world (if (<= number-of-templates 1)
@@ -447,15 +392,14 @@
                                              (add1 (modulo template-number number-of-templates))
                                              number-of-templates)))])
                     (values text world template))))])))
-      
-      (let-values ([(text world template)
+      (let-values ([(text expanded-world template)
                     (get-expanded-text&world)])
         (let* ([world
                 (print-mem*
                  'command-indent/selection
                  (indent/selection
                   (replace/selection
-                   (dedouble-ellipsis world) text)))])
+                   (dedouble-ellipsis expanded-world) text)))])
           (if template
               (holder world)
               (step-to-the-right world))))))

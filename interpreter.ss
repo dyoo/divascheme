@@ -1,13 +1,11 @@
 (module interpreter mzscheme
-  (require (lib "contract.ss")
-           (lib "etc.ss")
+  (require (lib "etc.ss")
            (lib "list.ss")
            (lib "plt-match.ss")
            (lib "class.ss")
            (lib "struct.ss")
            (only (lib "1.ss" "srfi") last circular-list partition find)
            "traversal.ss"
-           "operations.ss"
            "structures.ss"
            (all-except "utilities.ss"
                        insert-rope)
@@ -16,14 +14,25 @@
            "tag-reader.ss"
            "rope.ss")
   
-  
-  ;; This file provides an interpreter for the DivaLanguage.
+  ;; This file provides an interpreter for the DivaLanguage,
+  ;; that is this is a pure function, without any state, completely stateless,
   ;; which takes an ast (Abstract Syntax Tree) of the DivaLanguage and returns
-  ;; an operation that can be applied against a world to produce a new world.
-  (provide/contract
-   [interpreter (Protocol-Syntax-Tree? World? . -> . operation?)])
-  
-  
+  ;; a function which takes a World and returns a new World whose differences are conforms to the semantics to the abstract syntax tree.
+  ;; Also, the returned function can raise an exception if there's something wrong:
+  ;;  `next' asked when no context
+  ;;  or something really bad due to a bug.
+  (provide interpreter)
+
+
+  ;; Provided elements to perform the tests.
+  (provide eval-Protocol-Syntax-Tree
+           inc-what-distance
+           dec-what-distance
+           inc-Loc-distance
+           dec-Loc-distance
+           revert-cursor
+           make-make-metric
+           make-metric-w/world)
   
   (define diva-debug? false)
   (define (diva-printf text . args)
@@ -36,175 +45,174 @@
   ;; interpreter : ast World -> (union World SwitchWorld)
   ;; Applies the ast command on the given world, returning a new world.
   (define (interpreter ast world)
-    (eval-Protocol-Syntax-Tree world ast)
-    
-    ;; Currently simplified: not doing any selection stuff at all.
-    #;(let ([new-world
-             (if (World-extension world)
-                 (if (is-motion-ast? ast)
-                     (with-selection-extension
-                      world
-                      (lambda (world)
-                        (eval-Protocol-Syntax-Tree world ast)))
-                     (copy-struct World
-                                  (eval-Protocol-Syntax-Tree world ast)
-                                  [World-extension false]))
-                 (eval-Protocol-Syntax-Tree world ast))])
-        (if (and (World-extension new-world)
-                 (equal? (World-success-message new-world) ""))
-            (copy-struct World new-world
-                         [World-success-message "extending selection..."])
-            new-world)))
+    (print-mem
+     'interpreter
+     (lambda () (diva-printf "Interpreter was called with tree: ~a~n" ast)
+       (interpreter/extension world ast))))
   
+  
+  ;; interpreter/extension: World ast -> (union World SwitchWorld)
+  ;; Apply the interpreter, maintaining selection information.
+  (define (interpreter/extension world ast)
+    (let ([new-world
+           (if (World-extension world)
+               (if (is-motion-ast? ast)
+                   (with-selection-extension world (lambda (world) (eval-Protocol-Syntax-Tree world ast)))
+                   (copy-struct World
+                                (eval-Protocol-Syntax-Tree world ast)
+                                [World-extension false]))
+               (eval-Protocol-Syntax-Tree world ast))])
+      
+      (if (and (World-extension new-world)
+               (equal? (World-success-message new-world) ""))
+          (copy-struct World new-world
+                       [World-success-message "extending selection..."])
+          new-world)))
   
   
   ;; eval-Protocol-Syntax-Tree : World ast -> (union World SwitchWorld)
   (define (eval-Protocol-Syntax-Tree world ast)
-    (let* ([world (extend-world-with-again world ast)]
-           [world (trim-undos world max-undo-count)])
-      (match ast
-        [else
-         ;; Default: if we're given an ast that we don't understand,
-         ;; then return a no-op.
-         (make-operation:sequence '())]
-        
-        #;[(struct Verb ((struct Command ('Open)) loc what))
-           (eval-Open false world loc what 0 0 false 'Normal)]
-        #;[(struct Verb ((struct Command ('Open-Square)) loc what))
-           (eval-Open true world loc what 0 0 false 'Normal)]
-        #;[(struct Verb ((struct InsertRope-Cmd (rope)) loc #f))
-           (eval-InsertRope world rope loc 0 0 false 'Normal)]
-        #;[(struct Verb ((struct Command ('Close)) #f #f))
-           (eval-Close world)]
-        #;[(struct Verb ((struct Command ('Insert)) loc #f))
-           (eval-Insert world loc)]
-        #;[(struct Verb ((struct Command ('Search-Forward)) loc/false what/false))
-           (eval-Search world (make-make-metric world metric-forward)
-                        (World-cursor-position world) loc/false what/false)]
-        #;[(struct Verb ((struct Command ('Search-Backward)) loc/false what/false))
-           (eval-Search world (make-make-metric world metric-backward)
-                        (World-cursor-position world) loc/false what/false)]
-        #;[(struct Verb ((struct Command ('Search-Top)) loc what))
-           (eval-Search world (make-make-metric world metric-forward)
-                        (index->syntax-pos 0) loc what)]
-        #;[(struct Verb ((struct Command ('Search-Bottom)) loc what))
-           (eval-Search world (make-make-metric world metric-backward)
-                        (index->syntax-pos 0) loc what)]
-        #;[(struct Verb ((struct Command ('Select)) loc what))
-           (eval-Select world (World-cursor-position world) loc what)]
-        #;[(struct Verb ((struct Command ('Holder)) loc/false what/false))
-           (eval-Holder world false loc/false what/false)]
-        #;[(struct Verb ((struct Command ('Holder-Forward)) loc/false what/false))
-           (eval-Holder world false loc/false what/false)]
-        #;[(struct Verb ((struct Command ('Holder-Backward)) loc/false what/false))
-           (eval-Holder world true loc/false what/false)]
-        
-        #;[(struct Verb ((struct Command ('Next)) #f #f))
-           (eval-Next world)]
-        #;[(struct Verb ((struct Command ('Previous)) #f #f))
-           (eval-Previous world)]
-        #;[(struct Verb ((struct Command ('Cancel)) #f #f))
-           (eval-Cancel world)]
-        #;[(struct Verb ((struct Command ('Undo)) #f #f))
-           (eval-Undo world)]
-        #;[(struct Verb ((struct Command ('Redo)) #f #f))
-           (eval-Redo world)]
-        
-        #;[(struct Verb ((struct Command ('Magic)) #f #f))
-           (eval-Magic world false)]
-        #;[(struct Verb ((struct Command ('Magic-Bash)) #f what))
-           (eval-Magic-Bash world what)]
-        #;[(struct Verb ((struct Command ('Magic-Wrap)) #f #f))
-           (eval-Magic world true)]
-        #;[(struct Verb ((struct Command ('Pass)) #f #f))
-           (eval-Pass world false)]
-        #;[(struct Verb ((struct Command ('Pass-Wrap)) #f #f))
-           (eval-Pass world true)]
-        
-        #;[(struct Verb ((struct Command ('Again)) #f #f))
-           (eval-Again world)]
-        
-        #;[(struct Verb ((struct Command ('Out)) loc/false what/false))
-           (eval-Out world loc/false what/false)]
-        #;[(struct Verb ((struct Command ('Non-blank-out)) (struct Pos (p eol)) #f))
-           (eval-Non-blank-out world p)]
-        #;[(struct Verb ((struct Command ('Up)) #f #f))
-           (eval-Up world)]
-        #;[(struct Verb ((struct Command ('Down)) #f #f))
-           (eval-Down world)]
-        #;[(struct Verb ((struct Command ('Younger)) #f #f))
-           (eval-Younger world)]
-        #;[(struct Verb ((struct Command ('Older)) #f #f))
-           (eval-Older world)]
-        #;[(struct Verb ((struct Command ('First)) #f #f))
-           (eval-First world)]
-        #;[(struct Verb ((struct Command ('Last)) #f #f))
-           (eval-Last world)]
-        #;[(struct Verb ((struct Command ('Forward)) #f #f))
-           (eval-Forward world)]
-        #;[(struct Verb ((struct Command ('Backward)) #f #f))
-           (eval-Backward world)]
-        
-        #;[(struct Verb ((struct Command ('Delete)) #f #f))
-           (eval-Delete world)]
-        #;[(struct Verb ((struct Command ('Dedouble-Ellipsis)) #f #f))
-           (eval-Dedouble-Ellipsis world)]
-        
-        #;[(struct Verb ((struct Command ('Bring)) #f #f))
-           (eval-Bring world)]
-        #;[(struct Verb ((struct Command ('Push)) #f #f))
-           (eval-Push world)]
-        
-        #;[(struct Verb ((struct Command ('Exchange)) #f #f))
-           (eval-Exchange world)]
-        
-        #;[(struct Verb ((struct Command ('Mark)) loc/false what/false))
-           (eval-Mark world loc/false what/false)]
-        #;[(struct Verb ((struct Command ('UnMark)) #f #f))
-           (eval-UnMark world)]
-        
-        #;[(struct Verb ((struct Command ('Copy)) #f #f))
-           (eval-Copy world)]
-        #;[(struct Verb ((struct Command ('Cut)) #f #f))
-           (eval-Cut world)]
-        #;[(struct Verb ((struct Command ('Paste)) #f #f))
-           (eval-Paste world)]
-        
-        #;[(struct Verb ((struct Command ('Definition)) #f #f))
-           (eval-Definition world)]
-        #;[(struct Verb ((struct Command ('Usage)) #f #f))
-           (eval-Usage)]
-        
-        #;[(struct Verb ((struct Command ('Enter)) #f #f))
-           (eval-Enter world)]
-        #;[(struct Verb ((struct Command ('Join)) #f #f))
-           (eval-Join world)]
-        #;[(struct Verb ((struct Command ('Indent)) #f #f))
-           (eval-Indent world)]
-        
-        #;[(struct Verb ((struct Command ('Transpose)) #f #f))
-           (eval-Transpose world)]
-        
-        #;[(struct Verb ((struct Command ('Tag)) #f what))
-           (eval-Tag ast world what)]
-        
-        
-        #;[(struct Verb ((struct Command ('Extend-Selection)) #f #f))
-           (eval-Extend-Selection world)]
-        ;; Automatically turns extension off since this is not a motion command
-        #;[(struct Verb ((struct Command ('Stop-Extend-Selection)) #f #f))
-           world])))
-  
-  
-  ;; extend-wordl-with-again: world ast -> world
-  ;; Annotates the world with the ast as an again, unless the command itself
-  ;; is already an again.
-  (define (extend-world-with-again world ast)
-    (match ast
-      [(struct Verb ((struct Command ('Again)) #f #f)) world]
-      [_ (copy-struct World world
-                      [World-again ast])]))
-  
+    (print-mem*
+     'eval-Protocol-Syntax-Tree
+     (let* ([world (match ast
+                     [(struct Verb ((struct Command ('Again)) #f #f)) world]
+                     [_ (copy-struct World world
+                                     [World-again ast])])]
+            [world (trim-undos world max-undo-count)])
+       (match ast
+         
+         [(struct Verb ((struct Command ('Open)) loc what))
+          (eval-Open false world loc what 0 0 false 'Normal)]
+         [(struct Verb ((struct Command ('Open-Square)) loc what))
+          (eval-Open true world loc what 0 0 false 'Normal)]
+         [(struct Verb ((struct InsertRope-Cmd (rope)) loc #f))
+          (eval-InsertRope world rope loc 0 0 false 'Normal)]
+         
+         [(struct Verb ((struct Command ('Close)) #f #f))
+          (eval-Close world)]
+         
+         
+         [(struct Verb ((struct Command ('Insert)) loc #f))
+          (eval-Insert world loc)]
+         
+         [(struct Verb ((struct Command ('Search-Forward)) loc/false what/false))
+          (eval-Search world (make-make-metric world metric-forward)
+                       (World-cursor-position world) loc/false what/false)]
+         [(struct Verb ((struct Command ('Search-Backward)) loc/false what/false))
+          (eval-Search world (make-make-metric world metric-backward)
+                       (World-cursor-position world) loc/false what/false)]
+         [(struct Verb ((struct Command ('Search-Top)) loc what))
+          (eval-Search world (make-make-metric world metric-forward)
+                       (index->syntax-pos 0) loc what)]
+         [(struct Verb ((struct Command ('Search-Bottom)) loc what))
+          (eval-Search world (make-make-metric world metric-backward)
+                       (index->syntax-pos 0) loc what)]
+         [(struct Verb ((struct Command ('Select)) loc what))
+          (eval-Select world (World-cursor-position world) loc what)]
+         
+         [(struct Verb ((struct Command ('Holder)) loc/false what/false))
+          (eval-Holder world false loc/false what/false)]
+         [(struct Verb ((struct Command ('Holder-Forward)) loc/false what/false))
+          (eval-Holder world false loc/false what/false)]
+         [(struct Verb ((struct Command ('Holder-Backward)) loc/false what/false))
+          (eval-Holder world true loc/false what/false)]
+         
+         [(struct Verb ((struct Command ('Next)) #f #f))
+          (eval-Next world)]
+         [(struct Verb ((struct Command ('Previous)) #f #f))
+          (eval-Previous world)]
+         [(struct Verb ((struct Command ('Cancel)) #f #f))
+          (eval-Cancel world)]
+         [(struct Verb ((struct Command ('Undo)) #f #f))
+          (eval-Undo world)]
+         [(struct Verb ((struct Command ('Redo)) #f #f))
+          (eval-Redo world)]
+         
+         [(struct Verb ((struct Command ('Magic)) #f #f))
+          (eval-Magic world false)]
+         [(struct Verb ((struct Command ('Magic-Bash)) #f what))
+          (eval-Magic-Bash world what)]
+         [(struct Verb ((struct Command ('Magic-Wrap)) #f #f))
+          (eval-Magic world true)]
+         [(struct Verb ((struct Command ('Pass)) #f #f))
+          (eval-Pass world false)]
+         [(struct Verb ((struct Command ('Pass-Wrap)) #f #f))
+          (eval-Pass world true)]
+         
+         [(struct Verb ((struct Command ('Again)) #f #f))
+          (eval-Again world)]
+         
+         [(struct Verb ((struct Command ('Out)) loc/false what/false))
+          (eval-Out world loc/false what/false)]
+         [(struct Verb ((struct Command ('Non-blank-out)) (struct Pos (p eol)) #f))
+          (eval-Non-blank-out world p)]
+         [(struct Verb ((struct Command ('Up)) #f #f))
+          (eval-Up world)]
+         [(struct Verb ((struct Command ('Down)) #f #f))
+          (eval-Down world)]
+         [(struct Verb ((struct Command ('Younger)) #f #f))
+          (eval-Younger world)]
+         [(struct Verb ((struct Command ('Older)) #f #f))
+          (eval-Older world)]
+         [(struct Verb ((struct Command ('First)) #f #f))
+          (eval-First world)]
+         [(struct Verb ((struct Command ('Last)) #f #f))
+          (eval-Last world)]
+         [(struct Verb ((struct Command ('Forward)) #f #f))
+          (eval-Forward world)]
+         [(struct Verb ((struct Command ('Backward)) #f #f))
+          (eval-Backward world)]
+         
+         
+         [(struct Verb ((struct Command ('Delete)) #f #f))
+          (eval-Delete world)]
+         [(struct Verb ((struct Command ('Dedouble-Ellipsis)) #f #f))
+          (eval-Dedouble-Ellipsis world)]
+         
+         [(struct Verb ((struct Command ('Bring)) #f #f))
+          (eval-Bring world)]
+         [(struct Verb ((struct Command ('Push)) #f #f))
+          (eval-Push world)]
+         
+         [(struct Verb ((struct Command ('Exchange)) #f #f))
+          (eval-Exchange world)]
+         
+         [(struct Verb ((struct Command ('Mark)) loc/false what/false))
+          (eval-Mark world loc/false what/false)]
+         [(struct Verb ((struct Command ('UnMark)) #f #f))
+          (eval-UnMark world)]
+         
+         [(struct Verb ((struct Command ('Copy)) #f #f))
+          (eval-Copy world)]
+         [(struct Verb ((struct Command ('Cut)) #f #f))
+          (eval-Cut world)]
+         [(struct Verb ((struct Command ('Paste)) #f #f))
+          (eval-Paste world)]
+         
+         [(struct Verb ((struct Command ('Definition)) #f #f))
+          (eval-Definition world)]
+         [(struct Verb ((struct Command ('Usage)) #f #f))
+          (eval-Usage)]
+         
+         [(struct Verb ((struct Command ('Enter)) #f #f))
+          (eval-Enter world)]
+         [(struct Verb ((struct Command ('Join)) #f #f))
+          (eval-Join world)]
+         [(struct Verb ((struct Command ('Indent)) #f #f))
+          (eval-Indent world)]
+         
+         [(struct Verb ((struct Command ('Transpose)) #f #f))
+          (eval-Transpose world)]
+         
+         [(struct Verb ((struct Command ('Tag)) #f what))
+          (eval-Tag ast world what)]
+         
+         
+         [(struct Verb ((struct Command ('Extend-Selection)) #f #f))
+          (eval-Extend-Selection world)]
+         [(struct Verb ((struct Command ('Stop-Extend-Selection)) #f #f))
+          world]))) ;; Automatically turns extension off since this is not a motion command
+    )
   
   
   ;; is-motion-ast?: ast -> boolean
@@ -216,39 +224,7 @@
       [else #f]))
   
   
-  (define (with-selection-extension world fn)
-    (define (uw-pos int/stx) (if (syntax? int/stx)
-                                 (syntax-position int/stx)
-                                 int/stx))
-    (define (uw-end-pos int/stx) (if (syntax? int/stx)
-                                     (+ (syntax-position int/stx)
-                                        (syntax-span int/stx))
-                                     int/stx))
-    
-    (let* ([saved-extension (World-extension world)]
-           
-           [new-world (copy-struct World world
-                                   [World-extension #f]
-                                   [World-cursor-position (extension-puck (World-extension world))]
-                                   [World-selection-length (extension-puck-length (World-extension world))])]
-           
-           [new-position (fn new-world)]
-           
-           [new-extension (copy-struct extension saved-extension
-                                       [extension-puck (World-cursor-position new-position)]
-                                       [extension-puck-length (World-selection-length new-position)])])
-      
-      (let*-values
-          ([(p1 p2) (positions-within-least-common-parent
-                     (extension-base new-extension)
-                     (extension-puck new-extension)
-                     (World-syntax-list new-position))]
-           [(p1 p2) (if (< (uw-pos p1) (uw-pos p2)) (values p1 p2) (values p2 p1))])
-        
-        (copy-struct World new-position
-                     [World-extension new-extension]
-                     [World-cursor-position (uw-pos p1)]
-                     [World-selection-length (- (uw-end-pos p2) (uw-pos p1))]))))
+  
   
   (define (world-clear world)
     (copy-struct World world
@@ -259,10 +235,6 @@
                  [World-Pass-f     (default-Pass-f)]
                  [World-redo false]))
   
-  
-  ;; trim-undos: world number -> world
-  ;; Processes the world and removes undos from it, as the current
-  ;; amount of space that the undo takes up is enormous.
   (define (trim-undos world undo-count)
     (print-mem*
      'trim-undos
@@ -775,25 +747,9 @@
   
   
   (define (eval-line-motion world direction)
-    (queue-imperative-action 
+    (queue-imperative-operation
      (world-clear world)
-     (lambda (world window update-world-fn update-mred-fn)
-       (define (callback world)
-         (send window diva:-insertion-after-set-position-callback-set (lambda () ()))
-         (send window set-position (pos->index (World-cursor-position world))
-               'same #f #f 'default) ;; this may be the puck or the selection
-         (send window move-position direction)
-         (send window diva:-insertion-after-set-position-callback-reset)
-         (let ([b (box 0)])
-           (send window get-position b)
-           (copy-struct World world
-                        [World-cursor-position (index->syntax-pos (unbox b))]
-                        [World-selection-length 0])))
-       (let ([w (if (World-extension world)
-                    (with-selection-extension world callback)
-                    (callback world))])
-         (update-mred-fn w)
-         w))))
+     (make-imperative-op:move-cursor-position direction)))
   
   
   
@@ -958,13 +914,10 @@
   
   ;; eval-Transpose : World -> World
   (define (eval-Transpose original-world)
-    (queue-imperative-action
+    (queue-imperative-operation
      (world-clear original-world)
-     (lambda (world window update-world-fn update-mred-fn)
-       (send window transpose-sexp (pos->index (World-cursor-position world)))
-       (copy-struct World (update-world-fn world)
-                    [World-cancel original-world]
-                    [World-undo original-world]))))
+     (make-imperative-op:transpose original-world)))
+  
   
   (define (eval-Extend-Selection world)
     (world-clear

@@ -62,7 +62,7 @@
                         again
                         success-message
                         extension
-                        imperative-actions
+                        imperative-operations
                         markers
                         path) ;; read-only
     )
@@ -166,13 +166,44 @@
   (define world-fn/c (World? . -> . World?))
   
   
-  ;; queue-imperative-action: World (world window -> world) -> World
+  ;; FIXME: any imperative operation that uses raw positions should
+  ;; really use markers, since those are more stable.
+  
+  ;; Imperative operations are applied to bring the old
+  ;; world's state to the new world's state.
+  (define-struct imperative-op ())
+  
+  ;; op:indent-range: indent the region starting from the mark.
+  (define-struct (imperative-op:indent-range imperative-op) (mark len))
+  
+  ;; imperative-op:flash-last-sexp: flash the preceding s-exp.
+  ;; Fixme: this should be using a mark!
+  (define-struct (imperative-op:flash-last-sexp imperative-op) ())
+  
+  ;; imperative-op:move-cursor-position: moves the cursor in some direction.
+  (define-struct (imperative-op:move-cursor-position imperative-op) (direction))
+  
+  ;; imperative-op:transpose: transposes the s-expression at world cursor position.
+  (define-struct (imperative-op:transpose imperative-op) (original-world))
+  
+  ;; imperative-op:cleanup-range: cleans up the whitespace betwen start-pos and end-pos.
+  (define-struct (imperative-op:cleanup/pos imperative-op) (pos))
+  
+  ;; imperative-op:delete-range: delete the range of text.
+  (define-struct (imperative-op:delete-range imperative-op) (start-pos end-pos))
+  
+  ;; imperative-op:insert-rope: insert the rope at the given position.
+  (define-struct (imperative-op:insert-rope imperative-op) (rope pos))
+  
+  
+  
+  ;; queue-imperative-operation: World (world window [fixme: other stuff] -> world) -> World
   ;; Adds an imperative action that will be evaluated at the end of
   ;; evaluation.
-  (define (queue-imperative-action world fn)
+  (define (queue-imperative-operation world fn)
     (copy-struct World world
-                 [World-imperative-actions
-                  (cons fn (World-imperative-actions world))]))
+                 [World-imperative-operations
+                  (cons fn (World-imperative-operations world))]))
   
   
   
@@ -304,6 +335,7 @@
   
   
   
+  
   ;; success-message : World string -> World
   ;; Replace the success-message of the world with a given string.
   (define (success-message world message)
@@ -315,102 +347,102 @@
   ;; move to line, move to, move here
   ;; template == on parse (read-syntax) et on cherche les define & define-syntax 
   (define commands
-    (list #;'Open
-          #;'Open-Square
-          #;'Close
+    (list 'Open
+          'Open-Square
+          'Close
           
-          #;'Insert
+          'Insert
           
-          #;'Select
-          #;'Search-Forward
-          #;'Search-Backward
-          #;'Search-Top
-          #;'Search-Bottom
+          'Select
+          'Search-Forward
+          'Search-Backward
+          'Search-Top
+          'Search-Bottom
           
-          #;'Holder
-          #;'Holder-Forward
-          #;'Holder-Backward
+          'Holder
+          'Holder-Forward
+          'Holder-Backward
           
-          #;'Next
-          #;'Previous
-          #;'Cancel
-          #;'Undo
-          #;'Redo
+          'Next
+          'Previous
+          'Cancel
+          'Undo
+          'Redo
           
-          #;'Magic
-          #;'Magic-Bash
-          #;'Magic-Wrap
-          #;'Pass
-          #;'Pass-Wrap
+          'Magic
+          'Magic-Bash
+          'Magic-Wrap
+          'Pass
+          'Pass-Wrap
           
-          #;'Again
+          'Again
           
-          #;'Out
-          #;'Non-blank-out
-          #;'Down
-          #;'Up
-          #;'Forward
-          #;'Backward
-          #;'Younger
-          #;'Older
-          #;'First
-          #;'Last
+          'Out
+          'Non-blank-out
+          'Down
+          'Up
+          'Forward
+          'Backward
+          'Younger
+          'Older
+          'First
+          'Last
           
-          #;'Delete
-          #;'Dedouble-Ellipsis
+          'Delete
+          'Dedouble-Ellipsis
           
-          #;'Bring
-          #;'Push
+          'Bring
+          'Push
           
-          #;'Exchange
-          #;'Mark
-          #;'UnMark
+          'Exchange
+          'Mark
+          'UnMark
           
-          #;'Copy
-          #;'Cut
-          #;'Paste
+          'Copy
+          'Cut
+          'Paste
           
-          #;'Definition
-          #;'Usage
+          'Definition
+          'Usage
           
-          #;'Enter
-          #;'Join
-          #;'Indent
+          'Enter
+          'Join
+          'Indent
           
-          #;'Voice-Quote
+          'Voice-Quote
           
-          #;'Transpose
-          #;'Tag
-          #;'Extend-Selection
-          #;'Stop-Extend-Selection))
+          'Transpose
+          'Tag
+          'Extend-Selection
+          'Stop-Extend-Selection))
   
   (define motion-commands
     ;; commands which must manipulate the cursor position
     ;; when there is no extended selection but manipulate the puck when there is one
     (list
      
-     #;'Search-Forward
-     #;'Search-Backward
-     #;'Search-Top
-     #;'Search-Bottom
+     'Search-Forward
+     'Search-Backward
+     'Search-Top
+     'Search-Bottom
      
-     #;'Holder
-     #;'Holder-Forward
-     #;'Holder-Backward
+     'Holder
+     'Holder-Forward
+     'Holder-Backward
      
-     #;'Next
-     #;'Previous
+     'Next
+     'Previous
      
-     #;'Out
-     #;'Non-blank-out
-     #;'Down
-     #;'Up
-     #;'Forward
-     #;'Backward
-     #;'Younger
-     #;'Older
-     #;'First
-     #;'Last))
+     'Out
+     'Non-blank-out
+     'Down
+     'Up
+     'Forward
+     'Backward
+     'Younger
+     'Older
+     'First
+     'Last))
   
   
   ;; command?: symbol -> boolean
@@ -497,11 +529,7 @@
                   [again (or/c false/c Protocol-Syntax-Tree?)]
                   [success-message string?]
                   [extension (or/c false/c extension?)]
-                  [imperative-actions (listof
-                                       (World? (is-a?/c text%)
-                                               (World? . -> . World?)
-                                               (World? . -> . any)
-                                               . -> . World?))]
+                  [imperative-operations (listof imperative-op?)]
                   [markers (listof Marker?)]
                   [path (or/c false/c path-string?)])]
    
@@ -540,7 +568,28 @@
    [World-mark
     (World? . -> . (or/c false/c rope?))]
    
-   [queue-imperative-action (World? (World? any/c world-fn/c (World? . -> . void?) . -> . World?) . -> . World?)]
+   
+   [struct imperative-op ()]
+   [struct (imperative-op:indent-range imperative-op)
+           ([mark symbol?]
+            [len natural-number/c])]
+   [struct (imperative-op:flash-last-sexp imperative-op) ()]
+   [struct (imperative-op:move-cursor-position imperative-op)
+           ([direction
+             (one-of/c 'home 'end 'right 'left 'up 'down)])]
+   [struct (imperative-op:transpose imperative-op)
+           ([original-world World?])]
+   [struct (imperative-op:cleanup/pos imperative-op)
+           ([pos natural-number/c])]
+   [struct (imperative-op:delete-range imperative-op)
+           ([start-pos natural-number/c]
+            [end-pos natural-number/c])]
+   [struct (imperative-op:insert-rope imperative-op)
+           ([rope rope?]
+            [pos natural-number/c])]
+   
+   
+   [queue-imperative-operation (World? imperative-op? . -> . World?)]
    
    [world-new-marker
     ((World? number?) . ->* . (World? symbol?))]

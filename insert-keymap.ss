@@ -41,8 +41,12 @@
     (define magic-options-lst false)
     (define magic-option-base false)
     
+    (define selection-rope-before-insert (string->rope ""))
     (define left-edge-of-insert (send editor get-start-position))
     (define right-edge-of-insert (send editor get-start-position))
+    (define need-space-before #f)
+    (define need-space-after #f)
+    
     
     (define clear-highlight (lambda () (void)))
     (define insert-keymap #f)
@@ -56,9 +60,23 @@
       ;; Hooking up the other callbacks
       (set-on-focus-lost consume&exit)
       (unset-insert&delete-callbacks)
-      (if edit? (begin-symbol-edit) (begin-symbol-insertion))
+      (if edit?
+          (begin-symbol-edit)
+          (begin-symbol-insertion))
       (when cmd (eval-cmd cmd)))
     
+    
+    ;; Before interpreting a command, we'd like to restore the
+    ;; editor state before coming into insert mode, so that it
+    ;; syncs up with what's in the World.
+    (define (restore-editor-to-pre-state!)
+      (cond
+        [pending-open
+         (send editor set-rope
+               (World-rope (Pending-world pending-open)))]
+        [else
+         (send editor set-rope
+               (World-rope world-at-beginning-of-insert))]))
     
     
     ;; consume-text: World Pending rope -> void
@@ -66,23 +84,27 @@
     ;; The templating system forces us to consider if the insertion
     ;; is based on the sequence (Open X) or just regular X.
     (define (consume-text world pending-open a-rope)
-      (if pending-open
-          ;; possible templating with open parens
-          (interpret! (Pending-world pending-open)
-                      (make-Verb (make-Command (Pending-symbol pending-open))
-                                 false
-                                 (make-WhatN
-                                  (make-Rope-Noun a-rope))))
-          
-          ;; possible templating without open parens
-          (interpret! world
-                      (make-Verb (make-InsertRope-Cmd a-rope)
-                                 false
-                                 false))))
+      (restore-editor-to-pre-state!)
+      (cond
+        [pending-open
+         ;; possible templating with open parens
+         (interpret! (Pending-world pending-open)
+                     (make-Verb (make-Command (Pending-symbol pending-open))
+                                false
+                                (make-WhatN
+                                 (make-Rope-Noun a-rope))))]
+        [else
+         ;; possible templating without open parens
+         (interpret! world
+                     (make-Verb (make-InsertRope-Cmd a-rope)
+                                false
+                                false))]))
     
     
     (define (consume-cmd world symbol)
+      (restore-editor-to-pre-state!)
       (interpret! world (make-Verb (make-Command symbol) false false)))
+    
     
     (define (insert-color)
       (preferences:get 'framework:paren-match-color))
@@ -132,6 +154,13 @@
           [stx/false
            (let ([original-pos (send editor get-end-position)])
              (set-world (action:select/stx world stx/false))
+             (set! need-space-before #f)
+             (set! need-space-after #f)
+             (set! selection-rope-before-insert
+                   (read-subrope-in-text editor
+                                         (send editor get-start-position)
+                                         (- (send editor get-end-position)
+                                            (send editor get-start-position))))
              (begin-symbol (send editor get-start-position)
                            (send editor get-end-position))
              (send editor diva:set-selection-position
@@ -146,36 +175,44 @@
     
     
     (define (begin-symbol-insertion)
-      (define left-point (send editor get-start-position))
-      
-      (define need-space-before
-        (and (not (= 0 left-point))
-             (not (eq? #\space
-                       (send editor get-character (sub1 left-point))))))
-      
-      (define need-space-after
-        (or (= (string-length (send editor get-text))
-               left-point)
-            (not (eq? #\space
-                      (send editor get-character (add1 left-point))))))
-      
-      (define (prepare-insertion-point!)
-        (if need-space-before
-            (begin-symbol (add1 left-point) (add1 left-point))
-            (begin-symbol left-point left-point))
-        (unset-insert&delete-callbacks)
-        (unless (empty-selection?)
-          (send editor delete))
-        (when need-space-before
-          (send editor insert " "))
-        (when need-space-after
-          (send editor insert " ")
-          (send editor diva:set-selection-position
-                (max (sub1 (send editor get-end-position)) 0)))
-        (set-insert&delete-callbacks))
-      
-      (prepare-insertion-point!)
-      (fill-highlight!))
+      (let ([left-point (send editor get-start-position)]
+            [right-point (send editor get-end-position)])
+        
+        (define (prepare-insertion-point!)
+          (if need-space-before
+              (begin-symbol (add1 left-point) (add1 left-point))
+              (begin-symbol left-point left-point))
+          (unset-insert&delete-callbacks)
+          (set! selection-rope-before-insert
+                (read-subrope-in-text editor
+                                      (send editor get-start-position)
+                                      (- (send editor get-end-position)
+                                         (send editor get-start-position))))
+          (unless (empty-selection?)
+            (send editor delete))
+          (when need-space-before
+            (send editor insert " "))
+          (when need-space-after
+            (send editor insert " ")
+            (send editor diva:set-selection-position
+                  (max (sub1 (send editor get-end-position)) 0)))
+          
+          (set-insert&delete-callbacks))
+        
+        (begin
+          (set! need-space-before
+                (and (not (= 0 left-point))
+                     (not (char-whitespace?
+                           (send editor get-character (sub1 left-point))))))
+          
+          (set! need-space-after
+                (and (not (= (send editor last-position) right-point))
+                     (not (char-whitespace?
+                           (send editor get-character right-point)))))
+          (prepare-insertion-point!)
+          (fill-highlight!))))
+    
+    
     
     
     (define (begin-symbol start-position end-position)
@@ -327,11 +364,17 @@
                     (cond [closer
                            (rope-append a-rope (string->rope closer))]
                           [else a-rope])))
-            (let ([txt (if closer
-                           (format "~a~a" txt closer)
-                           txt)])
+            (let ([spaced-rope
+                   (rope-append
+                    (if need-space-before
+                        (string->rope " ")
+                        (string->rope ""))
+                    (rope-append closed-rope
+                                 (if need-space-after
+                                     (string->rope " ")
+                                     (string->rope ""))))])
               (consume-text world-at-beginning-of-insert
-                            pending-open closed-rope)
+                            pending-open spaced-rope)
               (begin-symbol-insertion/nothing-pending))))))
     
     
@@ -399,6 +442,8 @@
     
     
     (define (revert&exit)
+      #;(printf "revert&exit~n")
+      (restore-editor-to-pre-state!)
       (set-world world-at-beginning-of-insert)
       (exit))
     

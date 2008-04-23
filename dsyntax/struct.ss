@@ -4,8 +4,7 @@
   (require (lib "contract.ss")
            (lib "plt-match.ss")
            (lib "list.ss")
-           "weak-memoize.ss"
-           (prefix table: (planet "table.ss" ("soegaard" "galore.plt" 3))))
+           "weak-memoize.ss")
   
   
   ;; dstx's
@@ -33,22 +32,11 @@
   ;; Some constants:
   
   ;; An empty ordered table specialized for symbol keys.
-  (define empty-table
-    (let ()
-      ;; symbol-cmp: symbol symbol -> (or/c -1 0 1)
-      (define (symbol-cmp sym-1 sym-2)
-        (let ([s1 (symbol->string sym-1)]
-              [s2 (symbol->string sym-2)])
-          (cond
-            [(string<? s1 s2) -1]
-            [(string>? s1 s2) 1]
-            [else 0])))
-      (table:make-ordered symbol-cmp)))
+  (define empty-property-map
+    '())
   
   
-  ;; The empty space atom is sometimes used as a sentinel, so let's
-  ;; keep one here.
-  (define empty-space-atom (make-space empty-table ""))
+  
   ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
   
   
@@ -56,22 +44,27 @@
   ;; Constructor with default empty properties.
   (define new-atom
     (weak-memoize/equal
-     (lambda (content) (make-atom empty-table content))))
+     (lambda (content) (make-atom empty-property-map content))))
   
   ;; new-special-atom: any -> special-atom
   ;; Constructor with default empty properties and default width 1.
   (define new-special-atom
     (case-lambda [(content)
-                  (make-special-atom empty-table content 1)]
+                  (make-special-atom empty-property-map content 1)]
                  [(content width)
-                  (make-special-atom empty-table content width)]))
+                  (make-special-atom empty-property-map content width)]))
   
   ;; new-space: string -> space
   ;; Constructor with default empty properties.
   (define new-space
     (weak-memoize/equal
      (lambda (content)
-       (make-space empty-table content))))
+       (make-space empty-property-map content))))
+  
+  
+  ;; The empty space atom is sometimes used as a sentinel, so let's
+  ;; keep one here.
+  (define empty-space-atom (new-space ""))
   
   
   ;; new-fusion: string (listof dstx?) string -> fusion
@@ -79,28 +72,69 @@
   (define (new-fusion prefix children suffix)
     (cond
       [(empty? children)
-       (make-fusion empty-table prefix (list empty-space-atom) suffix)]
+       (make-fusion empty-property-map prefix (list empty-space-atom) suffix)]
       [else
-       (make-fusion empty-table prefix (cons empty-space-atom children)
+       (make-fusion empty-property-map prefix (cons empty-space-atom children)
                     suffix)]))
   
   
   ;; dstx-property-names: dstx -> (listof symbol)
   ;; Returns the list of property names attached to this dstx.
   (define (dstx-property-names a-dstx)
-    (table:keys (dstx-properties a-dstx)))
+    (map first (dstx-properties a-dstx)))
   
   
   ;; dstx-property-ref: dstx symbol -> any
-  (define (dstx-property-ref a-dstx a-sym)
-    (table:lookup a-sym (dstx-properties a-dstx)))
+  ;; Looks up a property.  If the lookup fails, calls the fail thunk
+  (define dstx-property-ref
+    (case-lambda
+      [(a-dstx a-sym fail-f)
+       (cond [(assq a-sym (dstx-properties a-dstx))
+              =>
+              second]
+             [else
+              (fail-f)])]
+      [(a-dstx a-sym)
+       (cond [(assq a-sym (dstx-properties a-dstx))
+              =>
+              second]
+             [else
+              (error 'dstx-property-ref "Can't find ~s~n" a-sym)])]))
+  
+  
+  ;; symbol-cmp: symbol symbol -> (or/c -1 0 1)
+  (define (symbol-cmp sym-1 sym-2)
+    (let ([s1 (symbol->string sym-1)]
+          [s2 (symbol->string sym-2)])
+      (cond
+        [(string<? s1 s2) -1]
+        [(string>? s1 s2) 1]
+        [else 0])))
+  
+  
+  ;; property-update: property-table/c symbol any -> property-table/c
+  ;; Extends a property table, keeping the keys sorted.
+  (define (property-update props a-sym a-val)
+    (let loop ([props props])
+      (cond
+        [(empty? props)
+         (list (list a-sym a-val))]
+        [(eq? (first (first props)) a-sym)
+         (cons (list a-sym a-val)
+               (rest props))]
+        [(= (symbol-cmp a-sym (first (first props)))
+            1)
+         (cons (list a-sym a-val)
+               props)]
+        [else
+         (cons (first props)
+               (loop (rest props)))])))
   
   
   ;; dstx-property-set: dstx symbol any -> dstx
   ;; Nondestructively set a property.
   (define (dstx-property-set a-dstx a-sym a-val)
-    (let ([new-properties
-           (table:insert a-sym a-val (dstx-properties a-dstx))])
+    (let ([new-properties (property-update (dstx-properties a-dstx) a-sym a-val)])
       (match a-dstx
         [(struct atom (_ content))
          (make-atom new-properties content)]
@@ -145,9 +179,11 @@
            (listof x)))
   
   
-  (define property-map/c (table:table-of/c symbol? any/c))
+  (define property-map/c (listof (list/c symbol? any/c)))
   
   (provide/contract
+   [empty-property-map property-map/c]
+   
    [struct dstx
            ([properties property-map/c])]
    [struct (atom dstx)
@@ -167,7 +203,8 @@
             [suffix string?])]
    
    [dstx-property-names (dstx? . -> . (listof symbol?))]
-   [dstx-property-ref (dstx? symbol? . -> . any)]
+   [dstx-property-ref (case-> (dstx? symbol? . -> . any)
+                              (dstx? symbol? (-> any) . -> . any))]
    [dstx-property-set (dstx? symbol? any/c . -> . dstx?)]
    
    [new-atom (string? . -> . atom?)]

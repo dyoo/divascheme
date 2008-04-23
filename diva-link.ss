@@ -9,9 +9,9 @@
            (lib "errortrace-lib.ss" "errortrace")
            "interpreter.ss"
            "dot-processing.ss"
+           "operations.ss"
            "mred-state.ss"
            "mred-callback.ss"
-           "operations.ss"
            "command-keymap.ss"
            "insert-keymap.ss"
            "structures.ss"
@@ -19,12 +19,15 @@
            "diva-central.ss" 
            "rope.ss"
            "cworld.ss"
+           "dsyntax/dsyntax.ss"
            "gui/clipboard.ss"
+           "imperative-operations.ss"
            (prefix preferences: "diva-preferences.ss"))
   
   (provide diva-link:frame-mixin)
   (provide diva-link:text-mixin)
-  (provide diva-link:interactions-text-mixin)
+  
+  
   
   ;; This file is the file which links every parts of DivaScheme into one:
   ;;  - the infrastructure
@@ -42,7 +45,7 @@
     (class super%
       (inherit get-diva-central
                get-definitions-text
-               get-interactions-text)
+               #;get-interactions-text)
       (define started? #f)
       (super-new)
       
@@ -57,31 +60,25 @@
       (define (startup)
         (send this diva-panel-show)
         (send (get-definitions-text) to-command-mode)
-        (send (get-interactions-text) to-command-mode)
+        (send (get-definitions-text) enable-dstx-parsing)
         (set! started? #t))
       
       (define (shutdown)
         (send this diva-panel-hide)
         (send (get-definitions-text) to-normal-mode)
-        (send (get-interactions-text) to-normal-mode)
+        (send (get-definitions-text) disable-dstx-parsing)
         (set! started? #f))
       
       (define (refresh-keymaps)
-        (send (get-definitions-text) refresh-keymaps)
-        (send (get-interactions-text) refresh-keymaps))
+        (send (get-definitions-text) refresh-keymaps))
       
       (define/augment (on-tab-change from-tab to-tab)
         (inner (void) on-tab-change from-tab to-tab)
         (when started?
           (send (send from-tab get-defs) diva:-on-loss-focus)
-          (send (send from-tab get-ints) diva:-on-loss-focus)
           (send (send to-tab get-defs) diva:-on-loss-focus)
-          (send (send to-tab get-ints) diva:-on-loss-focus)
-          
           (send (send from-tab get-defs) to-normal-mode)
-          (send (send from-tab get-ints) to-normal-mode)
-          (send (send to-tab get-defs) to-command-mode)
-          (send (send to-tab get-ints) to-command-mode)))
+          (send (send to-tab get-defs) to-command-mode)))
       
       (define (handle-diva-central-evt evt)
         (match evt
@@ -131,10 +128,11 @@
     (class (apply-callback-mixins super%)
       (inherit get-top-level-window
                get-keymap
-               get-canvas
+               
+               get-rope ;; We assume we'll get this text-rope-mixin
+               
                begin-edit-sequence
                end-edit-sequence
-               diva:-get-rope ;; from mred-callback mixin
                
                diva:-set-on-loss-focus
                diva:-on-loss-focus
@@ -227,6 +225,11 @@
         (cworld-world central-world))
       
       
+      ;; set-current-world!: World -> void
+      ;; Sets the current world to the new world.
+      (define (set-current-world! new-world)
+        (send-cworld-op (make-operation:replace-world new-world)))
+      
       
       ;; Whenever new events happen, we'll send an operation message to the central world
       ;; mailbox for processing.
@@ -236,8 +239,7 @@
       (thread (lambda ()
                 (let loop ()
                   (let ([new-op (channel-get central-world-mailbox)])
-                    (set! central-world
-                          (cworld-apply-operation central-world new-op)))
+                    (set! central-world (cworld-apply-operation central-world new-op)))
                   (loop))))
       
       
@@ -266,6 +268,34 @@
       (define (push-callback callback)
 	(parameterize ([current-eventspace (send (get-top-level-window) get-eventspace)])
           (queue-callback callback)))
+      
+      
+      (define/augment (on-structured-insert-before a-fcursor a-dstx)
+        #;(printf "structured insert-before of ~s~n" a-dstx)
+        (inner (void) on-structured-insert-before a-fcursor a-dstx))
+      
+      (define/augment (on-structured-insert-after a-fcursor a-dstx)
+        #;(printf "structured insert-after of ~s~n" a-dstx)
+        (inner (void) on-structured-insert-after a-fcursor a-dstx))
+      
+      (define/augment (on-structured-delete a-fcursor)
+        #;(printf "structured insert-delete of ~s~n" (cursor-dstx a-fcursor))
+        (inner (void) on-structured-delete a-fcursor))
+      
+      (define/augment (after-structured-insert a-fcursor)
+        (inner (void) after-structured-insert a-fcursor))
+      
+      (define/augment (after-structured-delete a-fcursor)
+        (inner (void) after-structured-delete a-fcursor))
+      
+      
+      
+      
+      
+      
+      
+      
+      
       
       
       ;; INTERPRETATION
@@ -301,35 +331,42 @@
           (error 'push-into-mred))
         (with-handlers ([voice-exn?
                          (lambda (exn)
+                           (printf "~a~n" exn)
                            (error-message (voice-exn-message exn)))]
                         [(lambda args true)
                          (lambda (exn)
+                           (printf "~a~n" exn)
                            (error-exn exn))])
           (dynamic-wind
            (lambda ()
              (begin-edit-sequence))
            (lambda ()
+             ;; This pushes through the initial changes in the world's content
+             ;; into our window text.
              (send current-mred push-world world)
+             
+             ;; We then apply the other imperative actions:
              (let
                  ([new-world
                    (foldl
-                    (lambda (fn world)
+                    (lambda (op world)
                       (with-divascheme-handlers
                        world
                        (lambda ()
-                         (fn world this
-                             (lambda (w)
-                               (send current-mred pull-world w))
-                             (lambda (w)
-                               (send current-mred push-world w))))))
-                    world
-                    (reverse (World-imperative-actions world)))])
-               #;(set-current-world! (copy-struct World new-world
-                                                  [World-imperative-actions empty]))
-               ;; fixme!
-               (void)))
+                         (apply-imperative-op
+                          op
+                          world this
+                          (lambda (w)
+                            (send current-mred pull-world w))
+                          (lambda (w)
+                            (send current-mred push-world w))))))
+                    (copy-struct World world [World-imperative-operations empty])
+                    (reverse (World-imperative-operations world)))])
+               (set-current-world! (copy-struct World new-world
+                                                [World-imperative-operations empty]))))
            (lambda ()
              (end-edit-sequence)))))
+      
       
       
       ;; with-divascheme-handlers: world (-> world) -> world
@@ -342,14 +379,17 @@
          (lambda () 
            (with-handlers ([voice-exn?
                             (lambda (exn)
+                              (printf "exception: ~s~n" exn)
                               (error-message (voice-exn-message exn))
                               default-world-on-exn)]
                            [voice-exn/world?
                             (lambda (exn)
+                              (printf "exception: ~s~n" exn)
                               (error-message (voice-exn/world-message exn))
                               (voice-exn/world-world exn))]
                            [(lambda args true)
                             (lambda (exn)
+                              (printf "exception: ~s~n" exn)
                               (error-exn exn)
                               default-world-on-exn)])
              (thunk)))
@@ -361,17 +401,18 @@
       ;; interpreter/imperative: ast world -> world
       ;; Evaluate the given ast and the world, and returns the new state of the world.
       (define (interpreter/imperative ast world)
-        (match (interpreter ast world)
-          ;; The command may refer to another file path, in which
-          ;; case we have to do some tab/frame stuff.
-          [(struct SwitchWorld (path inner-ast))
-           (let ([frame (handler:edit-file path)])
-             (when (eq? this (send frame get-editor))
-               (push-into-mred (pull-from-mred)))
-             (send (send frame get-editor) diva-ast-put inner-ast))
-           (pull-from-mred)]
-          [new-world
-           new-world]))
+        (let ([new-world (interpreter ast world)])
+          (match new-world
+            ;; The command may refer to another file path, in which
+            ;; case we have to do some tab/frame stuff.
+            [(struct SwitchWorld (path inner-ast))
+             (let ([frame (handler:edit-file path)])
+               (when (eq? this (send frame get-editor))
+                 (push-into-mred (pull-from-mred)))
+               (send (send frame get-editor) diva-ast-put inner-ast))
+             (pull-from-mred)]
+            [new-world
+             new-world])))
       
       
       ;; diva-ast-put: ast -> void
@@ -386,7 +427,6 @@
       ;; diva-ast-put/wait+world: world ast -> void
       ;; Applies the ast on the given world.
       (define (diva-ast-put/wait+world world ast)
-        ;; fixme!  Types are no longer right.
         (push-into-mred
          (with-divascheme-handlers
           world
@@ -404,13 +444,13 @@
       (define (check-good-syntax)
         (cond
           [(and (get-current-world)
-                (rope=? (diva:-get-rope)
+                (rope=? (get-rope)
                         (World-rope (get-current-world))))
            ;; Local optimization: if our rope is equal
            ;; to the one in the current-world, just reuse that.
            (void (World-syntax-list (get-current-world)))]
           [else
-           (void (rope-parse-syntax (diva:-get-rope)))]))
+           (void (rope-parse-syntax (get-rope)))]))
       
       
       ;; Insertion Mode
@@ -420,7 +460,7 @@
            (to-insert-mode edit? on-entry on-exit #f)]
           [(edit? on-entry on-exit cmd)
            (with-divascheme-handlers
-            #f
+            (pull-from-mred)
             (lambda ()
               (on-entry)
               ;; Currently, we're ignoring the return value of make-insert-mode.
@@ -507,7 +547,7 @@
       (define/public (to-command-mode)
         (install-command-keymap)
         (with-divascheme-handlers
-         #f
+         (pull-from-mred)
          (lambda ()
            (check-good-syntax))))
       
@@ -558,43 +598,4 @@
           [(start end)
            (set-position start end #f #t 'local)]
           [(start)
-           (set-position start 'same #f #t 'local)]))))
-  
-  
-  
-  
-  
-  ;; diva-link:interactions-text-mixin: diva-link:text -> diva-link:interactions-text
-  ;; One additional layer on top of interactions.  Interactions are
-  ;; slightly weird because they do REPL stuff.
-  (define (diva-link:interactions-text-mixin super%)
-    (class super%
-      (super-new)
-      (inherit get-start-position
-               get-end-position
-               submit-to-port?
-               diva:-on-loss-focus)
-      
-      (define/augment (on-submit)
-        (inner (void) on-submit))
-      
-      ;; The following is extremely ugly, but has to be done: whenever
-      ;; the user presses enter, framework/private/text.ss will call
-      ;; on-local-char and interpose an on-submit if we're sending
-      ;; something to the interaction repl.  We must turn insert mode off
-      ;; before that happens, or our state gets messed up.
-      (define/override (on-local-char key)
-        (let ([start (get-start-position)]
-              [end (get-end-position)]
-              [code (send key get-key-code)])
-          (cond
-            [(not (or (eq? code 'numpad-enter)
-                      (equal? code #\return)
-                      (equal? code #\newline)))
-             (super on-local-char key)]
-            [(and (= start end)
-                  (submit-to-port? key))
-             (diva:-on-loss-focus)
-             (super on-local-char key)]
-            [else
-             (super on-local-char key)]))))))
+           (set-position start 'same #f #t 'local)])))))

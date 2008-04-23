@@ -28,6 +28,8 @@
                      (-> weak-set?)]
                     [weak-set-add!
                      (weak-set? any/c . -> . any)]
+                    [weak-set-remove!
+                     (weak-set? any/c . -> . any)]
                     [weak-set-for-each
                      (weak-set? (any/c . -> . any) . -> . any)]
                     [weak-set-map

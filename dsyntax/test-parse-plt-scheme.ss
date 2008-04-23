@@ -147,20 +147,28 @@
        (parse "#,@ugh")
        (new-fusion "#,@" (list (new-atom "ugh")) "")))
      
+     
+     (test-case
+      "space after quote should be swallowed in the fusion"
+      (check-equal?
+       (parse "' hello")
+       (new-fusion "'" (list (new-space " ") (new-atom "hello")) "")))
+     
+     
      (test-case
       "pipe literal"
       (check-equal? (parse "#\\|")
                     (new-atom "#\\|"))
       (check-equal? (parse "(#\\| #\\|)")
                     (new-fusion "("
-                                 (list (new-atom "#\\|")
-                                       (new-space " ")
-                                       (new-atom "#\\|"))
-                                 ")"))
+                                (list (new-atom "#\\|")
+                                      (new-space " ")
+                                      (new-atom "#\\|"))
+                                ")"))
       
       (check-equal? (parse "(#\\| #rx#\"|\")")
                     (new-fusion "("
-                                 (list (new-atom "#\\|")
+                                (list (new-atom "#\\|")
                                        (new-space " ")
                                        (new-atom "#rx#\"|\""))
                                  ")")))
