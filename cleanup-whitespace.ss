@@ -21,7 +21,8 @@
             (define (next-position-token)
               (plt-lexer ip)))
       (let loop ([pos-tok (next-position-token)]
-                 [kill-leading-whitespace? #t]
+                 [kill-leading-whitespace? #f]
+                 [at-beginning-of-line? #t]
                  [markers (map add1 markers)]
                  [acc '()]
                  [count-deleted-chars 0])
@@ -30,9 +31,10 @@
                   (- (position-offset (position-token-start-pos pos-tok)) 
                      count-deleted-chars))
                 
-                (define (leave-preserved kill-leading-whitespace?)
+                (define (leave-preserved kill-leading-whitespace? at-beginning-of-line?)
                   (loop (next-position-token)
                         kill-leading-whitespace?
+                        at-beginning-of-line?
                         markers
                         (cons ((if (string? (token-value tok))
                                    string->rope
@@ -50,6 +52,13 @@
                                 truncate-white-footer
                                 trim-white-footer)))
                     (cond
+                      [at-beginning-of-line?
+                       (loop next-pos-token
+                             #f
+                             #t
+                             markers
+                             (cons (string->rope (token-value tok)) acc)
+                             count-deleted-chars)]
                       [(member (token-name next-tok) (list 'end 'suffix))
                        (let-values ([(new-str new-markers)
                                      (truncate-all-but-newlines 
@@ -57,7 +66,9 @@
                                       (- (position-offset (position-token-start-pos pos-tok))
                                          count-deleted-chars) 
                                       markers)])
-                         (loop next-pos-token #t
+                         (loop next-pos-token
+                               #t
+                               at-beginning-of-line?
                                new-markers
                                (cons (string->rope new-str) acc)
                                (+ count-deleted-chars 
@@ -68,7 +79,9 @@
                                  (trim-white-header (token-value tok) start-pos markers))
                                (define-values (new-whitespace new-markers-2)
                                  (footer-cleaner-f whitespace start-pos new-markers-1)))
-                         (loop next-pos-token #t
+                         (loop next-pos-token
+                               #t
+                               (contains-newline? new-whitespace)
                                new-markers-2
                                (cons (string->rope new-whitespace) acc)
                                (+ count-deleted-chars 
@@ -81,30 +94,38 @@
                      (let-values ([(cleaned-str new-markers)
                                    (truncate-white-footer
                                     (token-value tok) start-pos markers)])
-                       (loop (next-position-token) #f new-markers
+                       (loop (next-position-token)
+                             #f
+                             #f
+                             new-markers
                              (cons (string->rope cleaned-str) acc)
                              (+ count-deleted-chars
                                 (string-length-delta cleaned-str
                                                      (token-value tok)))))]
                     [else
-                     (leave-preserved #f)])))
+                     (leave-preserved #f #f)])))
           
           (case (token-name tok)
             [(atom)
              (handle-atom)]
             [(special-atom)
-             (leave-preserved #f)]
+             (leave-preserved #f #f)]
             [(quoter-prefix)
-             (leave-preserved #t)]
+             (leave-preserved #t #f)]
             [(prefix)
-             (leave-preserved #t)]
+             (leave-preserved #t #f)]
             [(suffix)
-             (leave-preserved #f)]
+             (leave-preserved #f #f)]
             [(space)
              (handle-space)]
             [(end)
              (values (apply rope-append* (reverse acc))
                      (map sub1 markers))])))))
+  
+  
+  ;; contains-newline?: string -> boolean
+  (define (contains-newline? a-str)
+    (and (regexp-match #rx"\n" a-str) #t))
   
   
   ;; trim-white-header: string natural-number (listof natural-number) -> (values string (listof natural-number)
