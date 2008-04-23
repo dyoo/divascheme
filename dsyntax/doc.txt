@@ -257,9 +257,21 @@ returns #f.
 Moves focus to the non-space successor, assuming a depth-first traversal.
 
 
+> focus-successor/no-snap: cursor -> (union cursor #f)
+
+Moves focus to the successor, assuming a depth-first traversal.
+
+
+
 > focus-predecessor: cursor -> (union cursor #f)
 
 Moves focus to the non-space predecessor, assuming a depth-first traversal.
+
+
+> focus-predecessor/no-snap: cursor -> (union cursor #f)
+
+Moves focus to predecessor, assuming a depth-first traversal.
+
 
 
 > focus-container: cursor number -> (union cursor #f)
@@ -276,7 +288,11 @@ spreads outward toward the successors and predecessors.
 
 > focus-pos: cursor number -> (union cursor #f)
 
-> focus-line: cursor number -> (union cursor #f)
+Given a cursor and a position, refocuses the cursor at the dstx at or
+immediately to the left of the cursor.  If no such syntax exists,
+returns #f.  Does not snap across whitespace, except for the special
+case of the sentinel empty-space character.
+
 
 
 
