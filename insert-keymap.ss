@@ -77,13 +77,15 @@
     ;; editor state before coming into insert mode, so that it
     ;; syncs up with what's in the World.
     (define (restore-editor-to-pre-state!)
-      (cond
-        [pending-open
-         (send editor set-rope
-               (World-rope (Pending-world pending-open)))]
-        [else
-         (send editor set-rope
-               (World-rope world-at-beginning-of-insert))]))
+      (with-insert-mode-flag
+       (lambda ()
+         (cond
+           [pending-open
+            (send editor set-rope
+                  (World-rope (Pending-world pending-open)))]
+           [else
+            (send editor set-rope
+                  (World-rope world-at-beginning-of-insert))]))))
     
     
     ;; consume-text: World Pending rope -> void
@@ -95,7 +97,7 @@
         [pending-open
          ;; possible templating with open parens
          (do-interpretation (Pending-world pending-open)
-                         (make-Verb (make-Command (Pending-symbol pending-open))
+                            (make-Verb (make-Command (Pending-symbol pending-open))
                                     false
                                     (make-WhatN
                                      (make-Rope-Noun a-rope))))]
@@ -183,42 +185,44 @@
     
     
     (define (begin-symbol-insertion)
-      (let ([left-point (send editor get-start-position)]
-            [right-point (send editor get-end-position)])
-        
-        (define (prepare-insertion-point!)
-          (if need-space-before
-              (begin-symbol (add1 left-point) (add1 left-point))
-              (begin-symbol left-point left-point))
-          (unset-insert&delete-callbacks)
-          (set! selection-rope-before-insert
-                (read-subrope-in-text editor
-                                      (send editor get-start-position)
-                                      (- (send editor get-end-position)
-                                         (send editor get-start-position))))
-          (unless (empty-selection?)
-            (send editor delete))
-          (when need-space-before
-            (send editor insert " "))
-          (when need-space-after
-            (send editor insert " ")
-            (send editor diva:set-selection-position
-                  (max (sub1 (send editor get-end-position)) 0)))
-          
-          (set-insert&delete-callbacks))
-        
-        (begin
-          (set! need-space-before
-                (and (not (= 0 left-point))
-                     (not (char-whitespace?
-                           (send editor get-character (sub1 left-point))))))
-          
-          (set! need-space-after
-                (and (not (= (send editor last-position) right-point))
-                     (not (char-whitespace?
-                           (send editor get-character right-point)))))
-          (prepare-insertion-point!)
-          (fill-highlight!))))
+      (with-insert-mode-flag
+       (lambda ()
+         (let ([left-point (send editor get-start-position)]
+               [right-point (send editor get-end-position)])
+           
+           (define (prepare-insertion-point!)
+             (if need-space-before
+                 (begin-symbol (add1 left-point) (add1 left-point))
+                 (begin-symbol left-point left-point))
+             (unset-insert&delete-callbacks)
+             (set! selection-rope-before-insert
+                   (read-subrope-in-text editor
+                                         (send editor get-start-position)
+                                         (- (send editor get-end-position)
+                                            (send editor get-start-position))))
+             (unless (empty-selection?)
+               (send editor delete))
+             (when need-space-before
+               (send editor insert " "))
+             (when need-space-after
+               (send editor insert " ")
+               (send editor diva:set-selection-position
+                     (max (sub1 (send editor get-end-position)) 0)))
+             
+             (set-insert&delete-callbacks))
+           
+           (begin
+             (set! need-space-before
+                   (and (not (= 0 left-point))
+                        (not (char-whitespace?
+                              (send editor get-character (sub1 left-point))))))
+             
+             (set! need-space-after
+                   (and (not (= (send editor last-position) right-point))
+                        (not (char-whitespace?
+                              (send editor get-character right-point)))))
+             (prepare-insertion-point!)
+             (fill-highlight!))))))
     
     
     
@@ -291,15 +295,27 @@
          ]
         [(< left-edge-of-insert
             (send editor get-start-position))
-         (send editor delete)]))
+         (with-insert-mode-flag (lambda ()
+                                  (send editor delete)))]))
     
     
     (define (delete-forward)
       (when (< (send editor get-start-position)
                right-edge-of-insert)
-        (send editor delete
-              (send editor get-start-position)
-              (add1 (send editor get-start-position)))))
+        
+        (with-insert-mode-flag
+         (lambda ()
+           (send editor delete
+                 (send editor get-start-position)
+                 (add1 (send editor get-start-position)))))))
+    
+    
+    (define (with-insert-mode-flag thunk)
+      (dynamic-wind (lambda ()
+                      (send editor set-in-insert-mode #t))
+                    thunk
+                    (lambda ()
+                      (send editor set-in-insert-mode #f))))
     
     
     ;; copy-and-paste from framework/private/keymap.ss.
@@ -308,10 +324,11 @@
             [sel-end (send editor get-end-position)])
         (let ([end-box (box sel-end)])
           (send editor find-wordbreak #f end-box 'caret)
-          (send editor kill
-                0
-                sel-start
-                (min right-edge-of-insert (unbox end-box))))))
+          (with-insert-mode-flag (lambda ()
+                                   (send editor kill
+                                         0
+                                         sel-start
+                                         (min right-edge-of-insert (unbox end-box))))))))
     
     
     (define (kill-word-backward)
@@ -319,10 +336,11 @@
             [sel-end (send editor get-end-position)])
         (let ([start-box (box sel-start)])
           (send editor find-wordbreak start-box #f 'caret)
-          (send editor kill
-                0
-                (max left-edge-of-insert (unbox start-box))
-                sel-end))))
+          (with-insert-mode-flag (lambda ()
+                                   (send editor kill
+                                         0
+                                         (max left-edge-of-insert (unbox start-box))
+                                         sel-end))))))
     
     
     (define (fill-highlight!)
@@ -510,7 +528,8 @@
     
     (define (maybe-literal* c . thunks)
       (if (in-something? (get-text-to-cursor))
-          (send editor insert c)
+          (with-insert-mode-flag (lambda ()
+                                   (send editor insert c)))
           (for-each (lambda (t) (t)) thunks)))
     
     (define (magic-or-pass)
