@@ -9,44 +9,45 @@
            "semi-read-syntax/lexer.ss")
   
   
+  ;; (make-del number number) represents a deletion operation.
+  (define-struct deletion (offset len))
+  
+  
+  
   ;; cleanup-whitespace: rope -> rope
   ;;
   ;; Given a rope with Scheme literals and specials, follows
   ;; standard conventions of removing whitespace around parens.
   ;;
-  ;; TODO: rather than return a new rope, it should return a list
-  ;; of operations we need to do to clean up the rope.
-  
   (define (cleanup-whitespace a-rope)
+    (let ([deletions (cleanup-whitespace-operations a-rope)])
+      (foldl apply-deletion a-rope deletions)))
+  
+  
+  ;; compute-cleanup-deletions: a-rope -> (listof deletion)
+  ;; Computes a list of deletions we need to do to clean up this string.
+  (define (cleanup-whitespace-operations a-rope)
     (local ((define ip (open-input-rope a-rope))
             (define (next-position-token)
               (plt-lexer ip)))
       (let loop ([pos-tok (next-position-token)]
                  [kill-leading-whitespace? #f]
                  [at-beginning-of-line? #t]
-                 [acc '()]
-                 [count-deleted-chars 0])
+                 [acc '()])
         
         (local ((define tok (position-token-token pos-tok))
-                (define start-pos 
-                  (- (position-offset (position-token-start-pos pos-tok)) 
-                     count-deleted-chars))
+                (define start-pos
+                  (sub1 (position-offset (position-token-start-pos pos-tok))))
                 
                 (define (leave-preserved kill-leading-whitespace? at-beginning-of-line?)
                   (loop (next-position-token)
                         kill-leading-whitespace?
                         at-beginning-of-line?
-                        (cons ((if (string? (token-value tok))
-                                   string->rope
-                                   special->rope)
-                               (token-value tok))
-                              acc)
-                        count-deleted-chars))
+                        acc))
                 
                 (define (handle-space)
                   (local ((define next-pos-token (next-position-token))
                           (define next-tok (position-token-token next-pos-token))
-                          
                           (define footer-cleaner-f
                             (if kill-leading-whitespace?
                                 truncate-all-but-newlines
@@ -56,17 +57,14 @@
                        (loop next-pos-token
                              #f
                              #t
-                             (cons (string->rope (token-value tok)) acc)
-                             count-deleted-chars)]
+                             acc)]
                       [(member (token-name next-tok) (list 'end 'suffix))
-                       (let-values ([(new-str) (truncate-all-but-newlines (token-value tok))])
+                       (let ([new-str (truncate-all-but-newlines (token-value tok))])
                          (loop next-pos-token
                                #t
                                at-beginning-of-line?
-                               (cons (string->rope new-str) acc)
-                               (+ count-deleted-chars 
-                                  (string-length-delta new-str (token-value tok)))))]
-                      
+                               (cons (make-deletion start-pos (string-length-delta (token-value tok) new-str))
+                                     acc)))]
                       [else
                        (local ((define-values (whitespace)
                                  (trim-white-header (token-value tok)))
@@ -75,24 +73,20 @@
                          (loop next-pos-token
                                #t
                                (contains-newline? new-whitespace)
-                               (cons (string->rope new-whitespace) acc)
-                               (+ count-deleted-chars 
-                                  (string-length-delta 
-                                   new-whitespace (token-value tok)))))])))
+                               (cons (make-deletion start-pos (string-length-delta (token-value tok) new-whitespace))
+                                     acc)))])))
                 
                 (define (handle-atom)
                   (cond
                     [(string-prefix? ";" (token-value tok))
-                     (let-values ([(cleaned-str new-markers)
-                                   (truncate-white-footer (token-value tok))])
+                     (let* ([cleaned-str (truncate-white-footer (token-value tok))]
+                            [delta (string-length-delta (token-value tok) cleaned-str)])
                        (loop (next-position-token)
                              #f
                              #f
-                             new-markers
-                             (cons (string->rope cleaned-str) acc)
-                             (+ count-deleted-chars
-                                (string-length-delta cleaned-str
-                                                     (token-value tok)))))]
+                             (cons (make-deletion (- (+ start-pos (string-length (token-value tok))) delta)
+                                                  delta)
+                                   acc)))]
                     [else
                      (leave-preserved #f #f)])))
           (case (token-name tok)
@@ -109,7 +103,19 @@
             [(space)
              (handle-space)]
             [(end)
-             (apply rope-append* (reverse acc))])))))
+             acc])))))
+  
+  
+  
+  ;; rope-delete: rope number -> rope
+  (define (rope-delete a-rope offset len)
+    (rope-append (subrope a-rope 0 offset)
+                 (subrope a-rope (+ offset len))))
+  
+  ;; apply-deletion: rope deletion -> rope
+  (define (apply-deletion a-deletion a-rope)
+    (rope-delete a-rope (deletion-offset a-deletion) (deletion-len a-deletion)))
+  
   
   
   ;; contains-newline?: string -> boolean
@@ -137,10 +143,13 @@
   
   ;; string-length-delta: string string -> number
   (define (string-length-delta s1 s2) 
-    (- (string-length s2) (string-length s1)))
+    (abs (- (string-length s2) (string-length s1))))
   
   
   (define positive-number/c (and/c integer? (>=/c 1)))
   
   (provide/contract
-   [cleanup-whitespace (rope? . -> . rope?)]))
+   [struct deletion ([offset natural-number/c]
+                     [len natural-number/c])]
+   [cleanup-whitespace (rope? . -> . rope?)]
+   [cleanup-whitespace-operations (rope? . -> . (listof deletion?))]))
