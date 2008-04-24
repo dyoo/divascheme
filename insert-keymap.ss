@@ -41,7 +41,6 @@
     (define magic-options-lst false)
     (define magic-option-base false)
     
-    (define selection-rope-before-insert (string->rope ""))
     (define left-edge-of-insert (send editor get-start-position))
     (define right-edge-of-insert (send editor get-start-position))
     (define need-space-before #f)
@@ -133,8 +132,18 @@
     (define (get-text-to-cursor)
       (send editor get-text left-edge-of-insert (send editor get-start-position)))
     
+    
+    (define (with-unstructured-decoration f) 
+      (dynamic-wind (lambda () (send editor set-in-unstructured-editing? #t))
+                    f
+                    (lambda () (send editor set-in-unstructured-editing? #f))))
+    
+    
     (define (set-text text)
-      (send editor insert text left-edge-of-insert (send editor get-start-position) true))
+      (with-unstructured-decoration 
+       (lambda () 
+         (send editor insert text left-edge-of-insert (send editor get-start-position) true))))
+    
     
     (define (set-insert&delete-callbacks)
       (set-after-insert-callback on-insert)
@@ -165,18 +174,18 @@
              (set-world (action:select/stx world stx/false))
              (set! need-space-before #f)
              (set! need-space-after #f)
-             (set! selection-rope-before-insert
-                   (read-subrope-in-text editor
-                                         (send editor get-start-position)
-                                         (- (send editor get-end-position)
-                                            (send editor get-start-position))))
-             (begin-symbol (send editor get-start-position)
-                           (send editor get-end-position))
-             (send editor diva:set-selection-position
-                   (clamp original-pos
-                          (send editor get-start-position)
-                          (send editor get-end-position)))
-             (set-insert&delete-callbacks))]
+             (let* ([start-pos (send editor get-start-position)]
+                    [end-pos (send editor get-end-position)]
+                    [selection-rope-before-insert
+                     (read-subrope-in-text editor start-pos (- end-pos start-pos))])
+               (begin-symbol start-pos end-pos) 
+               (send editor delete) 
+               (with-unstructured-decoration 
+                (lambda () 
+                  (insert-rope-in-text editor selection-rope-before-insert)))
+               (send editor diva:set-selection-position
+                     (clamp original-pos start-pos end-pos))
+               (set-insert&delete-callbacks)))]
           [else
            (begin-symbol-insertion)])))
     
@@ -192,21 +201,17 @@
               (begin-symbol (add1 left-point) (add1 left-point))
               (begin-symbol left-point left-point))
           (unset-insert&delete-callbacks)
-          (set! selection-rope-before-insert
-                (read-subrope-in-text editor
-                                      (send editor get-start-position)
-                                      (- (send editor get-end-position)
-                                         (send editor get-start-position))))
           (unless (empty-selection?)
             (send editor delete))
-          (when need-space-before
-            (send editor insert " "))
-          (when need-space-after
-            (send editor insert " ")
-            (send editor diva:set-selection-position
-                  (max (sub1 (send editor get-end-position)) 0)))
-          
-          (set-insert&delete-callbacks))
+          (with-unstructured-decoration 
+           (lambda () 
+             (when need-space-before
+               (send editor insert " "))
+             (when need-space-after
+               (send editor insert " ")
+               (send editor diva:set-selection-position
+                     (max (sub1 (send editor get-end-position)) 0)))
+             (set-insert&delete-callbacks))))
         
         (begin
           (set! need-space-before
