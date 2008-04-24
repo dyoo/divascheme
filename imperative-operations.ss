@@ -163,21 +163,24 @@
   ;; cleanup/between: number number world text% (World -> World) (World -> void) -> World
   (define (cleanup/between start-index end-index world a-text update-world-fn update-mred-fn)
     (let* ([line (subrope (World-rope world) start-index end-index)]
-           [len (rope-length line)])
-      (let ([clean-line (cleanup-whitespace line)])
-        (let* ([new-world (world-replace-rope world start-index clean-line len)])
-          ;; fixme: don't use update-mred-fn, but rather do the minimal whitespace
-          ;; changes we need.
-          (let ([new-world
-                 (preserve-selection-and-mark new-world
-                                              a-text
-                                              (lambda ()
-                                                (send a-text set-rope/minimal-edits (World-rope new-world))
-                                                (send a-text tabify-selection start-index (+ start-index len))))])
-            (let ([world-after-tabify (update-world-fn new-world)])
-              (update-mred-fn world-after-tabify)
-              world-after-tabify))))))
-  
+           [len (rope-length line)]
+           [deletions (cleanup-whitespace-operations line)])
+      (let* ([clean-world
+              (preserve-selection-and-mark world
+                                           a-text
+                                           (lambda ()
+                                             (for-each (lambda (a-del)
+                                                         (let ([pos (+ start-index (deletion-offset a-del))])
+                                                           (send a-text delete pos (+ pos (deletion-len a-del)))))
+                                                       deletions)))]
+             [clean-and-tabbed-world
+              (preserve-selection-and-mark clean-world
+                                           a-text
+                                           (lambda ()
+                                             (send a-text tabify-selection start-index (+ start-index len))))])
+        (let ([final-world (update-world-fn clean-and-tabbed-world)])
+          (update-mred-fn final-world)
+          final-world))))
   
   
   
