@@ -47,9 +47,10 @@
                get-definitions-text
                #;get-interactions-text)
       (define started? #f)
-      (super-new)
+      
       
       (define (initialize)
+        (super-new) 
         (send (get-diva-central) add-listener handle-diva-central-evt)
         (queue-callback
          (lambda ()
