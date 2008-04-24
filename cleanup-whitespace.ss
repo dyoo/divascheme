@@ -49,8 +49,8 @@
                           
                           (define footer-cleaner-f
                             (if kill-leading-whitespace?
-                                (lambda (s) "")
-                                (lambda (s) s))))
+                                truncate-all-but-newlines
+                                identity)))
                     (cond
                       [at-beginning-of-line?
                        (loop next-pos-token
