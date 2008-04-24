@@ -189,8 +189,8 @@
   ;; imperative-op:transpose: transposes the s-expression at world cursor position.
   (define-struct (imperative-op:transpose imperative-op) (original-world))
   
-  ;; imperative-op:cleanup-range: cleans up the whitespace betwen start-pos and end-pos.
-  (define-struct (imperative-op:cleanup/pos imperative-op) (pos))
+  ;; imperative-op:cleanup: cleans up the whitespace of the whole buffer.
+  (define-struct (imperative-op:cleanup imperative-op) ())
   
   ;; imperative-op:delete-range: delete the range of text.
   #;(define-struct (imperative-op:delete-range imperative-op) (start-pos end-pos))
@@ -588,14 +588,13 @@
              (one-of/c 'home 'end 'right 'left 'up 'down)])]
    [struct (imperative-op:transpose imperative-op)
            ([original-world World?])]
-   [struct (imperative-op:cleanup/pos imperative-op)
-           ([pos natural-number/c])]
+   [struct (imperative-op:cleanup imperative-op) ()]
    #;[struct (imperative-op:delete-range imperative-op)
              ([start-pos natural-number/c]
-            [end-pos natural-number/c])]
+              [end-pos natural-number/c])]
    #;[struct (imperative-op:insert-rope imperative-op)
              ([rope rope?]
-            [pos natural-number/c])]
+              [pos natural-number/c])]
    
    
    [queue-imperative-operation (World? imperative-op? . -> . World?)]

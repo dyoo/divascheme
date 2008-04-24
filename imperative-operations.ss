@@ -35,8 +35,8 @@
       [(struct imperative-op:transpose (original-world))
        (transpose original-world a-world a-text update-world-fn update-mred-fn)]
       
-      [(struct imperative-op:cleanup/pos (pos))
-       (cleanup/pos pos a-world a-text update-world-fn update-mred-fn)]
+      [(struct imperative-op:cleanup ())
+       (cleanup a-world a-text update-world-fn update-mred-fn)]
       
       #;[(struct imperative-op:delete-range (start-pos end-pos))
          (delete-range start-pos end-pos a-world a-text
@@ -154,46 +154,17 @@
   
   
   
-  ;; cleanup-pos: number world text% (World -> World) (World -> void) -> World
-  ;; Cleanup in the neighborhood of syntax near this position.
-  (define (cleanup/pos start-pos world a-text update-world-fn update-mred-fn)
-    (let ([cursor (send (send a-text get-dstx-cursor) get-functional-cursor)])
-      (cond
-        [(not (focus-container cursor start-pos))
-         world]
-        [else
-         (let* ([container (focus-container cursor start-pos)]
-                [outer (focus-out container)]
-                [before (focus-younger container)]
-                [after (focus-older container)])
-           (cond
-             [outer
-              (cleanup/between (cursor-pos outer)
-                               (cursor-endpos outer)
-                               world a-text update-world-fn update-mred-fn)]
-             [(and before after)
-              (cleanup/between (cursor-pos before)
-                               (cursor-endpos after)
-                               world a-text update-world-fn update-mred-fn)]
-             [before
-              (cleanup/between (cursor-pos before)
-                               (cursor-endpos container)
-                               world a-text update-world-fn update-mred-fn)]
-             [after
-              (cleanup/between (cursor-pos container)
-                               (cursor-endpos after)
-                               world a-text update-world-fn update-mred-fn)]
-             [else
-              world]))])))
-  
+  ;; cleanup: world text% (World -> World) (World -> void) -> World
+  ;; Cleanup everything we can see.
+  (define (cleanup world a-text update-world-fn update-mred-fn)
+    (cleanup/between 0 (send a-text last-position) world a-text update-world-fn update-mred-fn))
   
   
   ;; cleanup/between: number number world text% (World -> World) (World -> void) -> World
   (define (cleanup/between start-index end-index world a-text update-world-fn update-mred-fn)
     (let* ([line (subrope (World-rope world) start-index end-index)]
            [len (rope-length line)])
-      (let-values ([(clean-line lst)
-                    (cleanup-whitespace line start-index (list))])
+      (let ([clean-line (cleanup-whitespace line)])
         (let* ([new-world (world-replace-rope world start-index clean-line len)])
           ;; fixme: don't use update-mred-fn, but rather do the minimal whitespace
           ;; changes we need.
