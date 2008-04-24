@@ -57,7 +57,12 @@
            [(or meta-down? control-down?)
             no-further-dispatch-needed]
            [(printable-char? key-code)
-            (send editor insert key-code)
+            (dynamic-wind (lambda () 
+                            (send editor set-in-unstructured-editing? #t)) 
+                          (lambda () 
+                            (send editor insert key-code)) 
+                          (lambda () 
+                            (send editor set-in-unstructured-editing? #f)))
             no-further-dispatch-needed]
            [else
             more-dispatch-needed]))]

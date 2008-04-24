@@ -76,12 +76,13 @@
     ;; editor state before coming into insert mode, so that it
     ;; syncs up with what's in the World.
     (define (restore-editor-to-pre-state!)
+      (set-text "")
       (let ([world (cond
                      [pending-open
                       (Pending-world pending-open)]
                      [else
                       world-at-beginning-of-insert])])
-        (send editor set-rope (World-rope world))
+        (send editor set-rope (World-rope world)) 
         (let ([index (pos->index (World-cursor-position world))])
           (send editor diva:set-selection-position
                 index
@@ -210,8 +211,8 @@
              (when need-space-after
                (send editor insert " ")
                (send editor diva:set-selection-position
-                     (max (sub1 (send editor get-end-position)) 0)))
-             (set-insert&delete-callbacks))))
+                     (max (sub1 (send editor get-end-position)) 0)))))
+          (set-insert&delete-callbacks))
         
         (begin
           (set! need-space-before
@@ -297,18 +298,19 @@
          ]
         [(< left-edge-of-insert
             (send editor get-start-position))
-         (send editor delete)]))
+         (with-unstructured-decoration 
+          (lambda () (send editor delete)))]))
     
     
     (define (delete-forward)
       (when (< (send editor get-start-position)
                right-edge-of-insert)
         
-        (send editor delete
-              (send editor get-start-position)
-              (add1 (send editor get-start-position)))))
-    
-    
+        (with-unstructured-decoration 
+         (lambda () 
+           (send editor delete
+                 (send editor get-start-position)
+                 (add1 (send editor get-start-position)))))))
     
     
     ;; copy-and-paste from framework/private/keymap.ss.
@@ -317,10 +319,12 @@
             [sel-end (send editor get-end-position)])
         (let ([end-box (box sel-end)])
           (send editor find-wordbreak #f end-box 'caret)
-          (send editor kill
-                0
-                sel-start
-                (min right-edge-of-insert (unbox end-box))))))
+          (with-unstructured-decoration 
+           (lambda () 
+             (send editor kill
+                   0
+                   sel-start
+                   (min right-edge-of-insert (unbox end-box))))))))
     
     
     (define (kill-word-backward)
@@ -328,10 +332,12 @@
             [sel-end (send editor get-end-position)])
         (let ([start-box (box sel-start)])
           (send editor find-wordbreak start-box #f 'caret)
-          (send editor kill
-                0
-                (max left-edge-of-insert (unbox start-box))
-                sel-end))))
+          (with-unstructured-decoration 
+           (lambda () 
+             (send editor kill
+                   0
+                   (max left-edge-of-insert (unbox start-box))
+                   sel-end))))))
     
     
     (define (fill-highlight!)
