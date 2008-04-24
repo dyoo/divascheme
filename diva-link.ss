@@ -430,11 +430,16 @@
       ;; this function directly unless we know we're in the gui event thread.
       ;; TODO: add defensive check for this condition.
       (define (diva-ast-put/wait+world world ast)
-        (push-into-mred
-         (with-divascheme-handlers
-          world
-          (lambda ()
-            (interpreter/imperative ast world)))))
+        (dynamic-wind (lambda ()
+                        (set-in-insert-mode #f))
+                      (lambda ()
+                        (push-into-mred
+                         (with-divascheme-handlers
+                          world
+                          (lambda ()
+                            (interpreter/imperative ast world)))))
+                      (lambda ()
+                        (set-in-insert-mode #t))))
       
       
       ;;
@@ -488,9 +493,7 @@
                                  
                                  ;; interpreter
                                  (lambda (world ast)
-                                   (set-in-insert-mode #f)
-                                   (diva-ast-put/wait+world world ast)
-                                   (set-in-insert-mode #t))
+                                   (diva-ast-put/wait+world world ast))
                                  
                                  on-exit ;; post-exit-hook
                                  cmd ;; cmd
