@@ -200,7 +200,7 @@
                                              (for-each (lambda (a-del)
                                                          (let ([pos (+ start-index (deletion-offset a-del))])
                                                            (printf "deleting at ~a: ~s~n" pos (send a-text get-text pos (+ pos (deletion-len a-del))))
-                                                           #;(send a-text delete pos (+ pos (deletion-len a-del)))))
+                                                           (send a-text delete pos (+ pos (deletion-len a-del)))))
                                                        deletions)))]
              [clean-and-tabbed-world
               (preserve-selection-and-mark clean-world

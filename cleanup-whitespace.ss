@@ -4,6 +4,7 @@
            (lib "etc.ss")
            (lib "port.ss")
            (lib "list.ss")
+           (lib "class.ss")
            (only (lib "13.ss" "srfi") string-prefix?)
            "rope.ss"
            "semi-read-syntax/lexer.ss")
@@ -34,17 +35,26 @@
       (let loop ([pos-tok (next-position-token)]
                  [kill-leading-whitespace? #f]
                  [at-beginning-of-line? #t]
-                 [acc '()])
+                 [acc '()]
+                 [offset 0])
         
         (define (tok) (position-token-token pos-tok))
-        (define (start-pos)
-          (sub1 (position-offset (position-token-start-pos pos-tok))))
+        
+        (define (tok-length) 
+          (cond
+            [(string? (token-value (tok)))
+             (string-length (token-value (tok)))]
+            [else
+             (send (token-value (tok)) get-count)]))
+             
+        
         
         (define (leave-preserved kill-leading-whitespace? at-beginning-of-line?)
           (loop (next-position-token)
                 kill-leading-whitespace?
                 at-beginning-of-line?
-                acc))
+                acc
+                (+ offset (tok-length))))
         
         (define (handle-space)
           (local ((define next-pos-token (next-position-token))
@@ -58,14 +68,16 @@
                (loop next-pos-token
                      #f
                      #t
-                     acc)]
+                     acc
+                     (+ offset (tok-length)))]
               [(member (token-name next-tok) (list 'end 'suffix))
                (let ([new-str (truncate-all-but-newlines (token-value (tok)))])
                  (loop next-pos-token
                        #t
                        at-beginning-of-line?
-                       (accumulate (make-deletion (start-pos) (string-length-delta (token-value (tok)) new-str))
-                                   acc a-rope pos-tok)))]
+                       (accumulate (make-deletion offset (string-length-delta (token-value (tok)) new-str))
+                                   acc a-rope pos-tok)
+                       (+ offset (tok-length))))]
               [else
                (local ((define-values (whitespace)
                          (trim-white-header (token-value (tok))))
@@ -75,8 +87,9 @@
                        #t
                        (contains-newline? new-whitespace)
                        (accumulate
-                        (make-deletion (start-pos) (string-length-delta (token-value (tok)) new-whitespace))
-                        acc a-rope pos-tok)))])))
+                        (make-deletion offset (string-length-delta (token-value (tok)) new-whitespace))
+                        acc a-rope pos-tok)
+                       (+ offset (tok-length))))])))
         
         (define (handle-atom)
           (cond
@@ -87,13 +100,14 @@
                        #f
                        #f
                        (accumulate
-                        (make-deletion (- (+ (start-pos) (string-length (token-value (tok)))) delta)
+                        (make-deletion (- (+ offset (string-length (token-value (tok)))) delta)
                                        delta)
-                        acc a-rope pos-tok)))]
+                        acc a-rope pos-tok)
+                       (+ offset (tok-length))))]
             [else
              (leave-preserved #f #f)]))
         
-        (printf "I'm at ~a (~a)~n" (tok) (start-pos))
+        (printf "I'm at ~a (~a)~n" (tok) offset)
         (case (token-name (tok))
           [(atom)
            (handle-atom)]
@@ -109,12 +123,12 @@
            (handle-space)]
           [(end)
            acc]))))
-      
-      
-      ;; accumulate: deletion (listof deletion) -> (listof deletion)
-      ;; Add the deletion operation in, as long as it has an effect.
-      (define (accumulate a-deletion acc a-rope tok)
-        (cond
+  
+  
+  ;; accumulate: deletion (listof deletion) -> (listof deletion)
+  ;; Add the deletion operation in, as long as it has an effect.
+  (define (accumulate a-deletion acc a-rope tok)
+    (cond
       [(= (deletion-len a-deletion) 0)
        acc]
       [else
