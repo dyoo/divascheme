@@ -19,9 +19,9 @@
   ;;  * make an image which stands for the content of the text object (a World object)
   ;;  * update the text object from an image (a World object)
   ;;  * unlock the text.
-  ;; Such an object is stateless modulo the text object of course 
+  ;; Such an object is stateless modulo the text object of course
   ;; (because of the field and a function like get-text returns something according to the text).
-
+  
   
   ;; Here's our interface.
   (define MrEd-state<%>
@@ -43,8 +43,6 @@
   (define MrEd-state%
     (class* object% (MrEd-state<%>)
       
-      (super-instantiate ())
-      
       ;;
       ;; INIT STUFFS
       ;;
@@ -58,7 +56,8 @@
       (init window-text-init)
       (define window-text window-text-init)
       
-      
+      (define (initialize) 
+        (super-new))
       
       
       
@@ -115,7 +114,7 @@
       ;; Returns the selection length.
       (define (get-selection-len)
         (let ([start-pos (send window-text get-start-position)]
-              [end-pos   (send window-text get-end-position)])
+              [end-pos (send window-text get-end-position)])
           (- end-pos start-pos)))
       
       
@@ -128,14 +127,14 @@
       
       (define (get-mark-length)
         (let ([mark-start-pos (send window-text diva:-get-mark-start-position)]
-              [mark-end-pos   (send window-text diva:-get-mark-end-position)])
-	  (- mark-end-pos mark-start-pos)))
-
+              [mark-end-pos (send window-text diva:-get-mark-end-position)])
+          (- mark-end-pos mark-start-pos)))
+      
       (define (set-mark pos len)
         (if (>= len 0)
-	    (send window-text diva:-set-mark (pos->index pos) (+ (pos->index pos) len))
-	    (set-mark (+ pos len) (- len))))
-
+            (send window-text diva:-set-mark (pos->index pos) (+ (pos->index pos) len))
+            (set-mark (+ pos len) (- len))))
+      
       ;;
       ;; TEXT 2 WORLD STUFFS
       ;;
@@ -200,7 +199,7 @@
         (if (World-extension original-world)
             original-world
             (copy-struct World original-world
-                         [World-mark-position     (get-mark-position)]
+                         [World-mark-position (get-mark-position)]
                          [World-mark-length (get-mark-length)])))
       
       
@@ -244,4 +243,7 @@
            (send window-text begin-edit-sequence))
          f
          (lambda ()
-           (send window-text end-edit-sequence)))))))
+           (send window-text end-edit-sequence))))
+      
+      
+      (initialize))))

@@ -1,6 +1,6 @@
 (module diva-link mzscheme
   (require (lib "etc.ss")
-	   (lib "list.ss")
+           (lib "list.ss")
            (lib "class.ss")
            (lib "mred.ss" "mred")
            (lib "framework.ss" "framework")
@@ -107,7 +107,7 @@
   
   ;;
   ;; THE TEXT
-  ;; 
+  ;;
   
   ;;
   ;; OVERLOADING THE WORKING WINDOW
@@ -142,28 +142,53 @@
                get-diva-central
                set-position)
       
-      (super-instantiate ())
+      ;; STATE STUFFS
+      (define -in-unstructured-editing? #f) 
+      (define current-mred #f)
+      (define current-world #f) 
+      
+      (define last-action-load? false) 
+      
+      ;; Whenever new events happen, we'll send an operation message to the central world
+      ;; mailbox for processing.
+      (define command-mailbox (make-async-channel)) 
+      (define command-keymap #f) 
+      (define f4-keymap #f) 
+      
+      ;; initialize: -> void
+      ;; Constructor.  Called after everything else is defined.
+      (define (initialize) 
+        (super-new)
+        (start-command-mailbox-thread)
+        (set! current-mred (make-object MrEd-state% this))
+        (set! current-world (send current-mred pull-world (make-fresh-world)))
+        (set! command-keymap (new-command-keymap))
+        (set! f4-keymap (new-f4-keymap)) 
+        (install-f4-keymap))
       
       
-      (define -in-insert-mode? #f)
+      ;; set-in-unstructured-editing? boolean -> void
+      (define/public (set-in-unstructured-editing? b)
+        (set! -in-unstructured-editing? b))
       
-      (define/public (set-in-insert-mode b)
-        (set! -in-insert-mode? b))
       
-      (define/public (in-insert-mode?)
-        -in-insert-mode?)
+      ;; mark-dstx-as-unstructured: dstx -> dstx
+      ;; Returns true if we know that the dstx comes from an unstructured editing
+      ;; environment (like insert mode.)
+      (define (mark-dstx-as-unstructured a-dstx) 
+        (dstx-deepmap (lambda (a-dstx)
+                        (dstx-property-set a-dstx 'from-unstructured-editing #t))
+                      a-dstx))
       
       
       ;; decorate-new-dstx: dstx -> dstx
-      ;; When we see new dstxs being created, mark them with the 'from-insert-mode
-      ;; property if we're currently in insert-mode.
+      ;; When we see new dstxs being created, mark them if we know those dstx to be
+      ;; unstructured.
       (define/augment (decorate-new-dstx a-dstx)
         (let ([new-dstx
                (cond
-                 [(in-insert-mode?)
-                  (dstx-deepmap (lambda (a-dstx)
-                                  (dstx-property-set a-dstx 'from-insert-mode #t))
-                                a-dstx)]
+                 [-in-unstructured-editing?
+                  (mark-dstx-as-unstructured a-dstx)]
                  [else
                   a-dstx])])
           (inner new-dstx decorate-new-dstx new-dstx)))
@@ -238,14 +263,6 @@
       ;;
       
       
-      ;; STATE STUFFS
-      
-      (define current-mred
-        (make-object MrEd-state% this))
-      
-      (define current-world (send current-mred pull-world (make-fresh-world)))
-      
-      
       
       ;; get-current-world: -> World
       ;; Returns the current world state.
@@ -264,8 +281,6 @@
         (set! last-action-load? true)
         (inner void after-load-file success?))
       
-      (define last-action-load? false)
-      
       
       
       ;; STUFFS about the interpretation of the abstract syntax tree.
@@ -273,7 +288,7 @@
       ;; This function can be called from other threads,
       ;; and so we are not sure of the value of current-eventspace (if exists).
       (define (push-callback callback)
-	(parameterize ([current-eventspace (send (get-top-level-window) get-eventspace)])
+        (parameterize ([current-eventspace (send (get-top-level-window) get-eventspace)])
           (queue-callback callback)))
       
       
@@ -294,18 +309,16 @@
       (define/public (queue-for-interpretation! an-ast)
         (async-channel-put command-mailbox an-ast))
       
-      ;; Whenever new events happen, we'll send an operation message to the central world
-      ;; mailbox for processing.
-      (define command-mailbox (make-async-channel))
       
-      ;; A thread will run to process new operations
-      (thread (lambda ()
-                (let loop ()
-                  (let ([new-ast (async-channel-get command-mailbox)])
-                    (push-callback
-                     (lambda ()
-                       (diva-ast-put/wait+world (pull-from-mred) new-ast))))
-                  (loop))))
+      (define (start-command-mailbox-thread) 
+        ;; A thread will run to process new operations
+        (thread (lambda ()
+                  (let loop ()
+                    (let ([new-ast (async-channel-get command-mailbox)])
+                      (push-callback
+                       (lambda ()
+                         (diva-ast-put/wait+world (pull-from-mred) new-ast))))
+                    (loop)))))
       
       
       ;; pull-from-mred: -> world
@@ -430,16 +443,11 @@
       ;; this function directly unless we know we're in the gui event thread.
       ;; TODO: add defensive check for this condition.
       (define (diva-ast-put/wait+world world ast)
-        (dynamic-wind (lambda ()
-                        (set-in-insert-mode #f))
-                      (lambda ()
-                        (push-into-mred
-                         (with-divascheme-handlers
-                          world
-                          (lambda ()
-                            (interpreter/imperative ast world)))))
-                      (lambda ()
-                        (set-in-insert-mode #t))))
+        (push-into-mred
+         (with-divascheme-handlers
+          world
+          (lambda ()
+            (interpreter/imperative ast world)))))
       
       
       ;;
@@ -519,7 +527,6 @@
                 (define was-button-enabled? #t)
                 
                 (define (on-entry)
-                  (set-in-insert-mode #t)  
                   (diva-label "DivaScheme: insertion mode")
                   (diva-message "")
                   
@@ -530,7 +537,6 @@
                     (send (get-check-syntax-button) enable #f)))
                 
                 (define (on-exit)
-                  (set-in-insert-mode #f) 
                   (diva-label "DivaScheme: command mode")
                   (when (get-check-syntax-button)
                     (send (get-check-syntax-button) enable was-button-enabled?))))
@@ -544,8 +550,6 @@
                                diva-question
                                (lambda (ast)
                                  (diva-ast-put/wait+world (pull-from-mred) ast)))))
-      
-      (define command-keymap (new-command-keymap))
       
       
       (define (install-command-keymap)
@@ -582,9 +586,6 @@
       (define (install-f4-keymap)
         (send (get-keymap) chain-to-keymap f4-keymap #t))
       
-      (define f4-keymap (new-f4-keymap))
-      (install-f4-keymap)
-      
       
       (define/public (refresh-keymaps)
         (uninstall-f4-keymap)
@@ -608,4 +609,8 @@
           [(start end)
            (set-position start end #f #t 'local)]
           [(start)
-           (set-position start 'same #f #t 'local)])))))
+           (set-position start 'same #f #t 'local)]))
+      
+      
+      
+      (initialize))))
