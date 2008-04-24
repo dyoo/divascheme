@@ -1,6 +1,6 @@
 (module insert-keymap mzscheme
   (require (lib "etc.ss")
-	   (lib "list.ss")
+           (lib "list.ss")
            (lib "class.ss")
            (only (lib "1.ss" "srfi") circular-list)
            (lib "framework.ss" "framework")
@@ -77,13 +77,17 @@
     ;; editor state before coming into insert mode, so that it
     ;; syncs up with what's in the World.
     (define (restore-editor-to-pre-state!)
-      (cond
-        [pending-open
-         (send editor set-rope
-               (World-rope (Pending-world pending-open)))]
-        [else
-         (send editor set-rope
-               (World-rope world-at-beginning-of-insert))]))
+      (let ([world (cond
+                     [pending-open
+                      (Pending-world pending-open)]
+                     [else
+                      world-at-beginning-of-insert])])
+        (send editor set-rope (World-rope world))
+        (let ([index (pos->index (World-cursor-position world))])
+          (send editor diva:set-selection-position
+                index
+                (+ index (World-selection-length world))))))
+    
     
     
     ;; consume-text: World Pending rope -> void
@@ -96,22 +100,20 @@
          ;; possible templating with open parens
          (do-interpretation (Pending-world pending-open)
                             (make-Verb (make-Command (Pending-symbol pending-open))
-                                    false
-                                    (make-WhatN
-                                     (make-Rope-Noun a-rope))))]
+                                       false
+                                       (make-WhatN
+                                        (make-Rope-Noun a-rope))))]
         [else
          ;; possible templating without open parens
          (do-interpretation world
-                         (make-Verb (make-InsertRope-Cmd a-rope)
-                                    false
-                                    false)
-                         )]))
+                            (make-Verb (make-InsertRope-Cmd a-rope)
+                                       false
+                                       false))]))
     
-    
+    ;; consume-cmd: World symbol -> void
+    ;; Evaluates a symbol as a command.
     (define (consume-cmd world symbol)
       (do-interpretation world (make-Verb (make-Command symbol) false false)))
-    
-    
     
     
     (define (insert-color)

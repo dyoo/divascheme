@@ -183,9 +183,11 @@
   
   ;; cleanup-text/pos+len
   (define (cleanup-text/pos+len world pos len)
+    ;; Fixme: this probably needs to be more discriminating
+    ;; for efficiency's sake.
     (queue-imperative-operation
      world
-     (make-imperative-op:cleanup/pos (pos->index pos))))
+     (make-imperative-op:cleanup)))
   
   
   
@@ -200,7 +202,6 @@
   (define (insert world pos a-rope)
     (let ([len (rope-length a-rope)]
           [new-world (world-insert-rope world (pos->index pos) a-rope)])
-      ;; Disabling cleanup for now.
       (cleanup-text/pos+len
        (recompute-mark/insert
         (recompute-selection/insert new-world pos len) pos len) pos len)))

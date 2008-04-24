@@ -11,7 +11,8 @@
            "utilities.ss"
            "traversal.ss"
            "structures.ss"
-           "gui/text-rope-mixin.ss")
+           "gui/text-rope-mixin.ss"
+           "marker.ss")
   
   ;; We may want to put this in mred-state...
   
@@ -34,16 +35,40 @@
       [(struct imperative-op:transpose (original-world))
        (transpose original-world a-world a-text update-world-fn update-mred-fn)]
       
-      [(struct imperative-op:cleanup/pos (pos))
-       (cleanup/pos pos a-world a-text update-world-fn update-mred-fn)]
+      [(struct imperative-op:cleanup ())
+       (cleanup a-world a-text update-world-fn update-mred-fn)]
       
-      [(struct imperative-op:delete-range (start-pos end-pos))
-       (delete-range start-pos end-pos a-world a-text
+      #;[(struct imperative-op:delete-range (start-pos end-pos))
+         (delete-range start-pos end-pos a-world a-text
                      update-world-fn update-mred-fn)]
       
-      [(struct imperative-op:insert-rope (rope pos))
-       (do-insert-rope rope pos a-world a-text update-world-fn update-mred-fn)]))
+      #;[(struct imperative-op:insert-rope (rope pos))
+         (do-insert-rope rope pos a-world a-text update-world-fn update-mred-fn)]))
   
+  
+  
+  ;; preserve-selection-and-mark: World diva-text% -> World
+  ;; Given some function f that does imperative stuff with the text,
+  ;; we try to preserve the position of the mark and the selection.
+  (define (preserve-selection-and-mark a-world a-text some-text-touching-mutator!)
+    (let ([selection-start
+           (send a-text add-marker! (World-selection-index a-world))]
+          [selection-end
+           (send a-text add-marker! (World-selection-end-index a-world))]
+          [mark-start
+           (send a-text add-marker! (World-mark-index a-world))]
+          [mark-end
+           (send a-text add-marker! (World-mark-end-index a-world))])
+      (some-text-touching-mutator!)
+      (let ([new-selection-start (marker-pos selection-start)]
+            [new-selection-end (marker-pos selection-end)]
+            [new-mark-start (marker-pos mark-start)]
+            [new-mark-end (marker-pos mark-end)])
+        (copy-struct World a-world
+                     [World-cursor-position (index->pos new-selection-start)]
+                     [World-selection-length (- new-selection-end new-selection-start)]
+                     [World-mark-position (index->pos new-mark-start)]
+                     [World-mark-length (- new-mark-end new-mark-start)]))))
   
   
   
@@ -53,8 +78,11 @@
     (let* ([new-pos (max 0 (sub1 (world-marker-position a-world mark)))]
            [new-end-pos (min (string-length (send a-text get-text))
                              (+ new-pos len))])
-      (send a-text tabify-selection new-pos new-end-pos)
-      (world-clear-marker (update-world-fn a-world) mark)))
+      (preserve-selection-and-mark
+       (world-clear-marker (update-world-fn a-world) mark)
+       a-text
+       (lambda ()
+         (send a-text tabify-selection new-pos new-end-pos)))))
   
   
   ;; indent-range: world text (World -> World) (World -> void) -> World
@@ -113,79 +141,46 @@
   
   
   ;; delete-range: number number world text% (World->World) (World -> void) -> World
-  (define (delete-range start-pos end-pos world a-text update-world-fn update-mred-fn)
-    (send a-text delete start-pos end-pos #f)
+  #;(define (delete-range start-pos end-pos world a-text update-world-fn update-mred-fn)
+      (send a-text delete start-pos end-pos #f)
     world)
   
   
   ;; insert-rope: rope number World text% (World -> World) (World -> void) -> World
-  (define (do-insert-rope a-rope a-pos world a-text update-world-fn update-mred-fn)
-    (send a-text set-position a-pos 'same #f #f 'local)
+  #;(define (do-insert-rope a-rope a-pos world a-text update-world-fn update-mred-fn)
+      (send a-text set-position a-pos 'same #f #f 'local)
     (insert-rope-in-text a-text a-rope)
     world)
   
   
   
-  ;; cleanup-pos: number world text% (World -> World) (World -> void) -> World
-  ;; Cleanup in the neighborhood of syntax near this position.
-  (define (cleanup/pos start-pos world a-text update-world-fn update-mred-fn)
-    (let ([cursor (send (send a-text get-dstx-cursor) get-functional-cursor)])
-      (cond
-        [(not (focus-container cursor start-pos))
-         world]
-        [else
-         (let* ([container (focus-container cursor start-pos)]
-                [outer (focus-out container)]
-                [before (focus-younger container)]
-                [after (focus-older container)])
-           (cond
-             [outer
-              (cleanup/between (cursor-pos outer)
-                               (cursor-endpos outer)
-                               world a-text update-world-fn update-mred-fn)]
-             [(and before after)
-              (cleanup/between (cursor-pos before)
-                               (cursor-endpos after)
-                               world a-text update-world-fn update-mred-fn)]
-             [before
-              (cleanup/between (cursor-pos before)
-                               (cursor-endpos container)
-                               world a-text update-world-fn update-mred-fn)]
-             [after
-              (cleanup/between (cursor-pos container)
-                               (cursor-endpos after)
-                               world a-text update-world-fn update-mred-fn)]
-             [else
-              world]))])))
-  
+  ;; cleanup: world text% (World -> World) (World -> void) -> World
+  ;; Cleanup everything we can see.
+  (define (cleanup world a-text update-world-fn update-mred-fn)
+    (cleanup/between 0 (send a-text last-position) world a-text update-world-fn update-mred-fn))
   
   
   ;; cleanup/between: number number world text% (World -> World) (World -> void) -> World
   (define (cleanup/between start-index end-index world a-text update-world-fn update-mred-fn)
     (let* ([line (subrope (World-rope world) start-index end-index)]
-           [len (rope-length line)])
-      (let-values ([(clean-line lst)
-                    (cleanup-whitespace line start-index
-                                        (list (World-selection-index world)
-                                              (World-selection-end-index world)
-                                              (World-mark-index world)
-                                              (World-mark-end-index world)))])
-        (let* ([new-world
-                (world-replace-rope world start-index clean-line len)]
-               [new-world
-                (mark/pos+len (select/pos+len new-world
-                                              (index->pos (first lst))
-                                              (- (second lst) (first lst)))
-                              (index->pos (third lst))
-                              (- (fourth lst) (third lst)))])
-          
-          ;; fixme: don't use update-mred-fn, but rather do the minimal whitespace
-          ;; changes we need.
-          (send a-text set-rope/minimal-edits (World-rope new-world))
-          (send a-text tabify-selection start-index (+ start-index len))
-          (let ([world-after-tabify (update-world-fn new-world)])
-            (update-mred-fn world-after-tabify)
-            world-after-tabify)))))
+           [len (rope-length line)]
+           [deletions (cleanup-whitespace-operations line)])
+      (let* ([clean-world
+              (preserve-selection-and-mark world
+                                           a-text
+                                           (lambda ()
+                                             (for-each (lambda (a-del)
+                                                         (let ([pos (+ start-index (deletion-offset a-del))])
+                                                           (send a-text delete pos (+ pos (deletion-len a-del)))))
+                                                       deletions)))]
+             [clean-and-tabbed-world
+              (preserve-selection-and-mark clean-world
+                                           a-text
+                                           (lambda ()
+                                             (send a-text tabify-selection start-index (+ start-index len))))])
+        (let ([final-world (update-world-fn clean-and-tabbed-world)])
+          (update-mred-fn final-world)
+          final-world))))
   
   
   
