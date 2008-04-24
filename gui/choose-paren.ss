@@ -130,12 +130,10 @@
                      (change-to 6 #\()]))])))
          (send text delete pos (+ pos 1) #f)
          (send text end-edit-sequence)
-         real-char)  )
-    
+         real-char)) 
+     
      (lambda ()
-       (send text set-in-unstructured-editing? #t)) 
-       )
-    )
+       (send text set-in-unstructured-editing? #t))))
   
   
   ;; find-keyword-and-distance : -> (union #f (cons string number))

@@ -46,7 +46,7 @@
              (string-length (token-value (tok)))]
             [else
              (send (token-value (tok)) get-count)]))
-             
+        
         
         
         (define (leave-preserved kill-leading-whitespace? at-beginning-of-line?)
@@ -106,8 +106,6 @@
                        (+ offset (tok-length))))]
             [else
              (leave-preserved #f #f)]))
-        
-        (printf "I'm at ~a (~a)~n" (tok) offset)
         (case (token-name (tok))
           [(atom)
            (handle-atom)]
@@ -132,7 +130,6 @@
       [(= (deletion-len a-deletion) 0)
        acc]
       [else
-       (printf "Accumulating deletion ~s (~s) ~s~n" a-deletion (rope->string (subrope a-rope (deletion-offset a-deletion) (add1 (deletion-offset a-deletion)))) tok)
        (cons a-deletion acc)]))
   
   
