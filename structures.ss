@@ -27,23 +27,23 @@
   ;; Furthermore, somebody can select something in the definition window which is not a subtree...
   ;; cursor-position : syntax position (subset of integer) : the current cursor location
   ;; selection-length : non-negative-integer : the current selection ; 0 when no selection
-
+  
   ;; As the selection is not a syntax element, mark is not too.
   ;; mark-position : syntax position (subset of integer)
   ;; mark-length : non-negative-integer ; 0 when no mark
-
+  
   ;; Next-f : World -> World : the action when Next is called
   ;; Previous-f : World -> World : id
   ;; Cancel : (union World false) : restore the selection and the mark as it was before the search
   ;; TODO: In the states Next-f and Previous-f, the given World is not useful
   ;; (because we rewind and take another path). So, should we still take a World as parameter?
-
+  
   ;; undo : (union World false) : the previous World ; set only when an buffer editing is done
   ;; redo : (union World false) : the next World ; set only when an undo is performed
-
+  
   ;; Magic-f : World -> World : print the next completion
   ;; Pass-f : World -> World : print the next template
-
+  
   ;; again : (union ast false) : reexecute the previous ast.
   (define-struct World (rope
                         syntax-list/lazy
@@ -132,21 +132,21 @@
   ;; World-mark-index : World -> non-negative-integer
   (define (World-mark-index world)
     (syntax-pos->index (World-mark-position world)))
-
+  
   ;; World-selection-end-position : World -> pos
   (define (World-selection-end-position world)
-    (+ (World-cursor-position  world)
+    (+ (World-cursor-position world)
        (World-selection-length world)))
-
+  
   ;; World-mark-end-position : World -> pos
   (define (World-mark-end-position world)
     (+ (World-mark-position world)
-       (World-mark-length   world)))
-
+       (World-mark-length world)))
+  
   ;; World-selection-end-index : World -> index (== non-negative-integer)
   (define (World-selection-end-index world)
     (syntax-pos->index (World-selection-end-position world)))
-
+  
   ;; World-mark-end-index : World -> index (== non-negative-integer)
   (define (World-mark-end-index world)
     (syntax-pos->index (World-mark-end-position world)))
@@ -164,7 +164,7 @@
          (get-subrope/pos+len (World-rope world)
                               (World-mark-position world)
                               (World-mark-length world))))
-    
+  
   
   (define world-fn/c (World? . -> . World?))
   
@@ -348,7 +348,7 @@
   ;; missings
   ;; goto-definition
   ;; move to line, move to, move here
-  ;; template == on parse (read-syntax) et on cherche les define & define-syntax 
+  ;; template == on parse (read-syntax) et on cherche les define & define-syntax
   (define commands
     (list 'Open
           'Open-Square
@@ -470,10 +470,10 @@
   
   
   (define-datatype What
-    [WhatN  (noun)]
+    [WhatN (noun)]
     [WhatDN (distance noun)])
   (provide-datatype/contract What
-                             [WhatN  (Noun?)]
+                             [WhatN (Noun?)]
                              [WhatDN (integer? Noun?)])
   
   
@@ -598,6 +598,9 @@
    
    
    [queue-imperative-operation (World? imperative-op? . -> . World?)]
+   
+   [struct Marker ([name symbol?] 
+                   [index natural-number/c])]
    
    [world-new-marker
     ((World? number?) . ->* . (World? symbol?))]

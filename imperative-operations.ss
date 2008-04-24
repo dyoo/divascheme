@@ -40,16 +40,17 @@
       
       #;[(struct imperative-op:delete-range (start-pos end-pos))
          (delete-range start-pos end-pos a-world a-text
-                     update-world-fn update-mred-fn)]
+                       update-world-fn update-mred-fn)]
       
       #;[(struct imperative-op:insert-rope (rope pos))
          (do-insert-rope rope pos a-world a-text update-world-fn update-mred-fn)]))
   
   
-  
   ;; preserve-selection-and-mark: World diva-text% -> World
   ;; Given some function f that does imperative stuff with the text,
   ;; we try to preserve the position of the mark and the selection.
+  ;;
+  ;; Remember: "Marker" is functional, "marker" is imperative.
   (define (preserve-selection-and-mark a-world a-text some-text-touching-mutator!)
     (let ([selection-start
            (send a-text add-marker! (World-selection-index a-world))]
@@ -58,7 +59,9 @@
           [mark-start
            (send a-text add-marker! (World-mark-index a-world))]
           [mark-end
-           (send a-text add-marker! (World-mark-end-index a-world))])
+           (send a-text add-marker! (World-mark-end-index a-world))]
+          [other-markers 
+           (World-markers->imperative-marker-list a-world a-text)]) 
       (some-text-touching-mutator!)
       (let ([new-selection-start (marker-pos selection-start)]
             [new-selection-end (marker-pos selection-end)]
@@ -68,7 +71,28 @@
                      [World-cursor-position (index->pos new-selection-start)]
                      [World-selection-length (- new-selection-end new-selection-start)]
                      [World-mark-position (index->pos new-mark-start)]
-                     [World-mark-length (- new-mark-end new-mark-start)]))))
+                     [World-mark-length (- new-mark-end new-mark-start)]
+                     [World-markers (imperative-marker-list->world-markers other-markers)]))))
+  
+  
+  ;; World-markers->marker-list: World -> (listof (list symbol marker))
+  ;; Given a world, we pull out all the functional markers and construct
+  ;; imperative ones that we'll track.
+  (define (World-markers->imperative-marker-list a-world a-text) 
+    (map (lambda (a-marker) 
+           (list (Marker-name a-marker) 
+                 (send a-text add-marker! (Marker-index a-marker))))
+         (World-markers a-world)))
+  
+  
+  ;; imperative-marker-list->world-markers: (listof (list symbol marker)) -> (listof Marker)
+  ;; Turn the imperative markers back into normal marks that we can install into the world.
+  (define (imperative-marker-list->world-markers marker-list) 
+    (map (lambda (symbol&marker) 
+           (make-Marker 
+            (first symbol&marker) 
+            (marker-pos (second symbol&marker))))
+         marker-list))
   
   
   
@@ -143,14 +167,14 @@
   ;; delete-range: number number world text% (World->World) (World -> void) -> World
   #;(define (delete-range start-pos end-pos world a-text update-world-fn update-mred-fn)
       (send a-text delete start-pos end-pos #f)
-    world)
+      world)
   
   
   ;; insert-rope: rope number World text% (World -> World) (World -> void) -> World
   #;(define (do-insert-rope a-rope a-pos world a-text update-world-fn update-mred-fn)
       (send a-text set-position a-pos 'same #f #f 'local)
-    (insert-rope-in-text a-text a-rope)
-    world)
+      (insert-rope-in-text a-text a-rope)
+      world)
   
   
   
@@ -158,6 +182,7 @@
   ;; Cleanup everything we can see.
   (define (cleanup world a-text update-world-fn update-mred-fn)
     (cleanup/between 0 (send a-text last-position) world a-text update-world-fn update-mred-fn))
+  
   
   
   ;; cleanup/between: number number world text% (World -> World) (World -> void) -> World
