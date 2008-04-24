@@ -187,6 +187,9 @@
   
   ;; cleanup/between: number number world text% (World -> World) (World -> void) -> World
   (define (cleanup/between start-index end-index world a-text update-world-fn update-mred-fn)
+    (when (not (rope=? (World-rope world)
+                       (send a-text get-rope)))
+      (printf "mismatch!~n"))
     (let* ([line (subrope (World-rope world) start-index end-index)]
            [len (rope-length line)]
            [deletions (cleanup-whitespace-operations line)])
@@ -196,7 +199,8 @@
                                            (lambda ()
                                              (for-each (lambda (a-del)
                                                          (let ([pos (+ start-index (deletion-offset a-del))])
-                                                           (send a-text delete pos (+ pos (deletion-len a-del)))))
+                                                           (printf "deleting at ~a: ~s~n" pos (send a-text get-text pos (+ pos (deletion-len a-del))))
+                                                           #;(send a-text delete pos (+ pos (deletion-len a-del)))))
                                                        deletions)))]
              [clean-and-tabbed-world
               (preserve-selection-and-mark clean-world

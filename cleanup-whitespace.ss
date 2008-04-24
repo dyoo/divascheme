@@ -10,7 +10,7 @@
   
   
   ;; (make-del number number) represents a deletion operation.
-  (define-struct deletion (offset len))
+  (define-struct deletion (offset len) #f)
   
   
   
@@ -30,81 +30,96 @@
     (local ((define ip (open-input-rope a-rope))
             (define (next-position-token)
               (plt-lexer ip)))
+      
       (let loop ([pos-tok (next-position-token)]
                  [kill-leading-whitespace? #f]
                  [at-beginning-of-line? #t]
                  [acc '()])
         
-        (local ((define tok (position-token-token pos-tok))
-                (define start-pos
-                  (sub1 (position-offset (position-token-start-pos pos-tok))))
-                
-                (define (leave-preserved kill-leading-whitespace? at-beginning-of-line?)
-                  (loop (next-position-token)
-                        kill-leading-whitespace?
-                        at-beginning-of-line?
-                        acc))
-                
-                (define (handle-space)
-                  (local ((define next-pos-token (next-position-token))
-                          (define next-tok (position-token-token next-pos-token))
-                          (define footer-cleaner-f
-                            (if kill-leading-whitespace?
-                                truncate-all-but-newlines
-                                identity)))
-                    (cond
-                      [at-beginning-of-line?
-                       (loop next-pos-token
-                             #f
-                             #t
-                             acc)]
-                      [(member (token-name next-tok) (list 'end 'suffix))
-                       (let ([new-str (truncate-all-but-newlines (token-value tok))])
-                         (loop next-pos-token
-                               #t
-                               at-beginning-of-line?
-                               (cons (make-deletion start-pos (string-length-delta (token-value tok) new-str))
-                                     acc)))]
-                      [else
-                       (local ((define-values (whitespace)
-                                 (trim-white-header (token-value tok)))
-                               (define-values (new-whitespace)
-                                 (footer-cleaner-f whitespace)))
-                         (loop next-pos-token
-                               #t
-                               (contains-newline? new-whitespace)
-                               (cons (make-deletion start-pos (string-length-delta (token-value tok) new-whitespace))
-                                     acc)))])))
-                
-                (define (handle-atom)
-                  (cond
-                    [(string-prefix? ";" (token-value tok))
-                     (let* ([cleaned-str (truncate-white-footer (token-value tok))]
-                            [delta (string-length-delta (token-value tok) cleaned-str)])
-                       (loop (next-position-token)
-                             #f
-                             #f
-                             (cons (make-deletion (- (+ start-pos (string-length (token-value tok))) delta)
-                                                  delta)
-                                   acc)))]
-                    [else
-                     (leave-preserved #f #f)])))
-          (case (token-name tok)
-            [(atom)
-             (handle-atom)]
-            [(special-atom)
-             (leave-preserved #f #f)]
-            [(quoter-prefix)
-             (leave-preserved #t #f)]
-            [(prefix)
-             (leave-preserved #t #f)]
-            [(suffix)
-             (leave-preserved #f #f)]
-            [(space)
-             (handle-space)]
-            [(end)
-             acc])))))
-  
+        (define (tok) (position-token-token pos-tok))
+        (define (start-pos)
+          (sub1 (position-offset (position-token-start-pos pos-tok))))
+        
+        (define (leave-preserved kill-leading-whitespace? at-beginning-of-line?)
+          (loop (next-position-token)
+                kill-leading-whitespace?
+                at-beginning-of-line?
+                acc))
+        
+        (define (handle-space)
+          (local ((define next-pos-token (next-position-token))
+                  (define next-tok (position-token-token next-pos-token))
+                  (define footer-cleaner-f
+                    (if kill-leading-whitespace?
+                        truncate-all-but-newlines
+                        identity)))
+            (cond
+              [at-beginning-of-line?
+               (loop next-pos-token
+                     #f
+                     #t
+                     acc)]
+              [(member (token-name next-tok) (list 'end 'suffix))
+               (let ([new-str (truncate-all-but-newlines (token-value (tok)))])
+                 (loop next-pos-token
+                       #t
+                       at-beginning-of-line?
+                       (accumulate (make-deletion (start-pos) (string-length-delta (token-value (tok)) new-str))
+                                   acc a-rope pos-tok)))]
+              [else
+               (local ((define-values (whitespace)
+                         (trim-white-header (token-value (tok))))
+                       (define-values (new-whitespace)
+                         (footer-cleaner-f whitespace)))
+                 (loop next-pos-token
+                       #t
+                       (contains-newline? new-whitespace)
+                       (accumulate
+                        (make-deletion (start-pos) (string-length-delta (token-value (tok)) new-whitespace))
+                        acc a-rope pos-tok)))])))
+        
+        (define (handle-atom)
+          (cond
+            #;[(string-prefix? ";" (token-value (tok)))
+               (let* ([cleaned-str (truncate-white-footer (token-value (tok)))]
+                      [delta (string-length-delta (token-value (tok)) cleaned-str)])
+                 (loop (next-position-token)
+                       #f
+                       #f
+                       (accumulate
+                        (make-deletion (- (+ (start-pos) (string-length (token-value (tok)))) delta)
+                                       delta)
+                        acc a-rope pos-tok)))]
+            [else
+             (leave-preserved #f #f)]))
+        
+        (printf "I'm at ~a (~a)~n" (tok) (start-pos))
+        (case (token-name (tok))
+          [(atom)
+           (handle-atom)]
+          [(special-atom)
+           (leave-preserved #f #f)]
+          [(quoter-prefix)
+           (leave-preserved #t #f)]
+          [(prefix)
+           (leave-preserved #t #f)]
+          [(suffix)
+           (leave-preserved #f #f)]
+          [(space)
+           (handle-space)]
+          [(end)
+           acc]))))
+      
+      
+      ;; accumulate: deletion (listof deletion) -> (listof deletion)
+      ;; Add the deletion operation in, as long as it has an effect.
+      (define (accumulate a-deletion acc a-rope tok)
+        (cond
+      [(= (deletion-len a-deletion) 0)
+       acc]
+      [else
+       (printf "Accumulating deletion ~s (~s) ~s~n" a-deletion (rope->string (subrope a-rope (deletion-offset a-deletion) (add1 (deletion-offset a-deletion)))) tok)
+       (cons a-deletion acc)]))
   
   
   ;; rope-delete: rope number -> rope
