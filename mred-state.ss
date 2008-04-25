@@ -168,15 +168,10 @@
       (define (update-world-text original-world)
         (cond
           [(rope=? (World-rope original-world) (get-rope))
-           ;; we save the new rope for faster eq? checking next time, but
-           ;; reuse the World-syntax-list/lazy structure.
-           (copy-struct World original-world
-                        [World-rope (get-rope)]
-                        [World-syntax-list/lazy
-                         (World-syntax-list/lazy original-world)])]
+           original-world]
           [else
            (copy-struct World original-world
-                        [World-rope (get-rope)]
+                        [World-rope (get-rope)] 
                         [World-syntax-list/lazy #f])]))
       
       
