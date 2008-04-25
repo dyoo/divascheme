@@ -55,10 +55,12 @@
       
       (init window-text-init)
       (define window-text window-text-init)
+      (define clear-extension #f) 
+      
+      
       
       (define (initialize) 
         (super-new))
-      
       
       
       ;;
@@ -203,7 +205,6 @@
                          [World-mark-length (get-mark-length)])))
       
       
-      (define clear-extension #f)
       ;;
       ;; WORLD 2 TEXT STUFFS
       ;;
@@ -244,6 +245,5 @@
          f
          (lambda ()
            (send window-text end-edit-sequence))))
-      
       
       (initialize))))

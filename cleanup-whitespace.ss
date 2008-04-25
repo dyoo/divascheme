@@ -93,17 +93,17 @@
         
         (define (handle-atom)
           (cond
-            #;[(string-prefix? ";" (token-value (tok)))
-               (let* ([cleaned-str (truncate-white-footer (token-value (tok)))]
-                      [delta (string-length-delta (token-value (tok)) cleaned-str)])
-                 (loop (next-position-token)
-                       #f
-                       #f
-                       (accumulate
-                        (make-deletion (- (+ offset (string-length (token-value (tok)))) delta)
-                                       delta)
-                        acc a-rope pos-tok)
-                       (+ offset (tok-length))))]
+            [(string-prefix? ";" (token-value (tok)))
+             (let* ([cleaned-str (truncate-white-footer (token-value (tok)))]
+                    [delta (string-length-delta (token-value (tok)) cleaned-str)])
+               (loop (next-position-token)
+                     #f
+                     #f
+                     (accumulate
+                      (make-deletion (- (+ offset (string-length (token-value (tok)))) delta)
+                                     delta)
+                      acc a-rope pos-tok)
+                     (+ offset (tok-length))))] 
             [else
              (leave-preserved #f #f)]))
         (case (token-name (tok))
