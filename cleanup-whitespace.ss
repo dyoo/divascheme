@@ -48,7 +48,6 @@
              (send (token-value (tok)) get-count)]))
         
         
-        
         (define (leave-preserved kill-leading-whitespace? at-beginning-of-line?)
           (loop (next-position-token)
                 kill-leading-whitespace?
@@ -70,11 +69,20 @@
                      #t
                      acc
                      (+ offset (tok-length)))]
+              ;; if another space is in front, erase the current one.
+              [(member (token-name next-tok) (list 'space))
+               (let ([new-str (truncate-all-but-newlines (token-value (tok)))])
+                 (loop next-pos-token
+                       kill-leading-whitespace?
+                       (or at-beginning-of-line? (contains-newline? new-str))
+                       (accumulate (make-deletion offset (string-length-delta (token-value (tok)) new-str))
+                                   acc a-rope pos-tok)
+                       (+ offset (tok-length))))]
               [(member (token-name next-tok) (list 'end 'suffix))
                (let ([new-str (truncate-all-but-newlines (token-value (tok)))])
                  (loop next-pos-token
                        #t
-                       at-beginning-of-line?
+                       (or at-beginning-of-line? (contains-newline? new-str))
                        (accumulate (make-deletion offset (string-length-delta (token-value (tok)) new-str))
                                    acc a-rope pos-tok)
                        (+ offset (tok-length))))]
@@ -85,7 +93,7 @@
                          (footer-cleaner-f whitespace)))
                  (loop next-pos-token
                        #t
-                       (contains-newline? new-whitespace)
+                       (or at-beginning-of-line? (contains-newline? new-whitespace))
                        (accumulate
                         (make-deletion offset (string-length-delta (token-value (tok)) new-whitespace))
                         acc a-rope pos-tok)
@@ -173,6 +181,8 @@
   
   
   (define positive-number/c (and/c integer? (>=/c 1)))
+  
+  
   
   (provide/contract
    [struct deletion ([offset natural-number/c]
