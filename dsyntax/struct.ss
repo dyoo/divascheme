@@ -130,11 +130,41 @@
          (cons (first props)
                (loop (rest props)))])))
   
+  ;; property-remove: property-table/c symbol -> property-table/c
+  (define (property-remove props a-sym)
+    (let loop ([props props])
+      (cond
+        [(empty? props)
+         props]
+        [(eq? (first (first props)) a-sym)
+         (rest props)]
+        [(= (symbol-cmp a-sym (first (first props)))
+            1)
+         props]
+        [else
+         (cons (first props)
+               (loop (rest props)))])))
+  
   
   ;; dstx-property-set: dstx symbol any -> dstx
   ;; Nondestructively set a property.
   (define (dstx-property-set a-dstx a-sym a-val)
     (let ([new-properties (property-update (dstx-properties a-dstx) a-sym a-val)])
+      (match a-dstx
+        [(struct atom (_ content))
+         (make-atom new-properties content)]
+        [(struct special-atom (_ content width))
+         (make-special-atom new-properties content width)]
+        [(struct space (_ content))
+         (make-space new-properties content)]
+        [(struct fusion (_ prefix children suffix))
+         (make-fusion new-properties prefix children suffix)])))
+  
+  
+  ;; dstx-property-remove: dstx symbol -> dstx
+  ;; Strip a property from a dstx.
+  (define (dstx-property-remove a-dstx a-sym)
+    (let ([new-properties (property-remove (dstx-properties a-dstx) a-sym)])
       (match a-dstx
         [(struct atom (_ content))
          (make-atom new-properties content)]
@@ -206,6 +236,7 @@
    [dstx-property-ref (case-> (dstx? symbol? . -> . any)
                               (dstx? symbol? (-> any) . -> . any))]
    [dstx-property-set (dstx? symbol? any/c . -> . dstx?)]
+   [dstx-property-remove (dstx? symbol? . -> . dstx?)]
    
    [new-atom (string? . -> . atom?)]
    [new-special-atom (case-> (any/c . -> . special-atom?)

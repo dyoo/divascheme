@@ -80,6 +80,8 @@ We expose three main data types.
     * cursor
     * loc
 
+
+
 A _dstx_ is one of the following:
 
     * an _atom_
@@ -88,15 +90,26 @@ A _dstx_ is one of the following:
     * a _fusion_
 
 A dstx roughly corresponds to the idea of an s-expression, a
-tree-structure.  Both atoms and spaces represent elements without
-internal structure; the distinction is that the main focusing commands
-will ignore spaces and snap across them.
+tree-structure.  Unlike a real s-expression, we preserve both comments
+and whitespace. Comments are treated as atoms, and individual whitespace
+characters as _space_ dstx structures.  Dstxs can also be associated with
+name/value properties.
+
+Since we often want to ignore spaces while navigating a dstx, many of the
+focusing functions provided by a cursor will snap across space structs.
+
+
+_dstx predicates_
 
 > dstx?: any -> boolean
 > atom?: any -> boolean
 > special-atom: any -> boolean
 > space?: any -> boolean
 > fusion?: any -> boolean
+
+
+
+_dstx properties_
 
 > dstx-property-names: dstx -> (listof symbol)
 
@@ -105,23 +118,41 @@ Returns a list of the property names associated to the dstx.
 
 > dstx-property-set: dstx symbol any -> dstx
 
-Nondestructively associate a property name and value to a dstx.
+Returns a new dstx with the given name/value property.
 
 
 > dstx-property-ref: dstx symbol -> any
 
-Refers to the property with the given symbolic name.
+References the property with the given symbolic name.
 
 
+> dstx-property-remove: dstx symbol -> dstx
+
+Returns a dstx without the given property name binding.
+
+
+
+
+_dstx constructors_
+
+The constructors are available to build dstxs from scratch:
 
 > new-atom: string -> atom
-> atom-content: atom -> string
+
+Creates a new atom dstx.
+
 
 > new-special-atom: any -> special-atom
-> special-atom-content: special-atom -> any
+> new-special-atom: any number -> special-atom
+
+Creates a new special-atom dstx.  By default, the assumed width
+of a special-atom is 1.  This can be overridded by providing the optional
+width parameter.
+
 
 > new-space: string -> space
-> space-content: space -> string
+Creates a new space stx.
+
 
 > new-fusion: string (listof dstx) string -> fusion
 
@@ -130,16 +161,23 @@ Note: fusions will always contain, as a first child, an empty string
 space (new-space "") as a sentinel.
 
 
+_dstx selectors_
+
+> atom-content: atom -> string
+> special-atom-content: special-atom -> any
+> space-content: space -> string
 > fusion-prefix: fusion -> string
 > fusion-children: fusion -> (listof dstx)
 > fusion-suffix: fusion -> string
 
 
 
+
+
 _loc_
 
 A loc lets us know where we are in terms of line and column number, as
-well as positionally.
+well by position.
 
 > make-loc: positive-number natural-number natural-number -> loc
 
@@ -299,7 +337,6 @@ case of the sentinel empty-space character.
 
 _editing_
 
-All editing is done through cursors.
 
 > insert-before: cursor dstx -> cursor
 Inserts before the current focus.  Focus moves to the new element.
@@ -311,8 +348,8 @@ Inserts after the current focus.  Focus moves to the new element.
 
 > cursor-delete: cursor dstx -> cursor
 Removes the currently focused dstx.  Focus moves to the immediate
-right of the deleted dstx if one exists, and otherwise moves to 
-the left.
+older sibling of the deleted dstx if one exists, and otherwise moves to 
+the immediate younger sibling.
 
 
 > cursor-dstx-property-set: cursor symbol value -> cursor
