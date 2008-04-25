@@ -63,8 +63,8 @@
            (send a-text add-marker! (World-mark-index a-world))]
           [mark-end
            (send a-text add-marker! (World-mark-end-index a-world))]
-          [other-markers 
-           (World-markers->imperative-marker-list a-world a-text)]) 
+          [other-markers
+           (World-markers->imperative-marker-list a-world a-text)])
       (some-text-touching-mutator!)
       (let ([new-selection-start (marker-pos selection-start)]
             [new-selection-end (marker-pos selection-end)]
@@ -81,19 +81,19 @@
   ;; World-markers->marker-list: World -> (listof (list symbol marker))
   ;; Given a world, we pull out all the functional markers and construct
   ;; imperative ones that we'll track.
-  (define (World-markers->imperative-marker-list a-world a-text) 
-    (map (lambda (a-marker) 
-           (list (Marker-name a-marker) 
+  (define (World-markers->imperative-marker-list a-world a-text)
+    (map (lambda (a-marker)
+           (list (Marker-name a-marker)
                  (send a-text add-marker! (Marker-index a-marker))))
          (World-markers a-world)))
   
   
   ;; imperative-marker-list->world-markers: (listof (list symbol marker)) -> (listof Marker)
   ;; Turn the imperative markers back into normal marks that we can install into the world.
-  (define (imperative-marker-list->world-markers marker-list) 
-    (map (lambda (symbol&marker) 
-           (make-Marker 
-            (first symbol&marker) 
+  (define (imperative-marker-list->world-markers marker-list)
+    (map (lambda (symbol&marker)
+           (make-Marker
+            (first symbol&marker)
             (marker-pos (second symbol&marker))))
          marker-list))
   
@@ -190,26 +190,34 @@
   ;; cleanup-range: symbol symbol World text% (World -> World) (World -> void) -> World
   ;; Cleanup between the non-whitespace syntax near the start-mark and end-marks.
   (define (cleanup-range start-mark end-mark a-world a-text update-world-fn update-mred-fn)
-    (let ([start-pos (max 0 (world-marker-position a-world start-mark))]
-          [end-pos (min (send a-text last-position)
-                        (world-marker-position a-world end-mark))]
-          [world-without-marks
-           (world-clear-marker (world-clear-marker a-world start-mark)
-                               end-mark)])
-      (let ([cursor (send (send a-text get-dstx-cursor) get-functional-cursor)])
-        (let ([start-pos (cond [(not (focus-container cursor start-pos))
-                                0]
-                               [(not (focus-predecessor (focus-container cursor start-pos)))
-                                (cursor-pos (focus-container cursor start-pos))]
+    (cleanup a-world a-text update-world-fn update-mred-fn)
+    #;(let ([start-pos (max 0 (world-marker-position a-world start-mark))]
+            [end-pos (min (send a-text last-position)
+                          (world-marker-position a-world end-mark))]
+            [world-without-marks
+             (world-clear-marker (world-clear-marker a-world start-mark)
+                                 end-mark)])
+        (let ([cursor (send (send a-text get-dstx-cursor) get-functional-cursor)])
+          (let ([start-pos (cond [(not (focus-container cursor start-pos))
+                                  0]
+                                 [(focus-younger (focus-container cursor start-pos))
+                                  (cursor-pos (focus-younger (focus-container cursor start-pos)))]
+                                 [(focus-out (focus-container cursor start-pos))
+                                  (cursor-pos (focus-out (focus-container cursor start-pos)))]
+                                 [else
+                                  (cursor-pos (focus-container cursor start-pos))])]
+                [end-pos (cond [(not (focus-container cursor end-pos))
+                                (send a-text last-position)]
+                               [(focus-older (focus-container cursor end-pos))
+                                (cursor-endpos (focus-older (focus-container cursor end-pos)))]
+                               [(focus-out (focus-container cursor end-pos))
+                                (cursor-endpos (focus-out (focus-container cursor end-pos)))]
                                [else
-                                (cursor-pos (focus-predecessor (focus-container cursor start-pos)))])]
-              [end-pos (cond [(not (focus-container cursor start-pos))
-                              (send a-text last-position)]
-                             [(not (focus-out (focus-container cursor start-pos)))
-                              (cursor-endpos (focus-container cursor start-pos))]
-                             [else
-                              (cursor-endpos (focus-out (focus-container cursor start-pos)))])])
-          (cleanup/between start-pos end-pos world-without-marks a-text update-world-fn update-mred-fn)))))
+                                (cursor-endpos (focus-container cursor end-pos))])])
+            (printf "Cleaning up ~s -> ~s~n"
+                    (send a-text get-text start-pos end-pos)
+                    (cleanup-whitespace (string->rope (send a-text get-text start-pos end-pos))))
+            (cleanup/between start-pos end-pos world-without-marks a-text update-world-fn update-mred-fn)))))
   
   
   
@@ -220,7 +228,7 @@
            [len (rope-length line)]
            [deletions (cleanup-whitespace-operations line)])
       (let* ([clean-world
-              (preserve-selection-and-mark 
+              (preserve-selection-and-mark
                world
                a-text
                (lambda ()
@@ -232,7 +240,7 @@
               (preserve-selection-and-mark clean-world
                                            a-text
                                            (lambda ()
-                                             (send a-text tabify-selection 
+                                             (send a-text tabify-selection
                                                    start-index (+ start-index len))))])
         (let ([final-world (update-world-fn clean-and-tabbed-world)])
           (update-mred-fn final-world)
