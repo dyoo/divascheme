@@ -200,7 +200,7 @@
                          [World-mark-length (get-mark-length)])))
       
       
-      ;; set-mark/pub: World -> void
+      ;; set-mark/puck: World -> void
       ;; Set the mark, using the extension puck if we have one, and otherwise
       ;; with the regular mark-position stuff.
       (define (set-mark/puck world) 

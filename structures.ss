@@ -589,6 +589,9 @@
    [struct (imperative-op:transpose imperative-op)
            ([original-world World?])]
    [struct (imperative-op:cleanup imperative-op) ()]
+   [struct (imperative-op:cleanup-range imperative-op) 
+           ([start-mark symbol?] 
+            [end-mark symbol?])] 
    #;[struct (imperative-op:delete-range imperative-op)
              ([start-pos natural-number/c]
               [end-pos natural-number/c])]
