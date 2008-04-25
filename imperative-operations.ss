@@ -209,8 +209,6 @@
                               (cursor-endpos (focus-container cursor start-pos))]
                              [else
                               (cursor-endpos (focus-out (focus-container cursor start-pos)))])])
-          (printf "Going to try to clean up between ~a and ~a: ~s~n" start-pos end-pos
-                  (send a-text get-text start-pos end-pos))
           (cleanup/between start-pos end-pos world-without-marks a-text update-world-fn update-mred-fn)))))
   
   

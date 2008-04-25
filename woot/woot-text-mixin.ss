@@ -16,19 +16,19 @@
       
       (define/augment (on-structured-insert-before a-fcursor a-dstx)
         (when (not (dstx-from-unstructured-editing? a-dstx))
-          (printf "inserted ~s~n" a-dstx)
+          #;(printf "inserted ~s~n" a-dstx)
           (void)) 
         (inner (void) on-structured-insert-before a-fcursor))
       
       (define/augment (on-structured-insert-after a-fcursor a-dstx)
         (when (not (dstx-from-unstructured-editing? a-dstx))
-          (printf "inserted ~s~n" a-dstx) 
+          #;(printf "inserted ~s~n" a-dstx)
           (void)) 
         (inner (void) on-structured-insert-after a-fcursor))
       
       (define/augment (on-structured-delete a-fcursor)
         (when (not (dstx-from-unstructured-editing? (cursor-dstx a-fcursor)))
-          (printf "deleted ~s~n" (cursor-dstx a-fcursor)) 
+          #;(printf "deleted ~s~n" (cursor-dstx a-fcursor))
           (void)) 
         (inner (void) on-structured-delete a-fcursor))
       
