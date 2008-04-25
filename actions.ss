@@ -183,11 +183,11 @@
   
   ;; cleanup-text/pos+len
   (define (cleanup-text/pos+len world pos len)
-    ;; Fixme: this probably needs to be more discriminating
-    ;; for efficiency's sake.
-    (queue-imperative-operation
-     world
-     (make-imperative-op:cleanup)))
+    (let*-values ([(world start-mark) (world-new-marker world pos)]
+                  [(world end-mark) (world-new-marker world (+ pos len))])
+      (queue-imperative-operation
+       world
+       (make-imperative-op:cleanup-range start-mark end-mark))))
   
   
   

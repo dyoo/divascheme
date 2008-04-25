@@ -192,6 +192,9 @@
   ;; imperative-op:cleanup: cleans up the whitespace of the whole buffer.
   (define-struct (imperative-op:cleanup imperative-op) ())
   
+  ;; imperative-op:cleanup: cleans up the whitespace between the two marks.
+  (define-struct (imperative-op:cleanup-range imperative-op) (start-mark end-mark))
+  
   ;; imperative-op:delete-range: delete the range of text.
   #;(define-struct (imperative-op:delete-range imperative-op) (start-pos end-pos))
   

@@ -38,6 +38,9 @@
       [(struct imperative-op:cleanup ())
        (cleanup a-world a-text update-world-fn update-mred-fn)]
       
+      [(struct imperative-op:cleanup-range (start-mark end-mark))
+       (cleanup-range start-mark end-mark a-world a-text update-world-fn update-mred-fn)]
+      
       #;[(struct imperative-op:delete-range (start-pos end-pos))
          (delete-range start-pos end-pos a-world a-text
                        update-world-fn update-mred-fn)]
@@ -184,8 +187,36 @@
     (cleanup/between 0 (send a-text last-position) world a-text update-world-fn update-mred-fn))
   
   
+  ;; cleanup-range: symbol symbol World text% (World -> World) (World -> void) -> World
+  ;; Cleanup between the non-whitespace syntax near the start-mark and end-marks.
+  (define (cleanup-range start-mark end-mark a-world a-text update-world-fn update-mred-fn)
+    (let ([start-pos (max 0 (world-marker-position a-world start-mark))]
+          [end-pos (min (send a-text last-position)
+                        (world-marker-position a-world end-mark))]
+          [world-without-marks
+           (world-clear-marker (world-clear-marker a-world start-mark)
+                               end-mark)])
+      (let ([cursor (send (send a-text get-dstx-cursor) get-functional-cursor)])
+        (let ([start-pos (cond [(not (focus-container cursor start-pos))
+                                0]
+                               [(not (focus-predecessor (focus-container cursor start-pos)))
+                                (cursor-pos (focus-container cursor start-pos))]
+                               [else
+                                (cursor-pos (focus-predecessor (focus-container cursor start-pos)))])]
+              [end-pos (cond [(not (focus-container cursor start-pos))
+                              (send a-text last-position)]
+                             [(not (focus-out (focus-container cursor start-pos)))
+                              (cursor-endpos (focus-container cursor start-pos))]
+                             [else
+                              (cursor-endpos (focus-out (focus-container cursor start-pos)))])])
+          (printf "Going to try to clean up between ~a and ~a: ~s~n" start-pos end-pos
+                  (send a-text get-text start-pos end-pos))
+          (cleanup/between start-pos end-pos world-without-marks a-text update-world-fn update-mred-fn)))))
+  
+  
   
   ;; cleanup/between: number number world text% (World -> World) (World -> void) -> World
+  ;; Cleans up between the start and end positions.
   (define (cleanup/between start-index end-index world a-text update-world-fn update-mred-fn)
     (let* ([line (subrope (World-rope world) start-index end-index)]
            [len (rope-length line)]
