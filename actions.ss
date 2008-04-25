@@ -336,63 +336,63 @@
   (define (command world a-rope/false pos/false open?
                    square? template-number magic-number template/magic-wrap?)
     (local
-        (
-         
-         ;; apply-template: template (or/c symbol #f) -> rope
-         (define (apply-template template symbol/false)
-           (let ([format-string (cond [(and symbol/false
-                                            (string-prefix? "#<<" (symbol->string symbol/false)))
-                                       "~a"]
-                                      [else
-                                       "~a"])])
-             (string->rope
-              (format format-string (if template
-                                        (shape-paren (and square? 'Square) template)
-                                        symbol/false)))))
-         
-         
-         ;; get-expanded-text: (values rope world)
-         (define (get-expanded-text&world)
-           (cond
-             [(and a-rope/false (rope-has-special? a-rope/false))
-              (let ([world (if pos/false
-                               (set-cursor-position world pos/false)
-                               world)])
-                (values a-rope/false world #f))]
-             
-             [else
-              (let* ([world
-                      (if pos/false
-                          (set-cursor-position world pos/false)
-                          world)] ; thus we keep the current selection
-                     [symbol/false
-                      (and a-rope/false
-                           (string->symbol (rope->string a-rope/false)))]
-                     [symbol/false
-                      (and symbol/false
-                           (magic/expand world
-                                         (World-cursor-position world)
-                                         symbol/false
-                                         magic-number
-                                         template/magic-wrap?))])
-                (let-values ([(template number-of-templates)
-                              (lookup-template symbol/false
-                                               template-number
-                                               open?
-                                               template/magic-wrap?)])
-                  (let* ([text (apply-template template symbol/false)]
-                         #;[text (cond
-                                   [(cursor-position-is-quoted? world)
+      (
+       
+       ;; apply-template: template (or/c symbol #f) -> rope
+       (define (apply-template template symbol/false)
+         (let ([format-string (cond [(and symbol/false
+                                          (string-prefix? "#<<" (symbol->string symbol/false)))
+                                     "~a"]
+                                    [else
+                                     " ~a "])])
+           (string->rope
+            (format format-string (if template
+                                      (shape-paren (and square? 'Square) template)
+                                      symbol/false)))))
+       
+       
+       ;; get-expanded-text: (values rope world)
+       (define (get-expanded-text&world)
+         (cond
+           [(and a-rope/false (rope-has-special? a-rope/false))
+            (let ([world (if pos/false
+                             (set-cursor-position world pos/false)
+                             world)])
+              (values a-rope/false world #f))]
+           
+           [else
+            (let* ([world
+                    (if pos/false
+                        (set-cursor-position world pos/false)
+                        world)] ; thus we keep the current selection
+                   [symbol/false
+                    (and a-rope/false
+                         (string->symbol (rope->string a-rope/false)))]
+                   [symbol/false
+                    (and symbol/false
+                         (magic/expand world
+                                       (World-cursor-position world)
+                                       symbol/false
+                                       magic-number
+                                       template/magic-wrap?))])
+              (let-values ([(template number-of-templates)
+                            (lookup-template symbol/false
+                                             template-number
+                                             open?
+                                             template/magic-wrap?)])
+                (let* ([text (apply-template template symbol/false)]
+                       #;[text (cond
+                                 [(cursor-position-is-quoted? world)
                                   (subrope text 1)]
                                  [else text])]
-                         [world (if (<= number-of-templates 1)
-                                    world
-                                    (success-message
-                                     world
-                                     (format "template ~a of ~a"
-                                             (add1 (modulo template-number number-of-templates))
-                                             number-of-templates)))])
-                    (values text world template))))])))
+                       [world (if (<= number-of-templates 1)
+                                  world
+                                  (success-message
+                                   world
+                                   (format "template ~a of ~a"
+                                           (add1 (modulo template-number number-of-templates))
+                                           number-of-templates)))])
+                  (values text world template))))])))
       (let-values ([(text expanded-world template)
                     (get-expanded-text&world)])
         (let* ([world
@@ -722,41 +722,41 @@
                 holder
                 bring
                 push
-              copy
-              cut
-              paste
-              enter/selection
-              join/selection
-              transpose
-              indent/selection
-              magic-options
-              magic-bash)
-      
-      ;; public functions for tests
-      #;(public select/pos+len
-                cursor-at-selection-end
-                recompute-selection/insert
-                recompute-selection/delete
-                recompute-selection/replace
-                mark/pos+len
-                set-mark-position
-                mark-at-start
-                mark-at-end
-                recompute-mark/insert
-                recompute-mark/delete
-                recompute-mark/replace
-                cleanup-text/pos+len
-                cleanup-text/selection
-                insert
-                delete/pos+len
-                delete/selection
-                delete/mark
-                replace/selection
-                enter/pos+len
-                join/pos+len
-                magic/completion)
-      
-      
-      #;(super-instantiate ())
-      
-      )))
+                copy
+                cut
+                paste
+                enter/selection
+                join/selection
+                transpose
+                indent/selection
+                magic-options
+                magic-bash)
+        
+        ;; public functions for tests
+        #;(public select/pos+len
+                  cursor-at-selection-end
+                  recompute-selection/insert
+                  recompute-selection/delete
+                  recompute-selection/replace
+                  mark/pos+len
+                  set-mark-position
+                  mark-at-start
+                  mark-at-end
+                  recompute-mark/insert
+                  recompute-mark/delete
+                  recompute-mark/replace
+                  cleanup-text/pos+len
+                  cleanup-text/selection
+                  insert
+                  delete/pos+len
+                  delete/selection
+                  delete/mark
+                  replace/selection
+                  enter/pos+len
+                  join/pos+len
+                  magic/completion)
+        
+        
+        #;(super-instantiate ())
+        
+        )))

@@ -205,16 +205,10 @@
                          [World-mark-length (get-mark-length)])))
       
       
-      ;;
-      ;; WORLD 2 TEXT STUFFS
-      ;;
-      ;; Pushes changes from the world back into the stateful text%.
-      ;; push-world: world -> void
-      (define/public (push-world world)
-        (with-edit-sequence
-         (lambda ()
-           (send window-text set-rope (World-rope world))))
-        (set-selection (World-cursor-position world) (World-selection-length world))
+      ;; set-mark/pub: World -> void
+      ;; Set the mark, using the extension puck if we have one, and otherwise
+      ;; with the regular mark-position stuff.
+      (define (set-mark/puck world) 
         (cond [(World-extension world)
                (let ([e (World-extension world)])
                  (set-mark (extension-puck e)
@@ -233,8 +227,20 @@
               [else
                (set-mark (World-mark-position world) (World-mark-length world))
                (send window-text diva:-insertion-after-set-position-callback-set
-                     (lambda () (void)))])
-        
+                     (lambda () (void)))]))
+      
+      
+      ;;
+      ;; WORLD 2 TEXT STUFFS
+      ;;
+      ;; Pushes changes from the world back into the stateful text%.
+      ;; push-world: world -> void
+      (define/public (push-world world)
+        (with-edit-sequence
+         (lambda ()
+           (send window-text set-rope (World-rope world))))
+        (set-selection (World-cursor-position world) (World-selection-length world))
+        (set-mark/puck world)
         (send window-text diva-message (World-success-message world)))
       
       
