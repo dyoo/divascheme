@@ -138,6 +138,51 @@
         (check-equal? (map strip-local-ids (send text get-toplevel-dstxs))
                       (map strip-local-ids (list (new-space "") (new-atom "world"))))))
      
+     (test-case
+      "manually adding a space in front of an atom doesn't change the id"
+      (let* ([text (make-text-instance)]
+             [cursor (send text get-dstx-cursor)])
+        (send cursor insert-after! (new-atom "an-atom"))
+        (let ([old-id (send cursor property-ref 'local-id)])
+          (send text insert " " 0)
+          (let ([new-id (send cursor property-ref 'local-id)])
+            (check-equal? new-id old-id)))))
+     
+     
+     (test-case
+      "manually deleting a space in front of an atom doesn't change the id"
+      (let* ([text (make-text-instance)]
+             [cursor (send text get-dstx-cursor)])
+        (send cursor insert-after! (new-atom "an-atom"))
+        (let ([old-id (send cursor property-ref 'local-id)])
+          (send text insert " " 0)
+          (send text delete 0 1)
+          (let ([new-id (send cursor property-ref 'local-id)])
+            (check-equal? new-id old-id)))))
+     
+     
+     (test-case
+      "manually adding a space after an atom doesn't change the id"
+      (let* ([text (make-text-instance)]
+             [cursor (send text get-dstx-cursor)])
+        (send cursor insert-after! (new-atom "an-atom"))
+        (let ([old-id (send cursor property-ref 'local-id)])
+          (send text insert " " 7)
+          (let ([new-id (send cursor property-ref 'local-id)])
+            (check-equal? new-id old-id)))))
+     
+     (test-case
+      "manually deleting a space after an atom doesn't change the id"
+      (let* ([text (make-text-instance)]
+             [cursor (send text get-dstx-cursor)])
+        (send cursor insert-after! (new-atom "an-atom"))
+        (let ([old-id (send cursor property-ref 'local-id)])
+          (send text insert " " 7)
+          (send text delete 7 8)
+          (let ([new-id (send cursor property-ref 'local-id)])
+            (check-equal? new-id old-id)))))
+     
+     
      
      (test-case
       "manually editing a symbol at the back"
@@ -231,8 +276,8 @@
         (send cursor focus-in!)
         (send cursor insert-after! (new-space " "))
         (send cursor insert-after! (new-fusion "["
-                                                     (list (new-atom "world"))
-                                                     "]"))
+                                               (list (new-atom "world"))
+                                               "]"))
         ;; Check what's on screen...
         (check-equal? (send text get-text) "(hello [world])")
         ;; As well as what's in the dstx
