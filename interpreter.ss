@@ -37,6 +37,7 @@
   
   ;; interpreter/extension: World ast -> (union World SwitchWorld)
   ;; Apply the interpreter, maintaining selection information.
+  ;; If bad things happen, raises an exception.
   (define (interpreter/extension world ast)
     
     ;; annotate-success-message: (union World SwitchWorld) -> (union World SwitchWorld)
@@ -227,10 +228,10 @@
   (define (world-clear world)
     (copy-struct World world
                  [World-target-column #f]
-                 [World-Next-f     (default-Next-f)]
+                 [World-Next-f (default-Next-f)]
                  [World-Previous-f (default-Previous-f)]
-                 [World-Magic-f    (default-Magic-f)]
-                 [World-Pass-f     (default-Pass-f)]
+                 [World-Magic-f (default-Magic-f)]
+                 [World-Pass-f (default-Pass-f)]
                  [World-redo false]))
   
   (define (trim-undos world undo-count)
@@ -284,12 +285,12 @@
   (define (eval-What world make-metric-f base what)
     (define (aux noun ref)
       (let ([matches (eval-Noun world make-metric-f base noun)])
-	(list-ref/safe matches (modulo ref (add1 (length matches))))))
+        (list-ref/safe matches (modulo ref (add1 (length matches))))))
     (match what
       [#f (find-pos-near base (World-syntax-list world))]
-      [(struct WhatN           (noun)) (aux noun              0 )]
+      [(struct WhatN (noun)) (aux noun 0)]
       [(struct WhatDN (distance noun)) (aux noun (sub1 distance))]))
-
+  
   
   ;; eval-What/open : (union What false) -> (union rope false)
   (define (eval-What/open what/false)
@@ -334,7 +335,7 @@
   ;; eval-What/bash : What -> symbol
   (define (eval-What/bash what)
     (match what
-      [(struct WhatN  (  (struct Symbol-Noun (symbol)))) symbol]
+      [(struct WhatN ((struct Symbol-Noun (symbol)))) symbol]
       [(struct WhatDN (1 (struct Symbol-Noun (symbol)))) symbol]
       [_ (raise (make-voice-exn "This does not mean anything for me"))]))
   
@@ -346,26 +347,26 @@
        (let ([result1 (find-all/not-first (syntax-is-symbol? symbol) (World-syntax-list world))]
              [result2 (find-all (syntax-begins-with? symbol) (World-syntax-list world))])
          (sort/metric (make-metric-f base) (append result1 result2)))]
-      #; [(struct The-Symbol (symbol))
-          (find-all/metric (syntax-is-symbol? symbol) (make-metric-f base) (World-syntax-list world))]
+      #;[(struct The-Symbol (symbol))
+         (find-all/metric (syntax-is-symbol? symbol) (make-metric-f base) (World-syntax-list world))]
       [_ (raise (make-voice-exn "This does not mean anything for me"))]))
   
   ;; eval-Loc+What : World (pos -> metric) (union Loc false) (union What false) -> (union pos syntax)
   (define (eval-Loc+What world make-metric-f loc/false what/false)
-    (let* ([loc-base  (World-cursor-position world)]
+    (let* ([loc-base (World-cursor-position world)]
            [what-base (eval-Loc world make-metric-f loc-base loc/false)])
       (if what/false
           (eval-What world make-metric-f what-base what/false)
           what-base)))
- 
+  
   
   ;; inc-what-distance : (union WhatN WhatDN) int -> What
   (define (inc-what-distance what/false x)
     (match what/false
       [(struct WhatN (noun)) (make-WhatDN (+ 1 x) noun)]
-      [(struct WhatDN (distance noun))  (make-WhatDN (+ distance x) noun)]
+      [(struct WhatDN (distance noun)) (make-WhatDN (+ distance x) noun)]
       [_ (raise (make-voice-exn "Not supported"))]))
-
+  
   ;; dec-what-distance : (union WhatN WhatDN) int -> What
   (define (dec-what-distance what/false x)
     (inc-what-distance what/false (- x)))
@@ -400,7 +401,7 @@
   (define (eval-Open square? world loc/false what/false template-number magic-number template/magic-wrap? mode)
     (let*
         ([rope/false (print-mem*
-                      'eval-Open-symbol/false 
+                      'eval-Open-symbol/false
                       (eval-What/open what/false))]
          [pos (print-mem*
                'eval-Open-pos
@@ -444,64 +445,64 @@
           (lambda (new-world)
             (eval-Open square? world loc/false what/false
                        (sub1 template-number) magic-number template/magic-wrap? 'Pass))]
-         [Next-f     (match mode
-                       ['Normal (default-Next-f)]
-                       ['Magic     Magic-Next-f ]
-                       ['Pass       Pass-Next-f ])]
+         [Next-f (match mode
+                   ['Normal (default-Next-f)]
+                   ['Magic Magic-Next-f]
+                   ['Pass Pass-Next-f])]
          [Previous-f (match mode
                        ['Normal (default-Previous-f)]
-                       ['Magic     Magic-Previous-f ]
-                       ['Pass       Pass-Previous-f ])])
+                       ['Magic Magic-Previous-f]
+                       ['Pass Pass-Previous-f])])
       
       (copy-struct World new-world
                    [World-target-column #f]
-                   [World-Next-f     Next-f]
+                   [World-Next-f Next-f]
                    [World-Previous-f Previous-f]
-                   [World-cancel     world]
-                   [World-undo       world]
-                   [World-redo       false]
-                   [World-Magic-f    Magic-f]
-                   [World-Pass-f     Pass-f])))
-
-
+                   [World-cancel world]
+                   [World-undo world]
+                   [World-redo false]
+                   [World-Magic-f Magic-f]
+                   [World-Pass-f Pass-f])))
+  
+  
   ;; eval-InsertRope : World rope Location/false non-negative-integer non-negative-integer boolean mode -> World
   (define (eval-InsertRope world a-rope loc/false template-number magic-number
-                       template/magic-wrap? mode)
+                           template/magic-wrap? mode)
     (local
-        ((define (make-unary-callback new-template-number new-magic-number new-mode)
-           (lambda (new-world)
-             (eval-InsertRope world a-rope loc/false
-                          new-template-number
-                          new-magic-number
-                          template/magic-wrap?
-                          new-mode)))
-         
-         (define (make-binary-callback new-template-number new-magic-number new-mode)
-           (lambda (new-world template/magic-wrap?)
-             (eval-InsertRope world a-rope loc/false
-                          new-template-number
-                          new-magic-number
-                          template/magic-wrap?
-                          new-mode)))
-         
-         (define (get-Next-and-Previous-f)
-           (let ([Magic-Next-f
-                  (make-unary-callback 0 (add1 magic-number) 'Magic)]
-                 [Magic-Previous-f
-                  (make-unary-callback 0 (sub1 magic-number) 'Magic)]
-                 [Pass-Next-f
-                  (make-unary-callback (add1 template-number) magic-number 'Pass)]
-                 [Pass-Previous-f
-                  (make-unary-callback (sub1 template-number) magic-number 'Pass)])
-             (let ([Next-f (match mode
-                             ['Normal (default-Next-f)]
-                             ['Magic Magic-Next-f]
-                             ['Pass Pass-Next-f])]
-                   [Previous-f (match mode
-                                 ['Normal (default-Previous-f)]
-                                 ['Magic Magic-Previous-f]
-                                 ['Pass Pass-Previous-f])])
-               (values Next-f Previous-f)))))
+      ((define (make-unary-callback new-template-number new-magic-number new-mode)
+         (lambda (new-world)
+           (eval-InsertRope world a-rope loc/false
+                            new-template-number
+                            new-magic-number
+                            template/magic-wrap?
+                            new-mode)))
+       
+       (define (make-binary-callback new-template-number new-magic-number new-mode)
+         (lambda (new-world template/magic-wrap?)
+           (eval-InsertRope world a-rope loc/false
+                            new-template-number
+                            new-magic-number
+                            template/magic-wrap?
+                            new-mode)))
+       
+       (define (get-Next-and-Previous-f)
+         (let ([Magic-Next-f
+                (make-unary-callback 0 (add1 magic-number) 'Magic)]
+               [Magic-Previous-f
+                (make-unary-callback 0 (sub1 magic-number) 'Magic)]
+               [Pass-Next-f
+                (make-unary-callback (add1 template-number) magic-number 'Pass)]
+               [Pass-Previous-f
+                (make-unary-callback (sub1 template-number) magic-number 'Pass)])
+           (let ([Next-f (match mode
+                           ['Normal (default-Next-f)]
+                           ['Magic Magic-Next-f]
+                           ['Pass Pass-Next-f])]
+                 [Previous-f (match mode
+                               ['Normal (default-Previous-f)]
+                               ['Magic Magic-Previous-f]
+                               ['Pass Pass-Previous-f])])
+             (values Next-f Previous-f)))))
       
       (let*-values ([(loc-base)
                      (World-cursor-position world)]
@@ -540,8 +541,8 @@
           (copy-struct World new-w
                        [World-cancel world])
           (copy-struct World new-w
-                       [World-cancel     world]
-                       [World-undo       world]))))
+                       [World-cancel world]
+                       [World-undo world]))))
   
   
   ;; eval-Insert : World Loc -> World
@@ -583,33 +584,33 @@
                                        loc-base
                                        loc/false)
                              what))]
-           [make-NP    (lambda (x)
-                         (lambda (new-world)
-                           (eval-Search world make-metric-f loc-base loc/false (inc-what-distance what x))))]
-           [Next-f     (lambda (new-world)
-                         (with-handlers ([voice-exn? 
-                                          (lambda (exn) 
-                                            (raise (make-voice-exn/world "No more match"
-                                                                         (copy-struct World new-world
-                                                                                      [World-Next-f (make-NP 2)]))))])
-                           ((make-NP 1) new-world)))]
+           [make-NP (lambda (x)
+                      (lambda (new-world)
+                        (eval-Search world make-metric-f loc-base loc/false (inc-what-distance what x))))]
+           [Next-f (lambda (new-world)
+                     (with-handlers ([voice-exn?
+                                      (lambda (exn)
+                                        (raise (make-voice-exn/world "No more match"
+                                                                     (copy-struct World new-world
+                                                                                  [World-Next-f (make-NP 2)]))))])
+                       ((make-NP 1) new-world)))]
            [Previous-f (lambda (new-world)
-                         (with-handlers ([voice-exn? 
-                                          (lambda (exn) 
+                         (with-handlers ([voice-exn?
+                                          (lambda (exn)
                                             (raise (make-voice-exn/world "No more match"
                                                                          (copy-struct World new-world
                                                                                       [World-Previous-f (make-NP -2)]))))])
                            ((make-NP -1) new-world)))])
       
       (copy-struct World (world-clear (action:select/stx world stx))
-                   [World-Next-f     Next-f]
+                   [World-Next-f Next-f]
                    [World-Previous-f Previous-f]
-                   [World-cancel     world])))
+                   [World-cancel world])))
   
   ;; eval-Select : World pos (union Loc false) (union What false) -> World
   (define (eval-Select world loc-base loc/false what)
     (let* ([make-metric-f (make-make-metric world metric-forward)]
-           [what-base     (eval-Loc world make-metric-f loc-base loc/false)]
+           [what-base (eval-Loc world make-metric-f loc-base loc/false)]
            [rank/false (with-handlers ([voice-exn? (lambda (exn) (raise (make-voice-exn "nothing to select")))])
                          (eval-What/select world make-metric-f what-base what))]
            [what (if rank/false
@@ -622,22 +623,22 @@
   ;; eval-Holder : World boolean (union Loc false) (union What false) -> World
   (define (eval-Holder world backward? loc/false what/false)
     (let* ([make-metric-f (make-make-metric world (if backward? metric-backward metric-forward))]
-           [loc-base      (if backward? 
-                              (sub1 (World-cursor-position world))
-                              (World-selection-end-position world))]
-           [base          (eval-Loc world make-metric-f loc-base loc/false)])
+           [loc-base (if backward?
+                         (sub1 (World-cursor-position world))
+                         (World-selection-end-position world))]
+           [base (eval-Loc world make-metric-f loc-base loc/false)])
       (if what/false
           ;; eval-What/holder : world metric What -> syntax
-          (let* ([stx/false  (eval-What/holder world (make-metric-f base) what/false)]
-                 [Next-f     (lambda (new-world) (eval-Holder world backward? loc/false (inc-what-distance what/false 1)))]
+          (let* ([stx/false (eval-What/holder world (make-metric-f base) what/false)]
+                 [Next-f (lambda (new-world) (eval-Holder world backward? loc/false (inc-what-distance what/false 1)))]
                  [Previous-f (lambda (new-world) (eval-Holder world backward? loc/false (dec-what-distance what/false 1)))])
             (copy-struct World (world-clear (action:select/stx world stx/false))
-                         [World-Next-f     Next-f]
+                         [World-Next-f Next-f]
                          [World-Previous-f Previous-f]
-                         [World-cancel     world]))
+                         [World-cancel world]))
           (copy-struct World (world-clear (action:holder world base backward?))
-                       [World-cancel     world]))))
-    
+                       [World-cancel world]))))
+  
   
   ;; eval-Next : World -> World
   (define (eval-Next world)
@@ -685,8 +686,8 @@
   (define (eval-Magic-Bash world what)
     (let ([symbol (eval-What/bash what)])
       (copy-struct World (world-clear (action:magic-bash world symbol))
-                   [World-cancel     world]
-                   [World-undo       world])))
+                   [World-cancel world]
+                   [World-undo world])))
   
   (define (eval-Non-blank-out world pos)
     (let ([stx/false (find-pos/end pos (World-syntax-list world))])
@@ -699,19 +700,19 @@
   ;; TODO
   ;; eval-Out : World (union Loc false) (union What false) -> World
   (define (eval-Out world loc/false what/false)
-    (let* ([stx/pos    (eval-Loc+What world metric-nearest loc/false what/false)]
+    (let* ([stx/pos (eval-Loc+What world metric-nearest loc/false what/false)]
            [Next-f (if what/false
                        (lambda (new-world) (eval-Out world loc/false (inc-what-distance what/false 1)))
                        (default-Next-f))]
            [Previous-f (if what/false
                            (lambda (new-world) (eval-Out world loc/false (dec-what-distance what/false 1)))
                            (default-Previous-f))]
-           [base       (if (syntax? stx/pos)
-                           (syntax-position stx/pos)
-                           stx/pos)]
+           [base (if (syntax? stx/pos)
+                     (syntax-position stx/pos)
+                     stx/pos)]
            
            [stx/false (find-pos base (World-syntax-list world))]
-
+           
            [stx/false (if (or (not stx/false)
                               (and (= (syntax-position stx/false) (World-cursor-position world))
                                    (= (syntax-span stx/false) (World-selection-length world))))
@@ -719,9 +720,9 @@
                           stx/false)])
       (if stx/false
           (copy-struct World (world-clear (action:select/stx world stx/false))
-                       [World-Next-f     Next-f]
+                       [World-Next-f Next-f]
                        [World-Previous-f Previous-f]
-                       [World-cancel     world])
+                       [World-cancel world])
           (raise (make-voice-exn "No containing expression")))))
   
   (define (eval-Down world)
@@ -729,8 +730,8 @@
   
   (define (eval-Up world)
     (eval-column-motion world true))
-
-
+  
+  
   ;; eval-column-motion: World boolean -> World
   (define (eval-column-motion world is-up?)
     (let* ([line (line-number (World-rope world) (World-cursor-position world))]
@@ -769,22 +770,22 @@
           (copy-struct World (world-clear (action:select/stx world stx))
                        [World-cancel world])
           (raise (make-voice-exn "Nothing backward.")))))
-
-
+  
+  
   ;; eval-First : World -> World
   (define (eval-First world)
     (copy-struct World (world-clear (action:first/selection world))
                  [World-cancel world]))
-
+  
   ;; eval-Last : World -> World
   (define (eval-Last world)
     (copy-struct World (world-clear (action:last/selection world))
-                 [World-cancel     world]))
-
+                 [World-cancel world]))
+  
   (define ((not-here?/w world) stx) ((not-here? (World-cursor-position world)) stx))
   (define ((not-here? pos) stx) (not (= pos (syntax-position stx))))
   
-
+  
   ;; eval-Forward: world -> world
   (define (eval-Forward world)
     (let* ([stx-list (find-all-forward (lambda args true)
@@ -819,8 +820,8 @@
   ;; eval-Delete : World -> World
   (define (eval-Delete world)
     (copy-struct World (world-clear (action:delete world))
-                 [World-cancel     world]
-                 [World-undo       world]))
+                 [World-cancel world]
+                 [World-undo world]))
   
   ;; eval-Dedouble-Ellipsis : World -> World
   (define (eval-Dedouble-Ellipsis world)
@@ -830,84 +831,84 @@
   ;; eval-Bring : World -> World
   (define (eval-Bring world)
     (copy-struct World (world-clear (action:bring world))
-                 [World-cancel     world]
-                 [World-undo       world]))        
+                 [World-cancel world]
+                 [World-undo world]))
   
   ;; TODO
   ;; eval-Push : World -> World
   (define (eval-Push world)
     (copy-struct World (world-clear (action:push world))
-                 [World-cancel     world]
-                 [World-undo       world]))        
-
+                 [World-cancel world]
+                 [World-undo world]))
+  
   ;; eval-Exchange : World -> World
   (define (eval-Exchange world)
     (copy-struct World (world-clear (action:exchange world))
-                 [World-cancel     world]))        
-
+                 [World-cancel world]))
+  
   ;; eval-Mark : World (union Loc false) (union What false) -> World
   (define (eval-Mark world loc/false what/false)
     (if what/false
-        (let* ([loc-base    (World-cursor-position world)]
-               [what-base   (eval-Loc  world (make-make-metric world metric-forward)  loc-base  loc/false)]
-               [stx         (eval-What world (make-make-metric world metric-forward) what-base what/false)]
-               [Next-f      (lambda (new-world)
-                              (eval-Mark world loc/false (inc-what-distance what/false 1)))]
-               [Previous-f  (lambda (new-world)
-                              (eval-Mark world loc/false (dec-what-distance what/false 1)))])
+        (let* ([loc-base (World-cursor-position world)]
+               [what-base (eval-Loc world (make-make-metric world metric-forward) loc-base loc/false)]
+               [stx (eval-What world (make-make-metric world metric-forward) what-base what/false)]
+               [Next-f (lambda (new-world)
+                         (eval-Mark world loc/false (inc-what-distance what/false 1)))]
+               [Previous-f (lambda (new-world)
+                             (eval-Mark world loc/false (dec-what-distance what/false 1)))])
           
           (copy-struct World (world-clear (action:mark/stx world stx))
-                       [World-Next-f     Next-f]
+                       [World-Next-f Next-f]
                        [World-Previous-f Previous-f]
-                       [World-cancel     world]))
+                       [World-cancel world]))
         (copy-struct World (world-clear (action:selection->mark world))
-                     [World-cancel     world])))
-
+                     [World-cancel world])))
+  
   ;; eval-UnMark : World -> World
   (define (eval-UnMark world)
     (copy-struct World (world-clear (action:unmark world))
-                 [World-cancel     world]))
-
+                 [World-cancel world]))
+  
   ;; eval-Copy : World -> World
   (define (eval-Copy world)
     (copy-struct World (world-clear (action:copy world))
-                 [World-cancel     world]))
-
+                 [World-cancel world]))
+  
   ;; eval-Cut : World -> World
   (define (eval-Cut world)
     (copy-struct World (world-clear (action:cut world))
-                 [World-cancel     world]
-                 [World-undo       world]))
-
+                 [World-cancel world]
+                 [World-undo world]))
+  
   ;; eval-Paste : World -> World
   (define (eval-Paste world)
     (copy-struct World (world-clear (action:paste world))
-                 [World-cancel     world]
-                 [World-undo       world]))
-
+                 [World-cancel world]
+                 [World-undo world]))
+  
   ;; TODO
   ;; eval-Definition : world -> world
   (define (eval-Definition world)
     (raise (make-voice-exn "Not supported yet")))
-
+  
   ;; TODO
   ;; eval-Usage : world -> world
   (define (eval-Usage world)
     (raise (make-voice-exn "Not supported yet")))
   
-
+  
   ;; eval-Enter : World -> World
   (define (eval-Enter world)
     (copy-struct World (world-clear (action:enter/selection world))
-                 [World-cancel     world]
-                 [World-undo       world]))
-
+                 [World-cancel world]
+                 [World-undo world]))
+  
   ;; eval-Join : World -> World
   (define (eval-Join world)
     (copy-struct World (world-clear (action:join/selection world))
-                 [World-cancel     world]
-                 [World-undo       world]))
-
+                 [World-cancel world]
+                 [World-undo world]))
+  
   ;; eval-Indent : World -> World
   (define (eval-Indent world)
     (action:indent/selection world))
@@ -947,13 +948,13 @@
     ;; is working on?
     (define (in-same-file? world tag)
       (equal? (tag-path tag) (World-path world)))
-  
+    
     ;; apply-tag: tag world -> world
     (define (goto-tag tag world)
       (cond
         [(in-same-file? world tag)
          (let* ([positions
-                 (find-all-nearest 
+                 (find-all-nearest
                   (lambda (stx)
                     (in-syntax? (tag-position tag) stx))
                   (tag-position tag)
@@ -976,24 +977,24 @@
     (define (apply-tags tags world)
       (define (Next-f world)
         (apply-tags (rest tags) world))
-      (define (Previous-f world) 
+      (define (Previous-f world)
         (apply-tags (previous tags) world))
       (let ([new-world (goto-tag (first tags) world)])
         (if (SwitchWorld? new-world)
             new-world
             (copy-struct World new-world
-                         [World-Next-f     Next-f]
+                         [World-Next-f Next-f]
                          [World-Previous-f Previous-f]
-                         [World-cancel     world]
-                         [World-undo       world]))))
+                         [World-cancel world]
+                         [World-undo world]))))
     
-
+    
     ;; sort-for-NP: (listof tag) -> (circular-listof tag)
-    ;; 
+    ;;
     ;; impose ordering: tags in the world we're in will come first, followed
     ;; by the rest of the tags.  All tags are ordered by position.
     (define (sort-for-NP tags world)
-
+      
       (define (path-cmp a b)
         (cond
           [(string<? (path->string (tag-path a)) (path->string (tag-path b)))
@@ -1001,28 +1002,28 @@
           [(string>? (path->string (tag-path a)) (path->string (tag-path b)))
            1]
           [else 0]))
-
+      
       (define (numeric-cmp a b)
         (cond [(< a b) -1]
               [(> a b) 1]
               [else 0]))
       
       (define (cmp a b)
-        (cond 
+        (cond
           [(= (path-cmp a b) -1) -1]
           [(= (path-cmp a b) 1) 1]
           [else (numeric-cmp (tag-position a) (tag-position b))]))
-
+      
       (define sorted (quicksort tags cmp))
-
+      
       (let-values ([(here there) (partition (lambda (t) (in-same-file? world t)) sorted)])
         (apply circular-list (append here there))))
-          
     
     
-    (define tags 
+    
+    (define tags
       (tag-library-lookup (get-current-tag-library) (what->string what)))
-
+    
     
     (cond [(empty? tags)
            (raise (make-voice-exn "No match"))]

@@ -82,7 +82,7 @@
                       (Pending-world pending-open)]
                      [else
                       world-at-beginning-of-insert])])
-        (send editor set-rope (World-rope world)) 
+        (send editor set-rope (World-rope world))
         (let ([index (pos->index (World-cursor-position world))])
           (send editor diva:set-selection-position
                 index
@@ -134,15 +134,15 @@
       (send editor get-text left-edge-of-insert (send editor get-start-position)))
     
     
-    (define (with-unstructured-decoration f) 
+    (define (with-unstructured-decoration f)
       (dynamic-wind (lambda () (send editor set-in-unstructured-editing? #t))
                     f
                     (lambda () (send editor set-in-unstructured-editing? #f))))
     
     
     (define (set-text text)
-      (with-unstructured-decoration 
-       (lambda () 
+      (with-unstructured-decoration
+       (lambda ()
          (send editor insert text left-edge-of-insert (send editor get-start-position) true))))
     
     
@@ -179,10 +179,10 @@
                     [end-pos (send editor get-end-position)]
                     [selection-rope-before-insert
                      (read-subrope-in-text editor start-pos (- end-pos start-pos))])
-               (begin-symbol start-pos end-pos) 
-               (send editor delete) 
-               (with-unstructured-decoration 
-                (lambda () 
+               (begin-symbol start-pos end-pos)
+               (send editor delete)
+               (with-unstructured-decoration
+                (lambda ()
                   (insert-rope-in-text editor selection-rope-before-insert)))
                (send editor diva:set-selection-position
                      (clamp original-pos start-pos end-pos))
@@ -204,8 +204,8 @@
           (unset-insert&delete-callbacks)
           (unless (empty-selection?)
             (send editor delete))
-          (with-unstructured-decoration 
-           (lambda () 
+          (with-unstructured-decoration
+           (lambda ()
              (when need-space-before
                (send editor insert " "))
              (when need-space-after
@@ -298,7 +298,7 @@
          ]
         [(< left-edge-of-insert
             (send editor get-start-position))
-         (with-unstructured-decoration 
+         (with-unstructured-decoration
           (lambda () (send editor delete)))]))
     
     
@@ -306,8 +306,8 @@
       (when (< (send editor get-start-position)
                right-edge-of-insert)
         
-        (with-unstructured-decoration 
-         (lambda () 
+        (with-unstructured-decoration
+         (lambda ()
            (send editor delete
                  (send editor get-start-position)
                  (add1 (send editor get-start-position)))))))
@@ -319,8 +319,8 @@
             [sel-end (send editor get-end-position)])
         (let ([end-box (box sel-end)])
           (send editor find-wordbreak #f end-box 'caret)
-          (with-unstructured-decoration 
-           (lambda () 
+          (with-unstructured-decoration
+           (lambda ()
              (send editor kill
                    0
                    sel-start
@@ -332,8 +332,8 @@
             [sel-end (send editor get-end-position)])
         (let ([start-box (box sel-start)])
           (send editor find-wordbreak start-box #f 'caret)
-          (with-unstructured-decoration 
-           (lambda () 
+          (with-unstructured-decoration
+           (lambda ()
              (send editor kill
                    0
                    (max left-edge-of-insert (unbox start-box))
@@ -370,12 +370,6 @@
       (set! right-edge-of-insert (- right-edge-of-insert length))
       (fill-highlight!))
     
-    
-    (define (invalid-insert? text)
-      (with-handlers
-          ([exn:fail? (lambda (exn) (exn-message exn))])
-        (read (open-input-string text))
-        #f))
     
     (define (eval-text)
       (local
