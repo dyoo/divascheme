@@ -15,6 +15,7 @@
            "tag-gui.ss"
            "dsyntax/dstx-text-mixin.ss"
            "woot/woot-text-mixin.ss"
+           "gui/diva-menu-bar.ss"
            (lib "unit.ss")
            (lib "tool.ss" "drscheme"))
   
@@ -25,7 +26,7 @@
   (provide tool@)
   
   
-  (define-unit tool@ 
+  (define-unit tool@
     (import drscheme:tool^)
     (export drscheme:tool-exports^)
     ;; ~H~
@@ -47,7 +48,7 @@
     
     (define (phase1)
       ;; HACKY: replace with real unit integration when we
-      ;; finally abandon 301 unit compatibilty. 
+      ;; finally abandon 301 unit compatibilty.
       (language:initialize-get-language
        drscheme:language-configuration:get-settings-preferences-symbol
        drscheme:language-configuration:language-settings-language
@@ -60,7 +61,8 @@
            (diva-panel:frame-mixin
             (tag-gui-unit:frame-mixin
              (diva:menu-option-frame-mixin
-              (diva-central-mixin super%))))))
+              (diva-menu-bar-mixin
+               (diva-central-mixin super%)))))))
         
         (define (diva-definitions-canvas-mixin super%)
           (diva-central-mixin super%))
