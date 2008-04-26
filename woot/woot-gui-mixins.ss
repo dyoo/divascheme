@@ -1,4 +1,4 @@
-(module woot-text-mixin mzscheme
+(module woot-gui-mixins mzscheme
   
   (require (lib "class.ss")
            (lib "plt-match.ss")
@@ -8,7 +8,8 @@
            "self-ip-address.ss"
            (only (lib "13.ss" "srfi") string-join))
   
-  (provide woot-text-mixin)
+  (provide woot-text-mixin
+           woot-frame-mixin)
   
   ;; A woot-id is a (list a-number host-string)
   ;; where a-number is a number, and host-string is a string containing an ip address.
@@ -91,6 +92,54 @@
                     (loop))))
       
       (initialize)))
+  
+  
+  ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+  
+  
+  ;; woot-frame-mixin: add the menu options for hosting and joining sessions.
+  (define (woot-frame-mixin super%)
+    (class super%
+      (inherit get-diva-menu)
+      
+      (define host-menu-item #f)
+      (define join-menu-item #f)
+      
+      (define (initialize)
+        (super-new)
+        (set! host-menu-item
+              (new menu-item%
+                   [label "Host shared session..."]
+                   [parent (get-diva-menu)]
+                   [callback (lambda (menu-item control-event)
+                               (host-session))]))
+        (set! join-menu-item
+              (new menu-item%
+                   [label "Join shared session..."]
+                   [parent (get-diva-menu)]
+                   [callback (lambda (menu-item control-event)
+                               (join-session))])))
+      
+      
+      ;; host-session: -> void
+      ;; Brings up a dialog window to host a session.  Shows our ip, and
+      ;; some message on how to get others to join.
+      (define (host-session)
+        (void))
+      
+      
+      ;; join-session: -> void
+      ;; Brings up a dialog box asking which system to join to.
+      (define (join-session)
+        (void))
+      
+      
+      (initialize)))
+  
+  
+  
+  ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+  
   
   
   

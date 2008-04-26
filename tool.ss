@@ -14,7 +14,7 @@
            "gui/tag-gui.ss"
            "gui/diva-menu-bar.ss"
            "dsyntax/dstx-text-mixin.ss"
-           "woot/woot-text-mixin.ss"
+           "woot/woot-gui-mixins.ss"
            (lib "unit.ss")
            (lib "tool.ss" "drscheme"))
   
@@ -56,11 +56,12 @@
       (let ([diva-central-mixin (make-diva-central-mixin shared-diva-central)])
         
         (define (diva-frame-mixin super%)
-          (diva-link:frame-mixin
-           (diva-panel:frame-mixin
-            (tag-gui-unit:frame-mixin
-             (diva-menu-bar-mixin
-              (diva-central-mixin super%))))))
+          (woot-frame-mixin
+           (diva-link:frame-mixin
+            (diva-panel:frame-mixin
+             (tag-gui-unit:frame-mixin
+              (diva-menu-bar-mixin
+               (diva-central-mixin super%)))))))
         
         (define (diva-definitions-canvas-mixin super%)
           (diva-central-mixin super%))
