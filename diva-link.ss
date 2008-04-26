@@ -231,7 +231,6 @@
       ;; diva-message: string -> void
       ;; Displays a message to the top-level frame window.
       (define/public (diva-message msg)
-        (printf "diva-message: ~a~n" msg)
         (when (get-top-level-window)
           (send (get-top-level-window) diva-message msg)))
       
