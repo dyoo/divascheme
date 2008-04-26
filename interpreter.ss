@@ -508,28 +508,28 @@
                      (World-cursor-position world)]
                     [(pos)
                      (eval-Loc world (make-make-metric world metric-forward)
-                               loc-base loc/false)]
-                    [(new-world)
-                     (action:insert-rope
-                      world
-                      a-rope
-                      (and loc/false pos)
-                      template-number magic-number template/magic-wrap?)]
-                    [(Magic-f)
-                     (make-binary-callback 0 (add1 magic-number) 'Magic)]
-                    [(Pass-f)
-                     (make-binary-callback (add1 template-number) magic-number 'Pass)]
-                    [(Next-f Previous-f)
-                     (get-Next-and-Previous-f)])
-        (copy-struct World new-world
-                     [World-target-column #f]
-                     [World-Next-f Next-f]
-                     [World-Previous-f Previous-f]
-                     [World-cancel world]
-                     [World-undo world]
-                     [World-redo false]
-                     [World-Magic-f Magic-f]
-                     [World-Pass-f Pass-f]))))
+                               loc-base loc/false)])
+        (let-values ([(Magic-f)
+                      (make-binary-callback 0 (add1 magic-number) 'Magic)]
+                     [(Pass-f)
+                      (make-binary-callback (add1 template-number) magic-number 'Pass)]
+                     [(Next-f Previous-f)
+                      (get-Next-and-Previous-f)]
+                     [(new-world)
+                      (action:insert-rope
+                       world
+                       a-rope
+                       (and loc/false pos)
+                       template-number magic-number template/magic-wrap?)])
+          (copy-struct World new-world
+                       [World-target-column #f]
+                       [World-Next-f Next-f]
+                       [World-Previous-f Previous-f]
+                       [World-cancel world]
+                       [World-undo world]
+                       [World-redo false]
+                       [World-Magic-f Magic-f]
+                       [World-Pass-f Pass-f])))))
   
   
   
