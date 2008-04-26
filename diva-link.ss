@@ -16,7 +16,7 @@
            "insert-keymap.ss"
            "structures.ss"
            "utilities.ss"
-           "diva-central.ss" 
+           "diva-central.ss"
            "rope.ss"
            "dsyntax/dsyntax.ss"
            "gui/clipboard.ss"
@@ -50,7 +50,7 @@
       
       
       (define (initialize)
-        (super-new) 
+        (super-new)
         (send (get-diva-central) add-listener handle-diva-central-evt)
         (queue-callback
          (lambda ()
@@ -144,27 +144,27 @@
                set-position)
       
       ;; STATE STUFFS
-      (define -in-unstructured-editing? #f) 
+      (define -in-unstructured-editing? #f)
       (define current-mred #f)
-      (define current-world #f) 
+      (define current-world #f)
       
-      (define last-action-load? false) 
+      (define last-action-load? false)
       
       ;; Whenever new events happen, we'll send an operation message to the central world
       ;; mailbox for processing.
-      (define command-mailbox (make-async-channel)) 
-      (define command-keymap #f) 
-      (define f4-keymap #f) 
+      (define command-mailbox (make-async-channel))
+      (define command-keymap #f)
+      (define f4-keymap #f)
       
       ;; initialize: -> void
       ;; Constructor.  Called after everything else is defined.
-      (define (initialize) 
+      (define (initialize)
         (super-new)
         (start-command-mailbox-thread)
         (set! current-mred (make-object MrEd-state% this))
         (set! current-world (send current-mred pull-world (make-fresh-world)))
         (set! command-keymap (new-command-keymap))
-        (set! f4-keymap (new-f4-keymap)) 
+        (set! f4-keymap (new-f4-keymap))
         (install-f4-keymap))
       
       
@@ -176,7 +176,7 @@
       ;; mark-dstx-as-unstructured: dstx -> dstx
       ;; Returns true if we know that the dstx comes from an unstructured editing
       ;; environment (like insert mode.)
-      (define (mark-dstx-as-unstructured a-dstx) 
+      (define (mark-dstx-as-unstructured a-dstx)
         (dstx-deepmap (lambda (a-dstx)
                         (dstx-property-set a-dstx 'from-unstructured-editing #t))
                       a-dstx))
@@ -223,7 +223,7 @@
       
       ;; diva-label: string -> void
       ;; Displays a label.
-      (define (diva-label label) 
+      (define (diva-label label)
         (when (get-top-level-window)
           (send (get-top-level-window) diva-label label)))
       
@@ -231,6 +231,7 @@
       ;; diva-message: string -> void
       ;; Displays a message to the top-level frame window.
       (define/public (diva-message msg)
+        (printf "diva-message: ~a~n" msg)
         (when (get-top-level-window)
           (send (get-top-level-window) diva-message msg)))
       
@@ -239,7 +240,7 @@
       ;; Report an exception message.
       (define (error-exn exn)
         (let ([err-msg (format "DivaScheme Error: ~a" exn)])
-          (print-error-trace (current-error-port) exn)
+          #;(print-error-trace (current-error-port) exn)
           (diva-message err-msg)))
       
       
@@ -311,7 +312,7 @@
         (async-channel-put command-mailbox an-ast))
       
       
-      (define (start-command-mailbox-thread) 
+      (define (start-command-mailbox-thread)
         ;; A thread will run to process new operations
         (thread (lambda ()
                   (let loop ()
@@ -353,11 +354,9 @@
           (error 'push-into-mred))
         (with-handlers ([voice-exn?
                          (lambda (exn)
-                           (printf "~a~n" exn)
                            (error-message (voice-exn-message exn)))]
                         [(lambda args true)
                          (lambda (exn)
-                           (printf "~a~n" exn)
                            (error-exn exn))])
           (dynamic-wind
            (lambda ()
@@ -398,20 +397,17 @@
         (dynamic-wind
          (lambda ()
            (begin-edit-sequence))
-         (lambda () 
+         (lambda ()
            (with-handlers ([voice-exn?
                             (lambda (exn)
-                              (printf "exception: ~s~n" exn)
                               (error-message (voice-exn-message exn))
                               default-world-on-exn)]
                            [voice-exn/world?
                             (lambda (exn)
-                              (printf "exception: ~s~n" exn)
                               (error-message (voice-exn/world-message exn))
                               (voice-exn/world-world exn))]
                            [(lambda args true)
                             (lambda (exn)
-                              (printf "exception: ~s~n" exn)
                               (error-exn exn)
                               default-world-on-exn)])
              (thunk)))
@@ -472,7 +468,7 @@
       
       ;; Insertion Mode
       (define to-insert-mode
-        (case-lambda 
+        (case-lambda
           [(edit? on-entry on-exit)
            (to-insert-mode edit? on-entry on-exit #f)]
           [(edit? on-entry on-exit cmd)

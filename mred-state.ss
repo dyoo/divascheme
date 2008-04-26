@@ -55,11 +55,11 @@
       
       (init window-text-init)
       (define window-text window-text-init)
-      (define clear-extension #f) 
+      (define clear-extension #f)
       
       
       
-      (define (initialize) 
+      (define (initialize)
         (super-new))
       
       
@@ -148,8 +148,8 @@
       ;; changed, we reuse the parse tree of the original world.
       (define/public (pull-world original-world)
         (update-world-path
-         (update-world-mark 
-          (update-world-select 
+         (update-world-mark
+          (update-world-select
            ;; update-world-text should be first so that if the content of the buffer
            ;; is not parsable, nothing is changed.
            (update-world-text original-world)))))
@@ -171,7 +171,7 @@
            original-world]
           [else
            (copy-struct World original-world
-                        [World-rope (get-rope)] 
+                        [World-rope (get-rope)]
                         [World-syntax-list/lazy #f])]))
       
       
@@ -203,7 +203,7 @@
       ;; set-mark/puck: World -> void
       ;; Set the mark, using the extension puck if we have one, and otherwise
       ;; with the regular mark-position stuff.
-      (define (set-mark/puck world) 
+      (define (set-mark/puck world)
         (cond [(World-extension world)
                (let ([e (World-extension world)])
                  (set-mark (extension-puck e)
@@ -236,7 +236,10 @@
            (send window-text set-rope (World-rope world))))
         (set-selection (World-cursor-position world) (World-selection-length world))
         (set-mark/puck world)
-        (send window-text diva-message (World-success-message world)))
+        (unless (string=? (World-success-message world) "")
+          ;; This might overwrite previous diva-messages.  We need some way of
+          ;; queuing multiple messages up.
+          (send window-text diva-message (World-success-message world))))
       
       
       (define (with-edit-sequence f)
