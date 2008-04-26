@@ -3,9 +3,9 @@
            (lib "class.ss")
            (lib "list.ss")
            (lib "list.ss")
-           "stags-lib.ss"
-           "tag-reader.ss"
-           "tag-state.ss")
+           "../stags-lib.ss"
+           "../tag-reader.ss"
+           "../tag-state.ss")
   
   
   (provide tag-gui-unit:frame-mixin
@@ -52,23 +52,20 @@
   
   
   ;; Adds the support necessary to load new tag files.
-  ;; This adds a new menu to the File menu called "Load Navigation Tags".
-  
+  ;; This adds a new menu-item: "Load Navigation Tags".
   (define (tag-gui-unit:frame-mixin super%)
     (class super%
-      (override file-menu:between-print-and-close)
-      (super-new)
+      (inherit get-diva-menu)
+      (define load-menu-item #f)
       
-      ;; Add a new menu option "Load Diva Tags" that goes
-      ;; right after the print menu.
-      (define (file-menu:between-print-and-close menu)
-        (super file-menu:between-print-and-close menu)
-        (new menu-item% 
-             [label "Load Navigation Tags..."]
-             [parent menu]
-             [callback (lambda (menu-item control-event)
-                         (ask-and-load-tags this))])
-        (make-object separator-menu-item% menu))
+      (define (initialize)
+        (super-new)
+        (set! load-menu-item
+              (new menu-item%
+                   [label "Load Navigation Tags..."]
+                   [parent (get-diva-menu)]
+                   [callback (lambda (menu-item control-event)
+                               (ask-and-load-tags this))])))
       
       
       (define (ask-and-load-tags parent)
@@ -81,7 +78,10 @@
                          empty
                          '(("STAGS" "STAGS")))])
           (when filename
-            (load-tag-library filename)))))))
+            (load-tag-library filename))))
+      
+      
+      (initialize))))
 
 
 

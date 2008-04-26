@@ -7,15 +7,14 @@
            "diva-panel.ss"
            "diva-link.ss"
            "diva-central.ss"
-           "diva-file-menu.ss"
            "gui/text-rope-mixin.ss"
            (prefix language: "language.ss")
            (prefix preferences: "diva-preferences.ss")
            (prefix marker: "marker.ss")
-           "tag-gui.ss"
+           "gui/tag-gui.ss"
+           "gui/diva-menu-bar.ss"
            "dsyntax/dstx-text-mixin.ss"
            "woot/woot-text-mixin.ss"
-           "gui/diva-menu-bar.ss"
            (lib "unit.ss")
            (lib "tool.ss" "drscheme"))
   
@@ -60,9 +59,8 @@
           (diva-link:frame-mixin
            (diva-panel:frame-mixin
             (tag-gui-unit:frame-mixin
-             (diva:menu-option-frame-mixin
-              (diva-menu-bar-mixin
-               (diva-central-mixin super%)))))))
+             (diva-menu-bar-mixin
+              (diva-central-mixin super%))))))
         
         (define (diva-definitions-canvas-mixin super%)
           (diva-central-mixin super%))
