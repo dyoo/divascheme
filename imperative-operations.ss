@@ -108,11 +108,16 @@
     (let* ([new-pos (max 0 (sub1 (world-marker-position a-world mark)))]
            [new-end-pos (min (string-length (send a-text get-text))
                              (+ new-pos len))])
-      (preserve-selection-and-mark
-       (world-clear-marker (update-world-fn a-world) mark)
-       a-text
-       (lambda ()
-         (send a-text tabify-selection new-pos new-end-pos)))))
+      (let ([indented-world
+             (preserve-selection-and-mark
+              (world-clear-marker (update-world-fn a-world) mark)
+              a-text
+              (lambda ()
+                (send a-text tabify-selection new-pos new-end-pos)))])
+        
+        (let ([final-world (update-world-fn indented-world)])
+          (update-mred-fn final-world)
+          final-world))))
   
   
   ;; indent-range: world text (World -> World) (World -> void) -> World
@@ -165,22 +170,28 @@
   ;; transpose: world text% (World -> World) (World -> void) -> World
   (define (transpose original-world world window update-world-fn update-mred-fn)
     (send window transpose-sexp (pos->index (World-cursor-position world)))
-    (copy-struct World (update-world-fn world)
-                 [World-cancel original-world]
-                 [World-undo original-world]))
+    (let ([new-world (copy-struct World (update-world-fn world)
+                                  [World-cancel original-world]
+                                  [World-undo original-world])])
+      (update-mred-fn new-world)
+      new-world))
   
   
   ;; delete-range: number number world text% (World->World) (World -> void) -> World
   (define (delete-range start-pos end-pos world a-text update-world-fn update-mred-fn)
     (send a-text delete start-pos end-pos #f)
-    world)
+    (let ([new-world (update-world-fn world)])
+      (update-mred-fn new-world)
+      new-world))
   
   
   ;; insert-rope: rope number World text% (World -> World) (World -> void) -> World
   (define (do-insert-rope a-rope a-pos world a-text update-world-fn update-mred-fn)
     (send a-text set-position a-pos 'same #f #f 'local)
     (insert-rope-in-text a-text a-rope)
-    world)
+    (let ([new-world (update-world-fn world)])
+      (update-mred-fn new-world)
+      new-world))
   
   
   
@@ -253,9 +264,9 @@
   
   ;; select-range: number number world text% (World -> World) (World -> void) -> World
   (define (select-range start-pos end-pos world a-text update-world-fn update-mred-fn)
-    (printf "text is ~s~n" (send a-text get-text))
-    (printf "select-range: setting selection [~a, ~a] ~s~n" start-pos end-pos
-            (send a-text get-text start-pos end-pos))
+    #;(printf "text is ~s~n" (send a-text get-text))
+    #;(printf "select-range: setting selection [~a, ~a] ~s~n" start-pos end-pos
+              (send a-text get-text start-pos end-pos))
     (send a-text diva:set-selection-position start-pos end-pos)
     world)
   

@@ -359,8 +359,6 @@
            (lambda ()
              (begin-edit-sequence))
            (lambda ()
-             
-             (printf "Imperative operations are: ~s~n" (reverse (World-imperative-operations world)))
              ;; We apply the imperative operations, which do the operations
              ;; necessary to get the editor's text up to sync with the world.
              (let
@@ -378,7 +376,12 @@
                           (lambda (w)
                             (send current-mred push-world w))))))
                     (copy-struct World world [World-imperative-operations empty])
-                    (reverse (World-imperative-operations world)))])
+                    ;; Kludge: clean up everything at the very end.
+                    (reverse
+                     (cons (make-imperative-op:cleanup)
+                           (World-imperative-operations world)))
+                    #;(reverse
+                       (World-imperative-operations world)))])
                (set-current-world! (copy-struct World new-world
                                                 [World-rope (get-rope)]
                                                 [World-imperative-operations empty]))))
