@@ -374,18 +374,22 @@
                           (lambda (w)
                             (send current-mred push-world w))))))
                     (copy-struct World world [World-imperative-operations empty])
-                    ;; Kludge: clean up everything at the very end.
-                    (reverse
-                     (cons (make-imperative-op:cleanup)
-                           (World-imperative-operations world)))
-                    #;(reverse
-                       (World-imperative-operations world)))])
+                    (get-operations/add-necessary-cleanup world))])
                (set-current-world! (copy-struct World new-world
                                                 [World-rope (get-rope)]
                                                 [World-imperative-operations empty]))))
            (lambda ()
              (end-edit-sequence)))))
       
+      (define (get-operations/add-necessary-cleanup a-world)
+        ;; Kludge: clean up everything at the very end.
+        (cond
+          [(ormap imperative-op-changes-text? (World-imperative-operations a-world))
+           (reverse
+            (cons (make-imperative-op:cleanup)
+                  (World-imperative-operations a-world)))]
+          [else
+           (reverse (World-imperative-operations a-world))]))
       
       
       ;; with-divascheme-handlers: world (-> world) -> world

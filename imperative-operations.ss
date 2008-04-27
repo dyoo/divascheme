@@ -52,6 +52,40 @@
        (select-range start-pos end-pos a-world a-text update-world-fn update-mred-fn)]))
   
   
+  ;; imperative-op-changes-text?: imperative-op -> boolean
+  ;; Returns true if the operations has the potential for changing the text.
+  (define (imperative-op-changes-text? an-op)
+    (match an-op
+      [(struct imperative-op:indent-range (mark len))
+       #t]
+      
+      [(struct imperative-op:flash-last-sexp ())
+       #f]
+      
+      [(struct imperative-op:move-cursor-position (direction))
+       #f]
+      
+      [(struct imperative-op:transpose (original-world))
+       #t]
+      
+      [(struct imperative-op:cleanup ())
+       #t]
+      
+      [(struct imperative-op:cleanup-range (start-mark end-mark))
+       #t]
+      
+      [(struct imperative-op:delete-range (start-pos end-pos))
+       #t]
+      
+      [(struct imperative-op:insert-rope (rope pos))
+       #t]
+      
+      [(struct imperative-op:select-range (start-pos end-pos))
+       #f]))
+  
+  
+  
+  
   ;; preserve-selection-and-mark: World diva-text% -> World
   ;; Given some function f that does imperative stuff with the text,
   ;; we try to preserve the position of the mark and the selection.
@@ -272,4 +306,5 @@
                          (is-a?/c text%)
                          (World? . -> . World?) ;; pull-from-mred
                          (World? . -> . any) ;; push-into-mred
-                         . -> . World?)]))
+                         . -> . World?)]
+   [imperative-op-changes-text? (imperative-op? . -> . boolean?)]))
