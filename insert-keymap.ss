@@ -398,12 +398,13 @@
     (define (eval-cmd symbol)
       (consume-cmd world-at-beginning-of-insert symbol)
       
-      (if (or (eq? symbol 'Open)
-              (eq? symbol 'Open-Square))
-          (begin
-            (set! pending-open (make-Pending world-at-beginning-of-insert symbol))
-            (begin-symbol-insertion))
-          (begin-symbol-insertion/nothing-pending)))
+      (begin-symbol-insertion/nothing-pending)
+      #;(if (or (eq? symbol 'Open)
+                (eq? symbol 'Open-Square))
+            (begin
+              (set! pending-open (make-Pending world-at-beginning-of-insert symbol))
+              (begin-symbol-insertion))
+            (begin-symbol-insertion/nothing-pending)))
     
     (define (eval-text&cmd symbol)
       ;; FIXME: ugly kludge ahead.  The original architecture of this makes
