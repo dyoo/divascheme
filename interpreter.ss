@@ -65,8 +65,7 @@
   (define (eval-Protocol-Syntax-Tree world ast)
     (print-mem*
      'eval-Protocol-Syntax-Tree
-     (let* ([world (record-again-in-world world ast)]
-            [world (trim-undos world max-undo-count)])
+     (let* ([world (record-again-in-world world ast)])
        (match ast
          [(struct Verb ((struct InsertRope-Cmd (rope)) loc #f))
           (eval-InsertRope world rope loc 0 0 false 'Normal)]
@@ -231,35 +230,7 @@
                  [World-Next-f (default-Next-f)]
                  [World-Previous-f (default-Previous-f)]
                  [World-Magic-f (default-Magic-f)]
-                 [World-Pass-f (default-Pass-f)]
-                 [World-redo false]))
-  
-  (define (trim-undos world undo-count)
-    (print-mem*
-     'trim-undos
-     (define dealt-with (make-hash-table))
-     (let loop ([world world]
-                [undo-count undo-count])
-       (and
-        world
-        (hash-table-get
-         dealt-with
-         world
-         (lambda ()
-           (let ([result (cond
-                           [(not (World-undo world)) world]
-                           [(= undo-count 0)
-                            (copy-struct World world
-                                         [World-cancel false]
-                                         [World-undo false])]
-                           [else
-                            (let ([sub-undo (loop (World-undo world) (sub1 undo-count))]
-                                  [sub-cancel (loop (World-cancel world) (sub1 undo-count))])
-                              (copy-struct World world
-                                           [World-undo sub-undo]
-                                           [World-cancel sub-cancel]))])])
-             (hash-table-put! dealt-with world result)
-             result)))))))
+                 [World-Pass-f (default-Pass-f)]))
   
   
   (define (eval-No-op world)
@@ -459,8 +430,6 @@
                    [World-Next-f Next-f]
                    [World-Previous-f Previous-f]
                    [World-cancel world]
-                   [World-undo world]
-                   [World-redo false]
                    [World-Magic-f Magic-f]
                    [World-Pass-f Pass-f])))
   
@@ -526,8 +495,6 @@
                        [World-Next-f Next-f]
                        [World-Previous-f Previous-f]
                        [World-cancel world]
-                       [World-undo world]
-                       [World-redo false]
                        [World-Magic-f Magic-f]
                        [World-Pass-f Pass-f])))))
   
@@ -541,8 +508,7 @@
           (copy-struct World new-w
                        [World-cancel world])
           (copy-struct World new-w
-                       [World-cancel world]
-                       [World-undo world]))))
+                       [World-cancel world]))))
   
   
   ;; eval-Insert : World Loc -> World
@@ -651,22 +617,10 @@
   ;; eval-Cancel : World -> World
   (define (eval-Cancel world)
     (if (World-cancel world)
-        (copy-struct World (World-cancel world)
-                     [World-redo world])
+        (copy-struct World (World-cancel world))
         (raise (make-voice-exn "Cancel is not supported"))))
   
-  ;; eval-Undo : World -> World
-  #;(define (eval-Undo world)
-      (if (World-undo world)
-          (copy-struct World (World-undo world)
-                       [World-redo world])
-          (raise (make-voice-exn "Nothing to undo"))))
   
-  ;; eval-Redo : World -> World
-  #;(define (eval-Redo world)
-      (if (World-redo world)
-          (World-redo world)
-          (raise (make-voice-exn "Nothing to redo"))))
   
   ;; eval-Magic : World boolean -> World
   (define (eval-Magic world magic-wrap?)
@@ -686,8 +640,7 @@
   (define (eval-Magic-Bash world what)
     (let ([symbol (eval-What/bash what)])
       (copy-struct World (world-clear (action:magic-bash world symbol))
-                   [World-cancel world]
-                   [World-undo world])))
+                   [World-cancel world])))
   
   (define (eval-Non-blank-out world pos)
     (let ([stx/false (find-pos/end pos (World-syntax-list world))])
@@ -820,8 +773,7 @@
   ;; eval-Delete : World -> World
   (define (eval-Delete world)
     (copy-struct World (world-clear (action:delete world))
-                 [World-cancel world]
-                 [World-undo world]))
+                 [World-cancel world]))
   
   ;; eval-Dedouble-Ellipsis : World -> World
   (define (eval-Dedouble-Ellipsis world)
@@ -831,15 +783,13 @@
   ;; eval-Bring : World -> World
   (define (eval-Bring world)
     (copy-struct World (world-clear (action:bring world))
-                 [World-cancel world]
-                 [World-undo world]))
+                 [World-cancel world]))
   
   ;; TODO
   ;; eval-Push : World -> World
   (define (eval-Push world)
     (copy-struct World (world-clear (action:push world))
-                 [World-cancel world]
-                 [World-undo world]))
+                 [World-cancel world]))
   
   ;; eval-Exchange : World -> World
   (define (eval-Exchange world)
@@ -877,14 +827,12 @@
   ;; eval-Cut : World -> World
   (define (eval-Cut world)
     (copy-struct World (world-clear (action:cut world))
-                 [World-cancel world]
-                 [World-undo world]))
+                 [World-cancel world]))
   
   ;; eval-Paste : World -> World
   (define (eval-Paste world)
     (copy-struct World (world-clear (action:paste world))
-                 [World-cancel world]
-                 [World-undo world]))
+                 [World-cancel world]))
   
   ;; TODO
   ;; eval-Definition : world -> world
@@ -900,14 +848,12 @@
   ;; eval-Enter : World -> World
   (define (eval-Enter world)
     (copy-struct World (world-clear (action:enter/selection world))
-                 [World-cancel world]
-                 [World-undo world]))
+                 [World-cancel world]))
   
   ;; eval-Join : World -> World
   (define (eval-Join world)
     (copy-struct World (world-clear (action:join/selection world))
-                 [World-cancel world]
-                 [World-undo world]))
+                 [World-cancel world]))
   
   ;; eval-Indent : World -> World
   (define (eval-Indent world)
@@ -985,8 +931,7 @@
             (copy-struct World new-world
                          [World-Next-f Next-f]
                          [World-Previous-f Previous-f]
-                         [World-cancel world]
-                         [World-undo world]))))
+                         [World-cancel world]))))
     
     
     ;; sort-for-NP: (listof tag) -> (circular-listof tag)

@@ -337,11 +337,9 @@
                 new-world]
                [last-action-load?
                 (set! last-action-load? false)
-                (copy-struct World new-world
-                             [World-undo #f])]
+                (copy-struct World new-world)]
                [else
-                (copy-struct World new-world
-                             [World-undo (get-current-world)])])))))
+                (copy-struct World new-world)])))))
       
       
       ;; push-into-mred: world -> void

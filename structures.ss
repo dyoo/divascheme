@@ -38,8 +38,6 @@
   ;; TODO: In the states Next-f and Previous-f, the given World is not useful
   ;; (because we rewind and take another path). So, should we still take a World as parameter?
   
-  ;; undo : (union World false) : the previous World ; set only when an buffer editing is done
-  ;; redo : (union World false) : the next World ; set only when an undo is performed
   
   ;; Magic-f : World -> World : print the next completion
   ;; Pass-f : World -> World : print the next template
@@ -57,8 +55,6 @@
                         Next-f
                         Previous-f
                         cancel
-                        undo
-                        redo
                         Magic-f
                         Pass-f
                         again
@@ -86,25 +82,23 @@
   ;; make-fresh-world: -> world
   ;; Creates a fresh new world.
   (define (make-fresh-world)
-    (make-World (string->rope "")
-                empty
-                (index->syntax-pos 0)
-                #f
-                0
-                (index->syntax-pos 0)
-                0
-                (default-Next-f)
-                (default-Previous-f)
-                false
-                false
-                false
-                (default-Magic-f)
-                (default-Pass-f)
-                false
-                ""
-                #f
-                empty
-                empty
+    (make-World (string->rope "") ;;rope
+                empty ;;syntax-list/lazy
+                (index->syntax-pos 0) ;; cursor-position
+                #f ; target-column
+                0 ; selection-length
+                (index->syntax-pos 0) ;mark-position
+                0 ;mark-length
+                (default-Next-f) ; next-f
+                (default-Previous-f) ;previous-f
+                #f ;cancel
+                (default-Magic-f) ; Magic-f
+                (default-Pass-f) ;Pass-f
+                #f ;again
+                "" ;success-message
+                #f ;extension
+                empty ;imperative-operations
+                empty ;markers
                 (current-directory)))
   
   
@@ -551,8 +545,6 @@
                   [Next-f (World? . -> . World?)]
                   [Previous-f (World? . -> . World?)]
                   [cancel (or/c false/c World?)]
-                  [undo (or/c false/c World?)]
-                  [redo (or/c false/c World?)]
                   [Magic-f (World? boolean? . -> . World?)]
                   [Pass-f (World? boolean? . -> . World?)]
                   [again (or/c false/c Protocol-Syntax-Tree?)]

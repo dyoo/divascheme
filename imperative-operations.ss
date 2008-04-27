@@ -171,8 +171,7 @@
   (define (transpose original-world world window update-world-fn update-mred-fn)
     (send window transpose-sexp (pos->index (World-cursor-position world)))
     (let ([new-world (copy-struct World (update-world-fn world)
-                                  [World-cancel original-world]
-                                  [World-undo original-world])])
+                                  [World-cancel original-world])])
       (update-mred-fn new-world)
       new-world))
   
@@ -198,7 +197,6 @@
   ;; cleanup: world text% (World -> World) (World -> void) -> World
   ;; Cleanup everything we can see.
   (define (cleanup world a-text update-world-fn update-mred-fn)
-    (printf "Cleanup~n")
     (cleanup/between 0 (send a-text last-position) world a-text update-world-fn update-mred-fn))
   
   
@@ -229,9 +227,6 @@
                                 (cursor-endpos (focus-out (focus-container cursor end-pos)))]
                                [else
                                 (cursor-endpos (focus-container cursor end-pos))])])
-            (printf "Cleaning up ~s -> ~s~n"
-                    (send a-text get-text start-pos end-pos)
-                    (cleanup-whitespace (string->rope (send a-text get-text start-pos end-pos))))
             (cleanup/between start-pos end-pos world-without-marks a-text update-world-fn update-mred-fn)))))
   
   
@@ -264,9 +259,6 @@
   
   ;; select-range: number number world text% (World -> World) (World -> void) -> World
   (define (select-range start-pos end-pos world a-text update-world-fn update-mred-fn)
-    #;(printf "text is ~s~n" (send a-text get-text))
-    #;(printf "select-range: setting selection [~a, ~a] ~s~n" start-pos end-pos
-              (send a-text get-text start-pos end-pos))
     (send a-text diva:set-selection-position start-pos end-pos)
     world)
   

@@ -43,9 +43,6 @@
   
   ;; select/pos+len : World pos non-negative-integer -> World
   (define (select/pos+len world pos len)
-    (printf "Queuing selection of ~s~n" (rope->string (subrope (World-rope world)
-                                                               (sub1 pos)
-                                                               (+ (sub1 pos) len))))
     (queue-imperative-operation
      (copy-struct World world
                   [World-cursor-position pos]
