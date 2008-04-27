@@ -71,20 +71,24 @@
         
         (define (command command)
           (lambda (any event)
-	    (interpreter (make-Verb (make-Command command) false false))))
+            (interpreter (make-Verb (make-Command command) false false))))
         
-        (define insert-before-ast 
+        (define (no-op)
+          (lambda (any event)
+            (void)))
+        
+        (define insert-before-ast
           (make-Verb (make-Command 'Insert) (make-Loc (make-Before) false) false))
-        (define insert-after-ast  
+        (define insert-after-ast
           (make-Verb (make-Command 'Insert) (make-Loc (make-After) false) false))
         
         
         (define (insert ast/false edit?)
           (lambda (any event)
             (when ast/false
-		  (interpreter ast/false))
+              (interpreter ast/false))
             (to-insert-mode edit?)))
-
+        
         (define (insert/cmd cmd edit?)
           (lambda (any event)
             (to-insert-mode/cmd edit? cmd)))
@@ -118,51 +122,53 @@
         (add-text-keymap-functions command-keymap)
         
         (send command-keymap add-function "diva:enter" (command 'Enter))
-        (send command-keymap add-function "diva:indent"    (command 'Indent))
+        (send command-keymap add-function "diva:indent" (command 'Indent))
         (send command-keymap add-function "diva:before-this" (insert insert-before-ast false))
         (send command-keymap add-function "diva:after-this" (insert insert-after-ast false))
         (send command-keymap add-function "diva:insert" (insert false false))
-        (send command-keymap add-function "diva:up"        (command 'Up))
-        (send command-keymap add-function "diva:down"        (command 'Down))
-        (send command-keymap add-function "diva:out"       (command 'Out))
-        (send command-keymap add-function "diva:backward"  (command 'Backward))
-        (send command-keymap add-function "diva:forward"   (command 'Forward))
-        (send command-keymap add-function "diva:next"      (command 'Next))
-        (send command-keymap add-function "diva:previous"  (command 'Previous))
+        (send command-keymap add-function "diva:up" (command 'Up))
+        (send command-keymap add-function "diva:down" (command 'Down))
+        (send command-keymap add-function "diva:out" (command 'Out))
+        (send command-keymap add-function "diva:backward" (command 'Backward))
+        (send command-keymap add-function "diva:forward" (command 'Forward))
+        (send command-keymap add-function "diva:next" (command 'Next))
+        (send command-keymap add-function "diva:previous" (command 'Previous))
         (send command-keymap add-function "diva:select" (argument 'Select "select"))
-        (send command-keymap add-function "diva:search-forward"  (argument 'Search-Forward  "search forward"))
+        (send command-keymap add-function "diva:search-forward" (argument 'Search-Forward "search forward"))
         (send command-keymap add-function "diva:search-backward" (argument 'Search-Backward "search backward"))
-        (send command-keymap add-function "diva:copy"      (command 'Copy))
-        (send command-keymap add-function "diva:cut"       (command 'Cut))
-        (send command-keymap add-function "diva:paste"     (command 'Paste))
-        (send command-keymap add-function "diva:undo"      (command 'Undo))
-        (send command-keymap add-function "diva:cancel"    (command 'Cancel))
-        (send command-keymap add-function "diva:redo"      (command 'Redo))
-        (send command-keymap add-function "diva:delete"    (command 'Delete))
-        (send command-keymap add-function "diva:push"       (command 'Push))
-        (send command-keymap add-function "diva:bring"     (command 'Bring))
-        (send command-keymap add-function "diva:exchange"  (command 'Exchange))
-        (send command-keymap add-function "diva:mark"      (command 'Mark))
-        (send command-keymap add-function "diva:holder"    (command 'Holder))
+        (send command-keymap add-function "diva:copy" (command 'Copy))
+        (send command-keymap add-function "diva:cut" (command 'Cut))
+        (send command-keymap add-function "diva:paste" (command 'Paste))
+        #;(send command-keymap add-function "diva:undo" (command 'Undo))
+        (send command-keymap add-function "diva:undo" (no-op))
+        (send command-keymap add-function "diva:cancel" (command 'Cancel))
+        #;(send command-keymap add-function "diva:redo" (command 'Redo))
+        (send command-keymap add-function "diva:redo" (no-op))
+        (send command-keymap add-function "diva:delete" (command 'Delete))
+        (send command-keymap add-function "diva:push" (command 'Push))
+        (send command-keymap add-function "diva:bring" (command 'Bring))
+        (send command-keymap add-function "diva:exchange" (command 'Exchange))
+        (send command-keymap add-function "diva:mark" (command 'Mark))
+        (send command-keymap add-function "diva:holder" (command 'Holder))
         (send command-keymap add-function "diva:transpose" (command 'Transpose))
         (send command-keymap add-function "diva:find-tag" (argument 'Tag "Find tag"))
-        (send command-keymap add-function "diva:magic"     (command 'Magic))
-        (send command-keymap add-function "diva:join"      (command 'Join))
-        (send command-keymap add-function "diva:unmark"    (command 'UnMark))
+        (send command-keymap add-function "diva:magic" (command 'Magic))
+        (send command-keymap add-function "diva:join" (command 'Join))
+        (send command-keymap add-function "diva:unmark" (command 'UnMark))
         
         (send command-keymap add-function "diva:open" (insert/cmd 'Open false))
         (send command-keymap add-function "diva:open-square/contextual" (insert-contextual-open/cmd 'Open-Square false))
         (send command-keymap add-function "diva:open-square" (insert/cmd 'Open-Square false))
         
-        (send command-keymap add-function "diva:close"     (command 'Close))
-        (send command-keymap add-function "diva:search-top" (argument 'Search-Top "search top" ))
+        (send command-keymap add-function "diva:close" (command 'Close))
+        (send command-keymap add-function "diva:search-top" (argument 'Search-Top "search top"))
         (send command-keymap add-function "diva:search-bottom" (argument 'Search-Bottom "search bottom"))
         (send command-keymap add-function "diva:definition" (argument 'Definition "definition"))
         (send command-keymap add-function "diva:usage" (argument 'Usage "usage"))
-        (send command-keymap add-function "diva:younger"     (command 'Younger))
-        (send command-keymap add-function "diva:older"      (command 'Older))
-        (send command-keymap add-function "diva:first"     (command 'First))
-        (send command-keymap add-function "diva:last"      (command 'Last))
+        (send command-keymap add-function "diva:younger" (command 'Younger))
+        (send command-keymap add-function "diva:older" (command 'Older))
+        (send command-keymap add-function "diva:first" (command 'First))
+        (send command-keymap add-function "diva:last" (command 'Last))
         (send command-keymap add-function "diva:extend-selection" (command 'Extend-Selection))
         (send command-keymap add-function "diva:stop-extend-selection" (command 'Stop-Extend-Selection))
         (send command-keymap add-function "diva:edit-symbol" (insert false true))
@@ -175,7 +181,7 @@
                "!" "@" "#" "$" "%" "^" "&" "*"
                "_" "-" "=" "+"
                "backspace" "delete" "|"
-               "`" "\"" "," "'" "<" ">" "/" "\\"  "?"
+               "`" "\"" "," "'" "<" ">" "/" "\\" "?"
                "insert" "colon"
                ,@(map (lambda (ch) (format "s:~a" ch))
                       (string->list "abcdefghijklmnopqrstuvwxyz"))
@@ -183,7 +189,7 @@
                       (string->list "abcdefghijklmnopqrstuvwxyz"))))
         
         
-        ;; When caps lock is on, it appears that something screwy happens with 
+        ;; When caps lock is on, it appears that something screwy happens with
         ;; key lookup.  I may want to refactor this out or ask on the PLT list
         ;; what the right thing to do here is.
         ;; The following tries to ignore caps lock.

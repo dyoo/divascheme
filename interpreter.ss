@@ -113,10 +113,10 @@
           (eval-Previous world)]
          [(struct Verb ((struct Command ('Cancel)) #f #f))
           (eval-Cancel world)]
-         [(struct Verb ((struct Command ('Undo)) #f #f))
-          (eval-Undo world)]
-         [(struct Verb ((struct Command ('Redo)) #f #f))
-          (eval-Redo world)]
+         #;[(struct Verb ((struct Command ('Undo)) #f #f))
+            (eval-Undo world)]
+         #;[(struct Verb ((struct Command ('Redo)) #f #f))
+            (eval-Redo world)]
          
          [(struct Verb ((struct Command ('Magic)) #f #f))
           (eval-Magic world false)]
@@ -656,17 +656,17 @@
         (raise (make-voice-exn "Cancel is not supported"))))
   
   ;; eval-Undo : World -> World
-  (define (eval-Undo world)
-    (if (World-undo world)
-        (copy-struct World (World-undo world)
-                     [World-redo world])
-        (raise (make-voice-exn "Nothing to undo"))))
+  #;(define (eval-Undo world)
+      (if (World-undo world)
+          (copy-struct World (World-undo world)
+                       [World-redo world])
+          (raise (make-voice-exn "Nothing to undo"))))
   
   ;; eval-Redo : World -> World
-  (define (eval-Redo world)
-    (if (World-redo world)
-        (World-redo world)
-        (raise (make-voice-exn "Nothing to redo"))))
+  #;(define (eval-Redo world)
+      (if (World-redo world)
+          (World-redo world)
+          (raise (make-voice-exn "Nothing to redo"))))
   
   ;; eval-Magic : World boolean -> World
   (define (eval-Magic world magic-wrap?)
