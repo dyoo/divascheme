@@ -359,6 +359,8 @@
            (lambda ()
              (begin-edit-sequence))
            (lambda ()
+             
+             (printf "Imperative operations are: ~s~n" (reverse (World-imperative-operations world)))
              ;; We apply the imperative operations, which do the operations
              ;; necessary to get the editor's text up to sync with the world.
              (let

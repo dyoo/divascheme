@@ -187,6 +187,7 @@
   ;; cleanup: world text% (World -> World) (World -> void) -> World
   ;; Cleanup everything we can see.
   (define (cleanup world a-text update-world-fn update-mred-fn)
+    (printf "Cleanup~n")
     (cleanup/between 0 (send a-text last-position) world a-text update-world-fn update-mred-fn))
   
   
@@ -252,39 +253,12 @@
   
   ;; select-range: number number world text% (World -> World) (World -> void) -> World
   (define (select-range start-pos end-pos world a-text update-world-fn update-mred-fn)
+    (printf "text is ~s~n" (send a-text get-text))
+    (printf "select-range: setting selection [~a, ~a] ~s~n" start-pos end-pos
+            (send a-text get-text start-pos end-pos))
     (send a-text diva:set-selection-position start-pos end-pos)
     world)
   
-  
-  ;; fixme: eliminate copy-and-paste from actions.ss!
-  
-  ;; mark/pos+len : World pos non-negative-integer -> World
-  (define (mark/pos+len world pos len)
-    (mark/pos (mark/len world len) pos))
-  
-  ;; mark/len : World non-negative-integer -> World
-  (define (mark/len world len)
-    (copy-struct World world
-                 [World-mark-length len]))
-  
-  ;; mark/pos : World pos -> World
-  (define (mark/pos world pos)
-    (copy-struct World world
-                 [World-mark-position pos]))
-  
-  ;; select/pos+len : World pos non-negative-integer -> World
-  (define (select/pos+len world pos len)
-    (select/pos (select/len world len) pos))
-  
-  ;; select/pos : World pos -> World
-  (define (select/pos world pos)
-    (copy-struct World world
-                 [World-cursor-position pos]))
-  
-  ;; select/len : World non-negative-integer -> World
-  (define (select/len world len)
-    (copy-struct World world
-                 [World-selection-length len]))
   
   
   

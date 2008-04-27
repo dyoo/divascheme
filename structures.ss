@@ -174,35 +174,35 @@
   
   ;; Imperative operations are applied to bring the old
   ;; world's state to the new world's state.
-  (define-struct imperative-op ())
+  (define-struct imperative-op () #f)
   
   ;; op:indent-range: indent the region starting from the mark.
-  (define-struct (imperative-op:indent-range imperative-op) (mark len))
+  (define-struct (imperative-op:indent-range imperative-op) (mark len) #f)
   
   ;; imperative-op:flash-last-sexp: flash the preceding s-exp.
   ;; Fixme: this should be using a mark!
-  (define-struct (imperative-op:flash-last-sexp imperative-op) ())
+  (define-struct (imperative-op:flash-last-sexp imperative-op) () #f)
   
   ;; imperative-op:move-cursor-position: moves the cursor in some direction.
-  (define-struct (imperative-op:move-cursor-position imperative-op) (direction))
+  (define-struct (imperative-op:move-cursor-position imperative-op) (direction) #f)
   
   ;; imperative-op:transpose: transposes the s-expression at world cursor position.
-  (define-struct (imperative-op:transpose imperative-op) (original-world))
+  (define-struct (imperative-op:transpose imperative-op) (original-world) #f)
   
   ;; imperative-op:cleanup: cleans up the whitespace of the whole buffer.
-  (define-struct (imperative-op:cleanup imperative-op) ())
+  (define-struct (imperative-op:cleanup imperative-op) () #f)
   
   ;; imperative-op:cleanup: cleans up the whitespace between the two marks.
-  (define-struct (imperative-op:cleanup-range imperative-op) (start-mark end-mark))
+  (define-struct (imperative-op:cleanup-range imperative-op) (start-mark end-mark) #f)
   
   ;; imperative-op:delete-range: delete the range of text.
-  (define-struct (imperative-op:delete-range imperative-op) (start-pos end-pos))
+  (define-struct (imperative-op:delete-range imperative-op) (start-pos end-pos) #f)
   
   ;; imperative-op:insert-rope: insert the rope at the given position.
-  (define-struct (imperative-op:insert-rope imperative-op) (rope pos))
+  (define-struct (imperative-op:insert-rope imperative-op) (rope pos) #f)
   
   ;; imperative-op:select-range: selects the range given.
-  (define-struct (imperative-op:select-range imperative-op) (start-pos end-pos))
+  (define-struct (imperative-op:select-range imperative-op) (start-pos end-pos) #f)
   
   
   

@@ -43,7 +43,14 @@
   
   ;; select/pos+len : World pos non-negative-integer -> World
   (define (select/pos+len world pos len)
-    (select/len (select/pos world pos) len))
+    (printf "Queuing selection of ~s~n" (rope->string (subrope (World-rope world)
+                                                               (sub1 pos)
+                                                               (+ (sub1 pos) len))))
+    (queue-imperative-operation
+     (copy-struct World world
+                  [World-cursor-position pos]
+                  [World-selection-length len])
+     (make-imperative-op:select-range (sub1 pos) (+ (sub1 pos) len))))
   
   ;; select/pos : World pos -> World
   (define (select/pos world pos)
@@ -207,9 +214,11 @@
   (define (insert world pos a-rope)
     (let ([len (rope-length a-rope)]
           [new-world (world-insert-rope world (pos->index pos) a-rope)])
-      (cleanup-text/pos+len
-       (recompute-mark/insert
-        (recompute-selection/insert new-world pos len) pos len) pos len)))
+      (recompute-mark/insert
+       (recompute-selection/insert new-world pos len) pos len)
+      #;(cleanup-text/pos+len
+         (recompute-mark/insert
+          (recompute-selection/insert new-world pos len) pos len) pos len)))
   
   
   ;; delete/stx : World syntax -> World
@@ -221,10 +230,13 @@
     (if (= len 0)
         world
         (let ([new-world (world-delete-rope world (pos->index pos) len)])
-          (cleanup-text/pos+len
-           (recompute-mark/delete
-            (recompute-selection/delete
-             new-world pos len) pos len) pos 0))))
+          (recompute-mark/delete
+           (recompute-selection/delete
+            new-world pos len) pos len)
+          #;(cleanup-text/pos+len
+             (recompute-mark/delete
+              (recompute-selection/delete
+               new-world pos len) pos len) pos 0))))
   
   ;; delete/selection : World -> World
   (define (delete/selection world)
@@ -246,11 +258,16 @@
                                (World-cursor-index world)
                                a-rope
                                (World-selection-length world))])
-      (cleanup-text/selection (recompute-mark/replace
-                               (select/len new-world len)
-                               (World-cursor-position world)
-                               (World-selection-length world)
-                               len))))
+      (recompute-mark/replace
+       (select/len new-world len)
+       (World-cursor-position world)
+       (World-selection-length world)
+       len)
+      #;(cleanup-text/selection (recompute-mark/replace
+                                 (select/len new-world len)
+                                 (World-cursor-position world)
+                                 (World-selection-length world)
+                                 len))))
   
   ;; close : World -> World
   (define (close world)
@@ -401,11 +418,11 @@
       (let-values ([(text expanded-world template)
                     (get-expanded-text&world)])
         (let* ([world
-                (print-mem*
-                 'command-indent/selection
-                 (indent/selection
-                  (replace/selection
-                   (dedouble-ellipsis expanded-world) text)))])
+                (replace/selection
+                 (dedouble-ellipsis expanded-world) text)
+                #;(indent/selection
+                   (replace/selection
+                  (dedouble-ellipsis expanded-world) text))])
           (if template
               (holder world)
               (step-to-the-right world))))))
@@ -554,9 +571,10 @@
   
   ;; enter/pos+len : World pos len -> World
   (define (enter/pos+len world pos len)
-    (indent/pos+len (insert world pos (string->rope "\n"))
-                    (line-pos (World-rope world) pos)
-                    (+ len *indentation-overhang*)))
+    (insert world pos (string->rope "\n"))
+    #;(indent/pos+len (insert world pos (string->rope "\n"))
+                      (line-pos (World-rope world) pos)
+                      (+ len *indentation-overhang*)))
   
   ;; enter/selection : World -> World
   (define (enter/selection world)
@@ -569,11 +587,16 @@
            [line-start (line-pos (World-rope world) pos)])
       (when (= eol-index eof-index)
         (raise (make-voice-exn "No line to join.")))
-      (indent/pos+len (delete/pos+len
-                       (world-insert-rope world eol-index (string->rope " "))
-                       (add1 (index->pos eol-index)) 1)
-                      line-start
-                      (+ len (- pos line-start) *indentation-overhang*))))
+      
+      (delete/pos+len
+       (world-insert-rope world eol-index (string->rope " "))
+       (add1 (index->pos eol-index)) 1)
+      
+      #;(indent/pos+len (delete/pos+len
+                         (world-insert-rope world eol-index (string->rope " "))
+                         (add1 (index->pos eol-index)) 1)
+                        line-start
+                        (+ len (- pos line-start) *indentation-overhang*))))
   
   ;; join/selection : World -> World
   (define (join/selection world)
@@ -585,9 +608,10 @@
            [line-start (line-pos (World-rope world) pos)])
       (when (< eol-index 0)
         (raise (make-voice-exn "No line to anti-join.")))
-      (indent/pos+len (delete/pos+len world (index->pos eol-index) 1)
-                      line-start
-                      (+ len (- pos line-start)))))
+      (delete/pos+len world (index->pos eol-index) 1)
+      #;(indent/pos+len (delete/pos+len world (index->pos eol-index) 1)
+                        line-start
+                        (+ len (- pos line-start)))))
   
   ;; anti-join/cursor : World -> World
   (define (anti-join/cursor world)
