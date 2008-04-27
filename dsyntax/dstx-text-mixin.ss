@@ -33,6 +33,8 @@
                          get-dstx-cursor-class
                          get-dstx-cursor
                          
+                         dstx-parse-port
+                         
                          dstx-parsing-enabled?
                          enable-dstx-parsing
                          disable-dstx-parsing
@@ -549,10 +551,12 @@
       (define/public (parse-between start end)
         (with-handlers ([exn:fail? (lambda (exn)
                                      (parse-between/unparsed start end))])
-          (let* ([ip (parser:open-input-text this start end)]
-                 [dstxs (parser:parse-port ip)])
-            (map (lambda (a-dstx) (decorate-new-dstx a-dstx)) dstxs))))
+          (dstx-parse-port (parser:open-input-text this start end))))
       
+      
+      ;; dstx-parse-port: input-port -> (listof dstx)
+      (define/public (dstx-parse-port ip)
+        (map (lambda (a-dstx) (decorate-new-dstx a-dstx)) (parser:parse-port ip)))
       
       
       ;; parse-between/unparsed: start end -> (listof dstx)

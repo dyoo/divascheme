@@ -221,12 +221,25 @@
   ;; insert-rope: rope number World text% (World -> World) (World -> void) -> World
   (define (do-insert-rope a-rope a-pos world a-text update-world-fn update-mred-fn)
     (let ([cursor (send a-text get-dstx-cursor)])
-      (send cursor focus-endpos a-pos)
-      (send a-text set-position a-pos 'same #f #f 'local)
-      (insert-rope-in-text a-text a-rope)
-      (let ([new-world (update-world-fn world)])
-        (update-mred-fn new-world)
-        new-world)))
+      (cond
+        ;; All insertions should be structured.
+        [(send cursor can-focus-endpos? a-pos)
+         (send cursor focus-endpos! a-pos)
+         (let ([new-dstxs (send a-text dstx-parse-port (open-input-rope a-rope))])
+           (for-each (lambda (a-dstx)
+                       (send cursor insert-after! a-dstx))
+                     new-dstxs))
+         (let ([new-world (update-world-fn world)])
+           (update-mred-fn new-world)
+           new-world)]
+        ;; In the very strange case that they aren't, we have a back-hatch
+        ;; to insert unstructurally.  This shouldn't be the normal case, though. 
+        [else
+         (send a-text set-position a-pos 'same #f #f 'local)
+         (insert-rope-in-text a-text a-rope)
+         (let ([new-world (update-world-fn world)])
+           (update-mred-fn new-world)
+           new-world)])))
   
   
   
