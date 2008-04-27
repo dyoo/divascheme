@@ -58,22 +58,39 @@
                            property-ref
                            property-set!
                            
+                           can-focus-in?
                            focus-in!
+                           can-focus-in/no-snap?
                            focus-in/no-snap!
+                           can-focus-out?
                            focus-out!
+                           can-focus-older?
                            focus-older!
+                           can-focus-older/no-snap?
                            focus-older/no-snap!
+                           can-focus-oldest?
                            focus-oldest!
+                           can-focus-younger?
                            focus-younger!
+                           can-focus-younger/no-snap?
                            focus-younger/no-snap!
+                           can-focus-youngest?
                            focus-youngest!
+                           can-focus-successor?
                            focus-successor!
+                           can-focus-successor/no-snap?
                            focus-successor/no-snap!
+                           can-focus-predecessor?
                            focus-predecessor!
+                           can-focus-predecessor/no-snap?
                            focus-predecessor/no-snap!
                            focus-toplevel!
+                           can-focus-container?
                            focus-container!
+                           can-focus-pos?
                            focus-pos!
+                           can-focus-endpos?
+                           focus-endpos!
                            
                            insert-before!
                            insert-after!
@@ -711,74 +728,42 @@
                     (set! a-cursor new-cursor-val)))]))
       
       
+      ;; A little syntax to simplify writing the wrappers for all the functional cursors
+      ;; to the imperative interfaces.
+      ;; Given the functional focus function, defines the imperative predicate and mutators.
+      (define-syntax (define-focus-functions stx)
+        (syntax-case stx ()
+          [(_ (functional-focus args ...) can-focus? do-focus!)
+           (syntax/loc stx
+             (begin
+               (define/public (can-focus? args ...)
+                 (resynchronize-with-main-editing-cursor!)
+                 (and (functional-focus f-cursor args ...) #t))
+               
+               (define/public (do-focus! args ...)
+                 (resynchronize-with-main-editing-cursor!)
+                 (set-cursor/success f-cursor (functional-focus f-cursor args ...)))))]))
+      
+      
       ;; Focusers
-      (define/public (focus-in!)
-        (resynchronize-with-main-editing-cursor!)
-        (set-cursor/success f-cursor (cursor:focus-in f-cursor)))
+      (define-focus-functions (cursor:focus-in) can-focus-in? focus-in!)
+      (define-focus-functions (cursor:focus-in/no-snap) can-focus-in/no-snap? focus-in/no-snap!)
+      (define-focus-functions (cursor:focus-out) can-focus-out? focus-out!)
+      (define-focus-functions (cursor:focus-older) can-focus-older? focus-older!)
+      (define-focus-functions (cursor:focus-older/no-snap) can-focus-older/no-snap? focus-older/no-snap!)
+      (define-focus-functions (cursor:focus-oldest) can-focus-oldest? focus-oldest!)
+      (define-focus-functions (cursor:focus-younger) can-focus-younger? focus-younger!)
+      (define-focus-functions (cursor:focus-younger/no-snap) can-focus-younger/no-snap? focus-younger/no-snap!)
+      (define-focus-functions (cursor:focus-youngest) can-focus-youngest? focus-youngest!)
+      (define-focus-functions (cursor:focus-successor) can-focus-successor? focus-successor!)
+      (define-focus-functions (cursor:focus-successor/no-snap) can-focus-successor/no-snap? focus-successor/no-snap!)
+      (define-focus-functions (cursor:focus-predecessor) can-focus-predecessor? focus-predecessor!)
+      (define-focus-functions (cursor:focus-predecessor/no-snap) can-focus-predecessor/no-snap? focus-predecessor/no-snap!)
+      (define-focus-functions (cursor:focus-toplevel) can-focus-toplevel? focus-toplevel!)
+      (define-focus-functions (cursor:focus-container a-pos) can-focus-container? focus-container!)
+      (define-focus-functions (cursor:focus-pos a-pos) can-focus-pos? focus-pos!)
+      (define-focus-functions (cursor:focus-endpos a-pos) can-focus-endpos? focus-endpos!)
       
-      (define/public (focus-in/no-snap!)
-        (resynchronize-with-main-editing-cursor!)
-        (set-cursor/success f-cursor (cursor:focus-in/no-snap f-cursor)))
-      
-      (define/public (focus-out!)
-        (resynchronize-with-main-editing-cursor!)
-        (set-cursor/success f-cursor (cursor:focus-out f-cursor)))
-      
-      (define/public (focus-older!)
-        (resynchronize-with-main-editing-cursor!)
-        (set-cursor/success f-cursor (cursor:focus-older f-cursor)))
-      
-      (define/public (focus-older/no-snap!)
-        (resynchronize-with-main-editing-cursor!)
-        (set-cursor/success f-cursor (cursor:focus-older/no-snap f-cursor)))
-      
-      (define/public (focus-oldest!)
-        (resynchronize-with-main-editing-cursor!)
-        (set-cursor/success f-cursor (cursor:focus-oldest f-cursor)))
-      
-      (define/public (focus-younger!)
-        (resynchronize-with-main-editing-cursor!)
-        (set-cursor/success f-cursor (cursor:focus-younger f-cursor)))
-      
-      (define/public (focus-younger/no-snap!)
-        (resynchronize-with-main-editing-cursor!)
-        (set-cursor/success f-cursor (cursor:focus-younger/no-snap f-cursor)))
-      
-      (define/public (focus-youngest!)
-        (resynchronize-with-main-editing-cursor!)
-        (set-cursor/success f-cursor (cursor:focus-youngest f-cursor)))
-      
-      (define/public (focus-successor!)
-        (resynchronize-with-main-editing-cursor!)
-        (set-cursor/success f-cursor (cursor:focus-successor f-cursor)))
-      
-      (define/public (focus-successor/no-snap!)
-        (resynchronize-with-main-editing-cursor!)
-        (set-cursor/success f-cursor (cursor:focus-successor/no-snap f-cursor)))
-      
-      (define/public (focus-predecessor!)
-        (resynchronize-with-main-editing-cursor!)
-        (set-cursor/success f-cursor (cursor:focus-predecessor f-cursor)))
-      
-      (define/public (focus-predecessor/no-snap!)
-        (resynchronize-with-main-editing-cursor!)
-        (set-cursor/success f-cursor (cursor:focus-predecessor/no-snap f-cursor)))
-      
-      (define/public (focus-toplevel!)
-        (resynchronize-with-main-editing-cursor!)
-        (set-cursor/success f-cursor (cursor:focus-toplevel f-cursor)))
-      
-      (define/public (focus-container! a-pos)
-        (resynchronize-with-main-editing-cursor!)
-        (set-cursor/success f-cursor (cursor:focus-container f-cursor a-pos)))
-      
-      (define/public (focus-pos! a-pos)
-        (resynchronize-with-main-editing-cursor!)
-        (set-cursor/success f-cursor (cursor:focus-pos f-cursor a-pos)))
-      
-      (define/public (focus-endpos a-pos)
-        (resynchronize-with-main-editing-cursor!)
-        (set-cursor/success f-cursor (cursor:focus-endpos f-cursor a-pos)))
       
       
       ;; pretty-print-to-text: dstx -> void
@@ -928,4 +913,3 @@
                                      (struct:cursor-dstx f-cursor))))
                (mark-this-cursor-as-up-to-date-editor!)
                (send current-text after-structured-delete f-cursor deleted-dstx)))))))))
-  

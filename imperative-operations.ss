@@ -220,11 +220,13 @@
   
   ;; insert-rope: rope number World text% (World -> World) (World -> void) -> World
   (define (do-insert-rope a-rope a-pos world a-text update-world-fn update-mred-fn)
-    (send a-text set-position a-pos 'same #f #f 'local)
-    (insert-rope-in-text a-text a-rope)
-    (let ([new-world (update-world-fn world)])
-      (update-mred-fn new-world)
-      new-world))
+    (let ([cursor (send a-text get-dstx-cursor)])
+      (send cursor focus-endpos a-pos)
+      (send a-text set-position a-pos 'same #f #f 'local)
+      (insert-rope-in-text a-text a-rope)
+      (let ([new-world (update-world-fn world)])
+        (update-mred-fn new-world)
+        new-world)))
   
   
   
