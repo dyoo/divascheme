@@ -196,10 +196,13 @@
   (define-struct (imperative-op:cleanup-range imperative-op) (start-mark end-mark))
   
   ;; imperative-op:delete-range: delete the range of text.
-  #;(define-struct (imperative-op:delete-range imperative-op) (start-pos end-pos))
+  (define-struct (imperative-op:delete-range imperative-op) (start-pos end-pos))
   
   ;; imperative-op:insert-rope: insert the rope at the given position.
-  #;(define-struct (imperative-op:insert-rope imperative-op) (rope pos))
+  (define-struct (imperative-op:insert-rope imperative-op) (rope pos))
+  
+  ;; imperative-op:select-range: selects the range given.
+  (define-struct (imperative-op:select-range imperative-op) (start-pos end-pos))
   
   
   
@@ -291,39 +294,53 @@
   ;; world-insert-rope: World index rope -> World
   (define (world-insert-rope world index a-rope)
     (let ([new-rope (insert-rope (World-rope world) index a-rope)])
-      (update-markers/insert
-       (copy-struct World world
-                    [World-rope new-rope]
-                    [World-syntax-list/lazy #f])
-       index
-       (rope-length a-rope))))
+      (let ([new-world
+             (update-markers/insert
+              (copy-struct World world
+                           [World-rope new-rope]
+                           [World-syntax-list/lazy #f])
+              index
+              (rope-length a-rope))])
+        ;; Add the imperative operation we need to update
+        ;; a text to reflect the new content of the world.
+        (queue-imperative-operation
+         new-world
+         (make-imperative-op:insert-rope a-rope index)))))
   
   
   
   ;; world-delete-rope: World index length -> World
   (define (world-delete-rope world index length)
     (let ([new-rope (delete-rope (World-rope world) index length)])
-      (update-markers/delete
-       (copy-struct World world
-                    [World-rope new-rope]
-                    [World-syntax-list/lazy #f])
-       index
-       length)))
-  
+      (let ([new-world
+             (update-markers/delete
+              (copy-struct World world
+                           [World-rope new-rope]
+                           [World-syntax-list/lazy #f])
+              index
+              length)])
+        (queue-imperative-operation
+         new-world
+         (make-imperative-op:delete-range index (+ index length))))))
   
   
   
   ;; world-replace-rope : world index rope int -> World
   (define (world-replace-rope world index tyt len)
     (let ([new-rope (replace-rope (World-rope world) index tyt len)])
-      ;; FIXME: update marks
-      (update-markers/replace
-       (copy-struct World world
-                    [World-rope new-rope]
-                    [World-syntax-list/lazy #f])
-       index
-       len
-       (rope-length tyt))))
+      (let ([new-world
+             (update-markers/replace
+              (copy-struct World world
+                           [World-rope new-rope]
+                           [World-syntax-list/lazy #f])
+              index
+              len
+              (rope-length tyt))])
+        (queue-imperative-operation
+         (queue-imperative-operation
+          new-world
+          (make-imperative-op:delete-range index (+ index len)))
+         (make-imperative-op:insert-rope tyt index)))))
   
   
   
@@ -592,20 +609,23 @@
    [struct (imperative-op:transpose imperative-op)
            ([original-world World?])]
    [struct (imperative-op:cleanup imperative-op) ()]
-   [struct (imperative-op:cleanup-range imperative-op) 
-           ([start-mark symbol?] 
-            [end-mark symbol?])] 
-   #;[struct (imperative-op:delete-range imperative-op)
-             ([start-pos natural-number/c]
-              [end-pos natural-number/c])]
-   #;[struct (imperative-op:insert-rope imperative-op)
-             ([rope rope?]
-              [pos natural-number/c])]
+   [struct (imperative-op:cleanup-range imperative-op)
+           ([start-mark symbol?]
+            [end-mark symbol?])]
+   [struct (imperative-op:delete-range imperative-op)
+           ([start-pos natural-number/c]
+            [end-pos natural-number/c])]
+   [struct (imperative-op:insert-rope imperative-op)
+           ([rope rope?]
+            [pos natural-number/c])]
+   [struct (imperative-op:select-range imperative-op)
+           ([start-pos natural-number/c]
+            [end-pos natural-number/c])]
    
    
    [queue-imperative-operation (World? imperative-op? . -> . World?)]
    
-   [struct Marker ([name symbol?] 
+   [struct Marker ([name symbol?]
                    [index natural-number/c])]
    
    [world-new-marker

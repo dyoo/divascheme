@@ -43,17 +43,22 @@
   
   ;; select/pos+len : World pos non-negative-integer -> World
   (define (select/pos+len world pos len)
-    (select/pos (select/len world len) pos))
+    (select/len (select/pos world pos) len))
   
   ;; select/pos : World pos -> World
   (define (select/pos world pos)
-    (copy-struct World world
-                 [World-cursor-position pos]))
+    (queue-imperative-operation
+     (copy-struct World world
+                  [World-cursor-position pos])
+     (make-imperative-op:select-range (sub1 pos) (sub1 pos))))
   
   ;; select/len : World non-negative-integer -> World
   (define (select/len world len)
-    (copy-struct World world
-                 [World-selection-length len]))
+    (queue-imperative-operation
+     (copy-struct World world
+                  [World-selection-length len])
+     (make-imperative-op:select-range (sub1 (World-cursor-position world))
+                                      (+ len (sub1 (World-cursor-position world))))))
   
   ;; set-cursor-position : World pos -> World
   (define (set-cursor-position world pos)

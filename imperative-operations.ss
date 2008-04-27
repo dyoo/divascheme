@@ -41,12 +41,15 @@
       [(struct imperative-op:cleanup-range (start-mark end-mark))
        (cleanup-range start-mark end-mark a-world a-text update-world-fn update-mred-fn)]
       
-      #;[(struct imperative-op:delete-range (start-pos end-pos))
-         (delete-range start-pos end-pos a-world a-text
-                       update-world-fn update-mred-fn)]
+      [(struct imperative-op:delete-range (start-pos end-pos))
+       (delete-range start-pos end-pos a-world a-text
+                     update-world-fn update-mred-fn)]
       
-      #;[(struct imperative-op:insert-rope (rope pos))
-         (do-insert-rope rope pos a-world a-text update-world-fn update-mred-fn)]))
+      [(struct imperative-op:insert-rope (rope pos))
+       (do-insert-rope rope pos a-world a-text update-world-fn update-mred-fn)]
+      
+      [(struct imperative-op:select-range (start-pos end-pos))
+       (select-range start-pos end-pos a-world a-text update-world-fn update-mred-fn)]))
   
   
   ;; preserve-selection-and-mark: World diva-text% -> World
@@ -168,16 +171,16 @@
   
   
   ;; delete-range: number number world text% (World->World) (World -> void) -> World
-  #;(define (delete-range start-pos end-pos world a-text update-world-fn update-mred-fn)
-      (send a-text delete start-pos end-pos #f)
-      world)
+  (define (delete-range start-pos end-pos world a-text update-world-fn update-mred-fn)
+    (send a-text delete start-pos end-pos #f)
+    world)
   
   
   ;; insert-rope: rope number World text% (World -> World) (World -> void) -> World
-  #;(define (do-insert-rope a-rope a-pos world a-text update-world-fn update-mred-fn)
-      (send a-text set-position a-pos 'same #f #f 'local)
-      (insert-rope-in-text a-text a-rope)
-      world)
+  (define (do-insert-rope a-rope a-pos world a-text update-world-fn update-mred-fn)
+    (send a-text set-position a-pos 'same #f #f 'local)
+    (insert-rope-in-text a-text a-rope)
+    world)
   
   
   
@@ -246,6 +249,11 @@
           (update-mred-fn final-world)
           final-world))))
   
+  
+  ;; select-range: number number world text% (World -> World) (World -> void) -> World
+  (define (select-range start-pos end-pos world a-text update-world-fn update-mred-fn)
+    (send a-text diva:set-selection-position start-pos end-pos)
+    world)
   
   
   ;; fixme: eliminate copy-and-paste from actions.ss!

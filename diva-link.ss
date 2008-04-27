@@ -346,8 +346,6 @@
       
       ;; push-into-mred: world -> void
       ;; pushes our world into mred.
-      ;; WARNING: this also does things to our world, based on our kludgy implementation
-      ;; of world-imperative-actions!  This seems like a design flaw.
       (define (push-into-mred world)
         (unless (World? world)
           (error 'push-into-mred))
@@ -361,11 +359,8 @@
            (lambda ()
              (begin-edit-sequence))
            (lambda ()
-             ;; This pushes through the initial changes in the world's content
-             ;; into our window text.
-             (send current-mred push-world world)
-             
-             ;; We then apply the other imperative actions:
+             ;; We apply the imperative operations, which do the operations
+             ;; necessary to get the editor's text up to sync with the world.
              (let
                  ([new-world
                    (foldl
@@ -383,6 +378,7 @@
                     (copy-struct World world [World-imperative-operations empty])
                     (reverse (World-imperative-operations world)))])
                (set-current-world! (copy-struct World new-world
+                                                [World-rope (get-rope)]
                                                 [World-imperative-operations empty]))))
            (lambda ()
              (end-edit-sequence)))))
