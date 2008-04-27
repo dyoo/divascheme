@@ -23,13 +23,6 @@
   ;; The Insertion Mode
   ;;
   
-  ;; A Pending is a (make-Pending a-world a-sym)
-  ;; where a-World is a world, and a-sym is a member of '(Open Open-Square).
-  ;; If the user starts typing "(...)", this is a signal that there might be
-  ;; possible expansion by templates triggered by parens.
-  ;; FIXME: this design is slightly convoluted. What would be a better way?
-  (define-struct Pending (world symbol))
-  
   
   ;; FIXME: if this takes so many parameters, there is a structural problem.
   (define (make-insert-mode editor diva-message get-world set-world set-on-focus-lost
@@ -37,7 +30,6 @@
                             interpret! post-exit-hook cmd edit?)
     
     (define world-at-beginning-of-insert #f)
-    (define pending-open false)
     (define magic-options-lst false)
     (define magic-option-base false)
     
@@ -77,11 +69,7 @@
     ;; syncs up with what's in the World.
     (define (restore-editor-to-pre-state!)
       (set-text "")
-      (let ([world (cond
-                     [pending-open
-                      (Pending-world pending-open)]
-                     [else
-                      world-at-beginning-of-insert])])
+      (let ([world world-at-beginning-of-insert])
         (send editor set-rope (World-rope world))
         (let ([index (pos->index (World-cursor-position world))])
           (send editor diva:set-selection-position
@@ -94,21 +82,12 @@
     ;; Send the new text to be filled into the buffer.
     ;; The templating system forces us to consider if the insertion
     ;; is based on the sequence (Open X) or just regular X.
-    (define (consume-text world pending-open a-rope)
+    (define (consume-text world a-rope)
       (cond
-        [pending-open
-         ;; possible templating with open parens
-         (do-interpretation (Pending-world pending-open)
-                            (make-Verb (make-Command (Pending-symbol pending-open))
-                                       false
-                                       (make-WhatN
-                                        (make-Rope-Noun a-rope))))]
-        [else
-         ;; possible templating without open parens
-         (do-interpretation world
-                            (make-Verb (make-InsertRope-Cmd a-rope)
-                                       false
-                                       false))]))
+        (do-interpretation world
+                           (make-Verb (make-InsertRope-Cmd a-rope)
+                                      false
+                                      false))))
     
     ;; consume-cmd: World symbol -> void
     ;; Evaluates a symbol as a command.
@@ -156,7 +135,6 @@
     
     
     (define (begin-symbol-insertion/nothing-pending)
-      (set! pending-open false)
       (begin-symbol-insertion))
     
     
@@ -390,21 +368,14 @@
                                  (if need-space-after
                                      (string->rope " ")
                                      (string->rope ""))))])
-              (consume-text world-at-beginning-of-insert
-                            pending-open spaced-rope)
+              (consume-text world-at-beginning-of-insert spaced-rope)
               (begin-symbol-insertion/nothing-pending))))))
     
     
     (define (eval-cmd symbol)
       (consume-cmd world-at-beginning-of-insert symbol)
-      
-      (begin-symbol-insertion/nothing-pending)
-      #;(if (or (eq? symbol 'Open)
-                (eq? symbol 'Open-Square))
-            (begin
-              (set! pending-open (make-Pending world-at-beginning-of-insert symbol))
-              (begin-symbol-insertion))
-            (begin-symbol-insertion/nothing-pending)))
+      (begin-symbol-insertion/nothing-pending))
+    
     
     (define (eval-text&cmd symbol)
       ;; FIXME: ugly kludge ahead.  The original architecture of this makes
