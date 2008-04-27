@@ -83,11 +83,10 @@
     ;; The templating system forces us to consider if the insertion
     ;; is based on the sequence (Open X) or just regular X.
     (define (consume-text world a-rope)
-      (cond
-        (do-interpretation world
-                           (make-Verb (make-InsertRope-Cmd a-rope)
-                                      false
-                                      false))))
+      (do-interpretation world
+                         (make-Verb (make-InsertRope-Cmd a-rope)
+                                    false
+                                    false)))
     
     ;; consume-cmd: World symbol -> void
     ;; Evaluates a symbol as a command.
