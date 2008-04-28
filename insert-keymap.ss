@@ -48,6 +48,7 @@
       (set! insert-keymap (make-insert-keymap))
       (send (send editor get-keymap) chain-to-keymap insert-keymap #t)
       
+      (focus-world-selection-on-atom!)
       ;; Hooking up the other callbacks
       (set-on-focus-lost consume&exit)
       (unset-insert&delete-callbacks)
@@ -144,6 +145,25 @@
       (set-after-insert-callback void)
       (set-after-delete-callback void))
     
+    
+    ;; focus-world-selection-on-atom!: -> void 
+    ;; Given the current world, focus it on the atom we're on, or otherwise
+    ;; don't affect the world.
+    (define (focus-world-selection-on-atom!)
+      (let* ([stx/false (find-pos-near (World-cursor-position world-at-beginning-of-insert)
+                                       (World-syntax-list world-at-beginning-of-insert))]
+             [stx/false (and stx/false
+                             (first (append
+                                     (find-all atomic/stx?
+                                               (list stx/false))
+                                     (list #f))))])
+        (cond
+          [stx/false
+           (set! world-at-beginning-of-insert
+                 (action:select/stx world-at-beginning-of-insert stx/false))
+           (set-world world-at-beginning-of-insert)]
+          [else
+           (void)])))
     
     
     
