@@ -25,9 +25,7 @@
       (inherit queue-for-interpretation! get-top-level-window)
       
       (define woot-custodian (make-custodian))
-      
-      (define/public (get-woot-custodian)
-        woot-custodian)
+      (define woot-client #f)
       
       
       
@@ -105,12 +103,12 @@
                                    (get-top-level-window)
                                    (or (send this get-filename)
                                        "default-session"))])
-          (parameterize ([current-custodian (get-woot-custodian)])
-            (let ([url (start-local-server session-name)])
-              (start-network-client url)
-              (message-box
-               (format "Session started.\nOther hosts may connect by entering the session url: ~s"
-                       url))))))
+          (let ([url (start-local-server session-name)])
+            (start-network-client url)
+            (message-box
+             "Host session started"
+             (format "Session started.\nOther hosts may connect by entering the session url: ~s"
+                     url)))))
       
       
       ;; join-session: -> void
@@ -120,24 +118,25 @@
                                                "Session url:"
                                                (get-top-level-window)
                                                (default-hosting-url))])
-          (start-network-client session-url)))
+          (start-network-client session-url)
+          (message-box
+           "Connected to server"
+           (format "Connected to session ~s." session-url))))
       
       
       
       ;; start-local-server: string -> string
       ;; Starts up the local server.
       (define (start-local-server session-name)
-        (parameterize ([current-custodian (get-woot-custodian)])
+        (parameterize ([current-custodian woot-custodian])
           (server:start-server default-port-number session-name)))
       
       
       ;; start-network-client: string -> void
       ;; Starts up the client part of the server.
       (define (start-network-client url)
-        (parameterize ([current-custodian (get-woot-custodian)])
+        (parameterize ([current-custodian woot-custodian])
           (client:start-client url this)))
-      
-      
       
       
       ;; Just as an experiment, see that we can queue the following for interpretation.
@@ -185,7 +184,7 @@
   ;; default-hosting-url: -> string
   ;; Returns a string representing a default hosting connection.
   (define (default-hosting-url)
-    (hosting-url (self-ip-address) default-port-number "default-session"))
+    (hosting-url default-port-number "default-session"))
   
   
   ;; hosting-url number string: -> string

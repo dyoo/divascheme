@@ -16,8 +16,8 @@
 ;; Returns the url used to talk to this server.
 (define (start-server port session-name)
   (let ([shutdown (serve #:dispatch (make main-dispatcher) #:port port)])
-    (format "http://~a:~a/~a"
-            (self-ip-address))))
+    (format "http://~a:~a/~a" (self-ip-address) port session-name)))
+
 
 
 ;; The interaction is simply:
@@ -28,12 +28,10 @@
 ;; last-seen is either #f or a woot id.
 ;;
 ;; The response is all of the operations with a woot-id greater than last-seen.
-
 (define (main-dispatcher request)
-  (void)
-  #;`(html (head (title "External IP Address"))
-           (body (h1 "External IP Address")
-                 (p ,(get-client-ip request)))))
+  ;; fixme: do dispatching based on the request.
+  `(html (head (title "hello world"))
+         (body (h1 "hello world"))))
 
 
 
