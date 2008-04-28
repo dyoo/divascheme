@@ -6,6 +6,8 @@
            "../structures.ss"
            "../dsyntax/dsyntax.ss"
            "self-ip-address.ss"
+           (prefix server: "server.ss")
+           (prefix client: "client.ss")
            (only (lib "13.ss" "srfi") string-join))
   
   (provide woot-text-mixin
@@ -20,7 +22,14 @@
   ;; woot-text-mixin: diva-text% -> diva-text%
   (define (woot-text-mixin super%)
     (class super%
-      (inherit queue-for-interpretation!)
+      (inherit queue-for-interpretation! get-top-level-window)
+      
+      (define woot-custodian (make-custodian))
+      
+      (define/public (get-woot-custodian)
+        woot-custodian)
+      
+      
       
       (define host-ip (self-ip-address))
       
@@ -84,6 +93,53 @@
       
       
       
+      
+      
+      ;; host-session: -> void
+      ;; Brings up a dialog window to host a session.  Shows our ip, and
+      ;; some message on how to get others to join.
+      (define/public (host-session)
+        (let ([session-name
+               (get-text-from-user "Host shared session"
+                                   "Choose a session name:"
+                                   (get-top-level-window)
+                                   (or (send this get-filename)
+                                       "default-session"))])
+          (parameterize ([current-custodian (get-woot-custodian)])
+            (let ([url (start-local-server session-name)])
+              (start-network-client url)
+              (message-box
+               (format "Session started.\nOther hosts may connect by entering the session url: ~s"
+                       url))))))
+      
+      
+      ;; join-session: -> void
+      ;; Brings up a dialog box asking which system to join to.
+      (define/public (join-session)
+        (let ([session-url (get-text-from-user "Join shared session"
+                                               "Session url:"
+                                               (get-top-level-window)
+                                               (default-hosting-url))])
+          (start-network-client session-url)))
+      
+      
+      
+      ;; start-local-server: string -> string
+      ;; Starts up the local server.
+      (define (start-local-server session-name)
+        (parameterize ([current-custodian (get-woot-custodian)])
+          (server:start-server default-port-number session-name)))
+      
+      
+      ;; start-network-client: string -> void
+      ;; Starts up the client part of the server.
+      (define (start-network-client url)
+        (parameterize ([current-custodian (get-woot-custodian)])
+          (client:start-client url this)))
+      
+      
+      
+      
       ;; Just as an experiment, see that we can queue the following for interpretation.
       #;(thread (lambda ()
                   (let loop ()
@@ -100,7 +156,7 @@
   ;; woot-frame-mixin: add the menu options for hosting and joining sessions.
   (define (woot-frame-mixin super%)
     (class super%
-      (inherit get-diva-menu)
+      (inherit get-diva-menu get-definitions-text)
       
       (define host-menu-item #f)
       (define join-menu-item #f)
@@ -112,30 +168,30 @@
                    [label "Host shared session..."]
                    [parent (get-diva-menu)]
                    [callback (lambda (menu-item control-event)
-                               (host-session))]))
+                               (send (get-definitions-text) host-session))]))
         (set! join-menu-item
               (new menu-item%
                    [label "Join shared session..."]
                    [parent (get-diva-menu)]
                    [callback (lambda (menu-item control-event)
-                               (join-session))])))
-      
-      
-      ;; host-session: -> void
-      ;; Brings up a dialog window to host a session.  Shows our ip, and
-      ;; some message on how to get others to join.
-      (define (host-session)
-        (void))
-      
-      
-      ;; join-session: -> void
-      ;; Brings up a dialog box asking which system to join to.
-      (define (join-session)
-        (void))
+                               (send (get-definitions-text) join-session))])))
       
       
       (initialize)))
   
+  
+  (define default-port-number 44444)
+  
+  ;; default-hosting-url: -> string
+  ;; Returns a string representing a default hosting connection.
+  (define (default-hosting-url)
+    (hosting-url (self-ip-address) default-port-number "default-session"))
+  
+  
+  ;; hosting-url number string: -> string
+  ;; Returns a string representing the connection url.
+  (define (hosting-url port session-name)
+    (format "http://~a:~a/~a" (self-ip-address) port session-name))
   
   
   ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
