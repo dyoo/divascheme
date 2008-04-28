@@ -23,7 +23,7 @@
   
   
   
-  (define default-polling-delay 0.5)
+  (define default-polling-delay 0.1)
   
   ;; start-client: string -> client
   ;; Begins a client that periodically polls
