@@ -132,19 +132,14 @@
           (server:start-server default-port-number session-name)))
       
       
+      
       ;; start-network-client: string -> void
       ;; Starts up the client part of the server.
       (define (start-network-client url)
         (parameterize ([current-custodian woot-custodian])
-          (client:start-client url this)))
+          (set! woot-client (client:new-client url))))
       
       
-      ;; Just as an experiment, see that we can queue the following for interpretation.
-      #;(thread (lambda ()
-                  (let loop ()
-                    (sleep 5)
-                    (queue-for-interpretation! (make-No-op))
-                    (loop))))
       
       (initialize)))
   
