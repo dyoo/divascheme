@@ -7,6 +7,7 @@
            (lib "url.ss" "net")
            (lib "uri-codec.ss" "net")
            (lib "plt-match.ss")
+           (lib "list.ss")
            (lib "xml.ss" "xml"))
   
   (provide/contract
@@ -61,12 +62,23 @@
            [url (string->url
                  (string-append (client-url a-client) "?" encoded-params))])
       (let ([ip (get-pure-port url)])
-        
-        (let loop ([next-sexp (read ip)])
-          (match next-sexp
-            [(? eof-object?)
+        (let loop ([sexps (get-sexp-results ip)])
+          (cond
+            [(empty? sexps)
              (void)]
-            [(list id payload)
-             (set-client-last-seen-id! a-client id)
-             (async-channel-put (client-mailbox payload))
-             (loop (read ip))]))))))
+            [else
+             (match (first sexps)
+               [(list id payload)
+                (set-client-last-seen-id! a-client id)
+                (async-channel-put (client-mailbox payload))
+                (loop (rest sexps))])])))))
+  
+  
+  ;; get-sexp-results: input-port -> (listof (list number string))
+  (define (get-sexp-results ip)
+    (match (xml->xexpr (read-xml ip))
+      [(list 'html
+             (list 'head _)
+             (list 'body
+                   (list 'p payload)))
+       (read (open-input-string payload))])))

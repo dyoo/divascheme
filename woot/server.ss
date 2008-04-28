@@ -39,12 +39,12 @@
 ;;   last-seen is a number
 ;; The response will be a byte stream containing (id msg) s-expressions, up to and not including
 ;; the given last-seen.
-(define ((main-dispatcher a-server-state) request)
+(define ((main-dispatcher a-state) request)
   (cond
     [(pull? request)
-     (handle-pull a-server-state request)]
+     (handle-pull a-state request)]
     [(push? request)
-     (handle-push a-server-state request)]
+     (handle-push a-state request)]
     [else
      (error-response "Expected 'action")
      #;(handle-default a-server-state request)]))
@@ -55,7 +55,6 @@
 ;; If more than one value exists, or no values exist at all, returns #f.
 (define (lookup-single-binding id request)
   (let ([bindings (request-bindings request)])
-    (printf "I see ~a~n" bindings)
     (cond [(exists-binding? id bindings)
            (let ([vals (extract-bindings id bindings)])
              (cond [(empty? (rest vals))
@@ -94,9 +93,7 @@
 (define (make-messages-response msgs)
   `(html (head (title "Pull results"))
          (body
-          ,@(map (lambda (msg)
-                   `(p ,(format "~s" msg)))
-                 msgs))))
+          (p ,(format "~s" msgs)))))
 
 
 
@@ -114,11 +111,11 @@
 
 
 ;; handle-push: server-state request -> response
-(define (handle-push state request)
+(define (handle-push a-state request)
   (let ([msg (lookup-single-binding 'msg request)])
     (cond
       [msg
-       (let ([new-id (add-new-message! state msg)])
+       (let ([new-id (add-new-message! a-state msg)])
          `(html (head (title "Push result"))
                 (body
                  (p ,(format "Added ~s." new-id)))))]
@@ -143,10 +140,11 @@
 
 ;; add-new-message: server-state string -> number
 ;; Accumulates a new message to the server, incrementing the id, and returning that id.
-(define (add-new-message! a-server-state a-message)
-  (let ([new-id (add1 (server-state-last-id a-server-state))])
-    (set-server-state-messages! (cons (list new-id a-message)
-                                      (server-state-messages a-server-state)))
-    (set-server-state-last-id! new-id)
+(define (add-new-message! a-state a-message)
+  (let ([new-id (add1 (server-state-last-id a-state))])
+    (set-server-state-messages! a-state
+                                (cons (list new-id a-message)
+                                      (server-state-messages a-state)))
+    (set-server-state-last-id! a-state new-id)
     new-id))
 
