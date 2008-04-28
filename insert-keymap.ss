@@ -94,10 +94,14 @@
       (do-interpretation world (make-Verb (make-Command symbol) false false)))
     
     
+    ;; insert-color: -> color%
+    ;; Returns the color we use to highlight the insertion point.
     (define (insert-color)
       (preferences:get 'framework:paren-match-color))
     
     
+    ;; get-text: -> string
+    ;; Returns the string contents between the left and right edge of the insertion point.
     (define (get-text)
       (send editor get-text left-edge-of-insert right-edge-of-insert))
     
@@ -108,8 +112,6 @@
       (read-subrope-in-text editor left-edge-of-insert
                             (- right-edge-of-insert left-edge-of-insert)))
     
-    (define (get-text-to-cursor)
-      (send editor get-text left-edge-of-insert (send editor get-start-position)))
     
     
     (define (with-unstructured-decoration f)
@@ -429,12 +431,17 @@
               (consume-magic)]))]))
     
     
+    
+    ;; restore-editor-to-pre-state!: -> void
+    ;; Revert the buffer to its pre-state, and exit.
     (define (revert&exit)
       (restore-editor-to-pre-state!)
       (set-world world-at-beginning-of-insert)
-      
       (exit))
     
+    
+    ;; consume&exit: -> void
+    ;; Evaluate the text and then exit.
     (define (consume&exit)
       (if (blank-string? (get-text))
           (revert&exit)
@@ -445,6 +452,8 @@
     
     
     
+    ;; exit: -> void
+    ;; Detach our keymap, clear our state.
     (define (exit)
       (send (send editor get-keymap) remove-chained-keymap insert-keymap)
       (clear-highlight)
@@ -488,6 +497,14 @@
          (syntax/loc stx
            (maybe-literal* c (lambda () e) ...))]))
     
+    ;; get-text-to-cursor: -> string
+    ;; Gets the text from the left-edge-of-insert up to the current cursor position.
+    (define (get-text-to-cursor)
+      (send editor get-text left-edge-of-insert (send editor get-start-position)))
+    
+    ;; maybe-literal*: character (listof thunk) -> void
+    ;; Possibly insert the character c, depending on the content of the insertion point
+    ;; and the cursor position.  Otherwise, evaluate the thunks. 
     (define (maybe-literal* c . thunks)
       (if (in-something? (get-text-to-cursor))
           (send editor insert c)
