@@ -29,7 +29,7 @@
                             set-after-insert-callback set-after-delete-callback
                             interpret! post-exit-hook cmd edit?)
     
-    (define world-at-beginning-of-insert #f)
+    (define world-at-beginning-of-insert (get-world))
     (define magic-options-lst false)
     (define magic-option-base false)
     
@@ -86,12 +86,14 @@
       (do-interpretation world
                          (make-Verb (make-InsertRope-Cmd a-rope)
                                     false
-                                    false)))
+                                    false))
+      (set! world-at-beginning-of-insert (get-world)))
     
     ;; consume-cmd: World symbol -> void
     ;; Evaluates a symbol as a command.
     (define (consume-cmd world symbol)
-      (do-interpretation world (make-Verb (make-Command symbol) false false)))
+      (do-interpretation world (make-Verb (make-Command symbol) false false))
+      (set! world-at-beginning-of-insert (get-world)))
     
     
     ;; insert-color: -> color%
