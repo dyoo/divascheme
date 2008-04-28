@@ -211,11 +211,11 @@
   (define (insert world pos a-rope)
     (let ([len (rope-length a-rope)]
           [new-world (world-insert-rope world (pos->index pos) a-rope)])
-      (recompute-mark/insert
-       (recompute-selection/insert new-world pos len) pos len)
-      #;(cleanup-text/pos+len
-         (recompute-mark/insert
-          (recompute-selection/insert new-world pos len) pos len) pos len)))
+      #;(recompute-mark/insert
+         (recompute-selection/insert new-world pos len) pos len)
+      (cleanup-text/pos+len
+       (recompute-mark/insert
+        (recompute-selection/insert new-world pos len) pos len) pos len)))
   
   
   ;; delete/stx : World syntax -> World
@@ -227,13 +227,13 @@
     (if (= len 0)
         world
         (let ([new-world (world-delete-rope world (pos->index pos) len)])
-          (recompute-mark/delete
-           (recompute-selection/delete
+          #;(recompute-mark/delete
+             (recompute-selection/delete
             new-world pos len) pos len)
-          #;(cleanup-text/pos+len
-             (recompute-mark/delete
-              (recompute-selection/delete
-               new-world pos len) pos len) pos 0))))
+          (cleanup-text/pos+len
+           (recompute-mark/delete
+            (recompute-selection/delete
+             new-world pos len) pos len) pos 0))))
   
   ;; delete/selection : World -> World
   (define (delete/selection world)
@@ -255,16 +255,16 @@
                                (World-cursor-index world)
                                a-rope
                                (World-selection-length world))])
-      (recompute-mark/replace
-       (select/len new-world len)
+      #;(recompute-mark/replace
+         (select/len new-world len)
        (World-cursor-position world)
        (World-selection-length world)
        len)
-      #;(cleanup-text/selection (recompute-mark/replace
-                                 (select/len new-world len)
-                                 (World-cursor-position world)
-                                 (World-selection-length world)
-                                 len))))
+      (cleanup-text/selection (recompute-mark/replace
+                               (select/len new-world len)
+                               (World-cursor-position world)
+                               (World-selection-length world)
+                               len))))
   
   ;; close : World -> World
   (define (close world)

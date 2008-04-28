@@ -181,6 +181,7 @@
           [stx/false
            (let ([original-pos (send editor get-end-position)])
              (set-world (action:select/stx world stx/false))
+             (set! world-at-beginning-of-insert (get-world))
              (set! need-space-before #f)
              (set! need-space-after #f)
              (let* ([start-pos (send editor get-start-position)]
