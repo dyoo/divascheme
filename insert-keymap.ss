@@ -89,6 +89,7 @@
                                     false))
       (set! world-at-beginning-of-insert (get-world)))
     
+    
     ;; consume-cmd: World symbol -> void
     ;; Evaluates a symbol as a command.
     (define (consume-cmd world symbol)
@@ -221,7 +222,6 @@
       (set! left-edge-of-insert start-position)
       (set! right-edge-of-insert end-position)
       (fill-highlight!)
-      (set! world-at-beginning-of-insert (get-world))
       (set! magic-options-lst false)
       (set! magic-option-base false))
     
