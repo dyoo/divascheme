@@ -120,23 +120,28 @@
                     (lambda () (send editor set-in-unstructured-editing? #f))))
     
     
+    ;; set-text: string -> void
+    ;; Assign to the selection point text.
     (define (set-text text)
       (with-unstructured-decoration
        (lambda ()
          (send editor insert text left-edge-of-insert right-edge-of-insert true))))
     
     
+    ;; set-insert&delete-callbacks: -> void
+    ;; Attach callbacks to the editor, so we can detect insertions and deletions
+    ;; and readjust our insertion point accordingly.
     (define (set-insert&delete-callbacks)
       (set-after-insert-callback on-insert)
       (set-after-delete-callback on-delete))
     
+    ;; unset-insert&delete-callbacks
+    ;; Detach our callbacks.
     (define (unset-insert&delete-callbacks)
       (set-after-insert-callback void)
       (set-after-delete-callback void))
     
     
-    (define (begin-symbol-insertion/nothing-pending)
-      (begin-symbol-insertion))
     
     
     (define (begin-symbol-edit)
@@ -370,12 +375,12 @@
                                      (string->rope " ")
                                      (string->rope ""))))])
               (consume-text world-at-beginning-of-insert spaced-rope)
-              (begin-symbol-insertion/nothing-pending))))))
+              (begin-symbol-insertion))))))
     
     
     (define (eval-cmd symbol)
       (consume-cmd world-at-beginning-of-insert symbol)
-      (begin-symbol-insertion/nothing-pending))
+      (begin-symbol-insertion))
     
     
     (define (eval-text&cmd symbol)
