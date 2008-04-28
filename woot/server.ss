@@ -39,6 +39,8 @@
 ;;   last-seen is a number
 ;; The response will be a byte stream containing (id msg) s-expressions, up to and not including
 ;; the given last-seen.
+;;
+;; Fixme: add timeout because if the request just sits there, we might be in trouble. 
 (define ((main-dispatcher a-state) request)
   (cond
     [(pull? request)

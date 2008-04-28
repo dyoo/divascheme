@@ -56,27 +56,43 @@
       (close-input-port (get-pure-port url))))
   
   
+  ;; with-custodian: (-> X) -> X
+  ;; Evaluate a thunk with a custodian, cleaning up all resources consumed by the
+  ;; application of the thunk.
+  (define (with-custodian thunk)
+    (let ([a-cust (make-custodian)])
+      (dynamic-wind (lambda ()
+                      (void))
+                    (lambda ()
+                      (parameterize ([current-custodian a-cust])
+                        (thunk)))
+                    (lambda ()
+                      (custodian-shutdown-all a-cust)))))
+  
+  
   ;; client-pull: client -> void
   ;; Retrieves new messages from the server and puts them in the mailbox.
   (define (client-pull a-client)
-    (let* ([encoded-params (alist->form-urlencoded
-                            `((action . "pull")
-                              (last-seen . ,(number->string (client-last-seen-id a-client)))))]
-           [url (string->url
-                 (string-append (client-url a-client) "?" encoded-params))])
-      (let ([ip (get-pure-port url)])
-        (let loop ([sexps (reverse (get-sexp-results ip))])
-          (cond
-            [(empty? sexps)
-             (void)]
-            [else
-             (match (first sexps)
-               [(list id payload)
-                (set-client-last-seen-id! a-client
-                                          (max (client-last-seen-id a-client)
-                                               id))
-                (async-channel-put (client-mailbox a-client) payload)
-                (loop (rest sexps))])])))))
+    (with-custodian
+     (lambda ()
+       (let* ([encoded-params (alist->form-urlencoded
+                               `((action . "pull")
+                                 (last-seen . ,(number->string (client-last-seen-id a-client)))))]
+              [url (string->url
+                    (string-append (client-url a-client) "?" encoded-params))])
+         (let ([ip (get-pure-port url)])
+           (let loop ([sexps (reverse (get-sexp-results ip))])
+             (cond
+               [(empty? sexps)
+                (void)]
+               [else
+                (match (first sexps)
+                  [(list id payload)
+                   (set-client-last-seen-id! a-client
+                                             (max (client-last-seen-id a-client)
+                                                  id))
+                   (async-channel-put (client-mailbox a-client) payload)
+                   (loop (rest sexps))])])))))))
   
   
   ;; get-sexp-results: input-port -> (listof (list number string))
