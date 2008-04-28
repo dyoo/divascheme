@@ -84,6 +84,38 @@
        #f]))
   
   
+  ;; imperative-op-cleans-whitespace?: imperative-op -> boolean
+  ;; Returns true if the imperative operation cleans whitespace up.
+  (define (imperative-op-cleans-whitespace? an-op)
+    (match an-op
+      [(struct imperative-op:indent-range (mark len))
+       #t]
+      
+      [(struct imperative-op:flash-last-sexp ())
+       #f]
+      
+      [(struct imperative-op:move-cursor-position (direction))
+       #f]
+      
+      [(struct imperative-op:transpose (original-world))
+       #f]
+      
+      [(struct imperative-op:cleanup ())
+       #t]
+      
+      [(struct imperative-op:cleanup-range (start-mark end-mark))
+       #t]
+      
+      [(struct imperative-op:delete-range (start-pos end-pos))
+       #f]
+      
+      [(struct imperative-op:insert-rope (rope pos))
+       #f]
+      
+      [(struct imperative-op:select-range (start-pos end-pos))
+       #f]))
+  
+  
   
   
   ;; preserve-selection-and-mark: World diva-text% -> World
@@ -233,7 +265,7 @@
            (update-mred-fn new-world)
            new-world)]
         ;; In the very strange case that they aren't, we have a back-hatch
-        ;; to insert unstructurally.  This shouldn't be the normal case, though. 
+        ;; to insert unstructurally.  This shouldn't be the normal case, though.
         [else
          (send a-text set-position a-pos 'same #f #f 'local)
          (insert-rope-in-text a-text a-rope)
@@ -252,31 +284,30 @@
   ;; cleanup-range: symbol symbol World text% (World -> World) (World -> void) -> World
   ;; Cleanup between the non-whitespace syntax near the start-mark and end-marks.
   (define (cleanup-range start-mark end-mark a-world a-text update-world-fn update-mred-fn)
-    (cleanup a-world a-text update-world-fn update-mred-fn)
-    #;(let ([start-pos (max 0 (world-marker-position a-world start-mark))]
-            [end-pos (min (send a-text last-position)
-                          (world-marker-position a-world end-mark))]
-            [world-without-marks
-             (world-clear-marker (world-clear-marker a-world start-mark)
-                                 end-mark)])
-        (let ([cursor (send (send a-text get-dstx-cursor) get-functional-cursor)])
-          (let ([start-pos (cond [(not (focus-container cursor start-pos))
-                                  0]
-                                 [(focus-younger (focus-container cursor start-pos))
-                                  (cursor-pos (focus-younger (focus-container cursor start-pos)))]
-                                 [(focus-out (focus-container cursor start-pos))
-                                  (cursor-pos (focus-out (focus-container cursor start-pos)))]
-                                 [else
-                                  (cursor-pos (focus-container cursor start-pos))])]
-                [end-pos (cond [(not (focus-container cursor end-pos))
-                                (send a-text last-position)]
-                               [(focus-older (focus-container cursor end-pos))
-                                (cursor-endpos (focus-older (focus-container cursor end-pos)))]
-                               [(focus-out (focus-container cursor end-pos))
-                                (cursor-endpos (focus-out (focus-container cursor end-pos)))]
+    (let ([start-pos (max 0 (world-marker-position a-world start-mark))]
+          [end-pos (min (send a-text last-position)
+                        (world-marker-position a-world end-mark))]
+          [world-without-marks
+           (world-clear-marker (world-clear-marker a-world start-mark)
+                               end-mark)])
+      (let ([cursor (send (send a-text get-dstx-cursor) get-functional-cursor)])
+        (let ([start-pos (cond [(not (focus-container cursor start-pos))
+                                0]
+                               [(focus-younger (focus-container cursor start-pos))
+                                (cursor-pos (focus-younger (focus-container cursor start-pos)))]
+                               [(focus-out (focus-container cursor start-pos))
+                                (cursor-pos (focus-out (focus-container cursor start-pos)))]
                                [else
-                                (cursor-endpos (focus-container cursor end-pos))])])
-            (cleanup/between start-pos end-pos world-without-marks a-text update-world-fn update-mred-fn)))))
+                                (cursor-pos (focus-container cursor start-pos))])]
+              [end-pos (cond [(not (focus-container cursor end-pos))
+                              (send a-text last-position)]
+                             [(focus-older (focus-container cursor end-pos))
+                              (cursor-endpos (focus-older (focus-container cursor end-pos)))]
+                             [(focus-out (focus-container cursor end-pos))
+                              (cursor-endpos (focus-out (focus-container cursor end-pos)))]
+                             [else
+                              (cursor-endpos (focus-container cursor end-pos))])])
+          (cleanup/between start-pos end-pos world-without-marks a-text update-world-fn update-mred-fn)))))
   
   
   
@@ -322,4 +353,5 @@
                          (World? . -> . World?) ;; pull-from-mred
                          (World? . -> . any) ;; push-into-mred
                          . -> . World?)]
-   [imperative-op-changes-text? (imperative-op? . -> . boolean?)]))
+   [imperative-op-changes-text? (imperative-op? . -> . boolean?)]
+   [imperative-op-cleans-whitespace? (imperative-op? . -> . boolean?)]))

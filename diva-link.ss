@@ -7,9 +7,9 @@
            (lib "struct.ss")
            (lib "plt-match.ss")
            (lib "errortrace-lib.ss" "errortrace")
+           (only (lib "1.ss" "srfi") filter)
            "interpreter.ss"
            "dot-processing.ss"
-           "operations.ss"
            "mred-state.ss"
            "mred-callback.ss"
            "command-keymap.ss"
@@ -382,14 +382,21 @@
              (end-edit-sequence)))))
       
       ;; get-operations/lift-cleanup: world -> world
-      ;; Adds necessary cleanup, or lifts up cleanup as the last operation. 
+      ;; Adds necessary cleanup, or lifts up cleanup as the last operation.
       (define (get-operations/lift-cleanup a-world)
         ;; Kludge: clean up everything at the very end.
         (cond
-          [(ormap imperative-op-changes-text? (World-imperative-operations a-world))
-           (reverse
-            (cons (make-imperative-op:cleanup)
-                  (World-imperative-operations a-world)))]
+          [(ormap imperative-op-cleans-whitespace? (World-imperative-operations a-world))
+           (let* ([unfiltered (reverse (World-imperative-operations a-world))]
+                  [cleaners 
+                   (filter imperative-op-cleans-whitespace? unfiltered)]
+                  [others
+                   (filter (lambda (x) (not (imperative-op-cleans-whitespace? x))) unfiltered)])
+             (append others cleaners))]
+          #;[(ormap imperative-op-changes-text? (World-imperative-operations a-world))
+             (reverse
+              (cons (make-imperative-op:cleanup)
+                    (World-imperative-operations a-world)))]
           [else
            (reverse (World-imperative-operations a-world))]))
       
