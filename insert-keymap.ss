@@ -123,7 +123,7 @@
     (define (set-text text)
       (with-unstructured-decoration
        (lambda ()
-         (send editor insert text left-edge-of-insert (send editor get-start-position) true))))
+         (send editor insert text left-edge-of-insert right-edge-of-insert true))))
     
     
     (define (set-insert&delete-callbacks)
@@ -396,39 +396,7 @@
       (or (string=? txt "#")
           (string=? txt "#s")))
     
-    (define (magic-expand-insertion-text)
-      (define quote-prefix "^([\"#'`,@]*)")
-      
-      (define (get-unmagic-prefix)
-        (second (regexp-match quote-prefix (get-text))))
-      
-      (define (get-magic-text)
-        (regexp-replace quote-prefix (get-text) ""))
-      
-      (define (consume-magic)
-        (set-text (string-append (get-unmagic-prefix)
-                                 (first magic-options-lst)))
-        (diva-message "")
-        (set! magic-option-base (first magic-options-lst))
-        (set! magic-options-lst (rest magic-options-lst)))
-      
-      (cond
-        [(and magic-option-base
-              (string=? magic-option-base (get-magic-text)))
-         (consume-magic)]
-        [else
-         (let* ([options ;; options guaranteed not-empty: contains at least (get-text).
-                 (action:magic-options
-                  world-at-beginning-of-insert
-                  left-edge-of-insert
-                  (string->symbol (get-magic-text)))])
-           (set! magic-options-lst (rest (apply circular-list options)))
-           (cond
-             [(empty? (rest options))
-              (diva-message
-               (format "no completion for ~a" (get-magic-text)))]
-             [else
-              (consume-magic)]))]))
+    
     
     
     
@@ -514,10 +482,50 @@
            (maybe-literal* c (lambda () e)))]))
     
     
+    
+    ;; magic-or-pass: -> void
+    ;; Either evaluate the magic expansion, or do a Pass-Wrap.
     (define (magic-or-pass)
       (if (= (string-length (get-text)) 0)
           (eval-text&cmd 'Pass-Wrap)
           (magic-expand-insertion-text)))
+    
+    ;; magic-expand-insertion-text: -> void
+    ;; Do autocompletion.
+    (define (magic-expand-insertion-text)
+      (define quote-prefix "^([\"#'`,@]*)")
+      
+      (define (get-unmagic-prefix)
+        (second (regexp-match quote-prefix (get-text))))
+      
+      (define (get-magic-text)
+        (regexp-replace quote-prefix (get-text) ""))
+      
+      (define (consume-magic)
+        (set-text (string-append (get-unmagic-prefix)
+                                 (first magic-options-lst)))
+        (diva-message "")
+        (set! magic-option-base (first magic-options-lst))
+        (set! magic-options-lst (rest magic-options-lst)))
+      
+      (cond
+        [(and magic-option-base
+              (string=? magic-option-base (get-magic-text)))
+         (consume-magic)]
+        [else
+         (let* ([options ;; options guaranteed not-empty: contains at least (get-text).
+                 (action:magic-options
+                  world-at-beginning-of-insert
+                  left-edge-of-insert
+                  (string->symbol (get-magic-text)))])
+           (set! magic-options-lst (rest (apply circular-list options)))
+           (cond
+             [(empty? (rest options))
+              (diva-message
+               (format "no completion for ~a" (get-magic-text)))]
+             [else
+              (consume-magic)]))]))
+    
     
     
     ;; make-insert-keymap: -> keymap
