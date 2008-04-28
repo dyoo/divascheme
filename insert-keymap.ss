@@ -491,24 +491,28 @@
        editor evt))
     
     
-    (define-syntax (maybe-literal stx)
-      (syntax-case stx ()
-        [(_ c e ...)
-         (syntax/loc stx
-           (maybe-literal* c (lambda () e) ...))]))
     
     ;; get-text-to-cursor: -> string
     ;; Gets the text from the left-edge-of-insert up to the current cursor position.
     (define (get-text-to-cursor)
       (send editor get-text left-edge-of-insert (send editor get-start-position)))
     
-    ;; maybe-literal*: character (listof thunk) -> void
+    ;; maybe-literal*: character (-> void) -> void
     ;; Possibly insert the character c, depending on the content of the insertion point
-    ;; and the cursor position.  Otherwise, evaluate the thunks. 
-    (define (maybe-literal* c . thunks)
-      (if (in-something? (get-text-to-cursor))
-          (send editor insert c)
-          (for-each (lambda (t) (t)) thunks)))
+    ;; and the cursor position.  Otherwise, evaluate the thunks.
+    (define (maybe-literal* c thunk)
+      (cond [(in-something? (get-text-to-cursor))
+             (send editor insert c)]
+            [else
+             (thunk)]))
+    
+    ;; Syntax to automatically wrap the thunk around.
+    (define-syntax (maybe-literal stx)
+      (syntax-case stx ()
+        [(_ c e)
+         (syntax/loc stx
+           (maybe-literal* c (lambda () e)))]))
+    
     
     (define (magic-or-pass)
       (if (= (string-length (get-text)) 0)
