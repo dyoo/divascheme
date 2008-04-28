@@ -374,14 +374,16 @@
                           (lambda (w)
                             (send current-mred push-world w))))))
                     (copy-struct World world [World-imperative-operations empty])
-                    (get-operations/add-necessary-cleanup world))])
+                    (get-operations/lift-cleanup world))])
                (set-current-world! (copy-struct World new-world
                                                 [World-rope (get-rope)]
                                                 [World-imperative-operations empty]))))
            (lambda ()
              (end-edit-sequence)))))
       
-      (define (get-operations/add-necessary-cleanup a-world)
+      ;; get-operations/lift-cleanup: world -> world
+      ;; Adds necessary cleanup, or lifts up cleanup as the last operation. 
+      (define (get-operations/lift-cleanup a-world)
         ;; Kludge: clean up everything at the very end.
         (cond
           [(ormap imperative-op-changes-text? (World-imperative-operations a-world))

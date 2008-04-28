@@ -146,7 +146,7 @@
       (set-after-delete-callback void))
     
     
-    ;; focus-world-selection-on-atom!: -> void 
+    ;; focus-world-selection-on-atom!: -> void
     ;; Given the current world, focus it on the atom we're on, or otherwise
     ;; don't affect the world.
     (define (focus-world-selection-on-atom!)
@@ -158,7 +158,8 @@
                                                (list stx/false))
                                      (list #f))))])
         (cond
-          [stx/false
+          [(and stx/false (in-syntax? (World-cursor-position world-at-beginning-of-insert)
+                                      stx/false))
            (set! world-at-beginning-of-insert
                  (action:select/stx world-at-beginning-of-insert stx/false))
            (set-world world-at-beginning-of-insert)]
