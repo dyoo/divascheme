@@ -6,7 +6,8 @@
            (lib "async-channel.ss")
            (lib "url.ss" "net")
            (lib "uri-codec.ss" "net")
-           (lib "plt-match.ss"))
+           (lib "plt-match.ss")
+           (lib "xml.ss" "xml"))
   
   (provide/contract
    ;; make-client: string -> client
@@ -47,6 +48,7 @@
            [url (string->url
                  (string-append (client-url a-client) "?" encoded-params))])
       ;; fixme: we really should be using put here!
+      ;; we should also double check the return response...
       (close-input-port (get-pure-port url))))
   
   
@@ -59,6 +61,7 @@
            [url (string->url
                  (string-append (client-url a-client) "?" encoded-params))])
       (let ([ip (get-pure-port url)])
+        
         (let loop ([next-sexp (read ip)])
           (match next-sexp
             [(? eof-object?)

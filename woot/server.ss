@@ -3,6 +3,7 @@
 (require web-server/web-server
          web-server/configuration/responders
          web-server/private/request-structs
+         web-server/servlet/bindings
          web-server/dispatchers/dispatch-lift
          scheme/list
          scheme/contract
@@ -41,21 +42,111 @@
 (define ((main-dispatcher a-server-state) request)
   (cond
     [(pull? request)
-     (handle-pull)]
+     (handle-pull a-server-state request)]
     [(push? request)
-     (handle-push)]
+     (handle-push a-server-state request)]
     [else
-     ;; fixme: do dispatching based on the request.
-     `(html (head (title "hello world"))
-            (body (h1 "hello world")))]))
+     (error-response "Expected 'action")
+     #;(handle-default a-server-state request)]))
 
 
-;; add-new-message: server-state string -> bytes.
-;; Accumulates a new message to the server, incrementing the id.
+;; lookup-single-binding: symbol request -> (or/c #f string)
+;; Looks up a binding: if a single one exists, returns its value.
+;; If more than one value exists, or no values exist at all, returns #f.
+(define (lookup-single-binding id request)
+  (let ([bindings (request-bindings request)])
+    (printf "I see ~a~n" bindings)
+    (cond [(exists-binding? id bindings)
+           (let ([vals (extract-bindings id bindings)])
+             (cond [(empty? (rest vals))
+                    (first vals)]
+                   [else #f]))]
+          [else
+           #f])))
+
+;; pull?: request -> boolean
+;; Returns true if the request asks for messages
+(define (pull? request)
+  (let ([val (lookup-single-binding 'action request)])
+    (and val (string=? val "pull"))))
+
+
+;; pull?: request -> boolean
+(define (push? request)
+  (let ([val (lookup-single-binding 'action request)])
+    (and val (string=? val "push"))))
+
+
+
+;; handle-pull: server-state request -> response
+(define (handle-pull a-state request)
+  (let ([cutoff-id (lookup-single-binding 'last-seen request)])
+    (cond
+      [cutoff-id
+       (let ([msgs (collect-messages a-state (string->number cutoff-id))])
+         (make-messages-response msgs))]
+      [else
+       (error-response "expected 'last-seen parameter")])))
+
+
+;; make-messages-response: (listof (list number string)) -> response
+;; Creates a response that formats all the requested messages.
+(define (make-messages-response msgs)
+  `(html (head (title "Pull results"))
+         (body
+          ,@(map (lambda (msg)
+                   `(p ,(format "~s" msg)))
+                 msgs))))
+
+
+
+;; collect-messages: server-state number -> (listof (list number string))
+(define (collect-messages a-state cutoff-id)
+  (let loop ([msgs (server-state-messages a-state)])
+    (cond
+      [(empty? msgs)
+       '()]
+      [(<= (first (first msgs)) cutoff-id)
+       '()]
+      [else
+       (cons (first msgs)
+             (loop (rest msgs)))])))
+
+
+;; handle-push: server-state request -> response
+(define (handle-push state request)
+  (let ([msg (lookup-single-binding 'msg request)])
+    (cond
+      [msg
+       (let ([new-id (add-new-message! state msg)])
+         `(html (head (title "Push result"))
+                (body
+                 (p ,(format "Added ~s." new-id)))))]
+      [else
+       (error-response "expected 'msg")])))
+
+
+
+;; handle-default: server-state request -> response
+;; By default, just dump out all the messages for debugging purposes.
+(define (handle-default state request)
+  (make-messages-response (server-state-messages state)))
+
+
+
+;; error-response: string -> resposne
+;; Makes a very silly response.
+(define (error-response msg)
+  `(html (head (title "Error"))
+         (body (p ,msg))))
+
+
+;; add-new-message: server-state string -> number
+;; Accumulates a new message to the server, incrementing the id, and returning that id.
 (define (add-new-message! a-server-state a-message)
   (let ([new-id (add1 (server-state-last-id a-server-state))])
     (set-server-state-messages! (cons (list new-id a-message)
                                       (server-state-messages a-server-state)))
     (set-server-state-last-id! new-id)
-    (string->bytes/utf-8 (number->string new-id))))
+    new-id))
 
