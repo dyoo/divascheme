@@ -97,17 +97,12 @@
       ;; Brings up a dialog window to host a session.  Shows our ip, and
       ;; some message on how to get others to join.
       (define/public (host-session)
-        (let ([session-name
-               (get-text-from-user "Host shared session"
-                                   "Choose a session name:"
-                                   (get-top-level-window)
-                                   (or (send this get-filename)
-                                       "default-session"))])
-          (let ([url (start-local-server session-name)])
+        (let ()
+          (let ([url (start-local-server)])
             (start-network-client url)
             (message-box
              "Host session started"
-             (format "Session started.\nOther hosts may connect by entering the session url: ~s"
+             (format "Session started.\nOther hosts may join by using the session url: ~s"
                      url)))))
       
       
@@ -127,9 +122,9 @@
       
       ;; start-local-server: string -> string
       ;; Starts up the local server.
-      (define (start-local-server session-name)
+      (define (start-local-server)
         (parameterize ([current-custodian woot-custodian])
-          (server:start-server default-port-number session-name)))
+          (server:start-server default-port-number)))
       
       
       

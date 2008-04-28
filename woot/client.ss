@@ -2,7 +2,6 @@
   ;; A simple producer/consumer mailbox between the server and the client.
   
   (require (lib "contract.ss")
-           (lib "mred.ss" "mred")
            (lib "async-channel.ss")
            (lib "url.ss" "net")
            (lib "uri-codec.ss" "net")
@@ -76,7 +75,6 @@
                 (set-client-last-seen-id! a-client
                                           (max (client-last-seen-id a-client)
                                                id))
-                (printf "Adding ~a~n" payload)
                 (async-channel-put (client-mailbox a-client) payload)
                 (loop (rest sexps))])])))))
   
