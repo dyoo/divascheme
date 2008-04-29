@@ -269,7 +269,7 @@
       
       ;; get-current-world: -> World
       ;; Returns the current world state.
-      (define/public (get-current-world)
+      (define (get-current-world)
         current-world)
       
       (define (set-current-world! a-world)
