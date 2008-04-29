@@ -72,14 +72,16 @@
     ;; delete-insertion-point!: -> void
     ;; Deletes the insertion point.
     (define (delete-insertion-point!)      
-      (let ([left left-edge-of-insert]
-            [right right-edge-of-insert])
-        (unset-insert&delete-callbacks)      
-        (send editor delete left right)
-        (when need-space-after
-          (send editor delete left (add1 left)))
-        (when need-space-before
-          (send editor delete (sub1 left) left))))
+      (with-unstructured-decoration
+       (lambda ()
+         (let ([left left-edge-of-insert]
+               [right right-edge-of-insert])
+           (unset-insert&delete-callbacks)
+           (send editor delete left right)
+           (when need-space-after
+             (send editor delete left (add1 left)))
+           (when need-space-before
+             (send editor delete (sub1 left) left))))))
     
     
     ;; Before interpreting a command, we'd like to restore the
@@ -92,7 +94,9 @@
          (when original-selected-dstx
            (let ([a-cursor (send editor get-dstx-cursor)])
              (send a-cursor focus-endpos! (send editor get-start-position))
-             (send a-cursor insert-after! original-selected-dstx)))
+             (send a-cursor insert-after! original-selected-dstx)
+             ;; Restore the structured nature of the dstx.
+             (send a-cursor property-remove! 'from-unstructured-editing)))
          (let ([index (pos->index (World-cursor-position world-at-beginning-of-insert))])
            (send editor diva:set-selection-position
                  index
@@ -210,6 +214,10 @@
         (cond
           [(send a-cursor can-focus-pos? (send editor get-start-position))
            (send a-cursor focus-pos! (send editor get-start-position))
+           ;; Temporarily mark the selected dstx as unstructured.  When we
+           ;; reinstate it, we'll restore it.
+           (send a-cursor property-set! 'from-unstructured-editing #t)
+           (printf "Cursor dstx now ~s~n" (send a-cursor cursor-dstx))
            (set! original-selected-dstx (send a-cursor cursor-dstx))]
           [else
            (set! original-selected-dstx #f)])))

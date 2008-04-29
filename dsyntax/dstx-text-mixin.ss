@@ -57,8 +57,10 @@
                            cursor-col
                            cursor-pos
                            cursor-endpos
+                           
                            property-ref
                            property-set!
+                           property-remove!
                            
                            can-focus-in?
                            focus-in!
@@ -730,7 +732,11 @@
       
       (define/public (property-set! a-name a-val)
         (resynchronize-with-main-editing-cursor!)
-        (cursor:property-set f-cursor a-name a-val))
+        (set! f-cursor (cursor:property-set f-cursor a-name a-val)))
+      
+      (define/public (property-remove! a-name)
+        (resynchronize-with-main-editing-cursor!)
+        (set! f-cursor (cursor:property-remove f-cursor a-name)))
       
       
       (define-syntax (set-cursor/success stx)

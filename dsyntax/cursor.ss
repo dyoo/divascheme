@@ -28,10 +28,13 @@
    [insert-after (cursor? dstx? . -> . cursor?)]
    [delete (cursor? . -> . cursor?)]
    [replace (cursor? dstx? . -> . cursor?)]
-   [property-set
-    (cursor? symbol? any/c . -> . cursor?)]
+   
    [property-ref
     (cursor? symbol? . -> . any)]
+   [property-set
+    (cursor? symbol? any/c . -> . cursor?)]
+   [property-remove
+    (cursor? symbol? . -> . cursor?)]
    
    
    [loc-after (loc? dstx? . -> . loc?)]
@@ -175,7 +178,8 @@
        (make-cursor a-new-dstx loc parent youngers-rev youngers-loc-rev olders)]))
   
   
-  ;; cursor-dstx-property-set: cursor symbol any -> cursor
+  ;; property-set: cursor symbol any -> cursor
+  ;; Sets a property binding on the currently focused dstx.
   (define (property-set a-cursor a-symbol a-value)
     (match a-cursor
       [(struct cursor (dstx loc parent youngers-rev youngers-loc-rev olders))
@@ -188,7 +192,21 @@
                            olders)])
          new-cursor)]))
   
-  ;; cursor-dstx-property-ref: cursor symbol -> any
+  ;; property-remove: cursor symbol -> cursor
+  ;; Removes the property binding of the currently focused dstx.
+  (define (property-remove a-cursor a-symbol)
+    (match a-cursor
+      [(struct cursor (dstx loc parent youngers-rev youngers-loc-rev olders))
+       (let ([new-cursor
+              (make-cursor (dstx-property-remove dstx a-symbol)
+                           loc
+                           parent
+                           youngers-rev
+                           youngers-loc-rev
+                           olders)])
+         new-cursor)]))
+  
+  ;; property-ref: cursor symbol -> any
   ;; Returns the property value of the currently focused dstx.
   (define (property-ref a-cursor a-symbol)
     (dstx-property-ref (cursor-dstx a-cursor) a-symbol))
