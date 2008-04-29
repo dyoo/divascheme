@@ -39,19 +39,7 @@
       
       (define/augment (decorate-new-dstx a-dstx)
         (let ([a-dstx (inner a-dstx decorate-new-dstx a-dstx)])
-          (attach-woot-ids a-dstx)))
-      
-      
-      ;; Attach new woot identifiers to any dstx that doesn't yet have one.
-      (define (attach-woot-ids a-dstx)
-        (dstx-deepmap (lambda (a-dstx)
-                        (cond
-                          [(dstx-woot-id a-dstx)
-                           a-dstx]
-                          [else
-                           (dstx-property-set a-dstx 'woot-id (fresh-woot-id host-ip))]))
-                      a-dstx))
-      
+          (deep-attach-woot-ids a-dstx host-ip)))
       
       
       (define/pubment (on-woot-structured-insert a-dstx before-woot-id after-woot-id)
@@ -62,62 +50,57 @@
         (inner (void) on-woot-structured-delete woot-id))
       
       
-      
-      (define (handle-structured-insert-before a-fcursor a-dstx)
-        (cond
-          [(focus-younger/no-snap a-fcursor)
-           (on-woot-structured-insert
-            a-dstx
-            (dstx-woot-id (cursor-dstx (focus-younger/no-snap a-fcursor)))
-            (dstx-woot-id (cursor-dstx a-fcursor)))]
-          [else
-           ;; as an invariant, no insert-before should occur before the sentinel
-           ;; element, so we should never see this situation...
-           (error 'handle-structured-insert-before)]))
-      
-      
-      (define (handle-structured-insert-after a-fcursor a-dstx)
-        (cond
-          [(focus-older/no-snap a-fcursor)
-           (on-woot-structured-insert
-            a-dstx
-            (dstx-woot-id (cursor-dstx a-fcursor))
-            (dstx-woot-id (cursor-dstx (focus-older/no-snap a-fcursor))))]
-          [else
-           ;; Last element in a fusion or at the toplevel will have a nil right id.
-           (on-woot-structured-insert a-dstx (dstx-woot-id (cursor-dstx a-fcursor)) #f)]))
-      
-      
-      (define (handle-structured-delete a-fcursor a-dstx)
-        (cond
-          [(and (focus-younger/no-snap a-fcursor)
-                (focus-older/no-snap a-fcursor))
-           (on-woot-structured-delete (dstx-woot-id a-dstx))]
-          [(focus-younger/no-snap a-fcursor)
-           (on-woot-structured-delete (dstx-woot-id a-dstx))]
-          ;; The two cases below should never occur.
-          [(focus-older/no-snap a-fcursor)
-           (error 'handle-structured-delete)]
-          [else
-           (error 'handle-structured-delete)]))
-      
-      
       ;; Hooks into on-structured-insert-before.
+      ;; Given a structured insert appropriate for woot, we call out to
+      ;; on-woot-structured-insert.
       (define/augment (on-structured-insert-before a-fcursor a-dstx)
         (when (not (dstx-from-unstructured-editing? a-dstx))
-          (handle-structured-insert-before a-fcursor a-dstx))
+          (cond
+            [(focus-younger/no-snap a-fcursor)
+             (on-woot-structured-insert
+              (deep-strip-local-ids a-dstx)
+              (dstx-woot-id (cursor-dstx (focus-younger/no-snap a-fcursor)))
+              (dstx-woot-id (cursor-dstx a-fcursor)))]
+            [else
+             ;; as an invariant, no insert-before should occur before the sentinel
+             ;; element, so we should never see this situation...
+             (error 'handle-structured-insert-before)]))
         (inner (void) on-structured-insert-before a-fcursor))
       
+      
       ;; Hooks into on-structured-insert-after.
+      ;; Given a structured insert appropriate for woot, we call out to
+      ;; on-woot-structured-insert.
       (define/augment (on-structured-insert-after a-fcursor a-dstx)
         (when (not (dstx-from-unstructured-editing? a-dstx))
-          (handle-structured-insert-after a-fcursor a-dstx))
+          (cond
+            [(focus-older/no-snap a-fcursor)
+             (on-woot-structured-insert
+              (deep-strip-local-ids a-dstx)
+              (dstx-woot-id (cursor-dstx a-fcursor))
+              (dstx-woot-id (cursor-dstx (focus-older/no-snap a-fcursor))))]
+            [else
+             ;; Last element in a fusion or at the toplevel will have a nil right id.
+             (on-woot-structured-insert a-dstx (dstx-woot-id (cursor-dstx a-fcursor)) #f)]))
         (inner (void) on-structured-insert-after a-fcursor))
       
+      
       ;; Hooks into on-structured-delete.
+      ;; Given a structured delete appropriate for woot, we call out to
+      ;; on-woot-structured-insert.
       (define/augment (on-structured-delete a-fcursor)
         (when (not (dstx-from-unstructured-editing? (cursor-dstx a-fcursor)))
-          (handle-structured-delete a-fcursor (cursor-dstx a-fcursor)))
+          (cond
+            [(and (focus-younger/no-snap a-fcursor)
+                  (focus-older/no-snap a-fcursor))
+             (on-woot-structured-delete (dstx-woot-id (cursor-dstx a-fcursor)))]
+            [(focus-younger/no-snap a-fcursor)
+             (on-woot-structured-delete (dstx-woot-id (cursor-dstx a-fcursor)))]
+            ;; The two cases below should never occur.
+            [(focus-older/no-snap a-fcursor)
+             (error 'handle-structured-delete)]
+            [else
+             (error 'handle-structured-delete)]))
         (inner (void) on-structured-delete a-fcursor))
       
       (initialize)))
@@ -249,6 +232,26 @@
     (dstx-property-ref a-dstx 'woot-id (lambda () #f)))
   
   
+  ;; deep-attach-woot-id: dstx string -> dstx
+  ;; Attach new woot identifiers to any dstx that doesn't yet have one.
+  (define (deep-attach-woot-ids a-dstx host-ip)
+    (dstx-deepmap (lambda (a-dstx)
+                    (cond
+                      [(dstx-woot-id a-dstx)
+                       a-dstx]
+                      [else
+                       (dstx-property-set a-dstx 'woot-id (fresh-woot-id host-ip))]))
+                  a-dstx))
+  
+  
+  ;; deep-strip-local-ids: dstx -> dstx
+  ;; Given a dstx, rip out the local ids.
+  (define (deep-strip-local-ids a-dstx)
+    (dstx-deepmap (lambda (a-dstx)
+                    (dstx-property-remove a-dstx 'local-id))
+                  a-dstx))
+  
+  
   ;; dstx-from-unstructured-editing?: dstx -> boolean
   ;; Returns true if we're certain that the dstx came from intermediate insert-mode.
   (define (dstx-from-unstructured-editing? a-dstx)
@@ -277,7 +280,6 @@
                                  children)
                             " ")
                suffix)]))
-  
   
   
   ;; next-logical-id: -> number
