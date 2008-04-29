@@ -17,23 +17,25 @@
   ;; where a-number is a number, and host-string is a string containing an ip address.
   
   
-  
-  ;; Infrastructure for tying in woot stuff into DivaScheme
-  ;; woot-text-mixin: diva-text% -> diva-text%
   (define (woot-text-mixin super%)
+    (network-mixin
+     (structure-tracking-mixin
+      super%)))
+  
+  
+  
+  
+  
+  ;; structure-tracking-mixin: diva-text% -> diva-text%
+  ;; Mixin for dstx-text that detects structured edits.
+  (define (structure-tracking-mixin super%)
     (class super%
-      (inherit queue-for-interpretation! get-top-level-window)
       
-      (define woot-custodian (make-custodian))
-      (define woot-client #f)
-      
-      
-      
+      ;; We annotate every new structure with a host ip.
       (define host-ip (self-ip-address))
       
       (define (initialize)
         (super-new))
-      
       
       (define/augment (decorate-new-dstx a-dstx)
         (let ([a-dstx (inner a-dstx decorate-new-dstx a-dstx)])
@@ -47,28 +49,27 @@
                           [(dstx-woot-id a-dstx)
                            a-dstx]
                           [else
-                           (dstx-assign-woot-id a-dstx)]))
+                           (dstx-property-set a-dstx 'woot-id (fresh-woot-id host-ip))]))
                       a-dstx))
       
       
-      ;; dstx-woot-id: dstx -> woot-id
-      (define (dstx-woot-id a-dstx)
-        (dstx-property-ref a-dstx 'woot-id (lambda () #f)))
+      
+      (define/pubment (on-woot-structured-insert a-dstx before-woot-id after-woot-id)
+        (inner (void) on-woot-structured-insert a-dstx before-woot-id after-woot-id))
       
       
-      ;; dstx-assign-woot-id: dstx -> dstx
-      (define (dstx-assign-woot-id a-dstx)
-        (dstx-property-set a-dstx 'woot-id (fresh-woot-id host-ip)))
+      (define/pubment (on-woot-structured-delete woot-id)
+        (inner (void) on-woot-structured-delete woot-id))
       
       
       
       (define (handle-structured-insert-before a-fcursor a-dstx)
         (cond
           [(focus-younger/no-snap a-fcursor)
-           (printf "inserting ~s between ~s and ~s~n"
-                   a-dstx
-                   (dstx-woot-id (cursor-dstx (focus-younger/no-snap a-fcursor)))
-                   (dstx-woot-id (cursor-dstx a-fcursor)))]
+           (on-woot-structured-insert
+            a-dstx
+            (dstx-woot-id (cursor-dstx (focus-younger/no-snap a-fcursor)))
+            (dstx-woot-id (cursor-dstx a-fcursor)))]
           [else
            ;; as an invariant, no insert-before should occur before the sentinel
            ;; element, so we should never see this situation...
@@ -78,33 +79,27 @@
       (define (handle-structured-insert-after a-fcursor a-dstx)
         (cond
           [(focus-older/no-snap a-fcursor)
-           (printf "inserting ~s between ~s and ~s~n"
-                   a-dstx
-                   (dstx-woot-id (cursor-dstx a-fcursor))
-                   (dstx-woot-id (cursor-dstx (focus-older/no-snap a-fcursor))))]
+           (on-woot-structured-insert
+            a-dstx
+            (dstx-woot-id (cursor-dstx a-fcursor))
+            (dstx-woot-id (cursor-dstx (focus-older/no-snap a-fcursor))))]
           [else
            ;; Last element in a fusion or at the toplevel will have a nil right id.
-           (printf "inserting ~s at the end of a fusion or toplevel, after ~s~n"
-                   a-dstx
-                   (dstx-woot-id (cursor-dstx a-fcursor)))]))
+           (on-woot-structured-insert a-dstx (dstx-woot-id (cursor-dstx a-fcursor)) #f)]))
       
       
       (define (handle-structured-delete a-fcursor a-dstx)
         (cond
           [(and (focus-younger/no-snap a-fcursor)
                 (focus-older/no-snap a-fcursor))
-           (printf "deleting ~s~n" (cursor-dstx a-fcursor))]
+           (on-woot-structured-delete (dstx-woot-id a-dstx))]
           [(focus-younger/no-snap a-fcursor)
-           (printf "deleting ~s~n" (cursor-dstx a-fcursor))]
+           (on-woot-structured-delete (dstx-woot-id a-dstx))]
           ;; The two cases below should never occur.
           [(focus-older/no-snap a-fcursor)
            (error 'handle-structured-delete)]
           [else
            (error 'handle-structured-delete)]))
-      
-      
-      
-      
       
       
       ;; Hooks into on-structured-insert-before.
@@ -125,9 +120,23 @@
           (handle-structured-delete a-fcursor (cursor-dstx a-fcursor)))
         (inner (void) on-structured-delete a-fcursor))
       
+      (initialize)))
+  
+  
+  
+  
+  ;; woot-text-mixin: diva-text% -> diva-text%
+  ;; Infrastructure for tying in woot stuff with the network and DivaScheme
+  (define (network-mixin super%)
+    (class super%
+      (inherit queue-for-interpretation! get-top-level-window)
+      
+      (define woot-custodian (make-custodian))
+      (define woot-client #f)
       
       
-      
+      (define (initialize)
+        (super-new))
       
       ;; host-session: -> void
       ;; Brings up a dialog window to host a session.  Shows our ip, and
@@ -140,7 +149,6 @@
              "Host session started"
              (format "Session started.\nOther hosts may join by using the session url: ~s"
                      url)))))
-      
       
       ;; join-session: -> void
       ;; Brings up a dialog box asking which system to join to.
@@ -155,13 +163,11 @@
            (format "Connected to session ~s." session-url))))
       
       
-      
       ;; start-local-server: string -> string
       ;; Starts up the local server.
       (define (start-local-server)
         (parameterize ([current-custodian woot-custodian])
           (server:start-server default-port-number)))
-      
       
       
       ;; start-network-client: string -> void
@@ -171,6 +177,14 @@
           (set! woot-client (client:new-client url))))
       
       
+      (define/augment (on-woot-structured-insert a-dstx before-woot-id after-woot-id)
+        (printf "I: between ~s and ~s: ~s~n" before-woot-id after-woot-id a-dstx)
+        (inner (void) on-woot-structured-insert a-dstx before-woot-id after-woot-id))
+      
+      
+      (define/augment (on-woot-structured-delete woot-id)
+        (printf "D: ~s~n" woot-id)
+        (inner (void) on-woot-structured-delete woot-id))
       
       (initialize)))
   
@@ -228,6 +242,11 @@
   ;; Returns a fresh woot id.
   (define (fresh-woot-id host-ip)
     (list (next-logical-id) host-ip))
+  
+  
+  ;; dstx-woot-id: dstx -> woot-id
+  (define (dstx-woot-id a-dstx)
+    (dstx-property-ref a-dstx 'woot-id (lambda () #f)))
   
   
   ;; dstx-from-unstructured-editing?: dstx -> boolean

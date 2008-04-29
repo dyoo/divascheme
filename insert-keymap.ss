@@ -104,9 +104,11 @@
          ;; for debugging
          (unless (rope=? (World-rope world-at-beginning-of-insert)
                          (send editor get-rope))
-           (printf "rope mismatch!  World has~n~s~nEditor has ~n~s~n"
-                   (World-rope world-at-beginning-of-insert)
-                   (send editor get-rope))))))
+           (error 'restore-editor-to-pre-state!
+                  (format
+                   "rope mismatch!  World has~n~s~nEditor has ~n~s~n"
+                   (rope->string (World-rope world-at-beginning-of-insert))
+                   (rope->string (send editor get-rope))))))))
     
     
     
@@ -254,7 +256,6 @@
            ;; Temporarily mark the selected dstx as unstructured.  When we
            ;; reinstate it, we'll restore it.
            (send a-cursor property-set! 'from-unstructured-editing #t)
-           (printf "Cursor dstx now ~s~n" (send a-cursor cursor-dstx))
            (set! original-selected-dstx (send a-cursor cursor-dstx))]
           [else
            (set! original-selected-dstx #f)])))
