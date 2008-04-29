@@ -125,15 +125,16 @@
       (preferences:get 'framework:paren-match-color))
     
     
-    ;; get-text: -> string
+    ;; get-insertion-point-text: -> string
     ;; Returns the string contents between the left and right edge of the insertion point.
-    (define (get-text)
+    (define (get-insertion-point-text)
       (send editor get-text left-edge-of-insert right-edge-of-insert))
     
-    ;; get-rope: -> rope
+    
+    ;; get-insertion-point-rope: -> rope
     ;; Returns the contents between the left and right edge of the
     ;; insertion point.
-    (define (get-rope)
+    (define (get-insertion-point-rope)
       (read-subrope-in-text editor left-edge-of-insert
                             (- right-edge-of-insert left-edge-of-insert)))
     
@@ -204,9 +205,8 @@
     ;; begin-symbol-edit: -> void
     ;; Set up the insertion point around the currently focused atom. 
     (define (begin-symbol-edit)
-      (let* ([world (get-world)]
-             [stx/false (find-pos-near (World-cursor-position world)
-                                       (World-syntax-list world))]
+      (let* ([stx/false (find-pos-near (World-cursor-position world-at-beginning-of-insert)
+                                       (World-syntax-list world-at-beginning-of-insert))]
              [stx/false (and stx/false
                              (first (append
                                      (find-all atomic/stx?
@@ -215,8 +215,9 @@
         (cond
           [stx/false
            (let ([original-pos (send editor get-end-position)])
-             (set-world (action:select/stx world stx/false))
-             (set! world-at-beginning-of-insert (get-world))
+             (let ([selected-world (action:select/stx world-at-beginning-of-insert stx/false)])
+               (set-world selected-world)
+               (set! world-at-beginning-of-insert selected-world))
              (set! need-space-before #f)
              (set! need-space-after #f)
              (let* ([start-pos (send editor get-start-position)]
@@ -420,9 +421,9 @@
     
     (define (eval-text)
       (local
-        ((define txt (get-text))
+        ((define txt (get-insertion-point-text))
          (define closer (in-something? txt))
-         (define a-rope (get-rope)))
+         (define a-rope (get-insertion-point-rope)))
         (unless (blank-string? txt)
           (local ((define closed-rope
                     (cond [closer
@@ -454,7 +455,7 @@
       ;; The issue is if we enter the sequence "#(...", we want the templating
       ;; system to introduce "#($expr$)", but not execute the opening command, or else
       ;; we end up getting the silly expression "#(($expr$))".
-      (cond [(text-already-introduces-open? (get-text))
+      (cond [(text-already-introduces-open? (get-insertion-point-text))
              (eval-text)]
             [else
              (eval-text)
@@ -479,7 +480,7 @@
     ;; consume&exit: -> void
     ;; Evaluate the text and then exit.
     (define (consume&exit)
-      (if (blank-string? (get-text))
+      (if (blank-string? (get-insertion-point-text))
           (revert&exit)
           (begin
             (eval-text)
@@ -554,7 +555,7 @@
     ;; magic-or-pass: -> void
     ;; Either evaluate the magic expansion, or do a Pass-Wrap.
     (define (magic-or-pass)
-      (if (= (string-length (get-text)) 0)
+      (if (= (string-length (get-insertion-point-text)) 0)
           (eval-text&cmd 'Pass-Wrap)
           (magic-expand-insertion-text)))
     
@@ -564,10 +565,10 @@
       (define quote-prefix "^([\"#'`,@]*)")
       
       (define (get-unmagic-prefix)
-        (second (regexp-match quote-prefix (get-text))))
+        (second (regexp-match quote-prefix (get-insertion-point-text))))
       
       (define (get-magic-text)
-        (regexp-replace quote-prefix (get-text) ""))
+        (regexp-replace quote-prefix (get-insertion-point-text) ""))
       
       (define (consume-magic)
         (set-text (string-append (get-unmagic-prefix)
