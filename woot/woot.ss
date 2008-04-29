@@ -24,7 +24,6 @@
   
   (define-struct tomb-d (
     id ; id
-    sexp ; sexp
   ))
   
   (define-struct tomb-m (
@@ -82,7 +81,7 @@
   (define (sexp-id sexp)
     (cond
       [(exp? sexp) (exp-id sexp)]
-      [(tomb-d? sexp) (tomb-d-id sexp)]
+      [(tomb-d? sexp) (sexp-id (tomb-d-sexp sexp))]
       [(tomb-m? sexp) (tomb-m-id sexp)]
       [(whitespace? sexp) (whitespace-id sexp)]
       [(comment? sexp) (comment-id sexp)]))
@@ -91,32 +90,97 @@
   (define (sexp-sexps sexp)
     (cond
       [(exp? sexp) (exp-sexps sexp)]
+      [(tomb-d? sexp) (sexp-sexps (tomb-d-sexp sexp))]
       [else empty]))
   
-  ; parent-exp-of-in: id sexp -> sexp
+  (define (sexps-cur c) (car c))
+  (define (sexps-older c) (and (cons? c) (cdr c)))
+  (define (sexps-ormap f c)
+    (and c (or (f (sexps-cur c)) (sexps-ormap f (sexps-older c)))))
+  
+  ; replace-exp!: sexp id sexp -> void
+  ; (replace-exp! parent id new) replaces the sexp with id id in parent with new
+  
+  ; parent-exp-of-in: id sexp -> exp
   ; TODO: cache this (invalidate on move, &c.)
   (define (parent-exp-of-in id sexp)
-    (if (ormap (lambda (sexp) (eq? id (sexp-id sexp))) (sexp-sexps sexp))
+    (if (sexps-ormap (lambda (sexp) (eq? id (sexp-id sexp))) (sexp-sexps sexp))
         sexp
-        (ormap (lambda (sexp) (parent-exp-of-in id sexp)) (sexp-sexps sexp))))
+        (sexps-ormap (lambda (sexp) (parent-exp-of-in id sexp)) (sexp-sexps sexp))))
   
   (define (parent-exp-of id) (parent-exp-of-in id ast))
   
-  ; exp-of-in: id sexp -> sexp
+  ; sexp-of-in: id sexp -> sexp
   ; TODO: cache this (invalidate on move, &c.)
-  (define (exp-of-in id sexp)
+  (define (sexp-of-in id sexp)
     (if (eq? id (sexp-id sexp))
         sexp
-        (ormap (lambda (sexp) (exp-of-in id sexp)) (sexp-sexps sexp))))
+        (sexps-ormap (lambda (sexp) (exp-of-in id sexp)) (sexp-sexps sexp))))
   
   (define (exp-of id) (exp-of-in id ast))
   
-  ; move: move -> void
+  ; chase-exp: sexp -> exp
+  ; try coercing sexp into exp if possible
+  (define (chase-exp sexp)
+    (cond
+      [(exp? sexp) sexp]
+      [(tomb-d? sexp) (chase-exp (tomb-d-sexp sexp))]
+      [(tomb-m? sexp) (chase-exp (exp-of (tomb-d-forward-id sexp)))]
+      [else #f]))
+  
+  ; insert-before-first-larger-id: sexp exp id id -> void
+  (define (insert-before-first-larger-id sexp parent id-before id-after)
+    (local (define (insert-here sexps)
+             (if (or (not sexps)
+                     (eq? id-after (sexp-id (sexps-cur sexps)))
+                     (> (sexp-id sexp) (sexp-id (sexps-cur sexps))))
+               (insert-exp! sexps sexp)
+               (insert-here (sexps-older sexps))))
+           (define (insert-find sexps)
+             (if (eq? id-before (sexp-id (sexps-cur sexps)))
+               (insert-here (sexps-older sexps))
+               (insert-find (sexps-older sexps))))
+      (if (eq? id-before (exp-id-start parent))
+        (insert-here (exp-sexps exp))
+        (insert-find (exp-sexps exp)))))
+  
+  ; apply-move: move -> void
   ; integrate a move operation into our AST
   ; assumes preconditions are met
-  (define (move move-op)
-    (let* ([y (parent-exp-of id)]
-           [x (exp-of-in id y)]
-           [x (exp (exp-paren-type 
-  )
+  (define (apply-move op)
+    (let* ([y (parent-exp-of (move-id op))]
+           [x (exp-of-in (move-id op) y)])
+      (replace-exp! y (move-id op) (tomb-m (move-id op) (move-new-id op)))
+      (insert-before-first-larger-id
+        (exp (exp-paren-type x) (move-new-id op) (exp-id-start x) (exp-sexps x))
+        (parent-exp-of (move-id-before op))
+        (move-id-before op)
+        (move-id-after op))))
+  
+  ; apply-ins: ins -> void
+  ; integrate an insert operation into our AST
+  ; assumes preconditions are met
+  (define (apply-ins op)
+    (insert-before-first-larger-id
+      sexp
+      (parent-exp-of (ins-id-before op))
+      (ins-id-before op)
+      (ins-id-after op)))
+  
+  ; apply-del: del -> void
+  ; integrate a delete operation into our AST
+  ; assumes preconditions are met
+  (define (apply-del op)
+    (let* ([y (parent-exp-of (del-id op))]
+           [x (exp-of-in (del-id op) y)])
+      (replace-exp! y (del-id op) (tomb-d (del-id op) x))))
+  
+  ; apply-op: op -> void
+  ; integrate an operation into our AST
+  ; assumes preconditions are met
+  (define (apply-op op)
+    (cond
+      [(move? op) (apply-move op)]
+      [(ins? op) (apply-ins op)]
+      [(del? op) (apply-del op)]))
 )
