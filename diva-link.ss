@@ -231,6 +231,7 @@
       ;; diva-message: string -> void
       ;; Displays a message to the top-level frame window.
       (define/public (diva-message msg)
+        (printf "~a~n" msg)
         (when (get-top-level-window)
           (send (get-top-level-window) diva-message msg)))
       
@@ -238,6 +239,7 @@
       ;; error-exn: exn -> void
       ;; Report an exception message.
       (define (error-exn exn)
+        (printf "~a~n" exn)
         (let ([err-msg (format "DivaScheme Error: ~a" exn)])
           #;(print-error-trace (current-error-port) exn)
           (diva-message err-msg)))

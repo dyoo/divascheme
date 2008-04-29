@@ -35,6 +35,7 @@
     
     (define left-edge-of-insert (send editor get-start-position))
     (define right-edge-of-insert (send editor get-start-position))
+    (define original-selected-dstx #f)
     (define need-space-before #f)
     (define need-space-after #f)
     
@@ -60,6 +61,7 @@
     
     ;; do-interpretation: world Protocol-Syntax-tree -> void
     (define (do-interpretation world ast)
+      (set-text "")
       (restore-editor-to-pre-state!)
       (interpret! world ast))
     
@@ -69,14 +71,14 @@
     ;; editor state before coming into insert mode, so that it
     ;; syncs up with what's in the World.
     (define (restore-editor-to-pre-state!)
+      ;; force deletion of the insertion point.
       (set-text "")
-      (let ([world world-at-beginning-of-insert])
-        (send editor set-rope (World-rope world))
-        (let ([index (pos->index (World-cursor-position world))])
-          (send editor diva:set-selection-position
-                index
-                (+ index (World-selection-length world))))))
-    
+      (send editor set-rope (World-rope world-at-beginning-of-insert))
+      (let ([index (pos->index (World-cursor-position world-at-beginning-of-insert))])
+        (send editor diva:set-selection-position
+              index
+              (+ index (World-selection-length world-at-beginning-of-insert)))))
+  
     
     
     ;; consume-text: World Pending rope -> void
@@ -167,7 +169,21 @@
            (void)])))
     
     
+        
+    ;; save-original-selected-dstx!: -> void
+    ;; Saves the dstx at the selection.
+    (define (save-original-selected-dstx!)
+      (let ([a-cursor (send editor get-dstx-cursor)])
+        (cond
+          [(send a-cursor can-focus-pos? (send editor get-start-position))
+           (send a-cursor focus-pos! (send editor get-start-position))
+           (set! original-selected-dstx (send a-cursor cursor-dstx))]
+          [else
+           (set! original-selected-dstx #f)])))
     
+    
+    ;; begin-symbol-edit: -> void
+    ;; Set up the insertion point around the currently focused atom. 
     (define (begin-symbol-edit)
       (let* ([world (get-world)]
              [stx/false (find-pos-near (World-cursor-position world)
@@ -188,6 +204,7 @@
                     [end-pos (send editor get-end-position)]
                     [selection-rope-before-insert
                      (read-subrope-in-text editor start-pos (- end-pos start-pos))])
+               (save-original-selected-dstx!)
                (begin-symbol start-pos end-pos)
                (send editor delete)
                (with-unstructured-decoration
@@ -198,10 +215,10 @@
                (set-insert&delete-callbacks)))]
           [else
            (begin-symbol-insertion)])))
+            
     
-    
-    
-    
+    ;; begin-symbol-insertion: -> void
+    ;; Set up the insertion point, replacing the current selection. 
     (define (begin-symbol-insertion)
       (let ([left-point (send editor get-start-position)]
             [right-point (send editor get-end-position)])
@@ -211,8 +228,11 @@
               (begin-symbol (add1 left-point) (add1 left-point))
               (begin-symbol left-point left-point))
           (unset-insert&delete-callbacks)
-          (unless (empty-selection?)
-            (send editor delete))
+          (cond [(empty-selection?)
+                 (set! original-selected-dstx  #f)]
+                [else
+                 (save-original-selected-dstx!)
+                 (send editor delete)])
           (with-unstructured-decoration
            (lambda ()
              (when need-space-before
