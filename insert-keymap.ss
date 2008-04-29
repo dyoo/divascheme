@@ -49,7 +49,7 @@
       (set! insert-keymap (make-insert-keymap))
       (send (send editor get-keymap) chain-to-keymap insert-keymap #t)
       
-      (focus-world-selection-on-atom!)
+      (focus-initial-world-selection-on-atom!)
       ;; Hooking up the other callbacks
       (set-on-focus-lost consume&exit)
       (unset-insert&delete-callbacks)
@@ -186,27 +186,64 @@
     
     
     ;; focus-world-selection-on-atom!: -> void
-    ;; Given the current world, focus it on the atom we're on, or otherwise
+    ;; Given the current world, focus it on the structure we're on, or otherwise
     ;; don't affect the world.
-    (define (focus-world-selection-on-atom!)
+    ;; This code is kludgy, but there are a lot of edge cases here.
+    (define (focus-initial-world-selection-on-atom!)
       (let* ([stx/false (find-pos-near (World-cursor-position world-at-beginning-of-insert)
-                                       (World-syntax-list world-at-beginning-of-insert))]
-             [stx/false (and stx/false
-                             (first (append
-                                     (find-all atomic/stx?
-                                               (list stx/false))
-                                     (list #f))))])
+                                       (World-syntax-list world-at-beginning-of-insert))])
         (cond
-          [(and stx/false (in-syntax? (World-cursor-position world-at-beginning-of-insert)
-                                      stx/false))
-           (set! world-at-beginning-of-insert
-                 (action:select/stx world-at-beginning-of-insert stx/false))
-           (set-world world-at-beginning-of-insert)]
+          ;; Editing a symbol
+          [edit?
+           (let ([atom-stx/false (and stx/false
+                                      (first (append
+                                              (find-all atomic/stx?
+                                                        (list stx/false))
+                                              (list #f))))])
+             (cond
+               [(and atom-stx/false
+                     (in-syntax?
+                      (World-cursor-position world-at-beginning-of-insert)
+                      atom-stx/false))
+                (set! world-at-beginning-of-insert
+                      (action:select/stx world-at-beginning-of-insert atom-stx/false))
+                (set-world world-at-beginning-of-insert)]
+               [else
+                (void)]))]
           [else
-           (void)])))
+           ;; Inserting a new symbol: the selection must be completely surrounding a
+           ;; syntax.
+           ;; Otherwise, we should push the selection off to the side of
+           ;; the atom,to avoid screwing up the atom by unstructured edit.
+           (cond
+             [stx/false
+              (cond
+                [(and (= (World-cursor-position world-at-beginning-of-insert)
+                         (syntax-position stx/false))
+                      (= (World-selection-length world-at-beginning-of-insert)
+                         (syntax-span stx/false)))
+                 (set! world-at-beginning-of-insert
+                       (action:select/stx world-at-beginning-of-insert stx/false))
+                 (set-world world-at-beginning-of-insert)]
+                [else
+                 ;; Move selection to the front or back of the syntax, but ensure that
+                 ;; it is zero-width and on the borders of the stx.
+                 (cond
+                   [(= (send editor get-start-position)
+                       (send editor get-end-position)
+                       (+ (pos->index (syntax-position stx/false))
+                          (syntax-span stx/false)))
+                    (void)]
+                   [else
+                    (send editor diva:set-selection-position
+                          (pos->index (syntax-position stx/false)))
+                    (set! world-at-beginning-of-insert (get-world))
+                    (set-world world-at-beginning-of-insert)])])]
+             [else
+              (void)])])))
     
     
-        
+    
     ;; save-original-selected-dstx!: -> void
     ;; Saves the dstx at the selection.
     (define (save-original-selected-dstx!)
