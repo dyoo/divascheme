@@ -61,23 +61,42 @@
     
     ;; do-interpretation: world Protocol-Syntax-tree -> void
     (define (do-interpretation world ast)
-      (set-text "")
       (restore-editor-to-pre-state!)
       (interpret! world ast))
     
     
+    ;; delete-insertion-point!: -> void
+    ;; Deletes the insertion point.
+    (define (delete-insertion-point!)      
+      (let ([left left-edge-of-insert]
+            [right right-edge-of-insert])
+        (unset-insert&delete-callbacks)      
+        (send editor delete left right)
+        (when need-space-after
+          (send editor delete left (add1 left)))
+        (when need-space-before
+          (send editor delete (sub1 left) left))))
+      
     
     ;; Before interpreting a command, we'd like to restore the
     ;; editor state before coming into insert mode, so that it
     ;; syncs up with what's in the World.
     (define (restore-editor-to-pre-state!)
-      ;; force deletion of the insertion point.
-      (set-text "")
-      (send editor set-rope (World-rope world-at-beginning-of-insert))
+      (delete-insertion-point!)
+      (when original-selected-dstx
+        (let ([a-cursor (send editor get-dstx-cursor)])
+          (send a-cursor focus-endpos! (send editor get-start-position))
+          (send a-cursor insert-after! original-selected-dstx)))
       (let ([index (pos->index (World-cursor-position world-at-beginning-of-insert))])
         (send editor diva:set-selection-position
               index
-              (+ index (World-selection-length world-at-beginning-of-insert)))))
+              (+ index (World-selection-length world-at-beginning-of-insert))))
+      ;; for debugging
+      (unless (rope=? (World-rope world-at-beginning-of-insert)
+                      (send editor get-rope))
+        (printf "rope mismatch!  World has~n~s~nEditor has ~n~s~n" 
+                (World-rope world-at-beginning-of-insert)
+                (send editor get-rope))))
   
     
     
