@@ -235,7 +235,7 @@
       ;; diva-message: string -> void
       ;; Displays a message to the top-level frame window.
       (define/public (diva-message msg)
-        (printf "~a~n" msg)
+        #;(printf "~a~n" msg)
         (when (get-top-level-window)
           (send (get-top-level-window) diva-message msg)))
       
@@ -252,6 +252,7 @@
       ;; error-message: string -> void
       ;; Report a non-critical error to the user.
       (define (error-message str)
+        (printf "~a~n" str)
         (and str (diva-message str)))
       
       
@@ -545,15 +546,18 @@
                   (diva-message "")
                   
                   (check-good-syntax)
-                  
+                  (set-in-unstructured-editing? #t)
                   (when (get-check-syntax-button)
                     (set! was-button-enabled? (send (get-check-syntax-button) is-enabled?))
                     (send (get-check-syntax-button) enable #f)))
                 
                 (define (on-exit)
                   (diva-label "DivaScheme: command mode")
+                  
                   (when (get-check-syntax-button)
-                    (send (get-check-syntax-button) enable was-button-enabled?))))
+                    (send (get-check-syntax-button) enable was-button-enabled?))
+                  
+                  (set-in-unstructured-editing? #f)))
           (make-command-keymap this
                                (lambda (edit?)
                                  (to-insert-mode edit? on-entry on-exit))

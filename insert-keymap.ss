@@ -64,7 +64,9 @@
       (with-unstructured-decoration
        (lambda ()
          (restore-editor-to-pre-state!)))
-      (interpret! world ast))
+      (with-structured-decoration
+       (lambda ()
+         (interpret! world ast))))
     
     
     ;; delete-insertion-point!: -> void
@@ -84,22 +86,24 @@
     ;; editor state before coming into insert mode, so that it
     ;; syncs up with what's in the World.
     (define (restore-editor-to-pre-state!)
-      (delete-insertion-point!)
-      (when original-selected-dstx
-        (let ([a-cursor (send editor get-dstx-cursor)])
-          (send a-cursor focus-endpos! (send editor get-start-position))
-          (send a-cursor insert-after! original-selected-dstx)))
-      (let ([index (pos->index (World-cursor-position world-at-beginning-of-insert))])
-        (send editor diva:set-selection-position
-              index
-              (+ index (World-selection-length world-at-beginning-of-insert))))
-      ;; for debugging
-      (unless (rope=? (World-rope world-at-beginning-of-insert)
-                      (send editor get-rope))
-        (printf "rope mismatch!  World has~n~s~nEditor has ~n~s~n" 
-                (World-rope world-at-beginning-of-insert)
-                (send editor get-rope))))
-  
+      (with-unstructured-decoration
+       (lambda ()
+         (delete-insertion-point!)
+         (when original-selected-dstx
+           (let ([a-cursor (send editor get-dstx-cursor)])
+             (send a-cursor focus-endpos! (send editor get-start-position))
+             (send a-cursor insert-after! original-selected-dstx)))
+         (let ([index (pos->index (World-cursor-position world-at-beginning-of-insert))])
+           (send editor diva:set-selection-position
+                 index
+                 (+ index (World-selection-length world-at-beginning-of-insert))))
+         ;; for debugging
+         (unless (rope=? (World-rope world-at-beginning-of-insert)
+                         (send editor get-rope))
+           (printf "rope mismatch!  World has~n~s~nEditor has ~n~s~n"
+                   (World-rope world-at-beginning-of-insert)
+                   (send editor get-rope))))))
+    
     
     
     ;; consume-text: World Pending rope -> void
@@ -145,6 +149,12 @@
     (define (with-unstructured-decoration f)
       (let ([old-val (send editor in-unstructured-editing?)])
         (dynamic-wind (lambda () (send editor set-in-unstructured-editing? #t))
+                      f
+                      (lambda () (send editor set-in-unstructured-editing? old-val)))))
+    
+    (define (with-structured-decoration f)
+      (let ([old-val (send editor in-unstructured-editing?)])
+        (dynamic-wind (lambda () (send editor set-in-unstructured-editing? #f))
                       f
                       (lambda () (send editor set-in-unstructured-editing? old-val)))))
     
