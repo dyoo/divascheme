@@ -168,6 +168,10 @@
         (install-f4-keymap))
       
       
+      ;; in-unstructured-editing?: -> boolean
+      (define/public (in-unstructured-editing?)
+        -in-unstructured-editing?)
+      
       ;; set-in-unstructured-editing? boolean -> void
       (define/public (set-in-unstructured-editing? b)
         (set! -in-unstructured-editing? b))

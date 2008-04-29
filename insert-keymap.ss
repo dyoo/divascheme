@@ -143,9 +143,10 @@
     
     
     (define (with-unstructured-decoration f)
-      (dynamic-wind (lambda () (send editor set-in-unstructured-editing? #t))
-                    f
-                    (lambda () (send editor set-in-unstructured-editing? #f))))
+      (let ([old-val (send editor in-unstructured-editing?)])
+        (dynamic-wind (lambda () (send editor set-in-unstructured-editing? #t))
+                      f
+                      (lambda () (send editor set-in-unstructured-editing? old-val)))))
     
     
     ;; set-text: string -> void

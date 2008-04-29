@@ -44,27 +44,63 @@
       (define (attach-woot-ids a-dstx)
         (dstx-deepmap (lambda (a-dstx)
                         (cond
-                          [(dstx-property-ref a-dstx 'woot-id (lambda () #f))
+                          [(dstx-woot-id a-dstx)
                            a-dstx]
                           [else
-                           (dstx-property-set a-dstx 'woot-id
-                                              (fresh-woot-id host-ip))]))
+                           (dstx-assign-woot-id a-dstx)]))
                       a-dstx))
       
+      
+      ;; dstx-woot-id: dstx -> woot-id
+      (define (dstx-woot-id a-dstx)
+        (dstx-property-ref a-dstx 'woot-id (lambda () #f)))
+      
+      
+      ;; dstx-assign-woot-id: dstx -> dstx
+      (define (dstx-assign-woot-id a-dstx)
+        (dstx-property-set a-dstx 'woot-id (fresh-woot-id host-ip)))
       
       
       
       (define (handle-structured-insert-before a-fcursor a-dstx)
-        (printf "inserted ~s~n" a-dstx)
-        (void))
+        (cond
+          [(focus-younger/no-snap a-fcursor)
+           (printf "inserting ~s between ~s and ~s~n"
+                   a-dstx
+                   (dstx-woot-id (cursor-dstx (focus-younger/no-snap a-fcursor)))
+                   (dstx-woot-id (cursor-dstx a-fcursor)))]
+          [else
+           ;; as an invariant, no insert-before should occur before the sentinel
+           ;; element, so we should never see this situation...
+           (error 'handle-structured-insert-before)]))
+      
       
       (define (handle-structured-insert-after a-fcursor a-dstx)
-        (printf "inserted ~s~n" a-dstx)
-        (void))
+        (cond
+          [(focus-older/no-snap a-fcursor)
+           (printf "inserting ~s between ~s and ~s~n"
+                   a-dstx
+                   (dstx-woot-id (cursor-dstx a-fcursor))
+                   (dstx-woot-id (cursor-dstx (focus-older/no-snap a-fcursor))))]
+          [else
+           ;; Last element in a fusion or at the toplevel will have a nil right id.
+           (printf "inserting ~s at the end of a fusion or toplevel, after ~s~n"
+                   a-dstx
+                   (dstx-woot-id (cursor-dstx a-fcursor)))]))
+      
       
       (define (handle-structured-delete a-fcursor a-dstx)
-        (printf "deleted ~s~n" a-dstx)
-        (void))
+        (cond
+          [(and (focus-younger/no-snap a-fcursor)
+                (focus-older/no-snap a-fcursor))
+           (printf "deleting ~s~n" (dstx-woot-id (cursor-dstx a-fcursor)))]
+          [(focus-younger/no-snap a-fcursor)
+           (printf "deleting ~s~n" (dstx-woot-id (cursor-dstx a-fcursor)))]
+          ;; The two cases below should never occur.
+          [(focus-older/no-snap a-fcursor)
+           (error 'handle-structured-delete)]
+          [else
+           (error 'handle-structured-delete)]))
       
       
       

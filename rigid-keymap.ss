@@ -39,11 +39,20 @@
     (send keymap set-grab-key-function rigid-grab-key))
   
   
+  
+  
+  
   ;; rigid-grab-key: string-or-false keymap text% event
   ;; Our grab-key-function watches key events and only lets ones through that
   ;; either are regular printable key events, or calls to a function that
   ;; have the "diva:" prefix to them.  Other keystrokes are ignored.
   (define (rigid-grab-key callback-name/false km editor event)
+    (define (with-unstructured-decoration f)
+      (let ([old-val (send editor in-unstructured-editing?)])
+        (dynamic-wind (lambda () (send editor set-in-unstructured-editing? #t))
+                      f
+                      (lambda () (send editor set-in-unstructured-editing? old-val)))))
+    
     (define no-further-dispatch-needed #t)
     (define more-dispatch-needed #f)
     (diva-printf "GRAB KEY FUNCTION WAS CALLED for TEXT: str:~a km: editor: event:%~a%'~n" callback-name/false (send event get-key-code))
