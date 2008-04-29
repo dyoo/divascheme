@@ -248,12 +248,22 @@
         (let ([decorated-dstx (dstx-attach-local-ids a-dstx)])
           (inner decorated-dstx decorate-new-dstx decorated-dstx)))
       
+      
+      ;; on-structured-insert-after: cursor dstx -> void
+      ;; Called right before we do the structured insert.  a-functional-cursor points
+      ;; to the dstx that the new a-dstx will be inserted after.
       (define/pubment (on-structured-insert-after a-functional-cursor a-dstx)
         (inner (void) on-structured-insert-after a-functional-cursor a-dstx))
       
+      ;; on-structured-insert-before: cursor dstx -> void
+      ;; Called right before we do the structured insert.  a-functional-cursor points
+      ;; to the dstx that the new a-dstx will be inserted before.
       (define/pubment (on-structured-insert-before a-functional-cursor a-dstx)
         (inner (void) on-structured-insert-before a-functional-cursor a-dstx))
       
+      ;; on-structured-delete: cursor -> void
+      ;; Called right before we do a structured delete.  a-functional-cursor points
+      ;; to the dstx that will be deleted.
       (define/pubment (on-structured-delete a-functional-cursor)
         (inner (void) on-structured-delete a-functional-cursor))
       

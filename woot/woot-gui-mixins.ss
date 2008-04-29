@@ -55,15 +55,15 @@
       
       
       (define (handle-structured-insert-before a-fcursor a-dstx)
-        #;(printf "inserted ~s~n" (dstx->string a-dstx))
+        (printf "inserted ~s~n" a-dstx)
         (void))
       
       (define (handle-structured-insert-after a-fcursor a-dstx)
-        #;(printf "inserted ~s~n" (dstx->string a-dstx))
+        (printf "inserted ~s~n" a-dstx)
         (void))
       
       (define (handle-structured-delete a-fcursor a-dstx)
-        #;(printf "deleted ~s~n" (dstx->string a-dstx))
+        (printf "deleted ~s~n" a-dstx)
         (void))
       
       

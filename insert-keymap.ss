@@ -61,7 +61,9 @@
     
     ;; do-interpretation: world Protocol-Syntax-tree -> void
     (define (do-interpretation world ast)
-      (restore-editor-to-pre-state!)
+      (with-unstructured-decoration
+       (lambda ()
+         (restore-editor-to-pre-state!)))
       (interpret! world ast))
     
     
@@ -76,7 +78,7 @@
           (send editor delete left (add1 left)))
         (when need-space-before
           (send editor delete (sub1 left) left))))
-      
+    
     
     ;; Before interpreting a command, we'd like to restore the
     ;; editor state before coming into insert mode, so that it
@@ -205,76 +207,76 @@
     ;; begin-symbol-edit: -> void
     ;; Set up the insertion point around the currently focused atom. 
     (define (begin-symbol-edit)
-      (let* ([stx/false (find-pos-near (World-cursor-position world-at-beginning-of-insert)
-                                       (World-syntax-list world-at-beginning-of-insert))]
-             [stx/false (and stx/false
-                             (first (append
-                                     (find-all atomic/stx?
-                                               (list stx/false))
-                                     (list #f))))])
-        (cond
-          [stx/false
-           (let ([original-pos (send editor get-end-position)])
-             (let ([selected-world (action:select/stx world-at-beginning-of-insert stx/false)])
-               (set-world selected-world)
-               (set! world-at-beginning-of-insert selected-world))
-             (set! need-space-before #f)
-             (set! need-space-after #f)
-             (let* ([start-pos (send editor get-start-position)]
-                    [end-pos (send editor get-end-position)]
-                    [selection-rope-before-insert
-                     (read-subrope-in-text editor start-pos (- end-pos start-pos))])
-               (save-original-selected-dstx!)
-               (begin-symbol start-pos end-pos)
-               (send editor delete)
-               (with-unstructured-decoration
-                (lambda ()
-                  (insert-rope-in-text editor selection-rope-before-insert)))
-               (send editor diva:set-selection-position
-                     (clamp original-pos start-pos end-pos))
-               (set-insert&delete-callbacks)))]
-          [else
-           (begin-symbol-insertion)])))
-            
+      (with-unstructured-decoration
+       (lambda ()
+         (let* ([stx/false (find-pos-near (World-cursor-position world-at-beginning-of-insert)
+                                          (World-syntax-list world-at-beginning-of-insert))]
+                [stx/false (and stx/false
+                                (first (append
+                                        (find-all atomic/stx?
+                                                  (list stx/false))
+                                        (list #f))))])
+           (cond
+             [stx/false
+              (let ([original-pos (send editor get-end-position)])
+                (let ([selected-world (action:select/stx world-at-beginning-of-insert stx/false)])
+                  (set-world selected-world)
+                  (set! world-at-beginning-of-insert selected-world))
+                (set! need-space-before #f)
+                (set! need-space-after #f)
+                (let* ([start-pos (send editor get-start-position)]
+                       [end-pos (send editor get-end-position)]
+                       [selection-rope-before-insert
+                        (read-subrope-in-text editor start-pos (- end-pos start-pos))])
+                  (save-original-selected-dstx!)
+                  (begin-symbol start-pos end-pos)
+                  (send editor delete)
+                  (insert-rope-in-text editor selection-rope-before-insert)
+                  (send editor diva:set-selection-position
+                        (clamp original-pos start-pos end-pos))
+                  (set-insert&delete-callbacks)))]
+             [else
+              (begin-symbol-insertion)])))))
+    
     
     ;; begin-symbol-insertion: -> void
     ;; Set up the insertion point, replacing the current selection. 
     (define (begin-symbol-insertion)
-      (let ([left-point (send editor get-start-position)]
-            [right-point (send editor get-end-position)])
-        
-        (define (prepare-insertion-point!)
-          (if need-space-before
-              (begin-symbol (add1 left-point) (add1 left-point))
-              (begin-symbol left-point left-point))
-          (unset-insert&delete-callbacks)
-          (cond [(empty-selection?)
-                 (set! original-selected-dstx  #f)]
-                [else
-                 (save-original-selected-dstx!)
-                 (send editor delete)])
-          (with-unstructured-decoration
-           (lambda ()
+      (with-unstructured-decoration
+       (lambda ()
+         (let ([left-point (send editor get-start-position)]
+               [right-point (send editor get-end-position)])
+           
+           (define (prepare-insertion-point!)
+             (if need-space-before
+                 (begin-symbol (add1 left-point) (add1 left-point))
+                 (begin-symbol left-point left-point))
+             (unset-insert&delete-callbacks)
+             (cond [(empty-selection?)
+                    (set! original-selected-dstx #f)]
+                   [else
+                    (save-original-selected-dstx!)
+                    (send editor delete)])
              (when need-space-before
                (send editor insert " "))
              (when need-space-after
                (send editor insert " ")
                (send editor diva:set-selection-position
-                     (max (sub1 (send editor get-end-position)) 0)))))
-          (set-insert&delete-callbacks))
-        
-        (begin
-          (set! need-space-before
-                (and (not (= 0 left-point))
-                     (not (char-whitespace?
-                           (send editor get-character (sub1 left-point))))))
-          
-          (set! need-space-after
-                (and (not (= (send editor last-position) right-point))
-                     (not (char-whitespace?
-                           (send editor get-character right-point)))))
-          (prepare-insertion-point!)
-          (fill-highlight!))))
+                     (max (sub1 (send editor get-end-position)) 0)))
+             (set-insert&delete-callbacks))
+           
+           (begin
+             (set! need-space-before
+                   (and (not (= 0 left-point))
+                        (not (char-whitespace?
+                              (send editor get-character (sub1 left-point))))))
+             
+             (set! need-space-after
+                   (and (not (= (send editor last-position) right-point))
+                        (not (char-whitespace?
+                              (send editor get-character right-point)))))
+             (prepare-insertion-point!)
+             (fill-highlight!))))))
     
     
     
