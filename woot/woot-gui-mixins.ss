@@ -3,9 +3,10 @@
   (require (lib "class.ss")
            (lib "plt-match.ss")
            (lib "mred.ss" "mred")
-           "../structures.ss"
            "../dsyntax/dsyntax.ss"
-           "self-ip-address.ss"
+           "msg-structs.ss"
+           "woot-struct.ss"
+           (prefix self-ip: "self-ip-address.ss")
            (prefix server: "server.ss")
            (prefix client: "client.ss")
            (only (lib "13.ss" "srfi") string-join))
@@ -13,10 +14,8 @@
   (provide woot-text-mixin
            woot-frame-mixin)
   
-  ;; A woot-id is a (list a-number host-string)
-  ;; where a-number is a number, and host-string is a string containing an ip address.
-  
-  
+  ;; The woot-text-mixin is a function turning a diva-text% into one that
+  ;; supports woot-specific operations.
   (define (woot-text-mixin super%)
     (network-mixin
      (structure-tracking-mixin
@@ -32,20 +31,32 @@
     (class super%
       
       ;; We annotate every new structure with a host ip.
-      (define host-ip (self-ip-address))
+      (define self-ip #f)
       
       (define (initialize)
+        (set! self-ip (self-ip:self-ip-address))
         (super-new))
       
+      
+      ;; get-self-ip: -> string
+      ;; Returns the self-ip address
+      (define/public (get-self-ip)
+        self-ip)
+      
+      
+      ;; Hook to add woot ids to new structures.
       (define/augment (decorate-new-dstx a-dstx)
         (let ([a-dstx (inner a-dstx decorate-new-dstx a-dstx)])
-          (deep-attach-woot-ids a-dstx host-ip)))
+          (deep-attach-woot-ids a-dstx (get-self-ip))))
       
       
+      ;; on-woot-structured-insert: dstx woot-id woot-id -> void
+      ;; We define additional hooks for the network mixin to do its stuff.
       (define/pubment (on-woot-structured-insert a-dstx before-woot-id after-woot-id)
         (inner (void) on-woot-structured-insert a-dstx before-woot-id after-woot-id))
       
       
+      ;; on-woot-structured-delete: woot-id -> void
       (define/pubment (on-woot-structured-delete woot-id)
         (inner (void) on-woot-structured-delete woot-id))
       
@@ -112,7 +123,9 @@
   ;; Infrastructure for tying in woot stuff with the network and DivaScheme
   (define (network-mixin super%)
     (class super%
-      (inherit queue-for-interpretation! get-top-level-window)
+      (inherit queue-for-interpretation!
+               get-self-ip
+               get-top-level-window)
       
       (define woot-custodian (make-custodian))
       (define woot-client #f)
@@ -160,13 +173,25 @@
           (set! woot-client (client:new-client url))))
       
       
+      ;; on-woot-structured-insert: dstx woot-id woot-id -> void
+      ;; Broadcast a structured insert.
       (define/augment (on-woot-structured-insert a-dstx before-woot-id after-woot-id)
-        (printf "I: between ~s and ~s: ~s~n" before-woot-id after-woot-id a-dstx)
+        (when woot-client
+          (client:client-send-message
+           woot-client
+           (msg->string
+            (make-msg:insert (get-self-ip) a-dstx before-woot-id after-woot-id))))
         (inner (void) on-woot-structured-insert a-dstx before-woot-id after-woot-id))
       
       
+      ;; on-woot-structured-insert: dstx woot-id woot-id -> void
+      ;; Broadcast a structured delete.
       (define/augment (on-woot-structured-delete woot-id)
-        (printf "D: ~s~n" woot-id)
+        (when woot-client
+          (client:client-send-message
+           woot-client
+           (msg->string
+            (make-msg:delete (get-self-ip) woot-id))))
         (inner (void) on-woot-structured-delete woot-id))
       
       (initialize)))
@@ -213,7 +238,7 @@
   ;; hosting-url number string: -> string
   ;; Returns a string representing the connection url.
   (define (hosting-url port session-name)
-    (format "http://~a:~a/~a" (self-ip-address) port session-name))
+    (format "http://~a:~a/~a" (self-ip:self-ip-address) port session-name))
   
   
   ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
@@ -224,7 +249,7 @@
   ;; fresh-woot-id: string -> woot-id
   ;; Returns a fresh woot id.
   (define (fresh-woot-id host-ip)
-    (list (next-logical-id) host-ip))
+    (make-woot-id (next-logical-id) host-ip))
   
   
   ;; dstx-woot-id: dstx -> woot-id
