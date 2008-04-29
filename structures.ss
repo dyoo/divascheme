@@ -5,7 +5,6 @@
            (lib "struct.ss")
            (lib "mred.ss" "mred")
            (only (lib "1.ss" "srfi") find)
-           "struct/datatype.ss"
            "dot-processing.ss"
            "utilities.ss"
            "rope.ss")
@@ -474,59 +473,61 @@
     (and (member symbol motion-commands) #t))
   
   
-  (define-datatype Noun
-    [Symbol-Noun (symbol)]
-    [Rope-Noun (rope)])
-  (provide-datatype/contract Noun
-                             [Symbol-Noun (symbol?)]
-                             [Rope-Noun (rope?)])
+  (define-struct Noun () #f)
+  (define-struct (Symbol-Noun Noun) (symbol) #f)
+  (define-struct (Rope-Noun Noun) (rope) #f)
+  (provide/contract [struct Noun ()]
+                    [struct (Symbol-Noun Noun) ([symbol symbol?])]
+                    [struct (Rope-Noun Noun) ([rope rope?])])
   
   
   
-  (define-datatype What
-    [WhatN (noun)]
-    [WhatDN (distance noun)])
-  (provide-datatype/contract What
-                             [WhatN (Noun?)]
-                             [WhatDN (integer? Noun?)])
+  (define-struct What () #f)
+  (define-struct (WhatN What) (noun) #f)
+  (define-struct (WhatDN What) (distance noun) #f)
+  (provide/contract [struct What ()]
+                    [struct (WhatN What) ([noun Noun?])]
+                    [struct (WhatDN What) ([distance integer?]
+                                           [noun Noun?])])
   
-  
-  (define-datatype Where
-    [After ()]
-    [Before ()])
-  (provide-datatype/contract Where
-                             [After ()]
-                             [Before ()])
+  (define-struct Where () #f)
+  (define-struct (After Where) () #f)
+  (define-struct (Before Where) () #f)
+  (provide/contract [struct Where ()]
+                    [struct (After Where) ()]
+                    [struct (Before Where) ()])
   
   
   ;; A location is either an absolute position,
   ;; or relative to some thing.
-  (define-datatype Location
-    [Pos (p eol)]
-    [Loc (where what)])
-  (provide-datatype/contract Location
-                             [Pos (integer? boolean?)]
-                             [Loc (Where? (or/c false/c What?))])
+  (define-struct Location () #f)
+  (define-struct (Pos Location) (p eol) #f)
+  (define-struct (Loc Location) (where what) #f)
+  (provide/contract [struct Location ()]
+                    [struct (Pos Location) ([p integer?]
+                                            [eol boolean?])]
+                    [struct (Loc Location) ([where Where?]
+                                            [what (or/c false/c What?)])])
   
   
   
-  (define-datatype Verb-Content
-    [Command (command)]
-    [InsertRope-Cmd (rope)])
-  (provide-datatype/contract Verb-Content
-                             [Command (command?)]
-                             [InsertRope-Cmd (rope?)])
+  (define-struct Verb-Content () #f)
+  (define-struct (Command Verb-Content) (command) #f)
+  (define-struct (InsertRope-Cmd Verb-Content) (rope) #f)
+  (provide/contract [struct Verb-Content ()]
+                    [struct (Command Verb-Content) ([command command?])]
+                    [struct (InsertRope-Cmd Verb-Content) ([rope rope?])])
   
   
+  (define-struct Protocol-Syntax-Tree () #f)
+  (define-struct (Verb Protocol-Syntax-Tree) (content location what) #f)
+  (define-struct (No-op Protocol-Syntax-Tree) () #f)
+  (provide/contract [struct Protocol-Syntax-Tree ()]
+                    [struct (Verb Protocol-Syntax-Tree) ([content Verb-Content?]
+                                                         [location (or/c false/c Location?)]
+                                                         [what (or/c false/c What?)])]
+                    [struct (No-op Protocol-Syntax-Tree) ()])
   
-  (define-datatype Protocol-Syntax-Tree
-    [Verb (content location what)]
-    [No-op ()])
-  
-  (provide-datatype/contract
-   Protocol-Syntax-Tree
-   [Verb (Verb-Content? (or/c false/c Location?) (or/c false/c What?))]
-   [No-op ()])
   
   
   

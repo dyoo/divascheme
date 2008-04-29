@@ -267,6 +267,7 @@
         ;; In the very strange case that they aren't, we have a back-hatch
         ;; to insert unstructurally.  This shouldn't be the normal case, though.
         [else
+         (printf "do-insert-rope: unstructured insert of ~s~n" (rope->string a-rope))
          (send a-text set-position a-pos 'same #f #f 'local)
          (insert-rope-in-text a-text a-rope)
          (let ([new-world (update-world-fn world)])
@@ -340,8 +341,9 @@
   ;; select-range: number number world text% (World -> World) (World -> void) -> World
   (define (select-range start-pos end-pos world a-text update-world-fn update-mred-fn)
     (send a-text diva:set-selection-position start-pos end-pos)
-    world)
-  
+    (let ([new-world (update-world-fn world)])
+      (update-mred-fn new-world)
+      new-world))
   
   
   

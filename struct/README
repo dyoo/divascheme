@@ -1,4 +1,0 @@
-dyoo: This is a fork of dherman's struct.plt library, starting from
-v2.3.  We should remerge with the PLaneT version as soon as dherman
-incorporates the version-case compatibility fixes I sent him on
-January 16th.  Until then, we'll use this library.
