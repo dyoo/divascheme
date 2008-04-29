@@ -4,6 +4,7 @@
   (require (lib "contract.ss")
            (lib "plt-match.ss")
            (lib "list.ss")
+           (lib "serialize.ss")
            "weak-memoize.ss")
   
   
@@ -21,11 +22,11 @@
   ;;   * space
   ;;   * fusion
   
-  (define-struct dstx (properties) #f)
-  (define-struct (atom dstx) (content) #f)
-  (define-struct (special-atom dstx) (content width) #f)
-  (define-struct (space dstx) (content) #f)
-  (define-struct (fusion dstx) (prefix children suffix) #f)
+  (define-serializable-struct dstx (properties) #f)
+  (define-serializable-struct (atom dstx) (content) #f)
+  (define-serializable-struct (special-atom dstx) (content width) #f)
+  (define-serializable-struct (space dstx) (content) #f)
+  (define-serializable-struct (fusion dstx) (prefix children suffix) #f)
   
   
   ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
