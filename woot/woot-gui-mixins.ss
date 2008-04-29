@@ -93,9 +93,9 @@
         (cond
           [(and (focus-younger/no-snap a-fcursor)
                 (focus-older/no-snap a-fcursor))
-           (printf "deleting ~s~n" (dstx-woot-id (cursor-dstx a-fcursor)))]
+           (printf "deleting ~s~n" (cursor-dstx a-fcursor))]
           [(focus-younger/no-snap a-fcursor)
-           (printf "deleting ~s~n" (dstx-woot-id (cursor-dstx a-fcursor)))]
+           (printf "deleting ~s~n" (cursor-dstx a-fcursor))]
           ;; The two cases below should never occur.
           [(focus-older/no-snap a-fcursor)
            (error 'handle-structured-delete)]

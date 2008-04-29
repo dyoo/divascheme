@@ -732,11 +732,13 @@
       
       (define/public (property-set! a-name a-val)
         (resynchronize-with-main-editing-cursor!)
-        (set! f-cursor (cursor:property-set f-cursor a-name a-val)))
+        (set! f-cursor (cursor:property-set f-cursor a-name a-val))
+        (mark-this-cursor-as-up-to-date-editor!))
       
       (define/public (property-remove! a-name)
         (resynchronize-with-main-editing-cursor!)
-        (set! f-cursor (cursor:property-remove f-cursor a-name)))
+        (set! f-cursor (cursor:property-remove f-cursor a-name))
+        (mark-this-cursor-as-up-to-date-editor!))
       
       
       (define-syntax (set-cursor/success stx)
