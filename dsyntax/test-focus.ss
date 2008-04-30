@@ -224,6 +224,19 @@
         (check-false (focus-endpos a-cursor 1))
         (check-equal? (cursor-dstx (focus-endpos a-cursor 2))
                       (new-atom "hi"))
+        (check-false (focus-endpos a-cursor 3))))
+     
+     (test-case
+      "focus-endpos returns the most successive."
+      (let* ([a-dstx (new-atom "hi")]
+             [sentinel-1 (make-space '() "")]
+             [sentinel-2 (make-space '() "")]
+             [a-cursor (make-toplevel-cursor (list sentinel-1 a-dstx sentinel-2))])
+        (check-eq? (cursor-dstx (focus-endpos a-cursor 0))
+                   sentinel-1)
+        (check-false (focus-endpos a-cursor 1))
+        (check-eq? (cursor-dstx (focus-endpos a-cursor 2))
+                   sentinel-2)
         (check-false (focus-endpos a-cursor 3))))))
   
   
