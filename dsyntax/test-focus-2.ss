@@ -12,6 +12,8 @@
   (define (test)
     (test/text-ui test-focus-2))
   
+  ;; These test are more exhaustive, and iterate over all possible indices,
+  ;; and over all possible initial cursor focuses.
   (define test-focus-2
     (test-suite
      "test-focus-2.ss"
@@ -35,11 +37,15 @@
       "simple number"
       (test-both "42"))
      
+     
      (test-case
       "factorial"
       (test-both "(define (factorial x) (cond [(= x 0) 1] [else (* x (factorial (sub1 x)))]))"))
      
-     ))
+     
+     (test-case
+      "quoted things"
+      (test-both "'hello ''world '''this is 'a 'test"))))
   
   
   
