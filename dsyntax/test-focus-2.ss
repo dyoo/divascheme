@@ -45,7 +45,11 @@
      
      (test-case
       "quoted things"
-      (test-both "'hello ''world '''this is 'a 'test"))))
+      (test-both "'hello ''world '''this is 'a 'test"))
+     
+     (test-case
+      "quoted fusions"
+      (test-both "('(hello) '(world)) 'again testing"))))
   
   
   

@@ -4,9 +4,10 @@
            "test-dsyntax.ss"
            "test-edit.ss"
            "test-focus.ss"
+           "test-focus-2.ss"
            "test-parse-plt-scheme.ss"
            "test-dstx-text-mixin.ss")
-
+  
   (provide dsyntax-test-suite)
   
   (define dsyntax-test-suite
@@ -15,6 +16,7 @@
      test-dsyntax
      test-edit
      test-focus
+     test-focus-2
      test-parse-plt-scheme
      test-dstx-text-mixin))
   
