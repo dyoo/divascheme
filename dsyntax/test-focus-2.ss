@@ -88,13 +88,15 @@
                        [(hash-table-get ht i #f)
                         =>
                         (lambda (expected-dstx)
-                          (check-eq? (cursor-dstx (focus-pos a-cursor i)) expected-dstx))]
+                          (check-eq? (cursor-dstx (focus-pos a-cursor i)) expected-dstx
+                                     (format "pos ~a" i)))]
                        [else
-                        (check-false (focus-pos a-cursor i))])))))))
+                        (check-false (focus-pos a-cursor i)
+                                     (format "pos ~a" i))])))))))
   
   
   
-  ;; test-string-pos: string -> void
+  ;; test-string-endpos: string -> void
   ;; Checks for expected endpos on the parsed structures.
   (define (test-string-endpos a-str)
     (let* ([a-cursor (make-toplevel-cursor (parse-port (open-input-string a-str)))]
@@ -109,9 +111,11 @@
                        [(hash-table-get ht i #f)
                         =>
                         (lambda (expected-dstx)
-                          (check-eq? (cursor-dstx (focus-endpos a-cursor i)) expected-dstx))]
+                          (check-eq? (cursor-dstx (focus-endpos a-cursor i)) expected-dstx
+                                     (format "endpos ~a" i)))]
                        [else
-                        (check-false (focus-endpos a-cursor i))])))))))
+                        (check-false (focus-endpos a-cursor i)
+                                     (format "endpos ~a" i))])))))))
   
   
   
@@ -127,12 +131,23 @@
   ;; last-position: cursor -> natural-number
   ;; Returns the last position.
   (define (last-position a-cursor)
+    (let loop ([a-cursor (focus-toplevel a-cursor)])
+      (cond
+        [(focus-successor/no-snap a-cursor)
+         (max (cursor-endpos a-cursor)
+              (loop (focus-successor/no-snap a-cursor)))]
+        [else
+         (cursor-endpos a-cursor)])))
+  
+  
+  (define (focus-last-successor a-cursor)
     (let loop ([a-cursor a-cursor])
       (cond
         [(focus-successor/no-snap a-cursor)
          (loop (focus-successor/no-snap a-cursor))]
         [else
-         (cursor-endpos a-cursor)])))
+         a-cursor])))
+  
   
   
   ;; collect-start-pos: cursor -> (hash-table-of (list number dstx))
@@ -144,7 +159,8 @@
         [(not a-cursor)
          (void)]
         [else
-         (hash-table-put! ht (cursor-pos a-cursor) (cursor-dstx a-cursor))]))
+         (hash-table-put! ht (cursor-pos a-cursor) (cursor-dstx a-cursor))
+         (loop (focus-successor/no-snap a-cursor))]))
     ht)
   
   
@@ -152,7 +168,7 @@
   ;; Returns a list of end-pos/dstx lists.
   (define (collect-endpos a-cursor)
     (define ht (make-hash-table 'equal))
-    (let loop ([a-cursor (focus-toplevel a-cursor)])
+    (let loop ([a-cursor (focus-last-successor a-cursor)])
       (cond
         [(not a-cursor)
          (void)]
@@ -160,5 +176,5 @@
          (cons
           (hash-table-put! ht (cursor-endpos a-cursor)
                            (cursor-dstx a-cursor))
-          (loop (focus-successor/no-snap a-cursor)))]))
+          (loop (focus-predecessor/no-snap a-cursor)))]))
     ht))
