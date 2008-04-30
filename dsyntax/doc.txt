@@ -334,19 +334,17 @@ immediately returned.
 
 > focus-pos: cursor number -> (union cursor #f)
 
-Given a cursor and a position, refocuses the cursor at the dstx at or
-immediately to the left of the cursor.  If no such syntax exists,
-returns #f.  Does not snap across whitespace, except for the special
-case of the sentinel empty-space character.
+Given a cursor and a position, refocuses the cursor at the dstx
+starting at the left of the cursor.  If no such syntax exists, returns
+#f.  In the edge case where there's a sentinel whitespace character of
+zero width at the position, the cursor pushes forward to the next
+older dstx.
 
 
 > focus-endpos: cursor number -> (union cursor #f)
 
 Given a cursor and a position, refocuses the cursor at a dstx whose
 position is exactly the given number.
-
-(API discrepency: focus-pos is looser.  I think it should be as restricted
- as focus-pos.)
 
 
 

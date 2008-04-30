@@ -41,30 +41,30 @@
          (lambda (a-cursor)
            (check-equal? (cursor-dstx (focus-pos a-cursor 0))
                          (new-atom "foo"))
-           (check-equal? (cursor-dstx (focus-pos a-cursor 1))
-                         (new-atom "foo"))
-           (check-equal? (cursor-dstx (focus-pos a-cursor 2))
-                         (new-atom "foo"))
+           (check-equal? (focus-pos a-cursor 1)
+                         #f)
+           (check-equal? (focus-pos a-cursor 2)
+                         #f)
            (check-equal? (cursor-dstx (focus-pos a-cursor 3))
                          (new-atom "bar"))
-           (check-equal? (cursor-dstx (focus-pos a-cursor 4))
-                         (new-atom "bar"))
-           (check-equal? (cursor-dstx (focus-pos a-cursor 5))
-                         (new-atom "bar"))
-           (check-equal? (cursor-dstx (focus-pos a-cursor 6))
-                         (new-atom "bar"))))))
+           (check-equal? (focus-pos a-cursor 4)
+                         #f)
+           (check-equal? (focus-pos a-cursor 5)
+                         #f)
+           (check-equal? (focus-pos a-cursor 6)
+                         #f)))))
      
      
      (test-case
-      "focus-pos on a space"
+      "focus-pos on a space at the very beginning."
       (let ([a-cursor (make-toplevel-cursor (list (new-space " ")))])
         (with-cursor-anywhere 
          a-cursor
          (lambda (a-cursor)
            (check-equal? (cursor-dstx (focus-pos a-cursor 0))
                          (new-space " "))
-           (check-equal? (cursor-dstx (focus-pos a-cursor 1))
-                         (new-space " "))))))
+           (check-equal? (focus-pos a-cursor 1)
+                         #f)))))
      
      (test-case
       "focus-pos at an ending space"
@@ -76,8 +76,10 @@
                          (new-atom "x"))
            (check-equal? (cursor-dstx (focus-pos a-cursor 1))
                          (new-space " "))
-           (check-equal? (cursor-dstx (focus-pos a-cursor 2))
-                         (new-space " "))))))
+           (check-equal? (focus-pos a-cursor 2)
+                         #f)
+           (check-equal? (focus-pos a-cursor 3)
+                         #f)))))
      
      (test-case
       "focus-in and focus-out, when no modifications occur, should preserve fusions."
@@ -115,12 +117,12 @@
                          a-dstx)
            (check-equal? (cursor-dstx (focus-pos a-cursor 1))
                          (new-atom "box"))
-           (check-equal? (cursor-dstx (focus-pos a-cursor 2))
-                         (new-atom "box"))
-           (check-equal? (cursor-dstx (focus-pos a-cursor 3))
-                         (new-atom "box"))
-           (check-equal? (cursor-dstx (focus-pos a-cursor 4))
-                         (new-atom "box"))))))
+           (check-equal? (focus-pos a-cursor 2)
+                         #f)
+           (check-equal? (focus-pos a-cursor 3)
+                         #f)
+           (check-equal? (focus-pos a-cursor 4)
+                         #f)))))
      
      (test-case
       "focus-container on atoms"
