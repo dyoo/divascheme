@@ -690,19 +690,22 @@
   
   ;; focus-endpos: cursor number -> (or/c cursor #f)
   (define (focus-endpos a-cursor a-pos)
-    (let ([initial-cursor
-           #;(cond [(= a-pos 0)
-                    (focus-toplevel a-cursor)]
+    (let ([a-cursor
+           (cond [(= a-pos 0)
+                  (focus-toplevel a-cursor)]
                  [else
-                  (focus-container (sub1 a-pos))])
-           (focus-find/cursor a-cursor
-                              (lambda (a-cursor)
-                                (= (cursor-endpos a-cursor) a-pos)))])
+                  (focus-container a-cursor (sub1 a-pos))])])
       (cond
-        [initial-cursor
-         (scan-successive-preserving-endpos initial-cursor a-pos)]
+        [(not a-cursor)
+         #f]
+        [(= (cursor-endpos a-cursor) a-pos)
+         (scan-successive-preserving-endpos a-cursor a-pos)]
+        [(and (focus-successor/no-snap a-cursor)
+              (= (cursor-endpos (focus-successor/no-snap a-cursor)) a-pos))
+         (scan-successive-preserving-endpos (focus-successor/no-snap a-cursor) a-pos)]
         [else
          #f])))
+  
   
   
   ;; scan-successive-preserving-endpos: cursor pos -> cursor
