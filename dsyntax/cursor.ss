@@ -319,15 +319,29 @@
                                  (cursor-olders a-cursor)))])
               (cond
                 ;; If there has been no change in structure, leave things be.
-                [(and (= (length new-children)
-                         (length old-children))
-                      (andmap eq? new-children old-children))
+                [(list-elements-eq? new-children old-children)
                  parent-cursor]
                 [else
                  ;; Otherwise, reconstruct a new parent cursor.
                  (make-cursor (make-fusion props opener new-children closer)
                               loc parent youngers-rev youngers-loc-rev olders)]))])]
         [else #f])))
+  
+  
+  ;; list-elements-eq?: (listof X) (listof X) -> boolean
+  ;; Returns true if the lists contains the exact same elements in the same order.
+  (define (list-elements-eq? lst-1 lst-2)
+    (cond
+      [(and (empty? lst-1) (empty? lst-2))
+       #t]
+      [(empty? lst-1)
+       #f]
+      [(empty? lst-2)
+       #f]
+      [else
+       (and (eq? (first lst-1) (first lst-2))
+            (list-elements-eq? (rest lst-1) (rest lst-2)))]))
+  
   
   
   ;; append/rev: (listof X) (listof X) -> (listof X)
@@ -590,7 +604,7 @@
   (define (focus-pos a-cursor a-pos)
     ;; First scan forward, and then scan backward.
     (let* ([cursor-forward
-            (scan-forward-after-position a-cursor a-pos)]
+            (scan-forward-after-position-or-end a-cursor a-pos)]
            [cursor-at-pos
             (scan-backward-to-position cursor-forward a-pos)])
       ;; Skip over sentinels.
@@ -607,7 +621,7 @@
   ;; the given position.
   (define (focus-container a-cursor a-pos)
     ;; First scan forward, and then scan backward.
-    (let ([cursor-forward (scan-forward-after-position a-cursor a-pos)])
+    (let ([cursor-forward (scan-forward-after-position-or-end a-cursor a-pos)])
       (scan-backward-till-we-are-between cursor-forward a-pos)))
   
   
@@ -627,10 +641,10 @@
     (and (<= (cursor-pos a-cursor) a-pos)
          (< a-pos (cursor-endpos a-cursor))))
   
-  ;; scan-forward-after-position: cursor number -> cursor
+  ;; scan-forward-after-position-or-end: cursor number -> cursor
   ;; Returns a new cursor that's zipped forward past a-pos.  If we hit
   ;; the end, just return from that position.
-  (define (scan-forward-after-position a-cursor a-pos)
+  (define (scan-forward-after-position-or-end a-cursor a-pos)
     (let loop ([a-cursor a-cursor])
       (cond
         [(at-end? a-cursor)
