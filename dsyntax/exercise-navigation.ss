@@ -184,12 +184,19 @@
                (enable-dstx-parsing)]))))
   
   
+  ;; (test)
+  ;; torture test.  As of this writing, the file tex2page-aux.ss is the largest
+  ;; scheme source file.
   (define (test)
-    (open-file (expand-user-path "~/local/plt/collects/tex2page/tex2page-aux.ss")))
+    (open-file (path->string 
+                 (build-path 
+                  (collection-path "tex2page") 
+                  "tex2page-aux.ss"))))
+  
   
   
   (define (open-file filename)
-    (local ((define f (make-object frame% "test-navigation" #f 400 500))
+    (local ((define f (make-object frame% filename #f 400 500))
             (define t (make-object my-text%))
             (define c (make-object editor-canvas% f t '(no-hscroll))))
       (send t enable-dstx-parsing)
