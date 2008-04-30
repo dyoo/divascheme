@@ -171,6 +171,31 @@
           (let ([new-id (send cursor property-ref 'local-id)])
             (check-equal? new-id old-id)))))
      
+     
+     (test-case
+      "manually adding a space before a fusion doesn't change the id"
+      (let* ([text (make-text-instance)]
+             [cursor (send text get-dstx-cursor)])
+        (send cursor insert-after! (new-fusion "(" (list (new-atom "an-atom")) ")"))
+        (let ([old-id (send cursor property-ref 'local-id)])
+          (send text insert " " 0)
+          (send cursor focus-container! 1)
+          (let ([new-id (send cursor property-ref 'local-id)])
+            (check-equal? new-id old-id)))))
+     
+     
+     (test-case
+      "manually adding a space after a fusion doesn't change the id"
+      (let* ([text (make-text-instance)]
+             [cursor (send text get-dstx-cursor)])
+        (send cursor insert-after! (new-fusion "(" (list (new-atom "an-atom")) ")"))
+        (let ([old-id (send cursor property-ref 'local-id)])
+          (send text insert " " 9)
+          (send cursor focus-container! 0)
+          (let ([new-id (send cursor property-ref 'local-id)])
+            (check-equal? new-id old-id)))))
+     
+     
      (test-case
       "manually deleting a space after an atom doesn't change the id"
       (let* ([text (make-text-instance)]
