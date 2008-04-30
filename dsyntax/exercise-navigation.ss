@@ -29,58 +29,76 @@
                (send a-cursor insert-before! (new-space " "))
                (send a-cursor focus-younger/no-snap!)])))
     
-    (let ([a-cursor (send editor get-tree-cursor)])
+    (define (snap-to-container a-cursor)
+      (send a-cursor focus-container! (send editor get-start-position)))
+    
+    (define (snap-to-insertion-point a-cursor)
       (cond [(send a-cursor can-focus-endpos? (send editor get-start-position))
              (send a-cursor focus-endpos! (send editor get-start-position))]
+            [(send a-cursor can-focus-container? (send editor get-start-position))
+             (send a-cursor focus-container! (send editor get-start-position))]
             [else
-             (send a-cursor focus-container! (send editor get-start-position))])
-      
-      (case (send event get-key-code)
-        [(#\j)
-         (send a-cursor focus-predecessor!)
-         (send editor show-focus)]
-        [(#\l)
-         (send a-cursor focus-successor!)
-         (send editor show-focus)]
-        [(#\k)
-         (send a-cursor focus-out!)
-         (send editor show-focus)]
-        [(#\a)
-         (send a-cursor focus-younger!)
-         (send editor show-focus)]
-        [(#\e)
-         (send a-cursor focus-older!)
-         (send editor show-focus)]
-        [(#\()
-         (maybe-add-leading-space a-cursor)
-         (send a-cursor insert-after! (new-fusion "(" (list (new-atom "$expr$")) ")"))
-         (maybe-add-trailing-space a-cursor)
-         (send a-cursor focus-in!)
-         (send editor show-focus)]
-        [(#\[)
-         (maybe-add-leading-space a-cursor)
-         (send a-cursor insert-after! (new-fusion "[" (list (new-atom "$expr$")) "]"))
-         (maybe-add-trailing-space a-cursor)
-         (send a-cursor focus-in!)
-         (send editor show-focus)]
-        [(#\')
-         (maybe-add-leading-space a-cursor)
-         (send a-cursor insert-after! (new-fusion "'"
-                                                  (list (new-atom "$expr$"))
-                                                  ""))
-         (maybe-add-trailing-space a-cursor)
-         (send a-cursor focus-in!)
-         (send editor show-focus)]
-        [(#\,)
-         (maybe-add-leading-space a-cursor)
-         (send a-cursor insert-after! (new-fusion ","
-                                                  (list (new-atom "$expr$"))
-                                                  ""))
-         (maybe-add-trailing-space a-cursor)
-         (send a-cursor focus-in!)
-         (send editor show-focus)]
-        [(f4)
-         (send editor toggle-dstx-parsing)])))
+             (send a-cursor focus-toplevel!)
+             (send a-cursor focus-oldest!)]))
+    
+    (let ([a-cursor (send editor get-tree-cursor)])
+      (let ([start-pos (send editor get-start-position)]
+            [end-pos (send editor get-end-position)])
+        (case (send event get-key-code)
+          [(#\j)
+           (snap-to-container a-cursor)
+           (send a-cursor focus-predecessor!)
+           (send editor show-focus)]
+          [(#\l)
+           (snap-to-container a-cursor)
+           (send a-cursor focus-successor!)
+           (send editor show-focus)]
+          [(#\k)
+           (snap-to-container a-cursor)
+           (send a-cursor focus-out!)
+           (send editor show-focus)]
+          [(#\a)
+           (snap-to-container a-cursor)
+           (send a-cursor focus-younger!)
+           (send editor show-focus)]
+          [(#\e)
+           (snap-to-container a-cursor)
+           (send a-cursor focus-older!)
+           (send editor show-focus)]
+          [(#\()
+           (snap-to-insertion-point)
+           (maybe-add-leading-space a-cursor)
+           (send a-cursor insert-after! (new-fusion "(" (list (new-atom "$expr$")) ")"))
+           (maybe-add-trailing-space a-cursor)
+           (send a-cursor focus-in!)
+           (send editor show-focus)]
+          [(#\[)
+           (snap-to-insertion-point a-cursor)
+           (maybe-add-leading-space a-cursor)
+           (send a-cursor insert-after! (new-fusion "[" (list (new-atom "$expr$")) "]"))
+           (maybe-add-trailing-space a-cursor)
+           (send a-cursor focus-in!)
+           (send editor show-focus)]
+          [(#\')
+           (snap-to-insertion-point a-cursor)
+           (maybe-add-leading-space a-cursor)
+           (send a-cursor insert-after! (new-fusion "'"
+                                                    (list (new-atom "$expr$"))
+                                                    ""))
+           (maybe-add-trailing-space a-cursor)
+           (send a-cursor focus-in!)
+           (send editor show-focus)]
+          [(#\,)
+           (snap-to-insertion-point a-cursor)
+           (maybe-add-leading-space a-cursor)
+           (send a-cursor insert-after! (new-fusion ","
+                                                    (list (new-atom "$expr$"))
+                                                    ""))
+           (maybe-add-trailing-space a-cursor)
+           (send a-cursor focus-in!)
+           (send editor show-focus)]
+          [(f4)
+           (send editor toggle-dstx-parsing)]))))
   
   
   
