@@ -12,7 +12,7 @@
   
   ;; These tests take a bit of time, so it might make a good indicator
   ;; of optimization detection.
-  ;; as of this writing, on kfisler-ra1, I'm seeing 9185 cpu time.
+  ;; as of this writing, on kfisler-ra1, I'm seeing 7873 cpu time.
   (define (test)
     (time
      (test/text-ui test-focus-2)))
@@ -61,9 +61,9 @@
   ;; test-both: string -> void
   ;; Drive the test harnesses for the pos and endpos checkers.
   (define (test-both a-str)
-    #;(test-string-pos a-str)
+    (test-string-pos a-str)
     (test-string-endpos a-str)
-    #;(test-string-container a-str))
+    (test-string-container a-str))
   
   
   ;; with-cursor-anywhere: cursor (-> void) -> void
