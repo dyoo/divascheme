@@ -31,10 +31,10 @@
   (provide/contract [struct msg ([host-id string?])]
                     [struct (msg:insert msg) ([host-id string?]
                                               [dstx dstx?]
-                                              [before-id woot-id/c]
-                                              [after-id (or/c false/c woot-id/c)])]
+                                              [before-id woot-id?]
+                                              [after-id (or/c false/c woot-id?)])]
                     [struct (msg:delete msg) ([host-id string?]
-                                              [id woot-id/c])]
+                                              [id woot-id?])]
                     
                     [msg->string (msg? . -> . string?)]
                     [string->msg (string? . -> . msg?)]))

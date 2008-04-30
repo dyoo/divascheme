@@ -1,7 +1,6 @@
 (module exercise-navigation mzscheme
   (require "dsyntax.ss"
            "parse-plt-scheme.ss"
-           "text-support.ss"
            "simple-profile.ss"
            "dstx-text-mixin.ss"
            (lib "etc.ss")
@@ -33,27 +32,53 @@
          (send a-cursor focus-older!)
          (send editor show-focus)]
         [(#\()
+         (maybe-add-leading-space a-cursor)
          (send a-cursor insert-before! (new-fusion "(" (list (new-atom "$expr$")) ")"))
+         (maybe-add-trailing-space a-cursor)
          (send a-cursor focus-in!)
          (send editor show-focus)]
         [(#\[)
+         (maybe-add-leading-space a-cursor)
          (send a-cursor insert-before! (new-fusion "[" (list (new-atom "$expr$")) "]"))
+         (maybe-add-trailing-space a-cursor)
          (send a-cursor focus-in!)
          (send editor show-focus)]
         [(#\')
+         (maybe-add-leading-space a-cursor)
          (send a-cursor insert-before! (new-fusion "'"
                                                    (list (new-atom "$expr$"))
                                                    ""))
+         (maybe-add-trailing-space a-cursor)
          (send a-cursor focus-in!)
          (send editor show-focus)]
         [(#\,)
+         (maybe-add-leading-space a-cursor)
          (send a-cursor insert-before! (new-fusion ","
                                                    (list (new-atom "$expr$"))
                                                    ""))
+         (maybe-add-trailing-space a-cursor)
          (send a-cursor focus-in!)
          (send editor show-focus)]
         [(f4)
          (send editor toggle-dstx-parsing)])))
+  
+  (define (maybe-add-leading-space a-cursor)
+    (when (send a-cursor can-focus-younger/no-snap?)
+      (send a-cursor focus-younger/no-snap!)
+      (cond [(space? (send a-cursor cursor-dstx))
+             (send a-cursor focus-older/no-snap!)]
+            [else
+             (send a-cursor insert-after! (new-space " "))
+             (send a-cursor focus-older/no-snap!)])))
+  
+  (define (maybe-add-trailing-space a-cursor)
+    (when (send a-cursor can-focus-older/no-snap?)
+      (send a-cursor focus-older/no-snap!)
+      (cond [(space? (send a-cursor cursor-dstx))
+             (send a-cursor focus-younger/no-snap!)]
+            [else
+             (send a-cursor insert-before! (new-space " "))
+             (send a-cursor focus-younger/no-snap!)])))
   
   
   (define my-text%

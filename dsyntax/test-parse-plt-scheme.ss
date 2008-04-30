@@ -40,7 +40,10 @@
       (send text insert snip)
       (send text insert ")")
       
-      (call-with-text-input-port text ip-consumer)))
+      (let ([ip (open-input-text text 0 (send text last-position))])
+        (dynamic-wind void
+                      (lambda () (ip-consumer ip))
+                      (lambda () (close-input-port ip))))))
   
   
   (define test-parse-plt-scheme

@@ -22,6 +22,18 @@
       super%)))
   
   
+  ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+  ;; The following methods are meant to be internal to this module.
+  ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+  (define-local-member-name
+    with-remote-operation-active
+    get-self-ip
+    on-woot-structured-insert
+    on-woot-structured-delete
+    host-session
+    join-session)
+  ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+  
   
   
   
@@ -36,6 +48,19 @@
       (define (initialize)
         (set! self-ip (self-ip:self-ip-address))
         (super-new))
+      
+      
+      ;; We need to detect when things are being evaluated because they're
+      ;; driven by the outside world.  The parameter in-remote-operation is
+      ;; meant to protect the potential feedback that might happen otherwise.
+      (define in-remote-operation? (make-parameter #f))
+      
+      ;; with-remote-operation-active: (-> X) -> X
+      ;; Evalutes the thunk in a dynamic environment where the in-remote-operation? parameter
+      ;; is true.
+      (define/public (with-remote-operation-active thunk)
+        (parameterize ([in-remote-operation? #t])
+          (thunk)))
       
       
       ;; get-self-ip: -> string
@@ -53,12 +78,14 @@
       ;; on-woot-structured-insert: dstx woot-id woot-id -> void
       ;; We define additional hooks for the network mixin to do its stuff.
       (define/pubment (on-woot-structured-insert a-dstx before-woot-id after-woot-id)
-        (inner (void) on-woot-structured-insert a-dstx before-woot-id after-woot-id))
+        (when (not (in-remote-operation?))
+          (inner (void) on-woot-structured-insert a-dstx before-woot-id after-woot-id)))
       
       
       ;; on-woot-structured-delete: woot-id -> void
       (define/pubment (on-woot-structured-delete woot-id)
-        (inner (void) on-woot-structured-delete woot-id))
+        (when (not (in-remote-operation?))
+          (inner (void) on-woot-structured-delete woot-id)))
       
       
       ;; Hooks into on-structured-insert-before.
@@ -182,6 +209,7 @@
            (msg->string
             (make-msg:insert (get-self-ip) a-dstx before-woot-id after-woot-id))))
         (inner (void) on-woot-structured-insert a-dstx before-woot-id after-woot-id))
+      
       
       
       ;; on-woot-structured-insert: dstx woot-id woot-id -> void
