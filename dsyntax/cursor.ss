@@ -56,8 +56,10 @@
    
    
    
-   [focus-find-dstx
+   [focus-find/dstx
     (cursor? (dstx? . -> . boolean?) . -> . cursor-or-false/c)]
+   [focus-find/cursor
+    (cursor? (cursor? . -> . boolean?) . -> . cursor-or-false/c)]
    [focus-pos
     (cursor? natural-number/c . -> . cursor-or-false/c)]
    [focus-endpos
@@ -541,26 +543,29 @@
     (maximally-repeat-movement a-cursor focus-younger/no-snap))
   
   
-  ;; focus-find-dstx: cursor (dstx -> boolean?) -> (or/c cursor #f)
-  ;; Refocus the cursor, based on a predicate that distinguishing between
-  ;; dstxs.
-  (define (focus-find-dstx a-cursor a-pred)
-    #;(focus-search (focus-toplevel a-cursor)
-                    focus-successor/no-snap
-                  (lambda (a-cursor)
-                    (a-pred (cursor-dstx a-cursor))))
+  ;; focus-find/dstx: cursor (dstx -> boolean?) -> (or/c cursor #f)
+  ;; Refocus the cursor, based on a predicate on dstxs.
+  (define (focus-find/dstx a-cursor a-pred)
+    (focus-find/cursor a-cursor (lambda (a-cursor)
+                                  (a-pred (cursor-dstx a-cursor)))))
+  
+  
+  ;; focus-find/cursor: cursor (cursor -> boolean?) -> (or/c cursor #f)
+  ;; Refocus the cursor based on a predicate on cursors.
+  (define (focus-find/cursor a-cursor a-pred)
     (let loop ([leftward a-cursor]
                [rightward a-cursor])
       (cond
         [(and (not leftward) (not rightward))
          #f]
-        [(and leftward (a-pred (cursor-dstx leftward)))
+        [(and leftward (a-pred leftward))
          leftward]
-        [(and rightward (a-pred (cursor-dstx rightward)))
+        [(and rightward (a-pred rightward))
          rightward]
         [else
          (loop (and leftward (focus-predecessor/no-snap leftward))
                (and rightward (focus-successor/no-snap rightward)))])))
+  
   
   
   ;; focus-search: cursor focus-function (cursor -> boolean) -> (or/c cursor #f)
@@ -647,14 +652,11 @@
   
   
   
-  
   ;; focus-endpos: cursor number -> (or/c cursor #f)
   (define (focus-endpos a-cursor a-pos)
-    ;; todo: first, focus outward, then focus on successors?
-    (focus-search (focus-toplevel a-cursor)
-                  focus-successor/no-snap
-                  (lambda (a-cursor)
-                    (= (cursor-endpos a-cursor) a-pos))))
+    (focus-find/cursor a-cursor
+                       (lambda (a-cursor)
+                         (= (cursor-endpos a-cursor) a-pos))))
   
   
   ;; sentinel-space?: dstx -> boolean

@@ -318,10 +318,18 @@ Move focus to the enclosing dstx object of the given position.
 Returns false only if the position is outside all dstxs.
 
 
-> focus-find-dstx: cursor (dstx -> boolean) -> (union cursor #f)
+> focus-find/cursor: cursor (cursor -> boolean) -> (union cursor #f)
+
+Use the predicate to refocus the cursor.  Search starts from the cursor and
+spreads outward toward the successors and predecessors.  The first match is
+immediately returned.
+
+
+> focus-find/dstx: cursor (dstx -> boolean) -> (union cursor #f)
 
 Use the predicate to find the dstx.  Search starts from the cursor and
-spreads outward toward the successors and predecessors.
+spreads outward toward the successors and predecessors.  The first match is
+immediately returned.
 
 
 > focus-pos: cursor number -> (union cursor #f)
@@ -331,6 +339,14 @@ immediately to the left of the cursor.  If no such syntax exists,
 returns #f.  Does not snap across whitespace, except for the special
 case of the sentinel empty-space character.
 
+
+> focus-endpos: cursor number -> (union cursor #f)
+
+Given a cursor and a position, refocuses the cursor at a dstx whose
+position is exactly the given number.
+
+(API discrepency: focus-pos is looser.  I think it should be as restricted
+ as focus-pos.)
 
 
 

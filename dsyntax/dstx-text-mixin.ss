@@ -680,7 +680,7 @@
                ;; optimization: try to reuse the cursor that was last used for editing.
                (reuse-editing-fcursor!)])
             (cond
-              [(cursor:focus-find-dstx
+              [(cursor:focus-find/dstx
                 f-cursor
                 (lambda (a-dstx)
                   (= (struct:dstx-property-ref a-dstx 'local-id)
@@ -785,6 +785,9 @@
       (define-focus-functions (cursor:focus-container a-pos) can-focus-container? focus-container!)
       (define-focus-functions (cursor:focus-pos a-pos) can-focus-pos? focus-pos!)
       (define-focus-functions (cursor:focus-endpos a-pos) can-focus-endpos? focus-endpos!)
+      
+      (define-focus-functions (cursor:focus-find/dstx a-pred) can-focus-find/dstx? focus-find/dstx!)
+      (define-focus-functions (cursor:focus-find/cursor a-pred) can-focus-find/cursor? focus-find/cursor!)
       
       
       

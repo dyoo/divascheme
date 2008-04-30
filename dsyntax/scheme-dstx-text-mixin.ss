@@ -1,6 +1,8 @@
 (module scheme-dstx-text-mixin mzscheme
   
   (require (lib "class.ss")
+           (lib "mred.ss" "mred")
+           (lib "list.ss")
            "dsyntax.ss"
            "dstx-text-mixin.ss")
   
@@ -18,6 +20,7 @@
   ;;
   (define (scheme-dstx-text-mixin super%)
     (class (dstx-text-mixin super%)
+      (inherit get-dstx-cursor)
       (super-new)
       
       (define/augment (after-structured-insert-after f-cursor)
@@ -43,8 +46,8 @@
       
       
       (define (destruct-fusion! a-fusion)
-        (let ([cursor (get-cursor)])
-          (send cursor focus-find-dstx!
+        (let ([cursor (get-dstx-cursor)])
+          (send cursor focus-find/dstx!
                 (lambda (a-dstx)
                   (= (dstx-local-id a-dstx)
                      (dstx-local-id a-fusion))))
@@ -79,7 +82,7 @@
   (define (bad-unary-fusion? a-dstx)
     (and (fusion? a-dstx)
          (unary-fusion-prefix? (fusion-prefix a-dstx))
-         (not (exactly-one-nonspace? (fusion-children a-dstx)))))
+         (not (exactly-one-nonspace-child? (fusion-children a-dstx)))))
   
   
   ;; exactly-one-nonspace?: (listof dstx) -> boolean
