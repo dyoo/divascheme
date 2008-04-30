@@ -36,7 +36,7 @@
        (transpose original-world a-world a-text update-world-fn update-mred-fn)]
       
       [(struct imperative-op:cleanup ())
-       (cleanup a-world a-text update-world-fn update-mred-fn)]
+       (cleanup-everything a-world a-text update-world-fn update-mred-fn)]
       
       [(struct imperative-op:cleanup-range (start-mark end-mark))
        (cleanup-range start-mark end-mark a-world a-text update-world-fn update-mred-fn)]
@@ -276,39 +276,41 @@
   
   
   
-  ;; cleanup: world text% (World -> World) (World -> void) -> World
+  ;; cleanup-everything: world text% (World -> World) (World -> void) -> World
   ;; Cleanup everything we can see.
-  (define (cleanup world a-text update-world-fn update-mred-fn)
+  (define (cleanup-everything world a-text update-world-fn update-mred-fn)
     (cleanup/between 0 (send a-text last-position) world a-text update-world-fn update-mred-fn))
   
   
   ;; cleanup-range: symbol symbol World text% (World -> World) (World -> void) -> World
   ;; Cleanup between the non-whitespace syntax near the start-mark and end-marks.
   (define (cleanup-range start-mark end-mark a-world a-text update-world-fn update-mred-fn)
-    (let ([start-pos (max 0 (world-marker-position a-world start-mark))]
-          [end-pos (min (send a-text last-position)
-                        (world-marker-position a-world end-mark))]
-          [world-without-marks
-           (world-clear-marker (world-clear-marker a-world start-mark)
-                               end-mark)])
-      (let ([cursor (send (send a-text get-dstx-cursor) get-functional-cursor)])
-        (let ([start-pos (cond [(not (focus-container cursor start-pos))
-                                0]
-                               [(focus-younger (focus-container cursor start-pos))
-                                (cursor-pos (focus-younger (focus-container cursor start-pos)))]
-                               [(focus-out (focus-container cursor start-pos))
-                                (cursor-pos (focus-out (focus-container cursor start-pos)))]
+    ;; Temporarily disabled in favor of cleaning up everything.
+    (cleanup-everything a-world a-text update-world-fn update-mred-fn)
+    #;(let ([start-pos (max 0 (world-marker-position a-world start-mark))]
+            [end-pos (min (send a-text last-position)
+                          (world-marker-position a-world end-mark))]
+            [world-without-marks
+             (world-clear-marker (world-clear-marker a-world start-mark)
+                                 end-mark)])
+        (let ([cursor (send (send a-text get-dstx-cursor) get-functional-cursor)])
+          (let ([start-pos (cond [(not (focus-container cursor start-pos))
+                                  0]
+                                 [(focus-younger (focus-container cursor start-pos))
+                                  (cursor-pos (focus-younger (focus-container cursor start-pos)))]
+                                 [(focus-out (focus-container cursor start-pos))
+                                  (cursor-pos (focus-out (focus-container cursor start-pos)))]
+                                 [else
+                                  (cursor-pos (focus-container cursor start-pos))])]
+                [end-pos (cond [(not (focus-container cursor end-pos))
+                                (send a-text last-position)]
+                               [(focus-older (focus-container cursor end-pos))
+                                (cursor-endpos (focus-older (focus-container cursor end-pos)))]
+                               [(focus-out (focus-container cursor end-pos))
+                                (cursor-endpos (focus-out (focus-container cursor end-pos)))]
                                [else
-                                (cursor-pos (focus-container cursor start-pos))])]
-              [end-pos (cond [(not (focus-container cursor end-pos))
-                              (send a-text last-position)]
-                             [(focus-older (focus-container cursor end-pos))
-                              (cursor-endpos (focus-older (focus-container cursor end-pos)))]
-                             [(focus-out (focus-container cursor end-pos))
-                              (cursor-endpos (focus-out (focus-container cursor end-pos)))]
-                             [else
-                              (cursor-endpos (focus-container cursor end-pos))])])
-          (cleanup/between start-pos end-pos world-without-marks a-text update-world-fn update-mred-fn)))))
+                                (cursor-endpos (focus-container cursor end-pos))])])
+            (cleanup/between start-pos end-pos world-without-marks a-text update-world-fn update-mred-fn)))))
   
   
   

@@ -544,6 +544,9 @@
           (revert&exit)
           (begin
             (eval-text)
+            ;; Subtle: we need to remove the new insertion point, so we call
+            ;; restore-editor-to-pre-state! right after evaluation.
+            (restore-editor-to-pre-state!)
             (set-world world-at-beginning-of-insert)
             (exit))))
     
