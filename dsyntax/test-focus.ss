@@ -270,7 +270,24 @@
            (check-false (focus-endpos a-cursor 3))))))
      
      (test-case
-      "focus-endpos returns the most successive."
+      "focus-endpos returns the most successive 1."
+      (let* ([sentinel-1
+              (make-space '() "")]
+             [a-dstx
+              (new-fusion "'" (list (new-atom "hi")) "")]
+             [a-cursor (make-toplevel-cursor (list sentinel-1 a-dstx))])
+        (with-cursor-anywhere
+         a-cursor
+         (lambda (a-cursor)
+           (check-eq? (cursor-dstx (focus-endpos a-cursor 0)) sentinel-1)
+           (check-equal? (focus-endpos a-cursor 1) #f)
+           (check-equal? (focus-endpos a-cursor 2) #f)
+           (check-eq? (cursor-dstx (focus-endpos a-cursor 3)) a-dstx)
+           (check-false (focus-endpos a-cursor 4))))))
+     
+     
+     (test-case
+      "focus-endpos returns the most successive 2."
       (let* ([a-dstx (new-atom "hi")]
              [sentinel-1 (make-space '() "")]
              [sentinel-2 (make-space '() "")]
