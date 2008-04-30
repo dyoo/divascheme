@@ -172,9 +172,10 @@
   
   ;; collect-endpos: cursor -> (hash-table-of (list number dstx))
   ;; Returns a list of end-pos/dstx lists.
+  ;; Most successive endpos wins.
   (define (collect-endpos a-cursor)
     (define ht (make-hash-table 'equal))
-    (let loop ([a-cursor (focus-last-successor a-cursor)])
+    (let loop ([a-cursor (focus-toplevel a-cursor)])
       (cond
         [(not a-cursor)
          (void)]
@@ -182,5 +183,5 @@
          (cons
           (hash-table-put! ht (cursor-endpos a-cursor)
                            (cursor-dstx a-cursor))
-          (loop (focus-predecessor/no-snap a-cursor)))]))
+          (loop (focus-successor/no-snap a-cursor)))]))
     ht))

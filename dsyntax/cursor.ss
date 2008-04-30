@@ -702,6 +702,11 @@
            (cond [(and (focus-successor/no-snap cursor)
                        (= a-pos (cursor-endpos (focus-successor/no-snap cursor))))
                   (loop (focus-successor/no-snap cursor))]
+                 ;; And if we are on a fusion structure without a suffix, focus
+                 ;; on the oldest child.
+                 [(and (focus-in/no-snap cursor)
+                       (= a-pos (cursor-endpos (focus-oldest (focus-in/no-snap cursor)))))
+                  (loop (focus-oldest (focus-in/no-snap cursor)))]
                  [else
                   cursor]))]
         [else

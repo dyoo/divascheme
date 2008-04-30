@@ -270,24 +270,31 @@
            (check-false (focus-endpos a-cursor 3))))))
      
      (test-case
-      "focus-endpos returns the most successive 1."
+      "focus-endpos returns the most successive, on quoted atoms."
       (let* ([sentinel-1
               (make-space '() "")]
+             [an-atom (new-atom "hi")]
              [a-dstx
-              (new-fusion "'" (list (new-atom "hi")) "")]
+              (new-fusion "'" (list an-atom) "")]
              [a-cursor (make-toplevel-cursor (list sentinel-1 a-dstx))])
         (with-cursor-anywhere
          a-cursor
          (lambda (a-cursor)
-           (check-eq? (cursor-dstx (focus-endpos a-cursor 0)) sentinel-1)
-           (check-equal? (focus-endpos a-cursor 1) #f)
-           (check-equal? (focus-endpos a-cursor 2) #f)
-           (check-eq? (cursor-dstx (focus-endpos a-cursor 3)) a-dstx)
-           (check-false (focus-endpos a-cursor 4))))))
+           (check-eq? (cursor-dstx (focus-endpos a-cursor 0))
+                      sentinel-1)
+           ;; tricky case: we have sentinels in the very first element of a fusion.
+           (check-eq? (cursor-dstx (focus-endpos a-cursor 1))
+                      (cursor-dstx (focus-in/no-snap (focus-older (focus-toplevel a-cursor)))))
+           (check-equal? (focus-endpos a-cursor 2)
+                         #f)
+           (check-eq? (cursor-dstx (focus-endpos a-cursor 3))
+                      an-atom)
+           (check-equal? (focus-endpos a-cursor 4)
+                         #f)))))
      
      
      (test-case
-      "focus-endpos returns the most successive 2."
+      "focus-endpos returns the most successive, on degenerate sentinel spaces"
       (let* ([a-dstx (new-atom "hi")]
              [sentinel-1 (make-space '() "")]
              [sentinel-2 (make-space '() "")]
