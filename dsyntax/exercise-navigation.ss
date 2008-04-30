@@ -66,7 +66,7 @@
            (send a-cursor focus-older!)
            (send editor show-focus)]
           [(#\()
-           (snap-to-insertion-point)
+           (snap-to-insertion-point a-cursor)
            (maybe-add-leading-space a-cursor)
            (send a-cursor insert-after! (new-fusion "(" (list (new-atom "$expr$")) ")"))
            (maybe-add-trailing-space a-cursor)
@@ -78,6 +78,12 @@
            (send a-cursor insert-after! (new-fusion "[" (list (new-atom "$expr$")) "]"))
            (maybe-add-trailing-space a-cursor)
            (send a-cursor focus-in!)
+           (send editor show-focus)]
+          [(#\] #\))
+           (snap-to-insertion-point a-cursor)
+           (when (send a-cursor can-focus-out?)
+             (send a-cursor focus-out!))
+           (send editor set-position (send a-cursor cursor-endpos))
            (send editor show-focus)]
           [(#\')
            (snap-to-insertion-point a-cursor)
@@ -120,7 +126,9 @@
       (send (get-keymap) map-function "C:k" "dsyntax:test-handler")
       (send (get-keymap) map-function "C:l" "dsyntax:test-handler")
       (send (get-keymap) map-function "(" "dsyntax:test-handler")
+      (send (get-keymap) map-function ")" "dsyntax:test-handler")
       (send (get-keymap) map-function "[" "dsyntax:test-handler")
+      (send (get-keymap) map-function "]" "dsyntax:test-handler")
       (send (get-keymap) map-function "f4" "dsyntax:test-handler")
       (send (get-keymap) map-function "'" "dsyntax:test-handler")
       (send (get-keymap) map-function "," "dsyntax:test-handler")
