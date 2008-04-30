@@ -67,6 +67,24 @@
                          #f)))))
      
      (test-case
+      "focus-pos chooses the most successive, even with degenerate spaces."
+      (let* ([a-dstx (new-atom "fire")]
+             [a-cursor (make-toplevel-cursor (list (new-space " ")
+                                                   (new-space "")
+                                                   (new-space "")
+                                                   (new-space "")
+                                                   a-dstx
+                                                   (new-space " ")
+                                                   (new-space "")
+                                                   (new-space "")
+                                                   (new-space "")))])
+        (with-cursor-anywhere
+         a-cursor
+         (lambda (a-cursor)
+           (check-eq? (cursor-dstx (focus-pos a-cursor 1))
+                      a-dstx)))))
+     
+     (test-case
       "focus-pos at an ending space"
       (let ([a-cursor (make-toplevel-cursor (list (new-atom "x") (new-space " ")))])
         (with-cursor-anywhere 
