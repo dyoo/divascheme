@@ -6,6 +6,20 @@
   
   (provide test-focus)
   
+  ;; with-cursor-anywhere: cursor (-> void) -> void
+  ;; evaluate the thunk everywhere.  Lets us exhaustively check the 
+  ;; pos-focusing functions
+  (define (with-cursor-anywhere a-cursor thunk) 
+    (let loop ([a-cursor (focus-toplevel a-cursor)])
+      (cond
+        [a-cursor
+         (thunk a-cursor)
+         (loop (focus-successor/no-snap a-cursor))]
+        [else
+         (void)])))
+  
+  
+  
   (define test-focus
     (test-suite
      "test-focus.ss"
@@ -22,39 +36,48 @@
       "focus-pos"
       (let ([a-cursor (make-toplevel-cursor (list (new-atom "foo")
                                                   (new-atom "bar")))])
-        (check-equal? (cursor-dstx (focus-pos a-cursor 0))
-                      (new-atom "foo"))
-        (check-equal? (cursor-dstx (focus-pos a-cursor 1))
-                      (new-atom "foo"))
-        (check-equal? (cursor-dstx (focus-pos a-cursor 2))
-                      (new-atom "foo"))
-        (check-equal? (cursor-dstx (focus-pos a-cursor 3))
-                      (new-atom "bar"))
-        (check-equal? (cursor-dstx (focus-pos a-cursor 4))
-                      (new-atom "bar"))
-        (check-equal? (cursor-dstx (focus-pos a-cursor 5))
-                      (new-atom "bar"))
-        (check-equal? (cursor-dstx (focus-pos a-cursor 6))
-                      (new-atom "bar"))))
+        (with-cursor-anywhere 
+         a-cursor 
+         (lambda (a-cursor)
+           (check-equal? (cursor-dstx (focus-pos a-cursor 0))
+                         (new-atom "foo"))
+           (check-equal? (cursor-dstx (focus-pos a-cursor 1))
+                         (new-atom "foo"))
+           (check-equal? (cursor-dstx (focus-pos a-cursor 2))
+                         (new-atom "foo"))
+           (check-equal? (cursor-dstx (focus-pos a-cursor 3))
+                         (new-atom "bar"))
+           (check-equal? (cursor-dstx (focus-pos a-cursor 4))
+                         (new-atom "bar"))
+           (check-equal? (cursor-dstx (focus-pos a-cursor 5))
+                         (new-atom "bar"))
+           (check-equal? (cursor-dstx (focus-pos a-cursor 6))
+                         (new-atom "bar"))))))
      
      
      (test-case
       "focus-pos on a space"
       (let ([a-cursor (make-toplevel-cursor (list (new-space " ")))])
-        (check-equal? (cursor-dstx (focus-pos a-cursor 0))
-                      (new-space " "))
-        (check-equal? (cursor-dstx (focus-pos a-cursor 1))
-                      (new-space " "))))
+        (with-cursor-anywhere 
+         a-cursor
+         (lambda (a-cursor)
+           (check-equal? (cursor-dstx (focus-pos a-cursor 0))
+                         (new-space " "))
+           (check-equal? (cursor-dstx (focus-pos a-cursor 1))
+                         (new-space " "))))))
      
      (test-case
       "focus-pos at an ending space"
       (let ([a-cursor (make-toplevel-cursor (list (new-atom "x") (new-space " ")))])
-        (check-equal? (cursor-dstx (focus-pos a-cursor 0))
-                      (new-atom "x"))
-        (check-equal? (cursor-dstx (focus-pos a-cursor 1))
-                      (new-space " "))
-        (check-equal? (cursor-dstx (focus-pos a-cursor 2))
-                      (new-space " "))))
+        (with-cursor-anywhere 
+         a-cursor
+         (lambda (a-cursor)
+           (check-equal? (cursor-dstx (focus-pos a-cursor 0))
+                         (new-atom "x"))
+           (check-equal? (cursor-dstx (focus-pos a-cursor 1))
+                         (new-space " "))
+           (check-equal? (cursor-dstx (focus-pos a-cursor 2))
+                         (new-space " "))))))
      
      (test-case
       "focus-in and focus-out, when no modifications occur, should preserve fusions."
@@ -85,33 +108,39 @@
                                  (list (new-atom "box"))
                                  "]")]
              [a-cursor (make-toplevel-cursor (list a-dstx))])
-        (check-equal? (cursor-dstx (focus-pos a-cursor 0))
-                      a-dstx)
-        (check-equal? (cursor-dstx (focus-pos a-cursor 1))
-                      (new-atom "box"))
-        (check-equal? (cursor-dstx (focus-pos a-cursor 2))
-                      (new-atom "box"))
-        (check-equal? (cursor-dstx (focus-pos a-cursor 3))
-                      (new-atom "box"))
-        (check-equal? (cursor-dstx (focus-pos a-cursor 4))
-                      (new-atom "box"))))
+        (with-cursor-anywhere 
+         a-cursor
+         (lambda (a-cursor)           
+           (check-equal? (cursor-dstx (focus-pos a-cursor 0))
+                         a-dstx)
+           (check-equal? (cursor-dstx (focus-pos a-cursor 1))
+                         (new-atom "box"))
+           (check-equal? (cursor-dstx (focus-pos a-cursor 2))
+                         (new-atom "box"))
+           (check-equal? (cursor-dstx (focus-pos a-cursor 3))
+                         (new-atom "box"))
+           (check-equal? (cursor-dstx (focus-pos a-cursor 4))
+                         (new-atom "box"))))))
      
      (test-case
       "focus-container on atoms"
       (let* ([a-dstx (new-atom "hi")]
              [a-cursor (make-toplevel-cursor (list a-dstx))])
-        (check-equal? (cursor-dstx (focus-container a-cursor 0))
-                      (new-atom "hi"))
-        (check-equal? (cursor-dstx (focus-container a-cursor 1))
-                      (new-atom "hi"))
-        (check-equal? (focus-container a-cursor 2)
-                      #f)))
+        (with-cursor-anywhere
+         a-cursor
+         (lambda (a-cursor)
+           (check-equal? (cursor-dstx (focus-container a-cursor 0))
+                         (new-atom "hi"))
+           (check-equal? (cursor-dstx (focus-container a-cursor 1))
+                         (new-atom "hi"))
+           (check-equal? (focus-container a-cursor 2)
+                         #f)))))
      
      (test-case
       "focus-container when the cursor is not at the beginning"
       (let* ([a-dstx (new-fusion "(" (list (new-atom "x")
                                            (new-space " ")
-                                          (new-atom "y"))
+                                           (new-atom "y"))
                                  ")")]
              [a-cursor (make-toplevel-cursor (list a-dstx))])
         (check-equal? (cursor-dstx (focus-container
@@ -125,22 +154,25 @@
                                  (list (new-atom "bye"))
                                  ")")]
              [a-cursor (make-toplevel-cursor (list a-dstx))])
-        (check-equal? (cursor-dstx (focus-container a-cursor 0))
-                      (new-fusion "("
-                                  (list (new-atom "bye"))
-                                  ")"))
-        (check-equal? (cursor-dstx (focus-container a-cursor 1))
-                      (new-atom "bye"))
-        (check-equal? (cursor-dstx (focus-container a-cursor 2))
-                      (new-atom "bye"))
-        (check-equal? (cursor-dstx (focus-container a-cursor 3))
-                      (new-atom "bye"))
-        (check-equal? (cursor-dstx (focus-container a-cursor 4))
-                      (new-fusion "("
-                                  (list (new-atom "bye"))
-                                  ")"))
-        (check-equal? (focus-container a-cursor 5)
-                      #f)))
+        (with-cursor-anywhere
+         a-cursor
+         (lambda (a-cursor)
+           (check-equal? (cursor-dstx (focus-container a-cursor 0))
+                         (new-fusion "("
+                                     (list (new-atom "bye"))
+                                     ")"))
+           (check-equal? (cursor-dstx (focus-container a-cursor 1))
+                         (new-atom "bye"))
+           (check-equal? (cursor-dstx (focus-container a-cursor 2))
+                         (new-atom "bye"))
+           (check-equal? (cursor-dstx (focus-container a-cursor 3))
+                         (new-atom "bye"))
+           (check-equal? (cursor-dstx (focus-container a-cursor 4))
+                         (new-fusion "("
+                                     (list (new-atom "bye"))
+                                     ")"))
+           (check-equal? (focus-container a-cursor 5)
+                         #f)))))
      
      
      (test-case
@@ -159,25 +191,28 @@
                              ")"))
                       ")")]
              [a-cursor (make-toplevel-cursor (list a-dstx))])
-        (check-equal? (cursor-dstx (focus-container a-cursor 0)) a-dstx)
-        (check-equal? (cursor-dstx (focus-container a-cursor 1))
-                      (cursor-dstx (focus-in a-cursor)))
-        (check-equal? (cursor-dstx (focus-container a-cursor 2))
-                      (cursor-dstx (focus-in (focus-in a-cursor))))
-        (check-equal? (cursor-dstx (focus-container a-cursor 3))
-                      (cursor-dstx (focus-in (focus-in (focus-in a-cursor)))))
-        (check-equal? (cursor-dstx (focus-container a-cursor 4))
-                      (cursor-dstx (focus-in (focus-in (focus-in (focus-in a-cursor))))))
-        (check-equal? (cursor-dstx (focus-container a-cursor 5))
-                      (cursor-dstx (focus-in (focus-in (focus-in a-cursor)))))
-        (check-equal? (cursor-dstx (focus-container a-cursor 6))
-                      (cursor-dstx (focus-in (focus-in a-cursor))))
-        (check-equal? (cursor-dstx (focus-container a-cursor 7))
-                      (cursor-dstx (focus-in a-cursor)))
-        (check-equal? (cursor-dstx (focus-container a-cursor 8))
-                      (cursor-dstx a-cursor))
-        (check-equal? (focus-container a-cursor 9)
-                      #f)))
+        (with-cursor-anywhere
+         a-cursor
+         (lambda (a-cursor)
+           (check-equal? (cursor-dstx (focus-container a-cursor 0)) a-dstx)
+           (check-equal? (cursor-dstx (focus-container a-cursor 1))
+                         (cursor-dstx (focus-in (focus-toplevel a-cursor))))
+           (check-equal? (cursor-dstx (focus-container a-cursor 2))
+                         (cursor-dstx (focus-in (focus-in (focus-toplevel a-cursor)))))
+           (check-equal? (cursor-dstx (focus-container a-cursor 3))
+                         (cursor-dstx (focus-in (focus-in (focus-in (focus-toplevel a-cursor))))))
+           (check-equal? (cursor-dstx (focus-container a-cursor 4))
+                         (cursor-dstx (focus-in (focus-in (focus-in (focus-in (focus-toplevel a-cursor)))))))
+           (check-equal? (cursor-dstx (focus-container a-cursor 5))
+                         (cursor-dstx (focus-in (focus-in (focus-in (focus-toplevel a-cursor))))))
+           (check-equal? (cursor-dstx (focus-container a-cursor 6))
+                         (cursor-dstx (focus-in (focus-in (focus-toplevel a-cursor)))))
+           (check-equal? (cursor-dstx (focus-container a-cursor 7))
+                         (cursor-dstx (focus-in (focus-toplevel a-cursor))))
+           (check-equal? (cursor-dstx (focus-container a-cursor 8))
+                         (cursor-dstx (focus-toplevel a-cursor)))
+           (check-equal? (focus-container a-cursor 9)
+                         #f)))))
      
      
      (test-case
@@ -196,35 +231,41 @@
                              ")"))
                       ")")]
              [a-cursor (focus-oldest (make-toplevel-cursor (list a-dstx (new-atom "last"))))])
-        (check-equal? (cursor-dstx (focus-container a-cursor 0)) a-dstx)
-        (check-equal? (cursor-dstx (focus-container a-cursor 1))
-                      (cursor-dstx (focus-in (focus-toplevel a-cursor))))
-        (check-equal? (cursor-dstx (focus-container a-cursor 2))
-                      (cursor-dstx (focus-in (focus-in (focus-toplevel a-cursor)))))
-        (check-equal? (cursor-dstx (focus-container a-cursor 3))
-                      (cursor-dstx (focus-in (focus-in (focus-in (focus-toplevel a-cursor))))))
-        (check-equal? (cursor-dstx (focus-container a-cursor 4))
-                      (cursor-dstx (focus-in (focus-in (focus-in (focus-in (focus-toplevel a-cursor)))))))
-        (check-equal? (cursor-dstx (focus-container a-cursor 5))
-                      (cursor-dstx (focus-in (focus-in (focus-in (focus-toplevel a-cursor))))))
-        (check-equal? (cursor-dstx (focus-container a-cursor 6))
-                      (cursor-dstx (focus-in (focus-in (focus-toplevel a-cursor)))))
-        (check-equal? (cursor-dstx (focus-container a-cursor 7))
-                      (cursor-dstx (focus-in (focus-toplevel a-cursor))))
-        (check-equal? (cursor-dstx (focus-container a-cursor 8))
-                      (cursor-dstx (focus-toplevel a-cursor)))
-        (check-equal? (cursor-dstx (focus-container a-cursor 9))
-                      (new-atom "last"))))
+        (with-cursor-anywhere
+         a-cursor
+         (lambda (a-cursor)
+           (check-equal? (cursor-dstx (focus-container a-cursor 0)) a-dstx)
+           (check-equal? (cursor-dstx (focus-container a-cursor 1))
+                         (cursor-dstx (focus-in (focus-toplevel a-cursor))))
+           (check-equal? (cursor-dstx (focus-container a-cursor 2))
+                         (cursor-dstx (focus-in (focus-in (focus-toplevel a-cursor)))))
+           (check-equal? (cursor-dstx (focus-container a-cursor 3))
+                         (cursor-dstx (focus-in (focus-in (focus-in (focus-toplevel a-cursor))))))
+           (check-equal? (cursor-dstx (focus-container a-cursor 4))
+                         (cursor-dstx (focus-in (focus-in (focus-in (focus-in (focus-toplevel a-cursor)))))))
+           (check-equal? (cursor-dstx (focus-container a-cursor 5))
+                         (cursor-dstx (focus-in (focus-in (focus-in (focus-toplevel a-cursor))))))
+           (check-equal? (cursor-dstx (focus-container a-cursor 6))
+                         (cursor-dstx (focus-in (focus-in (focus-toplevel a-cursor)))))
+           (check-equal? (cursor-dstx (focus-container a-cursor 7))
+                         (cursor-dstx (focus-in (focus-toplevel a-cursor))))
+           (check-equal? (cursor-dstx (focus-container a-cursor 8))
+                         (cursor-dstx (focus-toplevel a-cursor)))
+           (check-equal? (cursor-dstx (focus-container a-cursor 9))
+                         (new-atom "last"))))))
      
      (test-case
       "focus-endpos"
       (let* ([a-dstx (new-atom "hi")]
              [a-cursor (make-toplevel-cursor (list a-dstx))])
-        (check-false (focus-endpos a-cursor 0))
-        (check-false (focus-endpos a-cursor 1))
-        (check-equal? (cursor-dstx (focus-endpos a-cursor 2))
-                      (new-atom "hi"))
-        (check-false (focus-endpos a-cursor 3))))
+        (with-cursor-anywhere
+         a-cursor
+         (lambda (a-cursor)
+           (check-false (focus-endpos a-cursor 0))
+           (check-false (focus-endpos a-cursor 1))
+           (check-equal? (cursor-dstx (focus-endpos a-cursor 2))
+                         (new-atom "hi"))
+           (check-false (focus-endpos a-cursor 3))))))
      
      (test-case
       "focus-endpos returns the most successive."
@@ -232,12 +273,15 @@
              [sentinel-1 (make-space '() "")]
              [sentinel-2 (make-space '() "")]
              [a-cursor (make-toplevel-cursor (list sentinel-1 a-dstx sentinel-2))])
-        (check-eq? (cursor-dstx (focus-endpos a-cursor 0))
-                   sentinel-1)
-        (check-false (focus-endpos a-cursor 1))
-        (check-eq? (cursor-dstx (focus-endpos a-cursor 2))
-                   sentinel-2)
-        (check-false (focus-endpos a-cursor 3))))))
+        (with-cursor-anywhere
+         a-cursor
+         (lambda (a-cursor)
+           (check-eq? (cursor-dstx (focus-endpos a-cursor 0))
+                      sentinel-1)
+           (check-false (focus-endpos a-cursor 1))
+           (check-eq? (cursor-dstx (focus-endpos a-cursor 2))
+                      sentinel-2)
+           (check-false (focus-endpos a-cursor 3))))))))
   
   
   (define (test)
