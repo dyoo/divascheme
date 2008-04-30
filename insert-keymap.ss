@@ -213,6 +213,7 @@
                [else
                 (void)]))]
           [else
+           
            ;; Inserting a new symbol: the selection must be completely surrounding a
            ;; syntax.
            ;; Otherwise, we should push the selection off to the side of
@@ -220,29 +221,29 @@
            (cond
              [stx/false
               (cond
-                [(and (= (World-cursor-position world-at-beginning-of-insert)
-                         (syntax-position stx/false))
-                      (= (World-selection-length world-at-beginning-of-insert)
-                         (syntax-span stx/false)))
+                [;; If we overlap, snap to it for replacement.
+                 (overlap? (World-cursor-position world-at-beginning-of-insert)
+                           (+ (World-selection-length world-at-beginning-of-insert)
+                              (World-cursor-position world-at-beginning-of-insert))
+                           (syntax-position stx/false)
+                           (+ (syntax-span stx/false)
+                              (syntax-position stx/false)))
                  (set! world-at-beginning-of-insert
                        (action:select/stx world-at-beginning-of-insert stx/false))
                  (set-world world-at-beginning-of-insert)]
                 [else
-                 ;; Move selection to the front or back of the syntax, but ensure that
-                 ;; it is zero-width and on the borders of the stx.
-                 (cond
-                   [(= (send editor get-start-position)
-                       (send editor get-end-position)
-                       (+ (pos->index (syntax-position stx/false))
-                          (syntax-span stx/false)))
-                    (void)]
-                   [else
-                    (send editor diva:set-selection-position
-                          (pos->index (syntax-position stx/false)))
-                    (set! world-at-beginning-of-insert (get-world))
-                    (set-world world-at-beginning-of-insert)])])]
+                 ;; Otherwise, we're not overlapping and we can just leave things be.
+                 (void)])]
              [else
               (void)])])))
+    
+    
+    ;; overlap?: number number number number -> boolean
+    ;; Returns true if the half-open intervals [start-1, end-1) [start-2, end-2)
+    ;; overlap.
+    (define (overlap? start-1 end-1 start-2 end-2)
+      (and (< start-1 end-2)
+           (< start-2 end-1)))
     
     
     
