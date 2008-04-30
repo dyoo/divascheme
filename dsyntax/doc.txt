@@ -340,11 +340,28 @@ starting at the left of the cursor.  If no such syntax exists, returns
 zero width at the position, the cursor pushes forward to the next
 older dstx.
 
+[fixme: disambiguate: what if there are fusions with empty prefixes?]
+
 
 > focus-endpos: cursor number -> (union cursor #f)
 
 Given a cursor and a position, refocuses the cursor at a dstx whose
 position is exactly the given number.
+
+
+In the boundary case, such as when there are fusions with an suffixes
+whose endpos matches the end position, we return the most successive
+dstx.
+
+i.e.
+
+    (let ([a-cursor 
+           (make-toplevel-cursor (new-fusion "'" 
+                                             (list (new-atom "hello")) 
+                                             ""))])
+      (find-endpos a-cursor 6))
+
+should always refocus the cursor on the inner atom.
 
 
 
