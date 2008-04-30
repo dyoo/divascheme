@@ -606,12 +606,6 @@
   ;; Similar to focus-pos.  We look for the smallest dstx that contains
   ;; the given position.
   (define (focus-container a-cursor a-pos)
-    (define (scan-backward-till-we-are-between a-cursor a-pos)
-      (focus-search a-cursor
-                    focus-predecessor/no-snap
-                    (lambda (a-cursor)
-                      (between? a-cursor a-pos))))
-    
     ;; First scan forward, and then scan backward.
     (let ([cursor-forward (scan-forward-after-position a-cursor a-pos)])
       (scan-backward-till-we-are-between cursor-forward a-pos)))
@@ -634,7 +628,8 @@
          (< a-pos (cursor-endpos a-cursor))))
   
   ;; scan-forward-after-position: cursor number -> cursor
-  ;; Returns a new cursor that's zipped forward past a-pos.
+  ;; Returns a new cursor that's zipped forward past a-pos.  If we hit
+  ;; the end, just return from that position.
   (define (scan-forward-after-position a-cursor a-pos)
     (let loop ([a-cursor a-cursor])
       (cond
@@ -669,6 +664,14 @@
         [else
          #f])))
   
+  
+  ;; scan-backward-till-we-are-between: cursor pos -> (union #f cursor)
+  ;; Moves toward predecessors and youngers until we're between.
+  (define (scan-backward-till-we-are-between a-cursor a-pos)
+    (focus-search a-cursor
+                  focus-predecessor/no-snap
+                  (lambda (a-cursor)
+                    (between? a-cursor a-pos))))
   
   
   ;; focus-endpos: cursor number -> (or/c cursor #f)
