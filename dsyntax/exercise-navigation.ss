@@ -103,6 +103,11 @@
            (maybe-add-trailing-space a-cursor)
            (send a-cursor focus-in!)
            (send editor show-focus)]
+          [(#\return numpad-enter)
+           (send editor set-position
+                 (send editor get-end-position)
+                 (send editor get-end-position))
+           (send editor insert "\n")]
           [(f4)
            (send editor toggle-dstx-parsing)]))))
   
@@ -130,6 +135,9 @@
       (send (get-keymap) map-function "[" "dsyntax:test-handler")
       (send (get-keymap) map-function "]" "dsyntax:test-handler")
       (send (get-keymap) map-function "f4" "dsyntax:test-handler")
+      (send (get-keymap) map-function "return" "dsyntax:test-handler")
+      (send (get-keymap) map-function "enter" "dsyntax:test-handler")
+      (send (get-keymap) map-function "numpadenter" "dsyntax:test-handler")
       (send (get-keymap) map-function "'" "dsyntax:test-handler")
       (send (get-keymap) map-function "," "dsyntax:test-handler")
       
