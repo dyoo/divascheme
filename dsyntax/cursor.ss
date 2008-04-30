@@ -654,9 +654,23 @@
   
   ;; focus-endpos: cursor number -> (or/c cursor #f)
   (define (focus-endpos a-cursor a-pos)
-    (focus-find/cursor a-cursor
-                       (lambda (a-cursor)
-                         (= (cursor-endpos a-cursor) a-pos))))
+    (let ([initial-cursor
+           (focus-find/cursor a-cursor
+                              (lambda (a-cursor)
+                                (= (cursor-endpos a-cursor) a-pos)))])
+      (cond
+        [initial-cursor
+         (let loop ([cursor initial-cursor])
+           ;; Because some dstxs may be zero-width, we focus on the most successive
+           ;; one.
+           (cond [(and (focus-successor/no-snap cursor)
+                       (= a-pos (cursor-endpos (focus-successor/no-snap cursor))))
+                  (loop (focus-successor/no-snap cursor))]
+                 [else
+                  cursor]))]
+        [else
+         #f])))
+  
   
   
   ;; sentinel-space?: dstx -> boolean

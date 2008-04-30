@@ -214,7 +214,17 @@
         (check-equal? (cursor-dstx (focus-container a-cursor 8))
                       (cursor-dstx (focus-toplevel a-cursor)))
         (check-equal? (cursor-dstx (focus-container a-cursor 9))
-                      (new-atom "last"))))))
+                      (new-atom "last"))))
+     
+     (test-case
+      "focus-endpos"
+      (let* ([a-dstx (new-atom "hi")]
+             [a-cursor (make-toplevel-cursor (list a-dstx))])
+        (check-false (focus-endpos a-cursor 0))
+        (check-false (focus-endpos a-cursor 1))
+        (check-equal? (cursor-dstx (focus-endpos a-cursor 2))
+                      (new-atom "hi"))
+        (check-false (focus-endpos a-cursor 3))))))
   
   
   (define (test)
