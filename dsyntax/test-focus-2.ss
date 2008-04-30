@@ -57,7 +57,8 @@
   ;; Drive the test harnesses for the pos and endpos checkers.
   (define (test-both a-str)
     (test-string-pos a-str)
-    (test-string-endpos a-str))
+    (test-string-endpos a-str)
+    (test-string-container a-str))
   
   
   ;; with-cursor-anywhere: cursor (-> void) -> void
@@ -83,12 +84,14 @@
          (void)])))
   
   
-  ;; test-string-pos: string -> void
-  ;; Checks for expected start-pos on the parsed structures.
-  (define (test-string-pos a-str)
+  
+  
+  
+  ;; test harness constructor.
+  (define ((make-test-string name collect-expected focuser) a-str)
     (let* ([a-cursor (make-toplevel-cursor (parse-port (open-input-string a-str)))]
            [last-pos (last-position a-cursor)]
-           [ht (collect-start-pos a-cursor)])
+           [ht (collect-expected a-cursor)])
       (with-cursor-anywhere
        a-cursor
        (lambda (a-cursor)
@@ -98,41 +101,14 @@
                        [(hash-table-get ht i #f)
                         =>
                         (lambda (expected-dstx)
-                          (check-eq? (cursor-dstx (focus-pos a-cursor i)) expected-dstx
-                                     (format "pos ~a" i)))]
+                          (check-eq? (cursor-dstx (focuser a-cursor i)) expected-dstx
+                                     (format "~a: ~a" name i)))]
                        [else
-                        (check-false (focus-pos a-cursor i)
-                                     (format "pos ~a" i))])))))))
+                        (check-false (focuser a-cursor i)
+                                     (format "~a: ~a" name i))])))))))
   
   
   
-  ;; test-string-endpos: string -> void
-  ;; Checks for expected endpos on the parsed structures.
-  (define (test-string-endpos a-str)
-    (let* ([a-cursor (make-toplevel-cursor (parse-port (open-input-string a-str)))]
-           [last-pos (last-position a-cursor)]
-           [ht (collect-endpos a-cursor)])
-      (with-cursor-anywhere
-       a-cursor
-       (lambda (a-cursor)
-         (do-range (+ last-pos 2)
-                   (lambda (i)
-                     (cond
-                       [(hash-table-get ht i #f)
-                        =>
-                        (lambda (expected-dstx)
-                          (check-eq? (cursor-dstx (focus-endpos a-cursor i)) expected-dstx
-                                     (format "endpos ~a" i)))]
-                       [else
-                        (check-false (focus-endpos a-cursor i)
-                                     (format "endpos ~a" i))])))))))
-  
-  
-  
-  
-  #;(define (test-string-endpos ip)
-      (let ([a-cursor (make-toplevel-cursor (parse-port ip))])
-        (void)))
   
   
   
@@ -161,7 +137,7 @@
   
   
   ;; collect-start-pos: cursor -> (hash-table-of (list number dstx))
-  ;; Returns a list of start-pos/dstx lists.
+  ;; Most successive pos wins.
   (define (collect-start-pos a-cursor)
     (define ht (make-hash-table 'equal))
     (let loop ([a-cursor (focus-toplevel a-cursor)])
@@ -175,7 +151,6 @@
   
   
   ;; collect-endpos: cursor -> (hash-table-of (list number dstx))
-  ;; Returns a list of end-pos/dstx lists.
   ;; Most successive endpos wins.
   (define (collect-endpos a-cursor)
     (define ht (make-hash-table 'equal))
@@ -188,4 +163,42 @@
           (hash-table-put! ht (cursor-endpos a-cursor)
                            (cursor-dstx a-cursor))
           (loop (focus-successor/no-snap a-cursor)))]))
-    ht))
+    ht)
+  
+  
+  ;; collect-endpos: cursor -> (hash-table-of (list number dstx))
+  ;; Most successive pos wins.
+  (define (collect-container a-cursor)
+    (define ht (make-hash-table 'equal))
+    (let loop ([a-cursor (focus-toplevel a-cursor)])
+      (cond
+        [(not a-cursor)
+         (void)]
+        [else
+         (cons
+          (do-range (- (cursor-endpos a-cursor)
+                       (cursor-pos a-cursor))
+                    (lambda (i)
+                      (hash-table-put! ht
+                                       (+ (cursor-pos a-cursor) i)
+                                       (cursor-dstx a-cursor))))
+          (loop (focus-successor/no-snap a-cursor)))]))
+    ht)
+  
+  
+  ;; test-string-pos: string -> void
+  ;; Checks for expected start-pos on the parsed structures.
+  (define test-string-pos
+    (make-test-string 'start-pos collect-start-pos focus-pos))
+  
+  
+  ;; test-string-endpos: string -> void
+  ;; Checks for expected endpos on the parsed structures.
+  (define test-string-endpos
+    (make-test-string 'end-pos collect-endpos focus-endpos))
+  
+  
+  ;; test-string-container: string -> void
+  ;; Checks for expected container on the parsed structures.
+  (define test-string-container
+    (make-test-string 'end-pos collect-container focus-container)))
