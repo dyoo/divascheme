@@ -691,26 +691,37 @@
   ;; focus-endpos: cursor number -> (or/c cursor #f)
   (define (focus-endpos a-cursor a-pos)
     (let ([initial-cursor
+           #;(cond [(= a-pos 0)
+                    (focus-toplevel a-cursor)]
+                 [else
+                  (focus-container (sub1 a-pos))])
            (focus-find/cursor a-cursor
                               (lambda (a-cursor)
                                 (= (cursor-endpos a-cursor) a-pos)))])
       (cond
         [initial-cursor
-         (let loop ([cursor initial-cursor])
-           ;; Because some dstxs may be zero-width, we focus on the most successive
-           ;; one.
-           (cond [(and (focus-successor/no-snap cursor)
-                       (= a-pos (cursor-endpos (focus-successor/no-snap cursor))))
-                  (loop (focus-successor/no-snap cursor))]
-                 ;; And if we are on a fusion structure without a suffix, focus
-                 ;; on the oldest child.
-                 [(and (focus-in/no-snap cursor)
-                       (= a-pos (cursor-endpos (focus-oldest (focus-in/no-snap cursor)))))
-                  (loop (focus-oldest (focus-in/no-snap cursor)))]
-                 [else
-                  cursor]))]
+         (scan-successive-preserving-endpos initial-cursor a-pos)]
         [else
          #f])))
+  
+  
+  ;; scan-successive-preserving-endpos: cursor pos -> cursor
+  ;; Assuming (cursor-endpos a-cursor) is a-pos, see if there are
+  ;; other successors with the same end position.
+  (define (scan-successive-preserving-endpos a-cursor a-pos)
+    (let loop ([a-cursor a-cursor])
+      ;; Because some dstxs may be zero-width, we focus on the most successive
+      ;; one.
+      (cond [(and (focus-successor/no-snap a-cursor)
+                  (= a-pos (cursor-endpos (focus-successor/no-snap a-cursor))))
+             (loop (focus-successor/no-snap a-cursor))]
+            ;; And if we are on a fusion structure without a suffix, focus
+            ;; on the oldest child.
+            [(and (focus-in/no-snap a-cursor)
+                  (= a-pos (cursor-endpos (focus-oldest (focus-in/no-snap a-cursor)))))
+             (loop (focus-oldest (focus-in/no-snap a-cursor)))]
+            [else
+             a-cursor])))
   
   
   
