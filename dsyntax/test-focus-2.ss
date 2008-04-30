@@ -17,7 +17,8 @@
      "test-focus-2.ss"
      (test-case
       "empty case"
-      (test-string-pos (open-input-string "")))))
+      (test-string-pos "")
+      (test-string-endpos ""))))
   
   
   ;; with-cursor-anywhere: cursor (-> void) -> void
@@ -43,23 +44,45 @@
          (void)])))
   
   
-  ;; test-string-pos: input-port -> void
+  ;; test-string-pos: string -> void
   ;; Checks for expected start-pos on the parsed structures.
-  (define (test-string-pos ip)
-    (let* ([a-cursor (make-toplevel-cursor (parse-port ip))]
+  (define (test-string-pos a-str)
+    (let* ([a-cursor (make-toplevel-cursor (parse-port (open-input-string a-str)))]
            [last-pos (last-position a-cursor)]
            [ht (collect-start-pos a-cursor)])
       (with-cursor-anywhere
        a-cursor
-       (lambda ()
-         (do-range (add1 last-pos)
+       (lambda (a-cursor)
+         (do-range (+ last-pos 2)
                    (lambda (i)
                      (cond
                        [(hash-table-get ht i #f)
+                        =>
                         (lambda (expected-dstx)
                           (check-eq? (cursor-dstx (focus-pos a-cursor i)) expected-dstx))]
                        [else
                         (check-false (focus-pos a-cursor i))])))))))
+  
+  
+  
+  ;; test-string-pos: string -> void
+  ;; Checks for expected endpos on the parsed structures.
+  (define (test-string-endpos a-str)
+    (let* ([a-cursor (make-toplevel-cursor (parse-port (open-input-string a-str)))]
+           [last-pos (last-position a-cursor)]
+           [ht (collect-endpos a-cursor)])
+      (with-cursor-anywhere
+       a-cursor
+       (lambda (a-cursor)
+         (do-range (+ last-pos 2)
+                   (lambda (i)
+                     (cond
+                       [(hash-table-get ht i #f)
+                        =>
+                        (lambda (expected-dstx)
+                          (check-eq? (cursor-dstx (focus-endpos a-cursor i)) expected-dstx))]
+                       [else
+                        (check-false (focus-endpos a-cursor i))])))))))
   
   
   
