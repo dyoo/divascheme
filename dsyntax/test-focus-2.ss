@@ -17,8 +17,37 @@
      "test-focus-2.ss"
      (test-case
       "empty case"
-      (test-string-pos "")
-      (test-string-endpos ""))))
+      (test-both ""))
+     
+     (test-case
+      "simple atom"
+      (test-both "a"))
+     
+     (test-case
+      "simple atom"
+      (test-both "alphabet"))
+     
+     (test-case
+      "simple string"
+      (test-both "\"hello world\""))
+     
+     (test-case
+      "simple number"
+      (test-both "42"))
+     
+     (test-case
+      "factorial"
+      (test-both "(define (factorial x) (cond [(= x 0) 1] [else (* x (factorial (sub1 x)))]))"))
+     
+     ))
+  
+  
+  
+  ;; test-both: string -> void
+  ;; Drive the test harnesses for the pos and endpos checkers.
+  (define (test-both a-str)
+    (test-string-pos a-str)
+    (test-string-endpos a-str))
   
   
   ;; with-cursor-anywhere: cursor (-> void) -> void
