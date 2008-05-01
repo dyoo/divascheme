@@ -145,9 +145,9 @@
       
       ;; STATE STUFFS
       (define -in-unstructured-editing? #f)
+      (define command-mode-sema (make-semaphore 1))
       (define current-mred #f)
       (define current-world #f)
-      
       (define last-action-load? false)
       
       ;; Whenever new events happen, we'll send an operation message to the central world
@@ -166,6 +166,12 @@
         (set! command-keymap (new-command-keymap))
         (set! f4-keymap (new-f4-keymap))
         (install-f4-keymap))
+      
+      
+      ;; get-command-mode-sema-peek-evt: -> evt
+      ;; Returns a peeking event that's ready when we're in command mode.
+      (define/public (get-command-mode-sema-peek-evt)
+        (semaphore-peek-evt command-mode-sema))
       
       
       ;; in-unstructured-editing?: -> boolean
@@ -546,6 +552,7 @@
                   (diva-message "")
                   
                   (check-good-syntax)
+                  (zero-out-command-mode-sema)
                   (set-in-unstructured-editing? #t)
                   (when (get-check-syntax-button)
                     (set! was-button-enabled? (send (get-check-syntax-button) is-enabled?))
@@ -556,7 +563,7 @@
                   
                   (when (get-check-syntax-button)
                     (send (get-check-syntax-button) enable was-button-enabled?))
-                  
+                  (semaphore-post command-mode-sema)
                   (set-in-unstructured-editing? #f)))
           (make-command-keymap this
                                (lambda (edit?)
@@ -578,6 +585,7 @@
       
       (define/public (to-command-mode)
         (install-command-keymap)
+        (semaphore-post command-mode-sema)
         (with-divascheme-handlers
          (pull-from-mred)
          (lambda ()
@@ -586,7 +594,17 @@
       (define/public (to-normal-mode)
         (diva:-on-loss-focus)
         (uninstall-command-keymap)
+        (zero-out-command-mode-sema)
         (diva-label false))
+      
+      
+      ;; zero-out-command-mode-sema: -> void
+      ;; Make sure command-mode-sema ends up being zero at the end.
+      (define (zero-out-command-mode-sema)
+        (cond [(semaphore-try-wait? command-mode-sema)
+               (zero-out-command-mode-sema)]
+              [else
+               (void)]))
       
       
       (define (new-f4-keymap)
