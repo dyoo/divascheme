@@ -456,9 +456,8 @@
     (make-focus-successor focus-in/no-snap focus-older/no-snap))
   
   
-  
-  ;; focus-predecessor: cursor -> (union cursor #f)
-  (define (focus-predecessor a-cursor)
+  ;; make-focus-predecessor: focus-function focus-function focus-function -> focus-function
+  (define ((make-focus-predecessor focus-younger focus-older focus-in) a-cursor)
     (cond
       [(focus-younger a-cursor)
        =>
@@ -475,24 +474,13 @@
       [(focus-out a-cursor) => identity]
       [else #f]))
   
+  ;; focus-predecessor: cursor -> (union cursor #f)
+  (define focus-predecessor
+    (make-focus-predecessor focus-younger focus-older focus-in))
   
   ;; focus-predecessor/no-snap: cursor -> (union cursor #f)
-  (define (focus-predecessor/no-snap a-cursor)
-    (cond
-      [(focus-younger/no-snap a-cursor)
-       =>
-       (lambda (a-cursor)
-         (let loop ([a-cursor a-cursor])
-           (cond [(focus-in/no-snap a-cursor)
-                  =>
-                  (lambda (a-cursor)
-                    (let find-last ([a-cursor a-cursor])
-                      (cond
-                        [(focus-older/no-snap a-cursor) => find-last]
-                        [else (loop a-cursor)])))]
-                 [else a-cursor])))]
-      [(focus-out a-cursor) => identity]
-      [else #f]))
+  (define focus-predecessor/no-snap
+    (make-focus-predecessor focus-younger/no-snap focus-older/no-snap focus-in/no-snap))
   
   
   ;; focus-toplevel: cursor -> cursor
