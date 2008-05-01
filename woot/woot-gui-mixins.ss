@@ -28,7 +28,7 @@
   ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
   (define-local-member-name
     with-remote-operation-active
-    get-self-ip
+    get-host-id
     on-woot-structured-insert
     on-woot-structured-delete
     host-session
@@ -37,17 +37,19 @@
   
   
   
-  
   ;; structure-tracking-mixin: diva-text% -> diva-text%
   ;; Mixin for dstx-text that detects structured edits.
   (define (structure-tracking-mixin super%)
     (class super%
       
-      ;; We annotate every new structure with a host ip.
-      (define self-ip #f)
+      ;; We annotate every new structure with a self-ip and host ip.
+      (define host-id #f)
       
       (define (initialize)
-        (set! self-ip (self-ip:self-ip-address))
+        (set! host-id (string-append
+                       (self-ip:self-ip-address)
+                       "::"
+                       (number->string (random 4294967086))))
         (super-new))
       
       
@@ -64,16 +66,16 @@
           (thunk)))
       
       
-      ;; get-self-ip: -> string
-      ;; Returns the self-ip address
-      (define/public (get-self-ip)
-        self-ip)
+      ;; get-host-id: -> string
+      ;; Returns the host identifer, which is some combination of ip and random number.
+      (define/public (get-host-id)
+        host-id)
       
       
       ;; Hook to add woot ids to new structures.
       (define/augment (decorate-new-dstx a-dstx)
         (let ([a-dstx (inner a-dstx decorate-new-dstx a-dstx)])
-          (deep-attach-woot-ids a-dstx (get-self-ip))))
+          (deep-attach-woot-ids a-dstx (get-host-id))))
       
       
       ;; on-woot-structured-insert: dstx woot-id woot-id -> void
@@ -96,10 +98,9 @@
         (when (not (dstx-from-unstructured-editing? a-dstx))
           (cond
             [(focus-younger/no-snap a-fcursor)
-             (on-woot-structured-insert
-              (deep-strip-local-ids a-dstx)
-              (dstx-woot-id (cursor-dstx (focus-younger/no-snap a-fcursor)))
-              (dstx-woot-id (cursor-dstx a-fcursor)))]
+             (on-woot-structured-insert (deep-strip-local-ids a-dstx)
+                                        (dstx-woot-id (cursor-dstx (focus-younger/no-snap a-fcursor)))
+                                        (dstx-woot-id (cursor-dstx a-fcursor)))]
             [else
              ;; as an invariant, no insert-before should occur before the sentinel
              ;; element, so we should never see this situation...
@@ -114,13 +115,14 @@
         (when (not (dstx-from-unstructured-editing? a-dstx))
           (cond
             [(focus-older/no-snap a-fcursor)
-             (on-woot-structured-insert
-              (deep-strip-local-ids a-dstx)
-              (dstx-woot-id (cursor-dstx a-fcursor))
-              (dstx-woot-id (cursor-dstx (focus-older/no-snap a-fcursor))))]
+             (on-woot-structured-insert (deep-strip-local-ids a-dstx)
+                                        (dstx-woot-id (cursor-dstx a-fcursor))
+                                        (dstx-woot-id (cursor-dstx (focus-older/no-snap a-fcursor))))]
             [else
              ;; Last element in a fusion or at the toplevel will have a nil right id.
-             (on-woot-structured-insert a-dstx (dstx-woot-id (cursor-dstx a-fcursor)) #f)]))
+             (on-woot-structured-insert (deep-strip-local-ids a-dstx)
+                                        (dstx-woot-id (cursor-dstx a-fcursor))
+                                        #f)]))
         (inner (void) on-structured-insert-after a-fcursor))
       
       
@@ -152,7 +154,7 @@
   (define (network-mixin super%)
     (class super%
       (inherit queue-for-interpretation!
-               get-self-ip
+               get-host-id
                get-top-level-window
                queue-callback/in-command-mode)
       
@@ -187,7 +189,7 @@
           (start-network-client session-url)
           (message-box
            "Connected to server"
-           (format "Connected to session ~s." session-url))))
+           (format "Connected to session."))))
       
       
       ;; start-local-server: string -> string
@@ -216,20 +218,35 @@
               (thread
                (lambda ()
                  (let loop ()
-                   (let ([msg (async-channel-get (client:client-mailbox woot-client))])
-                     (queue-callback/in-command-mode
-                      (lambda ()
-                        (send-message-to-woot msg)))
+                   (let ([msg (string->msg
+                               (async-channel-get
+                                (client:client-mailbox woot-client)))])
+                     (cond [(self-generated-message? msg)
+                            (void)]
+                           [else
+                            (queue-callback/in-command-mode
+                             (lambda ()
+                               (send-message-to-woot msg)))])
                      (loop)))))))
+      
+      
+      ;; self-generated-message?: msg -> boolean
+      ;; Returns true if we generated the message.  We'll look at the host-id for this.
+      (define (self-generated-message? a-msg)
+        (string=? (msg-host-id a-msg)
+                  (get-host-id)))
       
       
       ;; send-message-to-woot: msg -> void
       ;; Send a message off to woot.  This is running under the context of a queue-callback
       ;; in command mode.
       (define (send-message-to-woot a-msg)
-        ;; fill me in!
-        (printf "I see message ~s~n" a-msg)
-        (void))
+        ;; fill me in!  We should send the message to woot, and get any responses.
+        (match a-msg
+          [(struct msg:insert (host-id a-dstx before-id after-id))
+           (printf "I: (~s ~s) ~s~n~n" before-id after-id a-dstx)]
+          [(struct msg:delete (host-id woot-id))
+           (printf "D: (~s)~n~n" woot-id)]))
       
       
       ;; on-woot-structured-insert: dstx woot-id woot-id -> void
@@ -239,7 +256,7 @@
           (client:client-send-message
            woot-client
            (msg->string
-            (make-msg:insert (get-self-ip) a-dstx before-woot-id after-woot-id))))
+            (make-msg:insert (get-host-id) a-dstx before-woot-id after-woot-id))))
         (inner (void) on-woot-structured-insert a-dstx before-woot-id after-woot-id))
       
       
@@ -251,7 +268,7 @@
           (client:client-send-message
            woot-client
            (msg->string
-            (make-msg:delete (get-self-ip) woot-id))))
+            (make-msg:delete (get-host-id) woot-id))))
         (inner (void) on-woot-structured-delete woot-id))
       
       (initialize)))

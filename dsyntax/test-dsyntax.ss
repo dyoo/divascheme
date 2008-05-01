@@ -454,7 +454,28 @@
                          (focus-predecessor
                           (focus-successor
                            (focus-successor c))))))
-                      (new-atom "world"))))))
+                      (new-atom "world"))))
+     
+     (test-case
+      "property removal"
+      (let* ([a-dstx (new-atom "something")]
+             [a-dstx (dstx-property-set a-dstx 'local-id 42)]
+             [a-dstx (dstx-property-set a-dstx 'woot-id 17)]
+             [a-dstx (dstx-property-remove a-dstx 'local-id)])
+        (check-equal? (dstx-property-names a-dstx)
+                      (list 'woot-id))))
+     
+     
+     (test-case
+      "property removal 2"
+      (let* ([a-dstx (new-atom "something")]
+             [a-dstx (dstx-property-set a-dstx 'local-id 42)]
+             [a-dstx (dstx-property-set a-dstx 'woot-id 17)]
+             [a-dstx (dstx-deepmap (lambda (a-dstx)
+                                     (dstx-property-remove a-dstx 'local-id))
+                                   a-dstx)])
+        (check-equal? (dstx-property-names a-dstx)
+                      (list 'woot-id))))))
   
   
   
