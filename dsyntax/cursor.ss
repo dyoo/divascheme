@@ -360,15 +360,15 @@
   ;;
   ;; Moves the focus to the next oldest sibling.
   (define (focus-older a-cursor)
-    (let ([immediately-older-cursor
+    (let ([new-cursor
            (focus-older/no-snap a-cursor)])
       (cond
-        [(not immediately-older-cursor)
+        [(not new-cursor)
          #f]
-        [(space? (cursor-dstx immediately-older-cursor))
-         (focus-older immediately-older-cursor)]
+        [(space? (cursor-dstx new-cursor))
+         (focus-older new-cursor)]
         [else
-         immediately-older-cursor])))
+         new-cursor])))
   
   
   ;; focus-older/no-snap: cursor -> (union cursor #f)
@@ -402,43 +402,33 @@
   ;;
   ;; Moves the focus to the next youngest sibling.
   (define (focus-younger a-cursor)
-    (local ((define youngers-rev (cursor-youngers-rev a-cursor))
-            (define youngers-loc-rev (cursor-youngers-loc-rev a-cursor))
-            (define olders (cursor-olders a-cursor)))
+    (let ([new-cursor (focus-younger/no-snap a-cursor)])
       (cond
-        [(empty? youngers-rev) #f]
+        [(not new-cursor)
+         #f]
+        [(space? (cursor-dstx new-cursor))
+         (focus-younger new-cursor)]
         [else
-         (local ((define new-cursor
-                   (make-cursor (first youngers-rev)
-                                (first youngers-loc-rev)
-                                (cursor-parent a-cursor)
-                                (rest youngers-rev)
-                                (rest youngers-loc-rev)
-                                (cons (cursor-dstx a-cursor)
-                                      olders))))
-           (cond
-             [(space? (cursor-dstx new-cursor))
-              (focus-younger new-cursor)]
-             [else
-              new-cursor]))])))
+         new-cursor])))
   
   
   ;; focus-younger/no-snap: cursor -> (or/c cursor #f]
   ;; Moves the focus to a younger sibling, not snapping across whitespace.
   (define (focus-younger/no-snap a-cursor)
-    (local ((define youngers-rev (cursor-youngers-rev a-cursor))
-            (define youngers-loc-rev (cursor-youngers-loc-rev a-cursor))
-            (define olders (cursor-olders a-cursor)))
+    (let ([youngers-rev (cursor-youngers-rev a-cursor)])
       (cond
-        [(empty? youngers-rev) #f]
+        [(empty? youngers-rev)
+         #f]
         [else
-         (make-cursor (first youngers-rev)
-                      (first youngers-loc-rev)
-                      (cursor-parent a-cursor)
-                      (rest youngers-rev)
-                      (rest youngers-loc-rev)
-                      (cons (cursor-dstx a-cursor)
-                            olders))])))
+         (let ([youngers-loc-rev (cursor-youngers-loc-rev a-cursor)]
+               [olders (cursor-olders a-cursor)])
+           (make-cursor (first youngers-rev)
+                        (first youngers-loc-rev)
+                        (cursor-parent a-cursor)
+                        (rest youngers-rev)
+                        (rest youngers-loc-rev)
+                        (cons (cursor-dstx a-cursor)
+                              olders)))])))
   
   
   
