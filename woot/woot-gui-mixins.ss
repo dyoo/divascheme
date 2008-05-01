@@ -361,28 +361,6 @@
                                                            #f)))
   
   
-  ;; dstx->string: dstx -> string
-  ;; For debugging.
-  (define (dstx->string a-dstx)
-    (match a-dstx
-      [(struct atom (props content))
-       content]
-      [(struct special-atom (props content width))
-       (cond [(is-a? content string-snip%)
-              (send content get-text 0 (send content get-count))]
-             [else
-              (format "~s" content)])]
-      [(struct space (props content))
-       content]
-      [(struct fusion (props prefix children suffix))
-       (format "~s ~a ~s"
-               prefix
-               (string-join (map (lambda (a-dstx)
-                                   (format "~s" (dstx->string a-dstx)))
-                                 children)
-                            " ")
-               suffix)]))
-  
   
   ;; next-logical-id: -> number
   ;; Returns the next logical clock id.
