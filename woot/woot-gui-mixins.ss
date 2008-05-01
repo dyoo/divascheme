@@ -202,18 +202,34 @@
       (define (start-network-client url)
         (parameterize ([current-custodian woot-custodian])
           (set! woot-client (client:new-client url))
-          (set! client-thread (process-client-message-loop))))
+          (start-process-client-message-loop!)))
       
       
       
-      ;; process-client-message-loop: -> void
+      ;; start-process-client-message-loop!: -> void
+      ;; Starts up a thread that reads messages from the network and passes them off to
+      ;; woot.
       ;; When we get messages from the client, queue-callback a handler that
       ;; kickstarts woot.
-      (define (process-client-message-loop)
-        (let ([msg (async-channel-get (client:client-mailbox woot-client))])
-          (queue-callback/in-command-mode
-           (lambda ()
-             (void)))))
+      (define (start-process-client-message-loop!)
+        (set! client-thread
+              (thread
+               (lambda ()
+                 (let loop ()
+                   (let ([msg (async-channel-get (client:client-mailbox woot-client))])
+                     (queue-callback/in-command-mode
+                      (lambda ()
+                        (send-message-to-woot msg)))
+                     (loop)))))))
+      
+      
+      ;; send-message-to-woot: msg -> void
+      ;; Send a message off to woot.  This is running under the context of a queue-callback
+      ;; in command mode.
+      (define (send-message-to-woot a-msg)
+        ;; fill me in!
+        (printf "I see message ~s~n" a-msg)
+        (void))
       
       
       ;; on-woot-structured-insert: dstx woot-id woot-id -> void
@@ -276,13 +292,13 @@
   ;; default-hosting-url: -> string
   ;; Returns a string representing a default hosting connection.
   (define (default-hosting-url)
-    (hosting-url default-port-number "default-session"))
+    (hosting-url default-port-number))
   
   
   ;; hosting-url number string: -> string
   ;; Returns a string representing the connection url.
-  (define (hosting-url port session-name)
-    (format "http://~a:~a/~a" (self-ip:self-ip-address) port session-name))
+  (define (hosting-url port)
+    (format "http://~a:~a/" (self-ip:self-ip-address) port))
   
   
   ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;

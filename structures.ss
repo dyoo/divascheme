@@ -199,13 +199,13 @@
   
   
   
-  ;; queue-imperative-operation: World (world window [fixme: other stuff] -> world) -> World
+  ;; queue-imperative-operation: World imperative-op -> World
   ;; Adds an imperative action that will be evaluated at the end of
   ;; evaluation.
-  (define (queue-imperative-operation world fn)
+  (define (queue-imperative-operation world op)
     (copy-struct World world
                  [World-imperative-operations
-                  (cons fn (World-imperative-operations world))]))
+                  (cons op (World-imperative-operations world))]))
   
   
   
