@@ -10,7 +10,7 @@
   
   ;; These tests take a bit of time, so it might make a good indicator
   ;; of optimization detection.
-  ;; as of this writing, on kfisler-ra1, I'm seeing 7260 cpu time.
+  ;; as of this writing, on kfisler-ra1, I'm seeing about 6800 cpu time.
   (define (test)
     (time
      (test/text-ui test-focus-2)))
