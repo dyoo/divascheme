@@ -120,14 +120,16 @@
   ;; get-move-after-displayed-string: string -> move
   ;;
   ;; Returns the move we should do after displaying the content in a-string.
-  (define (get-move-after-displayed-string a-string)
-    (let ([ip (open-input-string a-string)])
-      (let loop ([a-move (begin-lifted (make-move:no-op))])
-        (local ((define next-move (line-breaking-lexer ip)))
-          (cond
-            [next-move
-             (loop (move-compose next-move a-move))]
-            [else a-move])))))
+  (define get-move-after-displayed-string
+    (weak-memoize/equal
+     (lambda (a-string)
+       (let ([ip (open-input-string a-string)])
+         (let loop ([a-move (begin-lifted (make-move:no-op))])
+           (local ((define next-move (line-breaking-lexer ip)))
+             (cond
+               [next-move
+                (loop (move-compose next-move a-move))]
+               [else a-move])))))))
   
   
   

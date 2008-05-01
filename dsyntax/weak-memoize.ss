@@ -1,6 +1,13 @@
 (module weak-memoize mzscheme
+  (require (lib "contract.ss"))
+  
+  
   ;; I should probably use dherman's memoize package...
   (provide weak-memoize weak-memoize/equal)
+  (provide/contract
+   [string-intern (string? . -> . string?)])
+  
+  
   
   ;; weak-memoize: (X -> X) -> (X -> X)
   ;; Applies a weak memoization to see if we can speed up get-move-after-dstx.
@@ -17,6 +24,10 @@
              (hash-table-put! ht x result)
              result)]))))
   
+  
+  ;; weak-memoize/equal: (X -> X) -> (X -> X)
+  ;; Applies a weak memoization.
+  ;; Compares with equal? rather than eq?.
   (define (weak-memoize/equal f)
     (let ([ht (make-hash-table 'weak 'equal)])
       (lambda (x)
@@ -28,4 +39,9 @@
           [else
            (let ([result (f x)])
              (hash-table-put! ht x result)
-             result)])))))
+             result)]))))
+  
+  
+  ;; string-intern: string -> string
+  (define string-intern
+    (weak-memoize/equal (lambda (x) x))))
