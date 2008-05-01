@@ -168,10 +168,24 @@
         (install-f4-keymap))
       
       
-      ;; get-command-mode-sema-peek-evt: -> evt
-      ;; Returns a peeking event that's ready when we're in command mode.
-      (define/public (get-command-mode-sema-peek-evt)
-        (semaphore-peek-evt command-mode-sema))
+      
+      ;; queue-callback/in-command-mode: (-> void) -> void
+      ;; Queue callback, but wait until we're in command mode before evaluating the thunk.
+      (define/public (queue-callback/in-command-mode thunk)
+        (queue-callback
+         (lambda ()
+           (yield (semaphore-peek-evt command-mode-sema))
+           (thunk))))
+      
+      
+      ;; zero-out-command-mode-sema: -> void
+      ;; Make sure command-mode-sema ends up being zero at the end.
+      (define (zero-out-command-mode-sema)
+        (cond [(semaphore-try-wait? command-mode-sema)
+               (zero-out-command-mode-sema)]
+              [else
+               (void)]))
+      
       
       
       ;; in-unstructured-editing?: -> boolean
@@ -598,13 +612,6 @@
         (diva-label false))
       
       
-      ;; zero-out-command-mode-sema: -> void
-      ;; Make sure command-mode-sema ends up being zero at the end.
-      (define (zero-out-command-mode-sema)
-        (cond [(semaphore-try-wait? command-mode-sema)
-               (zero-out-command-mode-sema)]
-              [else
-               (void)]))
       
       
       (define (new-f4-keymap)

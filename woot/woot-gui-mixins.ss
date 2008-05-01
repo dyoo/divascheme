@@ -3,6 +3,7 @@
   (require (lib "class.ss")
            (lib "plt-match.ss")
            (lib "mred.ss" "mred")
+           (lib "async-channel.ss")
            "../dsyntax/dsyntax.ss"
            "msg-structs.ss"
            "woot-struct.ss"
@@ -152,10 +153,13 @@
     (class super%
       (inherit queue-for-interpretation!
                get-self-ip
-               get-top-level-window)
+               get-top-level-window
+               queue-callback/in-command-mode)
+      
       
       (define woot-custodian (make-custodian))
       (define woot-client #f)
+      (define client-thread #f)
       
       
       (define (initialize)
@@ -197,7 +201,19 @@
       ;; Starts up the client part of the server.
       (define (start-network-client url)
         (parameterize ([current-custodian woot-custodian])
-          (set! woot-client (client:new-client url))))
+          (set! woot-client (client:new-client url))
+          (set! client-thread (process-client-message-loop))))
+      
+      
+      
+      ;; process-client-message-loop: -> void
+      ;; When we get messages from the client, queue-callback a handler that
+      ;; kickstarts woot.
+      (define (process-client-message-loop)
+        (let ([msg (async-channel-get (client:client-mailbox woot-client))])
+          (queue-callback/in-command-mode
+           (lambda ()
+             (void)))))
       
       
       ;; on-woot-structured-insert: dstx woot-id woot-id -> void
