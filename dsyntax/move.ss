@@ -32,8 +32,6 @@
    
    [after-displayed-string
     (loc? string? . -> . loc?)]
-   [get-move-after-displayed-string
-    (input-port? . -> . move?)]
    [get-move-after-dstx
     (dstx? . -> . move?)])
   
@@ -90,8 +88,7 @@
   ;; Applies a move on a-loc.
   ;;
   (define (apply-move a-move a-loc)
-    (local ((define (multiple-nearest n mul)
-              (* mul (quotient n mul))))
+    (local ()
       (match a-move
         [(struct move:no-op ())
          a-loc]
@@ -114,17 +111,24 @@
          (apply-move next (apply-move first a-loc))])))
   
   
-  ;; get-move-after-displayed-string: input-port -> move
+  ;; multiple-nearest: number number -> number
+  ;; Returns the multiple of mul nearest n.
+  (define (multiple-nearest n mul)
+    (* mul (quotient n mul)))
+  
+  
+  ;; get-move-after-displayed-string: string -> move
   ;;
-  ;; Returns the move we should do after seeing the content in ip.
-  (define (get-move-after-displayed-string ip)
-    (let loop ([a-move (begin-lifted (make-move:no-op))])
-      (local ((define next-move (line-breaking-lexer ip)))
-        (cond
-          [next-move
-           (loop (move-compose next-move a-move))]
-          [else a-move]))))
-
+  ;; Returns the move we should do after displaying the content in a-string.
+  (define (get-move-after-displayed-string a-string)
+    (let ([ip (open-input-string a-string)])
+      (let loop ([a-move (begin-lifted (make-move:no-op))])
+        (local ((define next-move (line-breaking-lexer ip)))
+          (cond
+            [next-move
+             (loop (move-compose next-move a-move))]
+            [else a-move])))))
+  
   
   
   ;; after-printed-string: loc string -> loc
@@ -132,7 +136,7 @@
   ;; Convenience function.  Returns the position after a-string, if it had
   ;; been displayed starting at the given a-loc.
   (define (after-displayed-string a-loc a-str)
-    (apply-move (get-move-after-displayed-string (open-input-string a-str))
+    (apply-move (get-move-after-displayed-string a-str)
                 a-loc))
   
   
@@ -203,13 +207,12 @@
   
   ;; after-atom-or-space: string -> move
   (define (after-atom-or-space a-str)
-    (get-move-after-displayed-string (open-input-string a-str)))
+    (get-move-after-displayed-string a-str))
   
   ;; after-fusion: fusion -> move
   (define (after-fusion an-sexp)
     (local ((define move-after-lparen
-              (get-move-after-displayed-string
-               (open-input-string (fusion-prefix an-sexp))))
+              (get-move-after-displayed-string (fusion-prefix an-sexp)))
             
             (define move-before-rparen
               (foldl (lambda (stx previous-move)
@@ -220,7 +223,6 @@
             
             (define move-after-rparen
               (move-compose (get-move-after-displayed-string
-                             (open-input-string
-                              (fusion-suffix an-sexp)))
+                             (fusion-suffix an-sexp))
                             move-before-rparen)))
       move-after-rparen)))
