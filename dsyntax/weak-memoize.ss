@@ -4,9 +4,6 @@
   
   ;; I should probably use dherman's memoize package...
   (provide weak-memoize weak-memoize/equal)
-  (provide/contract
-   [string-intern (string? . -> . string?)])
-  
   
   
   ;; weak-memoize: (X -> X) -> (X -> X)
@@ -39,9 +36,4 @@
           [else
            (let ([result (f x)])
              (hash-table-put! ht x result)
-             result)]))))
-  
-  
-  ;; string-intern: string -> string
-  (define string-intern
-    (weak-memoize/equal (lambda (x) x))))
+             result)])))))

@@ -1,6 +1,7 @@
 (module parse-plt-scheme mzscheme
   (require (prefix dstx: "dsyntax.ss")
            "simple-profile.ss"
+           "weak-memoize.ss"
            (lib "list.ss")
            (lib "contract.ss")
            (lib "etc.ss")
@@ -20,6 +21,10 @@
                     [pretty-print (dstx:dstx? output-port? . -> . void)]
                     [open-input-text ((is-a?/c text%) natural-number/c natural-number/c . -> . input-port?)])
   
+  
+  ;; string-intern: string -> string
+  (define string-intern
+    (weak-memoize/equal (lambda (x) x)))
   
   
   ;; Here are the standard tokens we're going to handle.
@@ -185,22 +190,22 @@
                 (token-atom
                  (string-append "#!" (continuation-line-lexer input-port)))]
                
-               [else (token-atom lexeme)]))
+               [else (token-atom (string-intern lexeme))]))
             
             (openers
-             (token-prefix lexeme))
+             (token-prefix (string-intern lexeme)))
             (closers
-             (token-suffix lexeme))
+             (token-suffix (string-intern lexeme)))
             
             (whitespace ;; a single whitespace character
-             (token-space lexeme))
+             (token-space (string-intern lexeme)))
             
             (quoters
-             (token-quoter-prefix lexeme))
+             (token-quoter-prefix (string-intern lexeme)))
             (pounded-atoms
-             (token-atom lexeme))
+             (token-atom (string-intern lexeme)))
             (pound-prefix-free-atom
-             (token-atom lexeme))
+             (token-atom (string-intern lexeme)))
             (line-comment
              (token-atom lexeme))
             (string-literal
