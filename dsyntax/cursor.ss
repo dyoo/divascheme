@@ -279,25 +279,23 @@
   
   ;; focus-in/no-snap: cursor -> (or/c cursor #f)
   (define (focus-in/no-snap a-cursor)
-    (local ((define focused-dstx (cursor-dstx a-cursor)))
+    (let ([focused-dstx (cursor-dstx a-cursor)])
       (cond
         [(atom? focused-dstx) #f]
         [(special-atom? focused-dstx) #f]
         [(space? focused-dstx) #f]
         [(fusion? focused-dstx)
-         (let ([younger-rev '()]
-               [younger-loc-rev '()]
-               [children (fusion-children focused-dstx)]
-               [loc (after-displayed-string (cursor-loc a-cursor)
-                                            (fusion-prefix focused-dstx))])
+         (let ([children (fusion-children focused-dstx)])
            (cond [(empty? children) #f]
                  [else
-                  (make-cursor (first children)
-                               loc
-                               a-cursor
-                               younger-rev
-                               younger-loc-rev
-                               (rest children))]))])))
+                  (let ([loc (after-displayed-string (cursor-loc a-cursor)
+                                                     (fusion-prefix focused-dstx))])
+                    (make-cursor (first children)
+                                 loc
+                                 a-cursor
+                                 '()
+                                 '()
+                                 (rest children)))]))])))
   
   
   
