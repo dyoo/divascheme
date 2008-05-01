@@ -360,31 +360,15 @@
   ;;
   ;; Moves the focus to the next oldest sibling.
   (define (focus-older a-cursor)
-    (local ((define olders (cursor-olders a-cursor)))
+    (let ([immediately-older-cursor
+           (focus-older/no-snap a-cursor)])
       (cond
-        [(empty? olders) #f]
+        [(not immediately-older-cursor)
+         #f]
+        [(space? (cursor-dstx immediately-older-cursor))
+         (focus-older immediately-older-cursor)]
         [else
-         (local ((define loc
-                   (loc-after (cursor-loc a-cursor)
-                              (cursor-dstx a-cursor)))
-                 (define youngers-rev
-                   (cons (cursor-dstx a-cursor)
-                         (cursor-youngers-rev a-cursor)))
-                 (define youngers-loc-rev
-                   (cons (cursor-loc a-cursor)
-                         (cursor-youngers-loc-rev a-cursor)))
-                 (define new-cursor
-                   (make-cursor (first olders)
-                                loc
-                                (cursor-parent a-cursor)
-                                youngers-rev
-                                youngers-loc-rev
-                                (rest olders))))
-           (cond
-             [(space? (cursor-dstx new-cursor))
-              (focus-older new-cursor)]
-             [else
-              new-cursor]))])))
+         immediately-older-cursor])))
   
   
   ;; focus-older/no-snap: cursor -> (union cursor #f)
