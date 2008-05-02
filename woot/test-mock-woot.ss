@@ -15,20 +15,24 @@
     (dstx-set-woot-id (new-space "")
                       first-sentinel-woot-id))
   
+  (define host-id "test")
+  
+  
   (define test-mock-woot
     (test-suite
      "test-mock-woot.ss"
      
      (test-case
       "construction"
-      (mock:new-mock-woot (list first-sentinel-woot-id)))
+      (mock:new-mock-woot (list sentinel-space)))
      
      (test-case
       "inserting an atom into empty buffer."
-      (let* ([woot (mock:new-mock-woot (list first-sentinel-woot-id))]
+      (let* ([woot (mock:new-mock-woot (list sentinel-space))]
              [new-cmds
               (mock:consume-msg! (make-msg:insert
-                                  (deep-attach-woot-ids (new-atom "hello"))
+                                  host-id
+                                  (deep-attach-woot-ids (new-atom "hello") host-id)
                                   first-sentinel-woot-id #f))])
         ;; fimxe: check that we get back a command that inserts after the sentinel space.
         (void)))
@@ -37,10 +41,11 @@
      
      (test-case
       "inserting without satisfying precondition should be empty"
-      (let* ([woot (mock:new-mock-woot (list first-sentinel-woot-id))]
+      (let* ([woot (mock:new-mock-woot (list sentinel-space))]
              [new-cmds
               (mock:consume-msg! (make-msg:insert
-                                  (deep-attach-woot-ids (new-atom "hello"))
-                                  (fresh-woot-id "test")
+                                  host-id
+                                  (deep-attach-woot-ids (new-atom "hello") host-id)
+                                  (fresh-woot-id host-id)
                                   #f))])
         (check-equal? new-cmds '()))))))
