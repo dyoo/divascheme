@@ -74,16 +74,39 @@
   
   
   
-  
-  
   ;; integrate!: mock-woot msg -> op
   ;; Needs to return any new operations that we've been able to successfully
   ;; integrate.
   (define (integrate! a-state a-msg)
+    (match a-msg
+      [(struct msg:insert (host-id dstx after-id before-id))
+       (integrate-insert! a-state a-msg)]
+      [(struct msg:delete (host-id id))
+       (integrate-delete! a-state a-msg)]))
+  
+  
+  ;; integrate-insert!: state msg -> op
+  (define (integrate-insert! a-state a-msg)
     ;; fixme: adjust cursor
     ;; fixme: find whatever dstx is visible, and insert after that thing.
-    ;; fixme: return values
-    (list))
+    (match a-msg
+      [(struct msg:insert (host-id dstx after-id before-id))
+       (make-op:insert-after a-msg dstx after-id)]
+      [(struct msg:delete (host-id id))
+       (make-op:delete a-msg id)]))
+  
+  
+  
+  ;; integrate-delete!: state msg -> op
+  (define (integrate-delete! a-state a-msg)
+    ;; fixme: adjust cursor
+    ;; fixme: find whatever dstx is visible, and insert after that thing.
+    (match a-msg
+      [(struct msg:insert (host-id dstx after-id before-id))
+       (make-op:insert-after a-msg dstx after-id)]
+      [(struct msg:delete (host-id id))
+       (make-op:delete a-msg id)]))
+  
   
   
   

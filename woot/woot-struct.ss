@@ -49,8 +49,9 @@
    [struct msg ([host-id string?])]
    [struct (msg:insert msg) ([host-id string?]
                              [dstx dstx?]
-                             [after-id (or/c false/c woot-id?)]
-                             [before-id woot-id?])]
+                             [after-id woot-id?]
+                             [before-id
+                              (or/c false/c woot-id?)])]
    [struct (msg:delete msg) ([host-id string?]
                              [id woot-id?])]
    
