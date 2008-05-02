@@ -74,4 +74,13 @@
               (mock:consume-msg! woot
                                  (make-msg:insert host-id hello-atom (dstx-woot-id sentinel-space) #f))])
         (check-equal? new-cmds-1 '())
-        (check-equal? (length new-cmds-2) 2))))))
+        (check-equal? (length new-cmds-2) 2)
+        (check-equal? (op:insert-after-dstx (first new-cmds-2))
+                      hello-atom)
+        (check-equal? (op:insert-after-id (first new-cmds-2))
+                      (dstx-woot-id sentinel-space))
+        
+        (check-equal? (op:insert-after-dstx (second new-cmds-2))
+                      world-atom)
+        (check-equal? (op:insert-after-id (second new-cmds-2))
+                      (dstx-woot-id hello-atom)))))))

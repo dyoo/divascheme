@@ -52,22 +52,19 @@
   ;; Look for all executable messages, integrate them, and get back
   ;; a list of the commands to evaluate, in topological order.
   (define (integrate-all-executables! a-state)
-    ;; Subtle: reverse is there to make this a topological ordering
-    ;; of the operations.
-    (reverse
-     (let loop ()
-       (let ([executables (filter (lambda (a-msg)
-                                    (is-executable? a-state a-msg))
-                                  (state-unexecuted a-state))])
-         (cond
-           [(empty? executables)
-            '()]
-           [else
-            (remove-from-unexecuted! a-state executables)
-            (append (map (lambda (a-msg)
-                           (integrate! a-state a-msg))
-                         executables)
-                    (loop))])))))
+    (let loop ()
+      (let ([executables (filter (lambda (a-msg)
+                                   (is-executable? a-state a-msg))
+                                 (state-unexecuted a-state))])
+        (cond
+          [(empty? executables)
+           '()]
+          [else
+           (remove-from-unexecuted! a-state executables)
+           (append (map (lambda (a-msg)
+                          (integrate! a-state a-msg))
+                        executables)
+                   (loop))]))))
   
   
   ;; remove-from-unexecuted!: mock-woot (listof msg) -> void
