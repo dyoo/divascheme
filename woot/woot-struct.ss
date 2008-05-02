@@ -27,7 +27,7 @@
   
   
   
-  ;; operations are produced after we process messages
+  ;; operations are produced after we process messages.
   (define-struct op (msg) #f)
   (define-struct (op:insert-after op) (dstx id) #f)
   (define-struct (op:delete op) (id) #f)

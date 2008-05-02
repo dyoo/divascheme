@@ -6,6 +6,10 @@
            "../dsyntax/dsyntax.ss"
            "utilities.ss")
   
+  ;; This is a mock-up of what interface we need from the woot algorithm.
+  ;; Unlike the real woot, we expect this to break when there are concurrent
+  ;; edits!
+  
   
   ;; unexecuted is a list of the unexecuted msg structures.
   ;; cursor is a functional cursor maintaining the structures that we
@@ -16,6 +20,7 @@
   
   
   (provide/contract [new-mock-woot ((listof dstx?) . -> . state?)]
+                    [get-visible-before-or-at (state? woot-id? . -> . woot-id?)]
                     [consume-msg! (state? msg? . -> . (listof op?))])
   
   
@@ -91,9 +96,9 @@
     ;; fixme: find whatever dstx is visible, and insert after that thing.
     (match a-msg
       [(struct msg:insert (host-id dstx after-id before-id))
-       (make-op:insert-after a-msg dstx after-id)]
-      [(struct msg:delete (host-id id))
-       (make-op:delete a-msg id)]))
+       (let ([a-cursor (focus/woot-id (state-cursor a-state) after-id)])
+         (set-state-cursor! a-state (insert-after a-cursor dstx)))
+       (make-op:insert-after a-msg dstx after-id)]))
   
   
   
@@ -102,11 +107,26 @@
     ;; fixme: adjust cursor
     ;; fixme: find whatever dstx is visible, and insert after that thing.
     (match a-msg
-      [(struct msg:insert (host-id dstx after-id before-id))
-       (make-op:insert-after a-msg dstx after-id)]
       [(struct msg:delete (host-id id))
+       (let ([a-cursor (focus/woot-id (state-cursor a-state) id)])
+         (set-state-cursor!
+          a-state
+          (replace a-cursor (dstx-set-invisible (cursor-dstx a-cursor)))))
        (make-op:delete a-msg id)]))
   
+  
+  ;; get-visible-before-or-at: state woot-id -> (or/c woot-id #f)
+  ;; Given the woot-id of a dstx, returns the woot-id of a dstx that is visible
+  ;; at or before the given dstx.
+  (define (get-visible-before-or-at a-state a-woot-id)
+    (let loop ([a-cursor (focus/woot-id (state-cursor a-state))])
+      (cond
+        [(dstx-visible? (cursor-dstx a-cursor))
+         (dstx-woot-id (cursor-dstx a-cursor))]
+        [(focus-younger/no-snap a-cursor)
+         => loop]
+        [else
+         #f])))
   
   
   
@@ -135,4 +155,16 @@
   (define (focus/woot-id a-cursor a-woot-id)
     (focus-find/dstx a-cursor
                      (lambda (a-dstx)
-                       (equal? a-woot-id (dstx-woot-id a-dstx))))))
+                       (equal? a-woot-id (dstx-woot-id a-dstx)))))
+  
+  
+  ;; dstx-set-invisible: dstx -> dstx
+  ;; Turn off the visible property of the dstx.
+  (define (dstx-set-invisible a-dstx)
+    (dstx-property-set a-dstx 'visible #f))
+  
+  
+  ;; dstx-visible?: dstx -> boolean
+  ;; Return the visible property of the dstx.  Default is visible.
+  (define (dstx-visible? a-dstx)
+    (dstx-property-ref a-dstx 'visible (lambda () #t))))
