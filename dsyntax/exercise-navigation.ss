@@ -33,10 +33,10 @@
       (send a-cursor focus-container! (send editor get-start-position)))
     
     (define (snap-to-insertion-point a-cursor)
-      (cond [(send a-cursor can-focus-endpos? (send editor get-start-position))
-             (send a-cursor focus-endpos! (send editor get-start-position))]
-            [(send a-cursor can-focus-container? (send editor get-start-position))
-             (send a-cursor focus-container! (send editor get-start-position))]
+      (cond [(send a-cursor try-focus-endpos! (send editor get-start-position))
+             (void)]
+            [(send a-cursor try-focus-container! (send editor get-start-position))
+             (void)]
             [else
              (send a-cursor focus-toplevel!)
              (send a-cursor focus-oldest!)]))
@@ -47,28 +47,23 @@
         (case (send event get-key-code)
           [(#\j)
            (snap-to-container a-cursor)
-           (when (send a-cursor can-focus-predecessor?)
-             (send a-cursor focus-predecessor!))
+           (send a-cursor try-focus-predecessor!)
            (send editor show-focus)]
           [(#\l)
            (snap-to-container a-cursor)
-           (when (send a-cursor can-focus-successor?)
-             (send a-cursor focus-successor!))
+           (send a-cursor try-focus-successor!)
            (send editor show-focus)]
           [(#\k)
            (snap-to-container a-cursor)
-           (when (send a-cursor can-focus-out?)
-             (send a-cursor focus-out!))
+           (send a-cursor try-focus-out!)
            (send editor show-focus)]
           [(#\a)
            (snap-to-container a-cursor)
-           (when (send a-cursor can-focus-younger?)
-             (send a-cursor focus-younger!))
+           (send a-cursor try-focus-younger!)
            (send editor show-focus)]
           [(#\e)
            (snap-to-container a-cursor)
-           (when (send a-cursor can-focus-older?)
-             (send a-cursor focus-older!))
+           (send a-cursor try-focus-older!)
            (send editor show-focus)]
           [(#\()
            (snap-to-insertion-point a-cursor)
@@ -86,8 +81,7 @@
            (send editor show-focus)]
           [(#\] #\))
            (snap-to-insertion-point a-cursor)
-           (when (send a-cursor can-focus-out?)
-             (send a-cursor focus-out!))
+           (send a-cursor try-focus-out!)
            (send editor set-position (send a-cursor cursor-endpos))
            (send editor show-focus)]
           [(#\')

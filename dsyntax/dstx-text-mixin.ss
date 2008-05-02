@@ -755,12 +755,25 @@
       ;; Given the functional focus function, defines the imperative predicate and mutators.
       (define-syntax (define-focus-functions stx)
         (syntax-case stx ()
-          [(_ (functional-focus args ...) can-focus? do-focus!)
+          [(_ (functional-focus args ...) can-focus? do-focus! try-focus!)
            (syntax/loc stx
              (begin
                (define/public (can-focus? args ...)
                  (resynchronize-with-main-editing-cursor!)
-                 (and (functional-focus f-cursor args ...) #t))
+                 (cond [(functional-focus f-cursor args ...)
+                        #t]
+                       [else
+                        #f]))
+               
+               (define/public (try-focus! args ...)
+                 (resynchronize-with-main-editing-cursor!)
+                 (cond [(functional-focus f-cursor args ...)
+                        =>
+                        (lambda (new-cursor)
+                          (set! f-cursor new-cursor)
+                          #t)]
+                       [else
+                        #f]))
                
                (define/public (do-focus! args ...)
                  (resynchronize-with-main-editing-cursor!)
@@ -768,26 +781,44 @@
       
       
       ;; Focusers
-      (define-focus-functions (cursor:focus-in) can-focus-in? focus-in!)
-      (define-focus-functions (cursor:focus-in/no-snap) can-focus-in/no-snap? focus-in/no-snap!)
-      (define-focus-functions (cursor:focus-out) can-focus-out? focus-out!)
-      (define-focus-functions (cursor:focus-older) can-focus-older? focus-older!)
-      (define-focus-functions (cursor:focus-older/no-snap) can-focus-older/no-snap? focus-older/no-snap!)
-      (define-focus-functions (cursor:focus-oldest) can-focus-oldest? focus-oldest!)
-      (define-focus-functions (cursor:focus-younger) can-focus-younger? focus-younger!)
-      (define-focus-functions (cursor:focus-younger/no-snap) can-focus-younger/no-snap? focus-younger/no-snap!)
-      (define-focus-functions (cursor:focus-youngest) can-focus-youngest? focus-youngest!)
-      (define-focus-functions (cursor:focus-successor) can-focus-successor? focus-successor!)
-      (define-focus-functions (cursor:focus-successor/no-snap) can-focus-successor/no-snap? focus-successor/no-snap!)
-      (define-focus-functions (cursor:focus-predecessor) can-focus-predecessor? focus-predecessor!)
-      (define-focus-functions (cursor:focus-predecessor/no-snap) can-focus-predecessor/no-snap? focus-predecessor/no-snap!)
-      (define-focus-functions (cursor:focus-toplevel) can-focus-toplevel? focus-toplevel!)
-      (define-focus-functions (cursor:focus-container a-pos) can-focus-container? focus-container!)
-      (define-focus-functions (cursor:focus-pos a-pos) can-focus-pos? focus-pos!)
-      (define-focus-functions (cursor:focus-endpos a-pos) can-focus-endpos? focus-endpos!)
-      
-      (define-focus-functions (cursor:focus-find/dstx a-pred) can-focus-find/dstx? focus-find/dstx!)
-      (define-focus-functions (cursor:focus-find/cursor a-pred) can-focus-find/cursor? focus-find/cursor!)
+      (define-focus-functions (cursor:focus-in)
+        can-focus-in? focus-in! try-focus-in!)
+      (define-focus-functions (cursor:focus-in/no-snap)
+        can-focus-in/no-snap? focus-in/no-snap! try-focus-in/no-snap!)
+      (define-focus-functions (cursor:focus-out)
+        can-focus-out? focus-out! try-focus-out!)
+      (define-focus-functions (cursor:focus-older)
+        can-focus-older? focus-older! try-focus-older!)
+      (define-focus-functions (cursor:focus-older/no-snap)
+        can-focus-older/no-snap? focus-older/no-snap! try-focus-older/no-snap!)
+      (define-focus-functions (cursor:focus-oldest)
+        can-focus-oldest? focus-oldest! try-focus-oldest!)
+      (define-focus-functions (cursor:focus-younger)
+        can-focus-younger? focus-younger! try-focus-younger!)
+      (define-focus-functions (cursor:focus-younger/no-snap)
+        can-focus-younger/no-snap? focus-younger/no-snap! try-focus-younger/no-snap!)
+      (define-focus-functions (cursor:focus-youngest)
+        can-focus-youngest? focus-youngest! try-focus-youngest!)
+      (define-focus-functions (cursor:focus-successor)
+        can-focus-successor? focus-successor! try-focus-successor!)
+      (define-focus-functions (cursor:focus-successor/no-snap)
+        can-focus-successor/no-snap? focus-successor/no-snap! try-focus-successor/no-snap!)
+      (define-focus-functions (cursor:focus-predecessor)
+        can-focus-predecessor? focus-predecessor! try-focus-predecessor!)
+      (define-focus-functions (cursor:focus-predecessor/no-snap)
+        can-focus-predecessor/no-snap? focus-predecessor/no-snap! try-focus-predecessor/no-snap!)
+      (define-focus-functions (cursor:focus-toplevel)
+        can-focus-toplevel? focus-toplevel! try-focus-toplevel!)
+      (define-focus-functions (cursor:focus-container a-pos)
+        can-focus-container? focus-container! try-focus-container!)
+      (define-focus-functions (cursor:focus-pos a-pos)
+        can-focus-pos? focus-pos! try-focus-pos!)
+      (define-focus-functions (cursor:focus-endpos a-pos)
+        can-focus-endpos? focus-endpos! try-focus-endpos!)
+      (define-focus-functions (cursor:focus-find/dstx a-pred)
+        can-focus-find/dstx? focus-find/dstx! try-focus-find/dstx!)
+      (define-focus-functions (cursor:focus-find/cursor a-pred)
+        can-focus-find/cursor? focus-find/cursor! try-focus-find/cursor!)
       
       
       
