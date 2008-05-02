@@ -5,6 +5,7 @@
            (lib "struct.ss")
            (lib "mred.ss" "mred")
            (only (lib "1.ss" "srfi") find)
+           "dsyntax/dsyntax.ss"
            "dot-processing.ss"
            "utilities.ss"
            "rope.ss")
@@ -522,10 +523,15 @@
   (define-struct Protocol-Syntax-Tree () #f)
   (define-struct (Verb Protocol-Syntax-Tree) (content location what) #f)
   (define-struct (No-op Protocol-Syntax-Tree) () #f)
+  (define-struct (Insert-Dstx-After Protocol-Syntax-Tree) (dstx local-id) #f)
   (provide/contract [struct Protocol-Syntax-Tree ()]
-                    [struct (Verb Protocol-Syntax-Tree) ([content Verb-Content?]
-                                                         [location (or/c false/c Location?)]
-                                                         [what (or/c false/c What?)])]
+                    [struct (Verb Protocol-Syntax-Tree)
+                            ([content Verb-Content?]
+                             [location (or/c false/c Location?)]
+                             [what (or/c false/c What?)])]
+                    [struct (Insert-Dstx-After Protocol-Syntax-Tree)
+                            ([dstx dstx?]
+                             [local-id number?])]
                     [struct (No-op Protocol-Syntax-Tree) ()])
   
   

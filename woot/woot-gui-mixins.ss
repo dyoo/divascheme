@@ -160,8 +160,9 @@
       
       
       (define woot-custodian (make-custodian))
-      (define woot-client #f)
-      (define client-thread #f)
+      (define network-mailbox-client #f)
+      (define mailbox-client-thread #f)
+      (define woot-state (new-mock-woot))
       
       
       (define (initialize)
@@ -171,13 +172,12 @@
       ;; Brings up a dialog window to host a session.  Shows our ip, and
       ;; some message on how to get others to join.
       (define/public (host-session)
-        (let ()
-          (let ([url (start-local-server)])
-            (start-network-client url)
-            (message-box
-             "Host session started"
-             (format "Session started.\nOther hosts may join by using the session url: ~s"
-                     url)))))
+        (let ([url (start-local-server)])
+          (start-network-client url)
+          (message-box
+           "Host session started"
+           (format "Session started.\nOther hosts may join by using the session url: ~s"
+                   url))))
       
       ;; join-session: -> void
       ;; Brings up a dialog box asking which system to join to.
@@ -203,7 +203,7 @@
       ;; Starts up the client part of the server.
       (define (start-network-client url)
         (parameterize ([current-custodian woot-custodian])
-          (set! woot-client (client:new-client url))
+          (set! network-mailbox-client (client:new-client url))
           (start-process-client-message-loop!)))
       
       
@@ -214,19 +214,14 @@
       ;; When we get messages from the client, queue-callback a handler that
       ;; kickstarts woot.
       (define (start-process-client-message-loop!)
-        (set! client-thread
+        (set! mailbox-client-thread
               (thread
                (lambda ()
                  (let loop ()
                    (let ([msg (string->msg
                                (async-channel-get
-                                (client:client-mailbox woot-client)))])
-                     (cond [(self-generated-message? msg)
-                            (void)]
-                           [else
-                            (queue-callback/in-command-mode
-                             (lambda ()
-                               (send-message-to-woot msg)))])
+                                (client:client-mailbox network-mailbox-client)))])
+                     (integrate-message-into-woot msg)
                      (loop)))))))
       
       
@@ -237,24 +232,26 @@
                   (get-host-id)))
       
       
-      ;; send-message-to-woot: msg -> void
+      ;; integrate a message-to-woot: msg -> void
       ;; Send a message off to woot.  This is running under the context of a queue-callback
       ;; in command mode.
-      (define (send-message-to-woot a-msg)
-        ;; fill me in!  We should send the message to woot, and get any responses.
-        (match a-msg
-          [(struct msg:insert (host-id a-dstx before-id after-id))
-           (printf "I: (~s ~s) ~s~n~n" before-id after-id a-dstx)]
-          [(struct msg:delete (host-id woot-id))
-           (printf "D: (~s)~n~n" woot-id)]))
+      (define (integrate-message-into-woot a-msg)
+        (queue-callback/in-command-mode
+         (lambda ()
+           ;; fill me in!  We should send the message to woot, and get any responses.
+           (match a-msg
+             [(struct msg:insert (host-id a-dstx before-id after-id))
+              (printf "I: (~s ~s) ~s~n~n" before-id after-id a-dstx)]
+             [(struct msg:delete (host-id woot-id))
+              (printf "D: (~s)~n~n" woot-id)]))))
       
       
       ;; on-woot-structured-insert: dstx woot-id woot-id -> void
       ;; Broadcast a structured insert.
       (define/augment (on-woot-structured-insert a-dstx before-woot-id after-woot-id)
-        (when woot-client
+        (when network-mailbox-client
           (client:client-send-message
-           woot-client
+           network-mailbox-client
            (msg->string
             (make-msg:insert (get-host-id) a-dstx before-woot-id after-woot-id))))
         (inner (void) on-woot-structured-insert a-dstx before-woot-id after-woot-id))
@@ -264,9 +261,9 @@
       ;; on-woot-structured-insert: dstx woot-id woot-id -> void
       ;; Broadcast a structured delete.
       (define/augment (on-woot-structured-delete woot-id)
-        (when woot-client
+        (when network-mailbox-client
           (client:client-send-message
-           woot-client
+           network-mailbox-client
            (msg->string
             (make-msg:delete (get-host-id) woot-id))))
         (inner (void) on-woot-structured-delete woot-id))
