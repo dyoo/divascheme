@@ -2,10 +2,17 @@
   (require (lib "contract.ss")
            "../dsyntax/dsyntax.ss"
            "woot-struct.ss")
-  (provide/contract [fresh-woot-id (string? . -> . woot-id?)]
+  
+  (provide/contract [first-sentinel-woot-id woot-id?]
+                    [fresh-woot-id (string? . -> . woot-id?)]
                     [dstx-woot-id (dstx? . -> . (or/c woot-id? false/c))]
+                    [dstx-set-woot-id (dstx? woot-id? . -> . dstx?)]
                     [deep-attach-woot-ids (dstx? string? . -> . dstx?)]
                     [deep-strip-local-ids (dstx? . -> . dstx?)])
+  
+  
+  ;; The very first dstx will have this identifier, which is shared among all clients.
+  (define first-sentinel-woot-id (make-woot-id 0 "woot"))
   
   
   ;; fresh-woot-id: string -> woot-id
@@ -14,9 +21,17 @@
     (make-woot-id (next-logical-id) host-ip))
   
   
-  ;; dstx-woot-id: dstx -> woot-id
+  ;; dstx-woot-id: dstx -> (or/c woot-id false)
+  ;; Get the woot id of the dstx.  If not decorated with
+  ;; a woot-id, returns false.
   (define (dstx-woot-id a-dstx)
     (dstx-property-ref a-dstx 'woot-id (lambda () #f)))
+  
+  
+  ;; dstx-set-woot-id: dstx woot-id -> dstx
+  ;; Set the woot id of the dstx.
+  (define (dstx-set-woot-id a-dstx a-woot-id)
+    (dstx-property-set a-dstx 'woot-id a-woot-id))
   
   
   ;; deep-attach-woot-id: dstx string -> dstx
@@ -27,7 +42,7 @@
                       [(dstx-woot-id a-dstx)
                        a-dstx]
                       [else
-                       (dstx-property-set a-dstx 'woot-id (fresh-woot-id host-ip))]))
+                       (dstx-set-woot-id a-dstx (fresh-woot-id host-ip))]))
                   a-dstx))
   
   

@@ -11,8 +11,7 @@
            "utilities.ss"
            (prefix self-ip: "self-ip-address.ss")
            (prefix server: "server.ss")
-           (prefix client: "client.ss")
-           (only (lib "13.ss" "srfi") string-join))
+           (prefix client: "client.ss"))
   
   (provide woot-text-mixin
            woot-frame-mixin)
