@@ -7,6 +7,8 @@
            "../dsyntax/dsyntax.ss"
            "msg-structs.ss"
            "woot-struct.ss"
+           "mock-woot.ss"
+           "utilities.ss"
            (prefix self-ip: "self-ip-address.ss")
            (prefix server: "server.ss")
            (prefix client: "client.ss")
@@ -317,52 +319,10 @@
   
   ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
   
-  
-  
-  
-  ;; fresh-woot-id: string -> woot-id
-  ;; Returns a fresh woot id.
-  (define (fresh-woot-id host-ip)
-    (make-woot-id (next-logical-id) host-ip))
-  
-  
-  ;; dstx-woot-id: dstx -> woot-id
-  (define (dstx-woot-id a-dstx)
-    (dstx-property-ref a-dstx 'woot-id (lambda () #f)))
-  
-  
-  ;; deep-attach-woot-id: dstx string -> dstx
-  ;; Attach new woot identifiers to any dstx that doesn't yet have one.
-  (define (deep-attach-woot-ids a-dstx host-ip)
-    (dstx-deepmap (lambda (a-dstx)
-                    (cond
-                      [(dstx-woot-id a-dstx)
-                       a-dstx]
-                      [else
-                       (dstx-property-set a-dstx 'woot-id (fresh-woot-id host-ip))]))
-                  a-dstx))
-  
-  
-  ;; deep-strip-local-ids: dstx -> dstx
-  ;; Given a dstx, rip out the local ids.
-  (define (deep-strip-local-ids a-dstx)
-    (dstx-deepmap (lambda (a-dstx)
-                    (dstx-property-remove a-dstx 'local-id))
-                  a-dstx))
-  
-  
   ;; dstx-from-unstructured-editing?: dstx -> boolean
   ;; Returns true if we're certain that the dstx came from intermediate insert-mode.
   (define (dstx-from-unstructured-editing? a-dstx)
     (dstx-property-ref a-dstx 'from-unstructured-editing (lambda ()
                                                            #f)))
   
-  
-  
-  ;; next-logical-id: -> number
-  ;; Returns the next logical clock id.
-  (define next-logical-id
-    (let ([n 0])
-      (lambda ()
-        (set! n (add1 n))
-        n))))
+  )

@@ -520,10 +520,16 @@
                     [struct (InsertRope-Cmd Verb-Content) ([rope rope?])])
   
   
-  (define-struct Protocol-Syntax-Tree () #f)
-  (define-struct (Verb Protocol-Syntax-Tree) (content location what) #f)
-  (define-struct (No-op Protocol-Syntax-Tree) () #f)
-  (define-struct (Insert-Dstx-After Protocol-Syntax-Tree) (dstx local-id) #f)
+  (define-struct Protocol-Syntax-Tree
+    () #f)
+  (define-struct (Verb Protocol-Syntax-Tree)
+    (content location what) #f)
+  (define-struct (No-op Protocol-Syntax-Tree)
+    () #f)
+  (define-struct (Insert-Dstx-After Protocol-Syntax-Tree)
+    (dstx local-id) #f)
+  (define-struct (Delete-Dstx Protocol-Syntax-Tree)
+    (local-id) #f)
   (provide/contract [struct Protocol-Syntax-Tree ()]
                     [struct (Verb Protocol-Syntax-Tree)
                             ([content Verb-Content?]
@@ -532,6 +538,8 @@
                     [struct (Insert-Dstx-After Protocol-Syntax-Tree)
                             ([dstx dstx?]
                              [local-id number?])]
+                    [struct (Delete-Dstx Protocol-Syntax-Tree)
+                            ([local-id number?])]
                     [struct (No-op Protocol-Syntax-Tree) ()])
   
   
