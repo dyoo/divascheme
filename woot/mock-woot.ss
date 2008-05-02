@@ -31,8 +31,8 @@
   ;; add-to-unexecuted!: mock-woot msg -> void
   ;; Adds to our pending queue of unexecuted messages.
   (define (add-to-unexecuted! a-state a-msg)
-    (set-state-unexecuted!
-     (cons a-msg (state-unexecuted a-state))))
+    (set-state-unexecuted! a-state
+                           (cons a-msg (state-unexecuted a-state))))
   
   
   ;; integrate-all-executables!: state -> (listof Protocol-Syntax-Tree)
@@ -43,7 +43,9 @@
     ;; of the operations.
     (reverse
      (let loop ()
-       (let ([executables (filter is-executable? (state-unexecuted a-state))])
+       (let ([executables (filter (lambda (a-msg)
+                                    (is-executable? a-state a-msg))
+                                  (state-unexecuted a-state))])
          (cond
            [(empty? executables)
             '()]
@@ -57,10 +59,10 @@
   
   ;; remove-from-unexecuted!: mock-woot (listof msg) -> void
   (define (remove-from-unexecuted! a-state msgs-to-remove)
-    (set-state-unexecuted!
-     (foldl (lambda (a-msg msgs) (remove a-msg msgs))
-            (state-unexecuted a-state)
-            msgs-to-remove)))
+    (set-state-unexecuted! a-state
+                           (foldl (lambda (a-msg msgs) (remove a-msg msgs))
+                                  (state-unexecuted a-state)
+                                  msgs-to-remove)))
   
   
   
@@ -71,7 +73,7 @@
   ;; integrate.
   (define (integrate! a-state a-msg)
     ;; fixme
-    (void))
+    (list))
   
   
   

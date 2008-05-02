@@ -30,7 +30,8 @@
       "inserting an atom into empty buffer."
       (let* ([woot (mock:new-mock-woot (list sentinel-space))]
              [new-cmds
-              (mock:consume-msg! (make-msg:insert
+              (mock:consume-msg! woot
+                                 (make-msg:insert
                                   host-id
                                   (deep-attach-woot-ids (new-atom "hello") host-id)
                                   first-sentinel-woot-id #f))])
@@ -43,7 +44,8 @@
       "inserting without satisfying precondition should be empty"
       (let* ([woot (mock:new-mock-woot (list sentinel-space))]
              [new-cmds
-              (mock:consume-msg! (make-msg:insert
+              (mock:consume-msg! woot
+                                 (make-msg:insert
                                   host-id
                                   (deep-attach-woot-ids (new-atom "hello") host-id)
                                   (fresh-woot-id host-id)
