@@ -162,7 +162,7 @@
       (define woot-custodian (make-custodian))
       (define network-mailbox-client #f)
       (define mailbox-client-thread #f)
-      (define woot-state (new-mock-woot))
+      (define woot-state (new-mock-woot first-sentinel-woot-id))
       
       
       (define (initialize)
