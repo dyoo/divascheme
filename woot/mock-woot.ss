@@ -116,7 +116,7 @@
   ;; Given the woot-id of a dstx, returns the woot-id of a dstx that is visible
   ;; at or before the given dstx.
   (define (visible-before-or-at a-state a-woot-id)
-    (let loop ([a-cursor (focus/woot-id (state-cursor a-state))])
+    (let loop ([a-cursor (focus/woot-id (state-cursor a-state) a-woot-id)])
       (cond
         [(dstx-visible? (cursor-dstx a-cursor))
          (dstx-woot-id (cursor-dstx a-cursor))]
@@ -143,7 +143,7 @@
           (and (focus/woot-id (state-cursor a-state) after-woot-id)
                #t)])]
       [(struct msg:delete (host-id woot-id))
-       (and (focus/woot-id (state-cursor a-state))
+       (and (focus/woot-id (state-cursor a-state) woot-id)
             #t)]))
   
   
