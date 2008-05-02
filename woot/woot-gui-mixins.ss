@@ -42,6 +42,8 @@
   (define (structure-tracking-mixin super%)
     (class super%
       
+      (inherit get-dstx-cursor)
+      
       ;; We annotate every new structure with a self-ip and host ip.
       (define host-id #f)
       
@@ -70,6 +72,19 @@
       ;; Returns the host identifer, which is some combination of ip and random number.
       (define/public (get-host-id)
         host-id)
+      
+      
+      (define/augment (reparse-all-dstxs!)
+        (set-toplevel-sentinel-woot-id!)
+        (inner (void) reparse-all-dstxs!))
+      
+      
+      ;; Ensures that the very first dstx, the sentinel space, has a canonical
+      ;; woot id that all clients share.
+      (define (set-toplevel-sentinel-woot-id!)
+        (let ([cursor (get-dstx-cursor)])
+          (send cursor focus-toplevel!)
+          (send cursor property-set! 'woot-id first-sentinel-woot-id)))
       
       
       ;; Hook to add woot ids to new structures.
@@ -156,17 +171,20 @@
       (inherit queue-for-interpretation!
                get-host-id
                get-top-level-window
+               get-dstx-cursor
                queue-callback/in-command-mode)
       
       
       (define woot-custodian (make-custodian))
       (define network-mailbox-client #f)
       (define mailbox-client-thread #f)
-      (define woot-state (new-mock-woot first-sentinel-woot-id))
+      (define woot-state #f)
       
       
       (define (initialize)
         (super-new))
+      
+      
       
       ;; host-session: -> void
       ;; Brings up a dialog window to host a session.  Shows our ip, and
@@ -204,8 +222,21 @@
       (define (start-network-client url)
         (parameterize ([current-custodian woot-custodian])
           (set! network-mailbox-client (client:new-client url))
-          (start-process-client-message-loop!)))
+          (set! woot-state (new-mock-woot (list (get-toplevel-sentinel))))
+          (start-process-client-message-loop!)
+          
+          ;; TODO: send over all the other structured elements in the buffer.
+          
+          ))
       
+      
+      
+      ;; get-toplevel-sentinel: -> dstx
+      ;; Returns the toplevel sentinel space.
+      (define (get-toplevel-sentinel)
+        (let ([cursor (get-dstx-cursor)])
+          (send cursor focus-toplevel!)
+          (send cursor cursor-dstx)))
       
       
       ;; start-process-client-message-loop!: -> void

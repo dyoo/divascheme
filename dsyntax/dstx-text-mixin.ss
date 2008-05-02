@@ -546,9 +546,10 @@
       
       ;; reparse-all-dstxs!: -> void
       ;; reparses the entire buffer.
-      (define/public (reparse-all-dstxs!)
+      (define/pubment (reparse-all-dstxs!)
         (increment-version!)
-        (send cursor-for-editing reparse!))
+        (send cursor-for-editing reparse!)
+        (inner (void) reparse-all-dstxs!))
       
       
       ;; Returns true if this atom is special and unparsed
