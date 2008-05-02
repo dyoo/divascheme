@@ -5,7 +5,6 @@
            (lib "mred.ss" "mred")
            (lib "async-channel.ss")
            "../dsyntax/dsyntax.ss"
-           "msg-structs.ss"
            "woot-struct.ss"
            "mock-woot.ss"
            "utilities.ss"

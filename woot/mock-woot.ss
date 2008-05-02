@@ -2,10 +2,10 @@
   (require (lib "contract.ss")
            (lib "list.ss")
            (lib "plt-match.ss")
+           "woot-struct.ss"
            "../structures.ss"
            "../dsyntax/dsyntax.ss"
-           "utilities.ss"
-           "msg-structs.ss")
+           "utilities.ss")
   
   ;; unexecuted is a list of the unexecuted msg structures.
   ;; cursor is a functional cursor maintaining the structures that we
