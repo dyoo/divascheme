@@ -3,14 +3,22 @@
            (lib "list.ss")
            (lib "plt-match.ss")
            "woot-struct.ss"
-           "../structures.ss"
            "../dsyntax/dsyntax.ss"
            "utilities.ss")
+  
   
   ;; unexecuted is a list of the unexecuted msg structures.
   ;; cursor is a functional cursor maintaining the structures that we
   ;; know about.
+  ;; State should be an opaque structure.
   (define-struct state (unexecuted cursor))
+  
+  
+  
+  (provide/contract [new-mock-woot ((listof dstx?) . -> . state?)]
+                    [consume-msg! (state? msg? . -> . (listof op?))])
+  
+  
   
   ;; Creates a new mock-woot interface.
   ;; Fixme: we need to initialize with the woot ids of the boundaries.
@@ -51,9 +59,9 @@
             '()]
            [else
             (remove-from-unexecuted! a-state executables)
-            (append (apply append (map (lambda (a-msg)
-                                         (integrate! a-state a-msg))
-                                       executables))
+            (append (map (lambda (a-msg)
+                           (integrate! a-state a-msg))
+                         executables)
                     (loop))])))))
   
   
@@ -68,11 +76,13 @@
   
   
   
-  ;; integrate!: mock-woot msg -> (listof Protocol-Syntax-Tree)
+  ;; integrate!: mock-woot msg -> op
   ;; Needs to return any new operations that we've been able to successfully
   ;; integrate.
   (define (integrate! a-state a-msg)
-    ;; fixme
+    ;; fixme: adjust cursor
+    ;; fixme: find whatever dstx is visible, and insert after that thing.
+    ;; fixme: return values
     (list))
   
   
@@ -81,16 +91,16 @@
   ;; Returns true if we can execute and integrate this message.
   (define (is-executable? a-state a-msg)
     (match a-msg
-      [(struct msg:insert (host-id dstx before-woot-id after-woot-id))
+      [(struct msg:insert (host-id dstx after-woot-id before-woot-id))
        (cond
          [(and before-woot-id after-woot-id)
           ;; Inserting between two dstxs
-          (and (focus/woot-id (state-cursor a-state) before-woot-id)
-               (focus/woot-id (state-cursor a-state) after-woot-id)
+          (and (focus/woot-id (state-cursor a-state) after-woot-id)
+               (focus/woot-id (state-cursor a-state) before-woot-id)
                #t)]
          [else
           ;; Inserting at end of fusion's children
-          (and (focus/woot-id (state-cursor a-state) before-woot-id)
+          (and (focus/woot-id (state-cursor a-state) after-woot-id)
                #t)])]
       [(struct msg:delete (host-id woot-id))
        (and (focus/woot-id (state-cursor a-state))
@@ -102,8 +112,4 @@
   (define (focus/woot-id a-cursor a-woot-id)
     (focus-find/dstx a-cursor
                      (lambda (a-dstx)
-                       (equal? a-woot-id (dstx-woot-id a-dstx)))))
-  
-  
-  (provide/contract [new-mock-woot ((listof dstx?) . -> . state?)]
-                    [consume-msg! (state? msg? . -> . (listof Protocol-Syntax-Tree?))]))
+                       (equal? a-woot-id (dstx-woot-id a-dstx))))))

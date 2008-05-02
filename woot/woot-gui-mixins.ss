@@ -80,9 +80,9 @@
       
       ;; on-woot-structured-insert: dstx woot-id woot-id -> void
       ;; We define additional hooks for the network mixin to do its stuff.
-      (define/pubment (on-woot-structured-insert a-dstx before-woot-id after-woot-id)
+      (define/pubment (on-woot-structured-insert a-dstx after-woot-id before-woot-id)
         (when (not (in-remote-operation?))
-          (inner (void) on-woot-structured-insert a-dstx before-woot-id after-woot-id)))
+          (inner (void) on-woot-structured-insert a-dstx after-woot-id before-woot-id)))
       
       
       ;; on-woot-structured-delete: woot-id -> void
@@ -240,21 +240,21 @@
          (lambda ()
            ;; fill me in!  We should send the message to woot, and get any responses.
            (match a-msg
-             [(struct msg:insert (host-id a-dstx before-id after-id))
-              (printf "I: (~s ~s) ~s~n~n" before-id after-id a-dstx)]
+             [(struct msg:insert (host-id a-dstx after-id before-id))
+              (printf "I: (~s ~s) ~s~n~n" after-id before-id a-dstx)]
              [(struct msg:delete (host-id woot-id))
               (printf "D: (~s)~n~n" woot-id)]))))
       
       
       ;; on-woot-structured-insert: dstx woot-id woot-id -> void
       ;; Broadcast a structured insert.
-      (define/augment (on-woot-structured-insert a-dstx before-woot-id after-woot-id)
+      (define/augment (on-woot-structured-insert a-dstx after-woot-id before-woot-id)
         (when network-mailbox-client
           (client:client-send-message
            network-mailbox-client
            (msg->string
-            (make-msg:insert (get-host-id) a-dstx before-woot-id after-woot-id))))
-        (inner (void) on-woot-structured-insert a-dstx before-woot-id after-woot-id))
+            (make-msg:insert (get-host-id) a-dstx after-woot-id before-woot-id))))
+        (inner (void) on-woot-structured-insert a-dstx after-woot-id before-woot-id))
       
       
       
