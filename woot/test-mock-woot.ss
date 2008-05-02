@@ -83,4 +83,20 @@
         (check-equal? (op:insert-after-dstx (second new-cmds-2))
                       world-atom)
         (check-equal? (op:insert-after-id (second new-cmds-2))
-                      (dstx-woot-id hello-atom)))))))
+                      (dstx-woot-id hello-atom))))
+     
+     
+     
+     (test-case
+      "deleting bar from 'foo bar baz'"
+      (let* ([foo (decorate (new-atom "foo"))]
+             [bar (decorate (new-atom "bar"))]
+             [baz (decorate (new-atom "baz"))]
+             [woot (mock:new-mock-woot (list sentinel-space foo bar baz))]
+             [new-cmds
+              (mock:consume-msg! woot
+                                 (make-msg:delete host-id (dstx-woot-id bar)))])
+        (check-equal? (length new-cmds) 1)
+        (check-equal? (op:delete-id (first new-cmds)) (dstx-woot-id bar))
+        (check-equal? (mock:visible-before-or-at woot (dstx-woot-id bar))
+                      (dstx-woot-id foo)))))))

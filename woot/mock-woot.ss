@@ -20,7 +20,7 @@
   
   
   (provide/contract [new-mock-woot ((listof dstx?) . -> . state?)]
-                    [get-visible-before-or-at (state? woot-id? . -> . woot-id?)]
+                    [visible-before-or-at (state? woot-id? . -> . woot-id?)]
                     [consume-msg! (state? msg? . -> . (listof op?))])
   
   
@@ -112,10 +112,10 @@
        (make-op:delete a-msg id)]))
   
   
-  ;; get-visible-before-or-at: state woot-id -> (or/c woot-id #f)
+  ;; visible-before-or-at: state woot-id -> (or/c woot-id #f)
   ;; Given the woot-id of a dstx, returns the woot-id of a dstx that is visible
   ;; at or before the given dstx.
-  (define (get-visible-before-or-at a-state a-woot-id)
+  (define (visible-before-or-at a-state a-woot-id)
     (let loop ([a-cursor (focus/woot-id (state-cursor a-state))])
       (cond
         [(dstx-visible? (cursor-dstx a-cursor))
