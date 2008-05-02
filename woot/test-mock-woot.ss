@@ -18,6 +18,9 @@
   
   (define host-id "test")
   
+  (define (decorate a-dstx)
+    (deep-attach-woot-ids a-dstx host-id))
+  
   
   (define test-mock-woot
     (test-suite
@@ -31,7 +34,7 @@
      (test-case
       "inserting an atom into empty buffer."
       (let* ([woot (mock:new-mock-woot (list sentinel-space))]
-             [an-atom (deep-attach-woot-ids (new-atom "hello") host-id)]
+             [an-atom (decorate (new-atom "hello"))]
              [new-ops
               (mock:consume-msg! woot
                                  (make-msg:insert
@@ -53,7 +56,22 @@
               (mock:consume-msg! woot
                                  (make-msg:insert
                                   host-id
-                                  (deep-attach-woot-ids (new-atom "hello") host-id)
+                                  (decorate (new-atom "hello"))
                                   (fresh-woot-id host-id)
                                   #f))])
-        (check-equal? new-cmds '()))))))
+        (check-equal? new-cmds '())))
+     
+     
+     (test-case
+      "inserting hello world in reverse order"
+      (let* ([woot (mock:new-mock-woot (list sentinel-space))]
+             [world-atom (decorate (new-atom "world"))]
+             [hello-atom (decorate (new-atom "hello"))]
+             [new-cmds-1
+              (mock:consume-msg! woot
+                                 (make-msg:insert host-id world-atom (dstx-woot-id hello-atom) #f))]
+             [new-cmds-2
+              (mock:consume-msg! woot
+                                 (make-msg:insert host-id hello-atom (dstx-woot-id sentinel-space) #f))])
+        (check-equal? new-cmds-1 '())
+        (check-equal? (length new-cmds-2) 2))))))
