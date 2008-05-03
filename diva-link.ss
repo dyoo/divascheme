@@ -7,7 +7,6 @@
            (lib "struct.ss")
            (lib "plt-match.ss")
            (lib "errortrace-lib.ss" "errortrace")
-           (only (lib "1.ss" "srfi") filter)
            "interpreter.ss"
            "dot-processing.ss"
            "mred-state.ss"
