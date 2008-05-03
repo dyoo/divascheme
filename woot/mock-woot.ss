@@ -91,6 +91,7 @@
   (define (integrate-insert! a-state a-msg)
     ;; fixme: adjust cursor
     ;; fixme: find whatever dstx is visible, and insert after that thing.
+    (printf "integrating ~s~n" a-msg)
     (match a-msg
       [(struct msg:insert (host-id dstx after-id before-id))
        (let ([a-cursor (focus/woot-id (state-cursor a-state) after-id)])
@@ -130,21 +131,23 @@
   ;; is-executable?: mock-woot msg -> boolean
   ;; Returns true if we can execute and integrate this message.
   (define (is-executable? a-state a-msg)
-    (match a-msg
-      [(struct msg:insert (host-id dstx after-woot-id before-woot-id))
-       (cond
-         [(and before-woot-id after-woot-id)
-          ;; Inserting between two dstxs
-          (and (focus/woot-id (state-cursor a-state) after-woot-id)
-               (focus/woot-id (state-cursor a-state) before-woot-id)
-               #t)]
-         [else
-          ;; Inserting at end of fusion's children
-          (and (focus/woot-id (state-cursor a-state) after-woot-id)
-               #t)])]
-      [(struct msg:delete (host-id woot-id))
-       (and (focus/woot-id (state-cursor a-state) woot-id)
-            #t)]))
+    (let ([result
+           (match a-msg
+             [(struct msg:insert (host-id dstx after-woot-id before-woot-id))
+              (cond
+                [(and after-woot-id before-woot-id)
+                 ;; Inserting between two dstxs
+                 (and (focus/woot-id (state-cursor a-state) after-woot-id)
+                      (focus/woot-id (state-cursor a-state) before-woot-id)
+                      #t)]
+                [else
+                 ;; Inserting at end of fusion's children
+                 (and (focus/woot-id (state-cursor a-state) after-woot-id)
+                      #t)])]
+             [(struct msg:delete (host-id woot-id))
+              (and (focus/woot-id (state-cursor a-state) woot-id)
+                   #t)])])
+      (printf "is-executable? ~s ~s~n" result a-msg)))
   
   
   ;; focus/woot-id: cursor woot-id -> (or/c cursor false/c)
