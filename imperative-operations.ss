@@ -258,6 +258,7 @@
   
   ;; delete-dstx: local-id World text% (World -> World) (World -> void) -> World
   (define (delete-dstx id world a-text update-world-fn update-mred-fn)
+    (printf "delete-dstx~n")
     (let ([a-cursor (send a-text get-dstx-cursor)])
       (cond
         [(send a-cursor try-focus-find/dstx!
@@ -298,6 +299,7 @@
   
   
   (define (insert-dstx-after a-dstx id world a-text update-world-fn update-mred-fn)
+    (printf "insert-dstx-after~n")
     (let ([a-cursor (send a-text get-dstx-cursor)])
       (cond
         [(send a-cursor try-focus-find/dstx!
