@@ -35,7 +35,8 @@
     join-session)
   ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
   
-  
+ 
+  (define big-number 2147483647)
   
   ;; structure-tracking-mixin: diva-text% -> diva-text%
   ;; Mixin for dstx-text that detects structured edits.
@@ -51,7 +52,7 @@
         (set! host-id (string-append
                        (self-ip:self-ip-address)
                        "::"
-                       (number->string (random 4294967086))))
+                       (number->string (random big-number))))
         (super-new))
       
       
