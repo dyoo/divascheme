@@ -147,7 +147,8 @@
              [(struct msg:delete (host-id woot-id))
               (and (focus/woot-id (state-cursor a-state) woot-id)
                    #t)])])
-      (printf "is-executable? ~s ~s~n" result a-msg)))
+      (printf "is-executable? ~s ~s~n" result a-msg)
+      result))
   
   
   ;; focus/woot-id: cursor woot-id -> (or/c cursor false/c)
