@@ -79,8 +79,9 @@
       ;; Given a woot-id, find the structure in the dstx tree and return it.
       (define/public (woot-id->local-dstx a-woot-id)
         (let ([a-cursor (get-dstx-cursor)])
-          (send a-cursor focus-find/dstx
+          (send a-cursor focus-find/dstx!
                 (lambda (a-dstx)
+                  (printf "looking for ~s~n" (dstx-woot-id a-dstx))
                   (equal? (dstx-woot-id a-dstx)
                           a-woot-id)))
           (send a-cursor cursor-dstx)))
