@@ -6,7 +6,7 @@
            (lib "framework.ss" "framework")
            (lib "struct.ss")
            (lib "plt-match.ss")
-           (lib "errortrace-lib.ss" "errortrace")
+           (lib "async-channel.ss")
            "interpreter.ss"
            "dot-processing.ss"
            "mred-state.ss"
@@ -18,8 +18,6 @@
            "diva-central.ss"
            "rope.ss"
            "dsyntax/dsyntax.ss"
-           "gui/clipboard.ss"
-           (lib "async-channel.ss")
            "imperative-operations.ss"
            (prefix preferences: "diva-preferences.ss"))
   

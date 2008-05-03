@@ -70,6 +70,14 @@
          [(struct Verb ((struct InsertRope-Cmd (rope)) loc #f))
           (eval-InsertRope world rope loc 0 0 false 'Normal)]
          
+         [(struct Insert-Dstx-After (dstx after-id))
+          (printf "I should be inserting a dstx~n")
+          world]
+         
+         [(struct Delete-Dstx (id))
+          (printf "I should be deleting a dstx~n")
+          world]
+         
          [(struct No-op ())
           (eval-No-op world)]
          

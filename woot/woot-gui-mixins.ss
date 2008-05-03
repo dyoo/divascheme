@@ -5,6 +5,7 @@
            (lib "mred.ss" "mred")
            (lib "async-channel.ss")
            "../dsyntax/dsyntax.ss"
+           "../structures.ss"
            "woot-struct.ss"
            "mock-woot.ss"
            "utilities.ss"
@@ -72,6 +73,17 @@
       ;; Returns the host identifer, which is some combination of ip and random number.
       (define/public (get-host-id)
         host-id)
+      
+      
+      ;; woot-id->local-dstx: woot-id -> dstx
+      ;; Given a woot-id, find the structure in the dstx tree and return it.
+      (define/public (woot-id->local-dstx a-woot-id)
+        (let ([a-cursor (get-dstx-cursor)])
+          (send a-cursor focus-find/dstx
+                (lambda (a-dstx)
+                  (equal? (dstx-woot-id a-dstx)
+                          a-woot-id)))
+          (send a-cursor cursor-dstx)))
       
       
       (define/augment (reparse-all-dstxs!)
@@ -172,6 +184,7 @@
                get-host-id
                get-top-level-window
                get-dstx-cursor
+               woot-id->local-dstx
                queue-callback/in-command-mode)
       
       
@@ -256,12 +269,6 @@
                      (loop)))))))
       
       
-      ;; self-generated-message?: msg -> boolean
-      ;; Returns true if we generated the message.  We'll look at the host-id for this.
-      (define (self-generated-message? a-msg)
-        (string=? (msg-host-id a-msg)
-                  (get-host-id)))
-      
       
       ;; integrate a message-to-woot: msg -> void
       ;; Send a message off to woot.  This is running under the context of a queue-callback
@@ -269,12 +276,40 @@
       (define (integrate-message-into-woot a-msg)
         (queue-callback/in-command-mode
          (lambda ()
-           ;; fill me in!  We should send the message to woot, and get any responses.
-           (match a-msg
-             [(struct msg:insert (host-id a-dstx after-id before-id))
-              (printf "I: (~s ~s) ~s~n~n" after-id before-id a-dstx)]
-             [(struct msg:delete (host-id woot-id))
-              (printf "D: (~s)~n~n" woot-id)]))))
+           (let ([ops (consume-msg! woot-state a-msg)])
+             (for-each maybe-apply-remote-operation ops)))))
+      
+      
+      ;; apply-op: op -> void
+      (define (maybe-apply-remote-operation an-op)
+        (match an-op
+          [(struct op:insert-after (msg dstx after-id))
+           (cond
+             [(msg-origin-remote? msg)
+              (let ([visible-woot-id
+                     (visible-before-or-at woot-state after-id)])
+                (queue-for-interpretation!
+                 (make-Insert-Dstx-After dstx
+                                         (dstx-local-id
+                                          (woot-id->local-dstx visible-woot-id)))))]
+             [else
+              (printf "local~n")])]
+          [(struct op:delete (msg id))
+           (cond
+             [(msg-origin-remote? msg)
+              (queue-for-interpretation!
+               (make-Delete-Dstx
+                (dstx-local-id (woot-id->local-dstx id))))]
+             [else
+              (printf "local~n")])]))
+      
+      
+      ;; msg-origin-remote?: msg -> boolean
+      ;; Returns true if the operation was generated off-site remotely.
+      (define (msg-origin-remote? a-msg)
+        (not (string=? (get-host-id)
+                       (msg-host-id a-msg))))
+      
       
       
       ;; on-woot-structured-insert: dstx woot-id woot-id -> void

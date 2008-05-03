@@ -6,6 +6,7 @@
   (provide/contract [first-sentinel-woot-id woot-id?]
                     [fresh-woot-id (string? . -> . woot-id?)]
                     [dstx-woot-id (dstx? . -> . (or/c woot-id? false/c))]
+                    [dstx-local-id (dstx? . -> . number?)]
                     [dstx-set-woot-id (dstx? woot-id? . -> . dstx?)]
                     [deep-attach-woot-ids (dstx? string? . -> . dstx?)]
                     [deep-strip-local-ids (dstx? . -> . dstx?)])
@@ -26,6 +27,11 @@
   ;; a woot-id, returns false.
   (define (dstx-woot-id a-dstx)
     (dstx-property-ref a-dstx 'woot-id (lambda () #f)))
+  
+  
+  ;; dstx-local-id: dstx -> number
+  (define (dstx-local-id a-dstx)
+    (dstx-property-ref a-dstx 'local-id))
   
   
   ;; dstx-set-woot-id: dstx woot-id -> dstx
