@@ -105,10 +105,9 @@
          (unless (rope=? (World-rope world-at-beginning-of-insert)
                          (send editor get-rope))
            (error 'restore-editor-to-pre-state!
-                  (format
-                   "rope mismatch!  World has~n~s~nEditor has ~n~s~n"
-                   (rope->string (World-rope world-at-beginning-of-insert))
-                   (rope->string (send editor get-rope))))))))
+                  "rope mismatch!  World has~n~s~nEditor has ~n~s~n"
+                  (rope->string (World-rope world-at-beginning-of-insert))
+                  (rope->string (send editor get-rope)))))))
     
     
     
