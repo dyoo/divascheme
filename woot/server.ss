@@ -3,6 +3,7 @@
            (lib "servlet.ss" "web-server")
            (lib "list.ss")
            (lib "contract.ss")
+           (prefix dispatch-lift: (lib "dispatch-lift.ss" "web-server" "dispatchers"))
            "self-ip-address.ss")
   
   (provide/contract [start-server (number? . -> . string?)])
@@ -16,14 +17,18 @@
   ;; start-server: number string -> void
   ;; Creates a web server under the current custodian.
   ;; Returns the url used to talk to this server.
-  #;(define (start-server port)
-      (let ([shutdown (serve #:dispatch (make (main-dispatcher (make-server-state '() -1)))
-                             #:port port)])
-        (format "http://~a:~a/" (self-ip-address) port)))
-  
   (define (start-server port)
-    (void))
+    (let ([shutdown (serve #:dispatch 
+                           (dispatch-lift:make 
+                            (make-main-dispatcher 
+                             (initial-server-state)))
+                           #:port port)])
+      (format "http://~a:~a/" (self-ip-address) port)))
   
+  
+  
+  (define (initial-server-state)
+    (make-server-state '() -1))
   
   
   ;; The interaction is simply:
@@ -40,7 +45,7 @@
   ;; the given last-seen.
   ;;
   ;; Fixme: add timeout because if the request just sits there, we might be in trouble.
-  (define ((main-dispatcher a-state) request)
+  (define ((make-main-dispatcher a-state) request)
     (cond
       [(pull? request)
        (handle-pull a-state request)]
