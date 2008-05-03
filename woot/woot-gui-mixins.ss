@@ -81,9 +81,6 @@
         (let ([a-cursor (get-dstx-cursor)])
           (send a-cursor focus-find/dstx!
                 (lambda (a-dstx)
-                  (printf "looking for ~s.  Currently on ~s.~n"
-                          a-woot-id
-                          (dstx-woot-id a-dstx))
                   (equal? (dstx-woot-id a-dstx)
                           a-woot-id)))
           (send a-cursor cursor-dstx)))

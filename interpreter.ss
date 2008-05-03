@@ -71,12 +71,10 @@
           (eval-InsertRope world rope loc 0 0 false 'Normal)]
          
          [(struct Insert-Dstx-After (dstx after-id))
-          (printf "I should be inserting a dstx~n")
-          world]
+          (eval-Insert-Dstx-After dstx after-id world)]
          
          [(struct Delete-Dstx (id))
-          (printf "I should be deleting a dstx~n")
-          world]
+          (eval-Delete-Dstx id world)]
          
          [(struct No-op ())
           (eval-No-op world)]
@@ -506,6 +504,18 @@
                        [World-Magic-f Magic-f]
                        [World-Pass-f Pass-f])))))
   
+  
+  
+  (define (eval-Insert-Dstx-After a-dstx after-local-id world)
+    (queue-imperative-operation
+     world
+     (make-imperative-op:insert-dstx-after a-dstx after-local-id)))
+  
+  
+  (define (eval-Delete-Dstx id world)
+    (queue-imperative-operation
+     world
+     (make-imperative-op:delete-dstx id)))
   
   
   ;; eval-Close : World -> World

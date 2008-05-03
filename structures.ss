@@ -191,9 +191,11 @@
   
   ;; imperative-op:delete-range: delete the range of text.
   (define-struct (imperative-op:delete-range imperative-op) (start-pos end-pos) #f)
+  (define-struct (imperative-op:delete-dstx imperative-op) (id) #f)
   
   ;; imperative-op:insert-rope: insert the rope at the given position.
   (define-struct (imperative-op:insert-rope imperative-op) (rope pos) #f)
+  (define-struct (imperative-op:insert-dstx-after imperative-op) (dstx id))
   
   ;; imperative-op:select-range: selects the range given.
   (define-struct (imperative-op:select-range imperative-op) (start-pos end-pos) #f)
@@ -622,9 +624,14 @@
    [struct (imperative-op:delete-range imperative-op)
            ([start-pos natural-number/c]
             [end-pos natural-number/c])]
+   [struct (imperative-op:delete-dstx imperative-op)
+           ([id natural-number/c])]
    [struct (imperative-op:insert-rope imperative-op)
            ([rope rope?]
             [pos natural-number/c])]
+   [struct (imperative-op:insert-dstx-after imperative-op)
+           ([dstx dstx?]
+            [id natural-number/c])]
    [struct (imperative-op:select-range imperative-op)
            ([start-pos natural-number/c]
             [end-pos natural-number/c])]

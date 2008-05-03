@@ -5,6 +5,7 @@
            (lib "class.ss")
            (lib "errortrace-lib.ss" "errortrace")
            (lib "contract.ss")
+           "dsyntax/dsyntax.ss"
            "voice-exn.ss"
            "rope.ss")
   
@@ -552,4 +553,12 @@
     (let-values ([(results cpu real gc)
                   (time-apply thunk empty)])
       (printf "timef ~a: cpu ~a   real ~a   gc ~a~n" label cpu real gc)
-      (apply values results))))
+      (apply values results)))
+  
+  
+  
+  
+  ;; dstx-local-id: dstx -> number
+  (provide/contract [dstx-local-id (dstx? . -> . natural-number/c)])
+  (define (dstx-local-id a-dstx)
+    (dstx-property-ref a-dstx 'local-id)))
