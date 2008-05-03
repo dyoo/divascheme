@@ -339,10 +339,13 @@
         ;; A thread will run to process new operations
         (thread (lambda ()
                   (let loop ()
-                    (let ([new-ast (async-channel-get command-mailbox)])
+                    (let ([new-ast (async-channel-get command-mailbox)]
+                          [sema (make-semaphore 0)])
                       (push-callback
                        (lambda ()
-                         (diva-ast-put/wait+world (pull-from-mred) new-ast))))
+                         (diva-ast-put/wait+world (pull-from-mred) new-ast)
+                         (semaphore-post sema)))
+                      (yield sema))
                     (loop)))))
       
       
