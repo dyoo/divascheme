@@ -221,31 +221,12 @@
   ;; Postcondition: the parent of the resulting cursor, if it exists,
   ;; must have been focused on a fusion.
   (define (focus-in a-cursor)
-    (local ((define focused-dstx (cursor-dstx a-cursor)))
+    (let ([a-cursor (focus-in/no-snap a-cursor)])
       (cond
-        [(atom? focused-dstx) #f]
-        [(special-atom? focused-dstx) #f]
-        [(space? focused-dstx) #f]
-        [(fusion? focused-dstx)
-         (let loop ([younger-rev '()]
-                    [younger-loc-rev '()]
-                    [children (fusion-children focused-dstx)]
-                    [loc (after-displayed-string (cursor-loc a-cursor)
-                                                 (fusion-prefix focused-dstx))])
-           (cond [(empty? children) #f]
-                 [(space? (first children))
-                  (loop (cons (first children) younger-rev)
-                        (cons loc younger-loc-rev)
-                        (rest children)
-                        (after-displayed-string
-                         loc (space-content (first children))))]
-                 [else
-                  (make-cursor (first children)
-                               loc
-                               a-cursor
-                               younger-rev
-                               younger-loc-rev
-                               (rest children))]))])))
+        [(not a-cursor)
+         #f]
+        [else
+         (focus-older a-cursor)])))
   
   
   ;; focus-in/no-snap: cursor -> (or/c cursor #f)
