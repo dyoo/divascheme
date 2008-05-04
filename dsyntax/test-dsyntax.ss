@@ -130,8 +130,9 @@
      (test-case
       "cursor-endpos"
       (local ((define cur
-                (make-toplevel-cursor
-                 (list (new-atom "hello") (new-atom "world"))))
+                (focus-successor/no-snap
+                 (make-toplevel-cursor
+                  (list (new-atom "hello") (new-atom "world")))))
               (define next-cur (focus-successor cur)))
         (check-equal? (cursor-pos cur) 0)
         (check-equal? (cursor-endpos cur) 5)
@@ -145,9 +146,9 @@
        (loc-after
         (make-loc 1 0 0)
         (new-fusion "("
-                     (list (new-atom "hello")
-                           (new-space "\n ")
-                           (new-fusion "("
+                    (list (new-atom "hello")
+                          (new-space "\n ")
+                          (new-fusion "("
                                         (list (new-atom "world")
                                               (new-space "\n"))
                                         ")"))
@@ -158,13 +159,13 @@
       "make-toplevel-cursor"
       (let ([result (make-toplevel-cursor (list (new-atom "someatom")))])
         (check-equal? (cursor-dstx result)
-                      (new-atom "someatom"))
+                      a-sentinel-space)
         (check-equal? (cursor-loc result)
                       (make-loc 1 0 0))
         (check-equal? (cursor-parent result) #f)
         (check-equal? (cursor-youngers-rev result) '())
         (check-equal? (cursor-youngers-loc-rev result) '())
-        (check-equal? (cursor-olders result) '())))
+        (check-equal? (cursor-olders result) (list (new-atom "someatom")))))
      
      
      (test-case
@@ -172,12 +173,13 @@
       (let ([result (make-toplevel-cursor (list (new-atom "someatom")
                                                 (new-atom "elder")))])
         (check-equal? result
-                      (make-cursor (new-atom "someatom")
+                      (make-cursor a-sentinel-space
                                    (make-loc 1 0 0)
                                    #f
                                    '()
                                    '()
-                                   (list (new-atom "elder"))))))
+                                   (list (new-atom "someatom")
+                                         (new-atom "elder"))))))
      
      (test-case
       "cursor-line and cursor-col"
