@@ -182,10 +182,33 @@
   ;; torture test.  As of this writing, the file tex2page-aux.ss is the largest
   ;; scheme source file.
   (define (test)
-    (open-file (path->string 
-                 (build-path 
-                  (collection-path "tex2page") 
-                  "tex2page-aux.ss"))))
+    (open-file (big-file-path-string)))
+  
+  (define (big-file-path-string)
+    (path->string
+     (build-path
+      (collection-path "tex2page")
+      "tex2page-aux.ss")))
+  
+  ;; Measures how much time it takes to focus-successor and focus-predecessor
+  ;; across a file.
+  (define (measure-time a-file)
+    (let* ([a-text (open-file a-file)]
+           [a-cursor (send a-text get-dstx-cursor)])
+      (time
+       (send a-cursor focus-toplevel!)
+       (let loop ([i 0])
+         (cond [(send a-cursor try-focus-successor!)
+                (loop (add1 i))]
+               [else
+                (display i)
+                (newline)]))
+       (let loop ([i 0])
+         (cond [(send a-cursor try-focus-predecessor!)
+                (loop (add1 i))]
+               [else
+                (display i)
+                (newline)])))))
   
   
   
