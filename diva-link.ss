@@ -41,8 +41,7 @@
   (define (diva-link:frame-mixin super%)
     (class super%
       (inherit get-diva-central
-               get-definitions-text
-               #;get-interactions-text)
+               get-definitions-text)
       (define started? #f)
       
       
@@ -345,6 +344,42 @@
         (diva-ast-put/wait+world (pull-from-mred) an-ast))
       
       
+      
+      ;; interpreter/imperative: ast world -> world
+      ;; Evaluate the given ast and the world, and returns the new state of the world.
+      (define (interpreter/imperative ast world)
+        (let ([new-world (interpreter ast world)])
+          (match new-world
+            ;; The command may refer to another file path, in which
+            ;; case we have to do some tab/frame stuff.
+            [(struct SwitchWorld (path inner-ast))
+             (let ([frame (handler:edit-file path)])
+               (when (eq? this (send frame get-editor))
+                 (push-into-mred (pull-from-mred)))
+               (send (send frame get-editor) queue-for-interpretation! inner-ast))
+             (pull-from-mred)]
+            [new-world
+             new-world])))
+      
+      
+      
+      ;; diva-ast-put/wait+world: world ast -> void
+      ;; Applies the ast on the given world.
+      ;; This assumes that we are currently in the gui thread.  Do not call
+      ;; this function directly unless we know we're in the gui event thread.
+      ;; TODO: add defensive check for this condition.
+      (define (diva-ast-put/wait+world world ast)
+        (push-into-mred
+         (with-divascheme-handlers
+          world
+          (lambda ()
+            (interpreter/imperative ast world)))))
+      
+      
+      
+      ;; start-command-mailbox-thread:
+      ;; starts the command mailbox thread, which will evaluate any operations pushed
+      ;; into the mailbox.
       (define (start-command-mailbox-thread)
         ;; A thread will run to process new operations
         (thread (lambda ()
@@ -463,36 +498,6 @@
            (end-edit-sequence))))
       
       
-      
-      ;; interpreter/imperative: ast world -> world
-      ;; Evaluate the given ast and the world, and returns the new state of the world.
-      (define (interpreter/imperative ast world)
-        (let ([new-world (interpreter ast world)])
-          (match new-world
-            ;; The command may refer to another file path, in which
-            ;; case we have to do some tab/frame stuff.
-            [(struct SwitchWorld (path inner-ast))
-             (let ([frame (handler:edit-file path)])
-               (when (eq? this (send frame get-editor))
-                 (push-into-mred (pull-from-mred)))
-               (send (send frame get-editor) queue-for-interpretation! inner-ast))
-             (pull-from-mred)]
-            [new-world
-             new-world])))
-      
-      
-      
-      ;; diva-ast-put/wait+world: world ast -> void
-      ;; Applies the ast on the given world.
-      ;; This assumes that we are currently in the gui thread.  Do not call
-      ;; this function directly unless we know we're in the gui event thread.
-      ;; TODO: add defensive check for this condition.
-      (define (diva-ast-put/wait+world world ast)
-        (push-into-mred
-         (with-divascheme-handlers
-          world
-          (lambda ()
-            (interpreter/imperative ast world)))))
       
       
       ;;
