@@ -12,9 +12,28 @@
   (define test-edit
     (test-suite
      "test-edit.ss"
+     
+     
+     (test-case
+      "inserting before a sentinel should raise error 1"
+      (let ([cursor (make-toplevel-cursor (list))])
+        (check-exn exn:fail?
+                   (lambda ()
+                     (insert-before cursor (new-atom "hello"))))))
+     
+     
+     (test-case
+      "inserting before a sentinel should raise error 2"
+      (let ([cursor (make-toplevel-cursor (list (new-atom "something")))])
+        (check-exn exn:fail?
+                   (lambda ()
+                     (insert-before cursor (new-atom "hello"))))))
+     
+     
      (test-case
       "inserting a single atom before."
-      (let ([cursor (make-toplevel-cursor (list (new-atom "world")))])
+      (let ([cursor (focus-older/no-snap
+                     (make-toplevel-cursor (list (new-atom "world"))))])
         (let ([new-cursor
                (insert-before cursor (new-atom "hello"))])
           (check-equal? (cursor-dstx new-cursor)
@@ -26,7 +45,8 @@
      
      (test-case
       "inserting a single atom after."
-      (let ([cursor (make-toplevel-cursor (list (new-atom "greetings")))])
+      (let ([cursor (focus-older/no-snap
+                     (make-toplevel-cursor (list (new-atom "greetings"))))])
         (let ([new-cursor
                (insert-after cursor (new-atom "earthling"))])
           (check-equal? (cursor-dstx new-cursor)
@@ -46,7 +66,7 @@
                  (new-atom "b"))
                 (new-atom "c"))])
           (check-equal? (cursor-toplevel-dstxs new-cursor)
-                        (list (new-space "")
+                        (list a-sentinel-space
                               (new-atom "b")
                               (new-atom "c")
                               (new-atom "a"))))))
@@ -69,7 +89,7 @@
      
      (test-case
       "inserting into a fusion"
-      (let* ([a-cursor (make-toplevel-cursor (list (new-fusion "(" '() ")")))]
+      (let* ([a-cursor (focus-older/no-snap (make-toplevel-cursor (list (new-fusion "(" '() ")"))))]
              [a-cursor (focus-in/no-snap a-cursor)]
              [a-cursor (insert-after a-cursor (new-atom "inside"))])
         (check-equal? (cursor-dstx a-cursor) (new-atom "inside"))
@@ -78,7 +98,7 @@
      
      (test-case
       "setting a property"
-      (let ([cursor (make-toplevel-cursor (list (new-atom "answer")))])
+      (let ([cursor (focus-older/no-snap (make-toplevel-cursor (list (new-atom "answer"))))])
         (check-equal? (dstx-property-names (cursor-dstx cursor)) '())
         (let ([new-cursor
                (property-set cursor 'value 42)])
@@ -89,7 +109,7 @@
      
      (test-case
       "setting a property twice"
-      (let ([cursor (make-toplevel-cursor (list (new-atom "answer")))])
+      (let ([cursor (focus-older/no-snap (make-toplevel-cursor (list (new-atom "answer"))))])
         (check-equal? (dstx-property-names (cursor-dstx cursor)) '())
         (let* ([new-cursor
                 (property-set cursor 'value 42)]
@@ -103,39 +123,46 @@
      
      
      (test-case
-      "deleting the empty toplevel should be idempotent"
+      "deleting the empty toplevel should raise an exception"
       (let ([a-cursor (make-toplevel-cursor (list))])
-        (let* ([new-cursor (delete a-cursor)])
-          (check-equal? a-cursor new-cursor))))
+        (check-exn exn:fail? (lambda () (delete a-cursor)))))
      
      (test-case
-      "deleting a single toplevel atom"
-      (let ([a-cursor (make-toplevel-cursor (list (new-atom "DELETED!")))])
+      "deleting a single toplevel atom should bring us back to the sentinel."
+      (let ([a-cursor (focus-older/no-snap
+                       (make-toplevel-cursor (list (new-atom "DELETED!"))))])
         (check-equal? (delete a-cursor)
-                      (make-toplevel-cursor (list)))))
+                      (make-toplevel-cursor (list)))
+        (check-eq? (cursor-dstx (delete a-cursor))
+                   a-sentinel-space)))
      
      (test-case
       "deleting from two toplevel atoms"
-      (let ([a-cursor (make-toplevel-cursor (list (new-atom "x")
-                                                  (new-atom "y")))])
+      (let ([a-cursor (focus-older/no-snap
+                       (make-toplevel-cursor (list (new-atom "x")
+                                                   (new-atom "y"))))])
         (check-equal? (delete a-cursor)
-                      (make-toplevel-cursor (list (new-atom "y"))))))
+                      (focus-older/no-snap
+                       (make-toplevel-cursor (list (new-atom "y")))))))
      
      (test-case
       "deleting from second of the two toplevel atoms"
-      (let* ([a-cursor (make-toplevel-cursor (list (new-atom "x")
-                                                   (new-atom "y")))]
+      (let* ([a-cursor (focus-older/no-snap
+                        (make-toplevel-cursor (list (new-atom "x")
+                                                    (new-atom "y"))))]
              [a-cursor (focus-successor a-cursor)])
         (check-equal? (delete a-cursor)
-                      (make-toplevel-cursor (list (new-atom "x"))))))
+                      (focus-older/no-snap
+                       (make-toplevel-cursor (list (new-atom "x")))))))
      
      (test-case
       "deleting from inside a fusion (removing y)"
-      (let* ([a-cursor (make-toplevel-cursor
-                        (list (new-atom "x")
-                              (new-fusion "[" (list (new-atom "y")
-                                                    (new-atom "z"))
-                                          "]")))]
+      (let* ([a-cursor (focus-older/no-snap
+                        (make-toplevel-cursor
+                         (list (new-atom "x")
+                               (new-fusion "[" (list (new-atom "y")
+                                                     (new-atom "z"))
+                                           "]"))))]
              [a-cursor (focus-successor a-cursor)]
              [a-cursor (focus-in a-cursor)])
         ;; check that the focus moved to z
@@ -151,11 +178,12 @@
      
      (test-case
       "deleting from inside a fusion (removing z)"
-      (let* ([a-cursor (make-toplevel-cursor
-                        (list (new-atom "x")
-                              (new-fusion "[" (list (new-atom "y")
-                                                    (new-atom "z"))
-                                          "]")))]
+      (let* ([a-cursor (focus-older/no-snap
+                        (make-toplevel-cursor
+                         (list (new-atom "x")
+                               (new-fusion "[" (list (new-atom "y")
+                                                     (new-atom "z"))
+                                           "]"))))]
              [a-cursor (focus-successor a-cursor)]
              [a-cursor (focus-successor a-cursor)]
              [a-cursor (focus-successor a-cursor)])
