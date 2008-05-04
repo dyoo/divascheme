@@ -6,9 +6,11 @@ Index terms: _dsyntax_, _divascheme_, _DivaScheme_, _dstx_, _syntax_,
 
 
 dsyntax provides a _dstx_ structure that represents a generalized
-s-expression type.  It also provides a zipper-like "cursor" data structure
-to traverse and edit dstx structure.  All of the operations here are
-non-destructive.
+s-expression type.  It also provides a zipper-like "cursor" data
+structure to traverse and edit dstx structure.  All of the operations
+supported by dsyntax are non-destructive.  An imperative-style
+library, tied to a text% mixin, is also supported within
+_dstx-text-mixin.ss_.
 
 
 
@@ -157,8 +159,10 @@ Creates a new space stx.
 > new-fusion: string (listof dstx) string -> fusion
 
 Creates a new fusion with the prefix, a list of children, and a suffix.
-Note: fusions will always contain, as a first child, an empty string
-space (new-space "") as a sentinel.
+
+Special note: fusions will always contain, as a first child, an empty
+string space (new-space "") as a sentinel.  This sentinel can not be
+deleted, nor can elements be inserted before the sentinel.
 
 
 _dstx selectors_
@@ -215,9 +219,9 @@ will snap over spaces for many of these functions.
 
 > make-toplevel-cursor: (listof dstx) -> cursor
 
-Constructs a new cursor that's focused on the first dstx given in the
-input list.  The list is assumed to be ordered in increasing
-seniority.
+Constructs a new cursor that's focused on an initial "sentinel" space,
+and the older elements are the given dstxs.  The list is assumed to be
+ordered in increasing seniority.
 
 
 > cursor-line: cursor -> positive-number
@@ -416,6 +420,17 @@ input-port are translated to special-atom dstxs.
 
 Pretty prints the dstx to the output-port.
 (FIXME: what happens if we try to pretty print a dstx with embedded specials?)
+
+
+
+======================================================================
+_dstx-text-mixin.ss_
+======================================================================
+
+[fixme: document this text% mixin]
+
+
+
 
 
 References
