@@ -213,61 +213,61 @@
      (test-case
       "cursor-dstx"
       (check-equal?
-       (cursor-dstx (make-toplevel-cursor (list (new-atom "focus!"))))
+       (cursor-dstx (focus-successor (make-toplevel-cursor (list (new-atom "focus!")))))
        (new-atom "focus!")))
      
      (test-case
       "focus-in"
       (check-false
-       (focus-in (make-toplevel-cursor
-                  (list (new-atom "should-fail")))))
+       (focus-in (focus-successor/no-snap (make-toplevel-cursor
+                                           (list (new-atom "should-fail"))))))
       (check-false
-       (focus-in (make-toplevel-cursor
-                  (list (new-space "\n\n")))))
+       (focus-in (focus-successor/no-snap (make-toplevel-cursor
+                                           (list (new-space "\n\n"))))))
       (check-false
-       (focus-in (make-toplevel-cursor
-                  (list (new-fusion "#(" '() ")")))))
-      (local
-          ((define original-cursor
-             (make-toplevel-cursor
-              (list (new-fusion "[" (list (new-atom "x")) "]")))))
+       (focus-in (focus-successor/no-snap (make-toplevel-cursor
+                                           (list (new-fusion "#(" '() ")"))))))
+      (let ([original-cursor
+             (focus-successor/no-snap
+              (make-toplevel-cursor
+               (list (new-fusion "[" (list (new-atom "x")) "]"))))])
         (check-equal?
          (focus-in original-cursor)
          (make-cursor
           (new-atom "x")
           (make-loc 1 1 1)
           original-cursor
-          (list (new-space ""))
+          (list a-sentinel-space)
           (list (make-loc 1 1 1))
           '())))
-      (local
-        ((define original-cursor
-           (make-toplevel-cursor
-            (list (new-fusion "#(" (list (new-atom "42")) ")")))))
+      (let ([original-cursor
+             (focus-successor/no-snap
+              (make-toplevel-cursor
+               (list (new-fusion "#(" (list (new-atom "42")) ")"))))])
         (check-equal?
          (focus-in original-cursor)
          (make-cursor (new-atom "42")
                       (make-loc 1 2 2)
                       original-cursor
-                      (list (new-space ""))
+                      (list a-sentinel-space)
                       (list (make-loc 1 2 2))
                       '()))))
      
      (test-case
       "focus-in should skip space"
-      (local
-        ((define original-cursor
-           (make-toplevel-cursor
-            (list (new-fusion "#("
-                              (list (new-space "    ")
-                                    (new-atom "42"))
-                              ")")))))
+      (let ([original-cursor
+             (focus-successor/no-snap
+              (make-toplevel-cursor
+               (list (new-fusion "#("
+                                 (list (new-space "    ")
+                                       (new-atom "42"))
+                                 ")"))))])
         (check-equal?
          (focus-in original-cursor)
          (make-cursor (new-atom "42")
                       (make-loc 1 6 6)
                       original-cursor
-                      (list (new-space "    ") (new-space ""))
+                      (list (new-space "    ") a-sentinel-space)
                       (list (make-loc 1 2 2) (make-loc 1 2 2))
                       '()))))
      
@@ -276,52 +276,53 @@
       "focus-out and focus-in-out"
       (check-false
        (focus-out (make-toplevel-cursor (list (new-atom "no go")))))
-      (local ((define my-dstx (new-fusion "<<<"
-                                          `(,(new-atom "ok"))
-                                          ">>>"))
-              (define toplevel-cursor
-                (make-toplevel-cursor (list my-dstx))))
+      (check-false
+       (focus-out (focus-successor/no-snap
+                   (make-toplevel-cursor (list (new-atom "no go"))))))
+      (let* ([my-dstx
+              (new-fusion "<<<" `(,(new-atom "ok")) ">>>")]
+             [toplevel-cursor
+              (focus-successor/no-snap
+               (make-toplevel-cursor (list my-dstx)))])
         (check-equal? (focus-in toplevel-cursor)
                       (make-cursor (new-atom "ok")
                                    (make-loc 1 3 3)
                                    toplevel-cursor
-                                   (list (new-space ""))
+                                   (list a-sentinel-space)
                                    (list (make-loc 1 3 3))
                                    '()))
         (check-equal? (focus-out (focus-in toplevel-cursor))
                       (make-cursor my-dstx
                                    (make-loc 1 0 0)
                                    #f
-                                   '()
-                                   '()
+                                   (list a-sentinel-space)
+                                   (list (make-loc 1 0 0))
                                    '()))))
      
      (test-case
       "focus-older"
-      (local
-        ((define simple-dstx (new-fusion "("
-                                         `(,(new-atom "hello")
-                                           ,(new-atom "world"))
-                                         ")"))
-         (define top (make-toplevel-cursor (list simple-dstx))))
-        (check-equal? (cursor-dstx (focus-older (focus-in top)))
+      (let* ([simple-dstx (new-fusion "("
+                                      `(,(new-atom "hello")
+                                       ,(new-atom "world"))
+                                      ")")]
+             [top (make-toplevel-cursor (list simple-dstx))])
+        (check-equal? (cursor-dstx (focus-older (focus-in (focus-older top))))
                       (new-atom "world"))
-        (check-equal? (cursor-loc (focus-older (focus-in top)))
+        (check-equal? (cursor-loc (focus-older (focus-in (focus-older top))))
                       (make-loc 1 6 6))))
      
      
      (test-case
       "focus-older with space"
-      (local
-          ((define simple-dstx (new-fusion "("
-                                            `(,(new-atom "hello")
-                                              ,(new-space " ")
-                                              ,(new-atom "world"))
-                                            ")"))
-           (define top (make-toplevel-cursor (list simple-dstx))))
-        (check-equal? (cursor-dstx (focus-older (focus-in top)))
+      (let* ([simple-dstx (new-fusion "("
+                                      `(,(new-atom "hello")
+                                       ,(new-space " ")
+                                       ,(new-atom "world"))
+                                     ")")]
+            [top (make-toplevel-cursor (list simple-dstx))])
+        (check-equal? (cursor-dstx (focus-older (focus-in (focus-successor/no-snap top))))
                       (new-atom "world"))
-        (check-equal? (cursor-loc (focus-older (focus-in top)))
+        (check-equal? (cursor-loc (focus-older (focus-in (focus-successor/no-snap top))))
                       (make-loc 1 7 7))))
      
      
@@ -331,58 +332,56 @@
       (check-false
        (focus-younger (make-toplevel-cursor (list (new-atom "huh?")))))
       (check-false
-       (focus-younger (make-toplevel-cursor (list (new-space "")))))
+       (focus-younger (make-toplevel-cursor (list))))
       (check-false
        (focus-younger (make-toplevel-cursor
                        (list (new-fusion "[" '() "]")))))
-      (local
-          ((define simple-dstx (new-fusion "("
-                                            `(,(new-atom "hello")
-                                              ,(new-atom "world"))
-                                            ")"))
-           (define top (make-toplevel-cursor (list simple-dstx)))
-           (define new-cursor
-             (focus-younger (focus-older (focus-in top)))))
+      (let* ([simple-dstx (new-fusion "("
+                                      `(,(new-atom "hello")
+                                        ,(new-atom "world"))
+                                      ")")]
+             [top (make-toplevel-cursor (list simple-dstx))]
+             [new-cursor
+              (focus-younger (focus-older (focus-in (focus-successor/no-snap top))))])
         (check-equal?
-         (cursor-dstx (focus-younger (focus-older (focus-in top))))
+         (cursor-dstx (focus-younger (focus-older (focus-in (focus-successor/no-snap top)))))
          (new-atom "hello"))))
+     
      
      (test-case
       "focus-younger with space"
-      (local
-          ((define simple-dstx (new-fusion "("
-                                            `(,(new-atom "hello")
-                                              ,(new-space " ")
-                                              ,(new-space "\n ")
-                                              ,(new-atom "world"))
-                                            ")"))
-           (define top (make-toplevel-cursor (list simple-dstx)))
-           (define new-cursor
-             (focus-younger (focus-older (focus-in top)))))
+      (let* ([simple-dstx (new-fusion "("
+                                      `(,(new-atom "hello")
+                                       ,(new-space " ")
+                                       ,(new-space "\n ")
+                                       ,(new-atom "world"))
+                                      ")")]
+             [top (make-toplevel-cursor (list simple-dstx))]
+             [new-cursor
+              (focus-younger (focus-older (focus-in (focus-successor/no-snap top))))])
         (check-equal?
-         (cursor-dstx (focus-younger (focus-older (focus-in top))))
+         (cursor-dstx (focus-younger (focus-older (focus-in (focus-successor/no-snap top)))))
          (new-atom "hello"))
         (check-equal?
-         (cursor-loc (focus-younger (focus-older (focus-in top))))
+         (cursor-loc (focus-younger (focus-older (focus-in (focus-successor/no-snap top)))))
          (make-loc 1 1 1))))
      
      
      (test-case
       "focus-successor"
-      (local
-          ((define top (make-toplevel-cursor (list sq-function-dstx)))
-           (define s focus-successor))
+      (let ([top (focus-successor/no-snap (make-toplevel-cursor (list sq-function-dstx)))]
+            [s focus-successor])
         (check-equal? (cursor-dstx (s top))
                       (new-atom "define"))
         (check-equal? (cursor-dstx (s (s top)))
                       (new-fusion "("
-                                   `(,(new-atom "sq")
-                                     ,(new-atom "x"))
-                                   ")"))
+                                  `(,(new-atom "sq")
+                                    ,(new-atom "x"))
+                                  ")"))
         (check-equal? (cursor-dstx (s (s (s top))))
-                   (new-atom "sq"))
+                      (new-atom "sq"))
         (check-equal? (cursor-dstx (s (s (s (s top)))))
-                   (new-atom "x"))
+                      (new-atom "x"))
         (check-equal? (cursor-dstx (s (s (s (s (s top))))))
                    (new-fusion "("
                                 `(,(new-atom "*")
