@@ -118,6 +118,8 @@
     (* mul (quotient n mul)))
   
   
+  (define NO-OP (make-move:no-op))
+  
   ;; get-move-after-displayed-string: string -> move
   ;;
   ;; Returns the move we should do after displaying the content in a-string.
@@ -125,7 +127,7 @@
     (weak-memoize/equal
      (lambda (a-string)
        (let ([ip (open-input-string a-string)])
-         (let loop ([a-move (begin-lifted (make-move:no-op))])
+         (let loop ([a-move NO-OP])
            (local ((define next-move (line-breaking-lexer ip)))
              (cond
                [next-move
@@ -218,14 +220,25 @@
               (get-move-after-displayed-string (fusion-prefix an-sexp)))
             
             (define move-before-rparen
-              (foldl (lambda (stx previous-move)
-                       (move-compose (get-move-after-dstx stx)
-                                     previous-move))
-                     move-after-lparen
-                     (fusion-children an-sexp)))
+              (move-compose (get-move-of-children (fusion-children an-sexp))
+                            move-after-lparen))
             
             (define move-after-rparen
               (move-compose (get-move-after-displayed-string
                              (fusion-suffix an-sexp))
                             move-before-rparen)))
-      move-after-rparen)))
+      move-after-rparen))
+  
+  
+  ;; get-move-of-children: (listof dstx) -> move
+  ;; Returns the movement after moving across the children.
+  (define get-move-of-children
+    (weak-memoize
+     (lambda (children)
+       (cond
+         [(empty? children)
+          NO-OP]
+         [else
+          (move-compose
+           (get-move-of-children (rest children))
+           (get-move-after-dstx (first children)))])))))
