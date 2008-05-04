@@ -4,7 +4,6 @@
            (lib "plt-match.ss")
            (lib "etc.ss")
            (lib "list.ss")
-           (lib "lex.ss" "parser-tools")
            (lib "contract.ss"))
   
   ;; Currently unexposed: it breaks the caching we do.
@@ -118,7 +117,65 @@
     (* mul (quotient n mul)))
   
   
+  (define new-move:forward
+    (weak-memoize/equal
+     (lambda (len)
+       (make-move:newline&forward 0 len len))))
+  
+  
+  ;; line-breaking-lexer: string number -> (values move number)
+  ;; Returns the next move we can read off the string.
+  (define (line-breaking-lexer-2 a-str start-pos)
+    (cond
+      [(regexp-match #rx"^[^\r\n\t]+" a-str start-pos)
+       =>
+       (lambda (a-match)
+         (let ([len (string-length (first a-match))])
+           (values (new-move:forward len) (+ start-pos len))))]
+      [(regexp-match #rx"^\r\n" a-str start-pos)
+       (values RN-move (+ start-pos 2))]
+      [(regexp-match #rx"^\n" a-str start-pos)
+       (values N-move (add1 start-pos))]
+      [(regexp-match #rx"^\r" a-str start-pos)
+       (values R-move (add1 start-pos))]
+      [(regexp-match #rx"^\t" a-str start-pos)
+       (values TAB (add1 start-pos))]
+      [else
+       (values #f #f)]))
+  
+  ;; no-op-move
   (define NO-OP (make-move:no-op))
+  (define FORWARD (make-move:newline&forward 0 1 1))
+  (define NL (make-move:newline&forward 1 0 1))
+  (define NLNL (make-move:newline&forward 2 0 2))
+  (define NL-FORWARD (make-move:newline&forward 1 1 2))
+  (define TAB (make-move:tab))
+  
+  (define RN-move
+    (case (current-line-break-mode)
+      [(linefeed) NL]
+      [(return) NL-FORWARD]
+      [(return-linefeed) NL]
+      [(any) NL]
+      [(any-one) NLNL]))
+  
+  (define N-move
+    (case (current-line-break-mode)
+      [(linefeed) NL]
+      [(return) FORWARD]
+      [(return-linefeed) NL]
+      [(any) NL]
+      [(any-one) NL]))
+  
+  (define R-move
+    (case (current-line-break-mode)
+      [(linefeed) FORWARD]
+      [(return) NL]
+      [(return-linefeed) FORWARD]
+      [(any) NL]
+      [(any-one) NL]))
+  
+  
   
   ;; get-move-after-displayed-string: string -> move
   ;;
@@ -126,13 +183,14 @@
   (define get-move-after-displayed-string
     (weak-memoize/equal
      (lambda (a-string)
-       (let ([ip (open-input-string a-string)])
-         (let loop ([a-move NO-OP])
-           (local ((define next-move (line-breaking-lexer ip)))
-             (cond
-               [next-move
-                (loop (move-compose next-move a-move))]
-               [else a-move])))))))
+       (let loop ([a-move NO-OP]
+                  [i 0])
+         (let-values ([(next-move next-i)
+                       (line-breaking-lexer-2 a-string i)])
+           (cond
+             [next-move
+              (loop (move-compose next-move a-move) next-i)]
+             [else a-move]))))))
   
   
   
@@ -146,52 +204,6 @@
   
   
   
-  ;; line-breaking-lexer: input-port -> (union move #f)
-  ;; Consumes a unit of text from the input port, and computes an
-  ;; appropriate next moving action on a position, or #f if
-  ;; we're all done.
-  (define line-breaking-lexer
-    (local
-        ((define FORWARD (make-move:newline&forward 0 1 1))
-         (define NL (make-move:newline&forward 1 0 1))
-         (define NLNL (make-move:newline&forward 2 0 2))
-         (define NL-FORWARD (make-move:newline&forward 1 1 2))
-         (define TAB (make-move:tab))
-         )
-      (lexer
-       ("\r\n"
-        (case (current-line-break-mode)
-          [(linefeed) NL]
-          [(return) NL-FORWARD]
-          [(return-linefeed) NL]
-          [(any) NL]
-          [(any-one) NLNL]))
-       ("\n"
-        (case (current-line-break-mode)
-          [(linefeed) NL]
-          [(return) FORWARD]
-          [(return-linefeed) NL]
-          [(any) NL]
-          [(any-one) NL]))
-       ("\r"
-        (case (current-line-break-mode)
-          [(linefeed) FORWARD]
-          [(return) NL]
-          [(return-linefeed) FORWARD]
-          [(any) NL]
-          [(any-one) NL]))
-       ("\t"
-        TAB)
-       ((repetition 1 +inf.0 (char-complement (char-set "\n\r\t")))
-        (make-move:newline&forward 0
-                                   (string-length lexeme)
-                                   (string-length lexeme)))
-       ((eof) #f))))
-  
-  
-  
-  
-  
   ;; get-move-after-dstx: dstx -> move
   ;;
   ;; Computes the move we want to apply after passing across a-dstx.
@@ -202,9 +214,7 @@
          [(atom? a-dstx)
           (after-atom-or-space (atom-content a-dstx))]
          [(special-atom? a-dstx)
-          (make-move:newline&forward 0
-                                     (special-atom-width a-dstx)
-                                     (special-atom-width a-dstx))]
+          (new-move:forward (special-atom-width a-dstx))]
          [(space? a-dstx)
           (after-atom-or-space (space-content a-dstx))]
          [(fusion? a-dstx)
