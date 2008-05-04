@@ -398,23 +398,23 @@
      
      (test-case
       "focus-predecessor"
-      (local ((define top (make-toplevel-cursor (list sq-function-dstx)))
-              (define s focus-successor)
-              (define p focus-predecessor)
-              (define last (let loop ([dstx top])
-                             (cond
-                               [(s dstx) => loop]
-                               [else dstx]))))
+      (let* ([top (focus-successor/no-snap (make-toplevel-cursor (list sq-function-dstx)))]
+             [s focus-successor]
+             [p focus-predecessor]
+             [last (let loop ([dstx top])
+                     (cond
+                       [(s dstx) => loop]
+                       [else dstx]))])
         (check-equal? (cursor-dstx last) (new-atom "x"))
         (check-equal? (cursor-dstx (p last)) (new-atom "x"))
         (check-equal? (cursor-dstx (p (p last))) (new-atom "*"))
         (check-equal?
          (cursor-dstx (p (p (p last))))
          (new-fusion "("
-                      `(,(new-atom "*")
-                        ,(new-atom "x")
-                        ,(new-atom "x"))
-                      ")"))
+                     `(,(new-atom "*")
+                       ,(new-atom "x")
+                       ,(new-atom "x"))
+                     ")"))
         (check-equal?
          (cursor-dstx (p (p (p (p last))))) (new-atom "x"))
         (check-equal?
@@ -422,9 +422,9 @@
         (check-equal?
          (cursor-dstx (p (p (p (p (p (p last)))))))
          (new-fusion "("
-                      `(,(new-atom "sq")
-                        ,(new-atom "x"))
-                      ")"))
+                     `(,(new-atom "sq")
+                       ,(new-atom "x"))
+                     ")"))
         (check-equal? (cursor-dstx (p (p (p (p (p (p (p last))))))))
                       (new-atom "define"))
         (check-equal? (p (p (p (p (p (p (p (p last))))))))
@@ -433,10 +433,11 @@
      
      (test-case
       "back and forth"
-      (local ((define c
-                (make-toplevel-cursor
-                 (parse-port
-                  (open-input-string "(hello (world) this is a test)")))))
+      (let ([c
+             (focus-successor/no-snap
+              (make-toplevel-cursor
+               (parse-port
+                (open-input-string "(hello (world) this is a test)"))))])
         (check-equal? (cursor-dstx
                        (focus-successor c))
                       (new-atom "hello"))
