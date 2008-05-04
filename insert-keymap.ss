@@ -108,6 +108,7 @@
                   "rope mismatch!  World has~n~s~nEditor has ~n~s~n"
                    (rope->string (World-rope world-at-beginning-of-insert))
                    (rope->string (send editor get-rope)))))))
+
     
     
     

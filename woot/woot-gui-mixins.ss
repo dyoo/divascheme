@@ -36,7 +36,6 @@
     join-session)
   ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
   
-  
   (define big-number 2147483647)
   
   ;; structure-tracking-mixin: diva-text% -> diva-text%
