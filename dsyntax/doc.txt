@@ -314,8 +314,10 @@ Moves focus to predecessor, assuming a depth-first traversal.
 
 > focus-container: cursor number -> (union cursor #f)
 
-Move focus to the enclosing dstx object of the given position.
-Returns false only if the position is outside all dstxs.
+Move focus to the enclosing dstx object of the given position.  If
+there are multiple dstxs that contain the position, this returns the
+most successive one.  Returns false only if the position is outside
+all dstxs.
 
 
 > focus-find/cursor: cursor (cursor -> boolean) -> (union cursor #f)
@@ -336,18 +338,21 @@ immediately returned.
 
 Given a cursor and a position, refocuses the cursor at the dstx
 starting at the left of the cursor.  If no such syntax exists, returns
-#f.  In the edge case where there's a sentinel whitespace character of
-zero width at the position, the cursor pushes forward to the next
-older dstx.
+#f.
 
-[fixme: disambiguate: what if there are fusions with empty prefixes?]
+In the edge case where there's a sentinel whitespace character of zero
+width at the position, the cursor pushes forward to the next older
+dstx.  More generally, if there are multiple dstxs with the given
+position, focus-pos will return the most successive one.
+
+[fixme: add example]
+
 
 
 > focus-endpos: cursor number -> (union cursor #f)
 
 Given a cursor and a position, refocuses the cursor at a dstx whose
 position is exactly the given number.
-
 
 In the boundary case, such as when there are fusions with an suffixes
 whose endpos matches the end position, we return the most successive
