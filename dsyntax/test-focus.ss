@@ -27,8 +27,10 @@
       "focus-toplevel"
       (let ([a-cursor (make-toplevel-cursor (list (new-atom "hello") (new-atom "world")))])
         (check-equal? (cursor-dstx (focus-toplevel a-cursor))
-                      (new-atom "hello"))
+                      a-sentinel-space)
         (check-equal? (cursor-dstx (focus-successor (focus-toplevel a-cursor)))
+                      (new-atom "hello"))
+        (check-equal? (cursor-dstx (focus-successor (focus-successor (focus-toplevel a-cursor))))
                       (new-atom "world"))))
      
      
@@ -101,19 +103,21 @@
      
      (test-case
       "focus-in and focus-out, when no modifications occur, should preserve fusions."
-      (let ([a-cursor (make-toplevel-cursor
-                       (list (new-fusion "("
-                                         (list (new-atom "hello"))
-                                         ")")))])
+      (let ([a-cursor (focus-older/no-snap
+                       (make-toplevel-cursor
+                        (list (new-fusion "("
+                                          (list (new-atom "hello"))
+                                          ")"))))])
         (check-eq? (cursor-dstx a-cursor)
                    (cursor-dstx (focus-out (focus-in a-cursor))))))
      
      (test-case
       "focus-in and focus-out should only preserve fusions on eq?"
-      (let ([a-cursor (make-toplevel-cursor
-                       (list (new-fusion "("
-                                         (list (new-special-atom "hello"))
-                                         ")")))])
+      (let ([a-cursor (focus-older/no-snap
+                       (make-toplevel-cursor
+                        (list (new-fusion "("
+                                          (list (new-special-atom "hello"))
+                                          ")"))))])
         (check-false (eq? (cursor-dstx a-cursor)
                           (cursor-dstx
                            (focus-out
@@ -162,7 +166,7 @@
                                            (new-space " ")
                                            (new-atom "y"))
                                  ")")]
-             [a-cursor (make-toplevel-cursor (list a-dstx))])
+             [a-cursor (focus-older/no-snap (make-toplevel-cursor (list a-dstx)))])
         (check-equal? (cursor-dstx (focus-container
                                     (focus-oldest (focus-in a-cursor)) 2))
                       (new-space " "))))
@@ -216,21 +220,21 @@
          (lambda (a-cursor)
            (check-equal? (cursor-dstx (focus-container a-cursor 0)) a-dstx)
            (check-equal? (cursor-dstx (focus-container a-cursor 1))
-                         (cursor-dstx (focus-in (focus-toplevel a-cursor))))
+                         (cursor-dstx (focus-in (focus-older/no-snap (focus-toplevel a-cursor)))))
            (check-equal? (cursor-dstx (focus-container a-cursor 2))
-                         (cursor-dstx (focus-in (focus-in (focus-toplevel a-cursor)))))
+                         (cursor-dstx (focus-in (focus-in (focus-older/no-snap (focus-toplevel a-cursor))))))
            (check-equal? (cursor-dstx (focus-container a-cursor 3))
-                         (cursor-dstx (focus-in (focus-in (focus-in (focus-toplevel a-cursor))))))
+                         (cursor-dstx (focus-in (focus-in (focus-in (focus-older/no-snap (focus-toplevel a-cursor)))))))
            (check-equal? (cursor-dstx (focus-container a-cursor 4))
-                         (cursor-dstx (focus-in (focus-in (focus-in (focus-in (focus-toplevel a-cursor)))))))
+                         (cursor-dstx (focus-in (focus-in (focus-in (focus-in (focus-older/no-snap (focus-toplevel a-cursor))))))))
            (check-equal? (cursor-dstx (focus-container a-cursor 5))
-                         (cursor-dstx (focus-in (focus-in (focus-in (focus-toplevel a-cursor))))))
+                         (cursor-dstx (focus-in (focus-in (focus-in (focus-older/no-snap (focus-toplevel a-cursor)))))))
            (check-equal? (cursor-dstx (focus-container a-cursor 6))
-                         (cursor-dstx (focus-in (focus-in (focus-toplevel a-cursor)))))
+                         (cursor-dstx (focus-in (focus-in (focus-older/no-snap (focus-toplevel a-cursor))))))
            (check-equal? (cursor-dstx (focus-container a-cursor 7))
-                         (cursor-dstx (focus-in (focus-toplevel a-cursor))))
+                         (cursor-dstx (focus-in (focus-older/no-snap (focus-toplevel a-cursor)))))
            (check-equal? (cursor-dstx (focus-container a-cursor 8))
-                         (cursor-dstx (focus-toplevel a-cursor)))
+                         (cursor-dstx (focus-older/no-snap (focus-toplevel a-cursor))))
            (check-equal? (focus-container a-cursor 9)
                          #f)))))
      
@@ -256,21 +260,21 @@
          (lambda (a-cursor)
            (check-equal? (cursor-dstx (focus-container a-cursor 0)) a-dstx)
            (check-equal? (cursor-dstx (focus-container a-cursor 1))
-                         (cursor-dstx (focus-in (focus-toplevel a-cursor))))
+                         (cursor-dstx (focus-in (focus-older/no-snap (focus-toplevel a-cursor)))))
            (check-equal? (cursor-dstx (focus-container a-cursor 2))
-                         (cursor-dstx (focus-in (focus-in (focus-toplevel a-cursor)))))
+                         (cursor-dstx (focus-in (focus-in (focus-older/no-snap (focus-toplevel a-cursor))))))
            (check-equal? (cursor-dstx (focus-container a-cursor 3))
-                         (cursor-dstx (focus-in (focus-in (focus-in (focus-toplevel a-cursor))))))
+                         (cursor-dstx (focus-in (focus-in (focus-in (focus-older/no-snap (focus-toplevel a-cursor)))))))
            (check-equal? (cursor-dstx (focus-container a-cursor 4))
-                         (cursor-dstx (focus-in (focus-in (focus-in (focus-in (focus-toplevel a-cursor)))))))
+                         (cursor-dstx (focus-in (focus-in (focus-in (focus-in (focus-older/no-snap (focus-toplevel a-cursor))))))))
            (check-equal? (cursor-dstx (focus-container a-cursor 5))
-                         (cursor-dstx (focus-in (focus-in (focus-in (focus-toplevel a-cursor))))))
+                         (cursor-dstx (focus-in (focus-in (focus-in (focus-older/no-snap (focus-toplevel a-cursor)))))))
            (check-equal? (cursor-dstx (focus-container a-cursor 6))
-                         (cursor-dstx (focus-in (focus-in (focus-toplevel a-cursor)))))
+                         (cursor-dstx (focus-in (focus-in (focus-older/no-snap (focus-toplevel a-cursor))))))
            (check-equal? (cursor-dstx (focus-container a-cursor 7))
-                         (cursor-dstx (focus-in (focus-toplevel a-cursor))))
+                         (cursor-dstx (focus-in (focus-older/no-snap (focus-toplevel a-cursor)))))
            (check-equal? (cursor-dstx (focus-container a-cursor 8))
-                         (cursor-dstx (focus-toplevel a-cursor)))
+                         (cursor-dstx (focus-older/no-snap (focus-toplevel a-cursor))))
            (check-equal? (cursor-dstx (focus-container a-cursor 9))
                          (new-atom "last"))))))
      
@@ -281,7 +285,8 @@
         (with-cursor-anywhere
          a-cursor
          (lambda (a-cursor)
-           (check-false (focus-endpos a-cursor 0))
+           (check-equal? (cursor-dstx (focus-endpos a-cursor 0))
+                         a-sentinel-space)
            (check-false (focus-endpos a-cursor 1))
            (check-equal? (cursor-dstx (focus-endpos a-cursor 2))
                          (new-atom "hi"))
