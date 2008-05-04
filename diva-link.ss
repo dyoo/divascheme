@@ -57,13 +57,11 @@
       (define (startup)
         (send this diva-panel-show)
         (send (get-definitions-text) to-command-mode)
-        (send (get-definitions-text) enable-dstx-parsing)
         (set! started? #t))
       
       (define (shutdown)
         (send this diva-panel-hide)
         (send (get-definitions-text) to-normal-mode)
-        (send (get-definitions-text) disable-dstx-parsing)
         (set! started? #f))
       
       (define (refresh-keymaps)
@@ -127,6 +125,9 @@
                get-keymap
                
                get-rope ;; We assume we'll get this text-rope-mixin
+               
+               enable-dstx-parsing
+               disable-dstx-parsing
                
                begin-edit-sequence
                end-edit-sequence
@@ -614,6 +615,7 @@
       
       (define/public (to-command-mode)
         (install-command-keymap)
+        (enable-dstx-parsing)
         (semaphore-post command-mode-sema)
         (with-divascheme-handlers
          (pull-from-mred)
@@ -622,6 +624,7 @@
       
       (define/public (to-normal-mode)
         (diva:-on-loss-focus)
+        (disable-dstx-parsing)
         (uninstall-command-keymap)
         (zero-out-command-mode-sema)
         (diva-label false))

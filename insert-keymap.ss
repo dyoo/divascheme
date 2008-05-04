@@ -91,39 +91,33 @@
     (define (restore-editor-to-pre-state!)
       (with-unstructured-decoration
        (lambda ()
-         (dynamic-wind (lambda ()
-                         (send editor begin-edit-sequence))
-                       
-                       (lambda ()
-                         (delete-insertion-point!)
-                         (when original-selected-dstx
-                           (let ([a-cursor (send editor get-dstx-cursor)])
-                             (send a-cursor focus-endpos! (send editor get-start-position))
-                             (send a-cursor insert-after! original-selected-dstx)
-                             ;; Restore the structured nature of the dstx.
-                             (send a-cursor property-remove! 'from-unstructured-editing)))
-                         (let ([index (pos->index
-                                       (World-cursor-position world-at-beginning-of-insert))])
-                           (send editor diva:set-selection-position
-                                 index
-                                 (+ index (World-selection-length world-at-beginning-of-insert))))
-                         ;; FIXME: there is a bug here that I'm still trying
-                         ;; to isolate: every so often, the rope results here aren't what I expect.
-                         
-                         ;; Test: see if waiting will help.
-                         (let ([sema (make-semaphore)])
-                           (queue-callback (lambda () (semaphore-post sema)))
-                           (yield sema))
-                         
-                         ;; for debugging
-                         (unless (rope=? (World-rope world-at-beginning-of-insert)
-                                         (send editor get-rope))
-                           (error 'restore-editor-to-pre-state!
-                                  "rope mismatch!~nWorld has~n~s~nEditor has ~n~s~n"
-                                  (rope->string (World-rope world-at-beginning-of-insert))
-                                  (rope->string (send editor get-rope)))))
-                       (lambda ()
-                         (send editor end-edit-sequence))))))
+         (dynamic-wind
+          (lambda ()
+            (send editor begin-edit-sequence))
+          
+          (lambda ()
+            (delete-insertion-point!)
+            (when original-selected-dstx
+              (let ([a-cursor (send editor get-dstx-cursor)])
+                (send a-cursor focus-endpos! (send editor get-start-position))
+                (send a-cursor insert-after! original-selected-dstx)
+                ;; Restore the structured nature of the dstx.
+                (send a-cursor property-remove! 'from-unstructured-editing)))
+            (let ([index (pos->index
+                          (World-cursor-position world-at-beginning-of-insert))])
+              (send editor diva:set-selection-position
+                    index
+                    (+ index (World-selection-length world-at-beginning-of-insert))))
+            
+            ;; for debugging
+            (unless (rope=? (World-rope world-at-beginning-of-insert)
+                            (send editor get-rope))
+              (error 'restore-editor-to-pre-state!
+                     "rope mismatch!~nWorld has~n~s~nEditor has ~n~s~n"
+                     (rope->string (World-rope world-at-beginning-of-insert))
+                     (rope->string (send editor get-rope)))))
+          (lambda ()
+            (send editor end-edit-sequence))))))
     
     
     
