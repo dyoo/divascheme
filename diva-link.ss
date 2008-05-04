@@ -335,6 +335,16 @@
         (async-channel-put command-mailbox an-ast))
       
       
+      ;; interpret!: ast -> void
+      ;; Immediately evaluate the ast on the world in mred.
+      ;; Assumes that we are running in the gui thread.
+      (define/public (interpret! an-ast)
+        (unless (eq? (current-thread)
+                     (eventspace-handler-thread (current-eventspace)))
+          (error 'interpret! "interpret! called outside of eventspace thread"))
+        (diva-ast-put/wait+world (pull-from-mred) an-ast))
+      
+      
       (define (start-command-mailbox-thread)
         ;; A thread will run to process new operations
         (thread (lambda ()
@@ -343,7 +353,7 @@
                           [sema (make-semaphore 0)])
                       (push-callback
                        (lambda ()
-                         (diva-ast-put/wait+world (pull-from-mred) new-ast)
+                         (interpret! new-ast)
                          (semaphore-post sema)))
                       (yield sema))
                     (loop)))))
@@ -588,7 +598,7 @@
                                  (diva-message msg))
                                diva-question
                                (lambda (ast)
-                                 (diva-ast-put/wait+world (pull-from-mred) ast)))))
+                                 (interpret! ast)))))
       
       
       (define (install-command-keymap)

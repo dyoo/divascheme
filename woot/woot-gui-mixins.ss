@@ -180,11 +180,12 @@
   ;; Infrastructure for tying in woot stuff with the network and DivaScheme
   (define (network-mixin super%)
     (class super%
-      (inherit queue-for-interpretation!
+      (inherit interpret!
                get-host-id
                get-top-level-window
                get-dstx-cursor
                woot-id->local-dstx
+               with-remote-operation-active
                queue-callback/in-command-mode)
       
       
@@ -280,7 +281,8 @@
              (for-each maybe-apply-remote-operation ops)))))
       
       
-      ;; apply-op: op -> void
+      ;; maybe-apply-op: op -> void
+      ;; Maybe interpret the operation.
       (define (maybe-apply-remote-operation an-op)
         (match an-op
           [(struct op:insert-after (msg dstx after-id))
@@ -288,18 +290,22 @@
              [(msg-origin-remote? msg)
               (let ([visible-woot-id
                      (visible-before-or-at woot-state after-id)])
-                (queue-for-interpretation!
-                 (make-Insert-Dstx-After dstx
-                                         (dstx-local-id
-                                          (woot-id->local-dstx visible-woot-id)))))]
+                (with-remote-operation-active
+                 (lambda ()
+                   (interpret!
+                    (make-Insert-Dstx-After dstx
+                                            (dstx-local-id
+                                             (woot-id->local-dstx visible-woot-id)))))))]
              [else
               (printf "local~n")])]
           [(struct op:delete (msg id))
            (cond
              [(msg-origin-remote? msg)
-              (queue-for-interpretation!
-               (make-Delete-Dstx
-                (dstx-local-id (woot-id->local-dstx id))))]
+              (with-remote-operation-active
+               (lambda ()
+                 (interpret!
+                  (make-Delete-Dstx
+                   (dstx-local-id (woot-id->local-dstx id))))))]
              [else
               (printf "local~n")])]))
       
