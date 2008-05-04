@@ -26,6 +26,7 @@
   (define-serializable-struct (atom dstx) (content) #f)
   (define-serializable-struct (special-atom dstx) (content width) #f)
   (define-serializable-struct (space dstx) (content) #f)
+  (define-serializable-struct (sentinel-space space) () #f)
   (define-serializable-struct (fusion dstx) (prefix children suffix) #f)
   
   
@@ -64,8 +65,10 @@
   
   
   ;; The empty space atom is sometimes used as a sentinel, so let's
-  ;; keep one here.
-  (define empty-space-atom (new-space ""))
+  ;; keep one here.  The first element of a toplevel cursor always points
+  ;; to a sentinel space, and the first child of every fusion is
+  ;; a sentinel space.
+  (define a-sentinel-space (make-sentinel-space empty-property-map ""))
   
   
   ;; new-fusion: string (listof dstx?) string -> fusion
@@ -73,9 +76,9 @@
   (define (new-fusion prefix children suffix)
     (cond
       [(empty? children)
-       (make-fusion empty-property-map prefix (list empty-space-atom) suffix)]
+       (make-fusion empty-property-map prefix (list a-sentinel-space) suffix)]
       [else
-       (make-fusion empty-property-map prefix (cons empty-space-atom children)
+       (make-fusion empty-property-map prefix (cons a-sentinel-space children)
                     suffix)]))
   
   
@@ -227,11 +230,16 @@
    [struct (space dstx)
            ([properties property-map/c]
             [content string?])]
+   [struct (sentinel-space space)
+           ([properties property-map/c]
+            [content string?])]
    [struct (fusion dstx)
            ([properties property-map/c]
             [prefix string?]
             [children (nelistof dstx?)]
             [suffix string?])]
+   
+   [a-sentinel-space sentinel-space?]
    
    [dstx-property-names (dstx? . -> . (listof symbol?))]
    [dstx-property-ref (case-> (dstx? symbol? . -> . any)

@@ -110,23 +110,7 @@
     (match a-cursor
       [(struct cursor (dstx loc parent youngers-rev youngers-loc-rev olders))
        (cond [(empty? youngers-rev)
-              (let ([parent (focus-out a-cursor)])
-                (match parent
-                  [(struct cursor ((struct fusion (parent-props parent-prefix parent-children parent-suffix))
-                                   parent-loc
-                                   parent-parent
-                                   parent-youngers-rev
-                                   parent-youngers-loc-rev
-                                   parent-olders))
-                   (let ([new-cursor (make-cursor (make-fusion parent-props parent-prefix (cons a-dstx parent-children) parent-suffix)
-                                                  parent-loc
-                                                  parent-parent
-                                                  parent-youngers-rev
-                                                  parent-youngers-loc-rev
-                                                  parent-olders)])
-                     (focus-in/no-snap new-cursor))]
-                  [else
-                   (make-toplevel-cursor (cons a-dstx (cons dstx olders)))]))]
+              (error 'insert-before "Not allowed to insert-before a sentinel space.")]
              [else
               (let ([pred-cursor (focus-younger/no-snap a-cursor)])
                 (insert-after pred-cursor a-dstx))])]))
@@ -155,7 +139,7 @@
       [(struct cursor (dstx loc parent youngers-rev youngers-loc-rev olders))
        (cond [(empty? olders)
               (cond [(empty? youngers-rev)
-                     (make-cursor (new-space "") loc parent youngers-rev youngers-loc-rev olders)]
+                     (error 'delete "Not allowed to delete a sentinel space.")]
                     [else
                      (make-cursor (first youngers-rev)
                                   (first youngers-loc-rev)
@@ -185,28 +169,24 @@
   (define (property-set a-cursor a-symbol a-value)
     (match a-cursor
       [(struct cursor (dstx loc parent youngers-rev youngers-loc-rev olders))
-       (let ([new-cursor
-              (make-cursor (dstx-property-set dstx a-symbol a-value)
-                           loc
-                           parent
-                           youngers-rev
-                           youngers-loc-rev
-                           olders)])
-         new-cursor)]))
+       (make-cursor (dstx-property-set dstx a-symbol a-value)
+                    loc
+                    parent
+                    youngers-rev
+                    youngers-loc-rev
+                    olders)]))
   
   ;; property-remove: cursor symbol -> cursor
   ;; Removes the property binding of the currently focused dstx.
   (define (property-remove a-cursor a-symbol)
     (match a-cursor
       [(struct cursor (dstx loc parent youngers-rev youngers-loc-rev olders))
-       (let ([new-cursor
-              (make-cursor (dstx-property-remove dstx a-symbol)
-                           loc
-                           parent
-                           youngers-rev
-                           youngers-loc-rev
-                           olders)])
-         new-cursor)]))
+       (make-cursor (dstx-property-remove dstx a-symbol)
+                    loc
+                    parent
+                    youngers-rev
+                    youngers-loc-rev
+                    olders)]))
   
   ;; property-ref: cursor symbol -> any
   ;; Returns the property value of the currently focused dstx.
@@ -217,23 +197,14 @@
   
   ;; make-toplevel-cursor: (listof dstx) -> cursor
   ;;
-  ;; Creates the initial cursor focused on the first object in the list.
+  ;; Creates the initial cursor focused on the first sentinel space.
   (define (make-toplevel-cursor dstxs)
-    (cond
-      [(empty? dstxs)
-       (make-cursor (new-space "")
-                    (make-loc 1 0 0)
-                    #f
-                    '()
-                    '()
-                    '())]
-      [else
-       (make-cursor (first dstxs)
-                    (make-loc 1 0 0)
-                    #f
-                    '()
-                    '()
-                    (rest dstxs))]))
+    (make-cursor a-sentinel-space
+                 (make-loc 1 0 0)
+                 #f
+                 '()
+                 '()
+                 dstxs))
   
   
   ;; loc-after: loc dstx -> loc
@@ -681,11 +652,6 @@
   
   
   
-  ;; sentinel-space?: dstx -> boolean
-  ;; Returns true if we're on a sentinel space.
-  (define (sentinel-space? a-dstx)
-    (and (space? a-dstx)
-         (string=? "" (space-content a-dstx))))
   
   
   ;; at-or-before?: cursor pos -> boolean
