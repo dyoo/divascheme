@@ -5,7 +5,6 @@
   ;; queue whose dependencies are all satisfied.
   
   (require (lib "async-channel.ss")
-           (lib "plt-match.ss")
            (lib "contract.ss"))
   
   
@@ -31,44 +30,56 @@
   
   
   
-  
   ;; new-topological-queue: -> tqueue
   ;; Returns a new topological queue.
   (define (new-topological-queue)
-    (make-tqueue (make-hash-table)
-                 (make-hash-table)
-                 (make-async-channel)))
+    (make-tqueue (make-hash-table) ;; satisifed-deps will be the keys
+                 (make-hash-table) ;; dep-to-unexecuteds will map a dep to a list of unexecuteds
+                 (make-async-channel) ; ready will contain any ready elements.
+                 ))
   
   
-  ;; add: tqueue X (listof dep) -> void
+  ;; add!: tqueue X (listof dep) -> void
   ;; Adds a new element to the system.
-  ;; Fixme: not kill safe.
-  (define (add a-tqueue an-elt deps)
-    (match a-tqueue
-      [(struct tqueue (satisfied-deps dep-to-unexecuteds ready))
-       
-       (let ([an-unexecuted (make-unexecuted (length deps) an-elt)])
-         ;; Mark off the dependencies that are already satisfied.
-         (for-each (lambda (a-dep)
-                     (cond
-                       [(satisifed? a-tqueue a-dep)
-                        (unexecuted-decrement-dep-count! a-tqueue an-unexecuted)]
-                       [else
-                        (register-dependency! a-tqueue an-unexecuted a-dep)]))
-                   deps))]))
+  (define (add! a-tqueue an-elt deps)
+    (let ([an-unexecuted (make-unexecuted (length deps) an-elt)])
+      ;; Mark off the dependencies that are already satisfied.
+      (for-each (lambda (a-dep)
+                  (cond
+                    [(dependency-satisifed? a-tqueue a-dep)
+                     (unexecuted-decrement-dep-count!/maybe-add-to-ready a-tqueue an-unexecuted)]
+                    [else
+                     (register-dependency! a-tqueue an-unexecuted a-dep)]))
+                deps)))
+  
+  
+  ;; get!: tqueue -> elt
+  ;; Gets a ready element from the tqueue.  Blocks if none are available.
+  (define (get! a-tqueue)
+    (async-channel-get (tqueue-ready a-tqueue)))
+  
+  
+  ;; satisfy!: tqueue dep -> void
+  ;; Tells the tqueue that a certain dependency has just been satisfied.
+  ;; Any unexecuted targets whose dependencies are cleared are moved into the
+  ;; ready channel.
+  (define (satisfy! a-tqueue a-dep)
+    (for-each (lambda (an-unexecuted)
+                (unexecuted-decrement-dep-count!/maybe-add-to-ready a-tqueue an-unexecuted))
+              (hash-table-get (tqueue-dep-to-unexecuteds a-tqueue) a-dep '()))
+    (hash-table-put! (tqueue-satisfied-deps a-tqueue) a-dep #t))
   
   
   
-  
-  ;; satisifed?: tqueue dep -> boolean
+  ;; dependency-satisifed?: tqueue dep -> boolean
   ;; Returns true when a-tqueue knows that a-dep is already satisfied.
-  (define (satisifed? a-tqueue a-dep)
+  (define (dependency-satisifed? a-tqueue a-dep)
     (hash-table-get (tqueue-satisfied-deps a-tqueue) a-dep #f))
   
   
   ;; unexecuted-decrement-dep-count!: unexecuted -> void
   ;; Decrements the dependency count of the unexecuted element.
-  (define (unexecuted-decrement-dep-count! a-tqueue an-unexecuted)
+  (define (unexecuted-decrement-dep-count!/maybe-add-to-ready a-tqueue an-unexecuted)
     (unless (> (unexecuted-dep-count an-unexecuted) 0)
       (error 'unexecuted-decrement-dep-count!
              "Impossible to decrement past zero."))
@@ -87,20 +98,11 @@
     (= (unexecuted-dep-count an-unexecuted) 0))
   
   
-  
-  ;; Gets a ready element from the tqueue.  Blocks if none are available.
-  (define (get a-tqueue)
-    (async-channel-get (tqueue-ready a-tqueue)))
-  
-  
+  ;; register-dependency!: tqueue unexecuted dep -> void
+  ;; Adds a new dep->unexecuted mapping.
   (define (register-dependency! a-tqueue an-unexecuted a-dep)
-    ;; fixme
-    (void))
-  
-  
-  (define (satisfy a-tqueue a-dep)
-    ;; fixme
-    (void))
+    (let ([ht (tqueue-dep-to-unexecuteds a-tqueue)])
+      (hash-table-put! ht (cons an-unexecuted (hash-table-get ht a-dep '())))))
   
   
   
@@ -111,6 +113,6 @@
   (define dep/c any/c)
   
   (provide/contract [new-topological-queue (-> tqueue?)]
-                    [add (tqueue? elt/c (listof dep/c) . -> . any)]
-                    [get (tqueue? . -> . elt/c)]
-                    [satisfy (tqueue? dep/c . -> . any)]))
+                    [add! (tqueue? elt/c (listof dep/c) . -> . any)]
+                    [get! (tqueue? . -> . elt/c)]
+                    [satisfy! (tqueue? dep/c . -> . any)]))
