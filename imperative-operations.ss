@@ -83,7 +83,13 @@
       [(struct imperative-op:delete-range (start-pos end-pos))
        #t]
       
+      [(struct imperative-op:delete-dstx (id))
+       #t]
+      
       [(struct imperative-op:insert-rope (rope pos))
+       #t]
+      
+      [(struct imperative-op:insert-dstx-after (dstx id))
        #t]
       
       [(struct imperative-op:select-range (start-pos end-pos))
@@ -115,7 +121,13 @@
       [(struct imperative-op:delete-range (start-pos end-pos))
        #f]
       
+      [(struct imperative-op:delete-dstx (id))
+       #f]
+      
       [(struct imperative-op:insert-rope (rope pos))
+       #f]
+      
+      [(struct imperative-op:insert-dstx-after (dstx id))
        #f]
       
       [(struct imperative-op:select-range (start-pos end-pos))

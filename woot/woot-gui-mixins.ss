@@ -292,6 +292,7 @@
                      (visible-before-or-at woot-state after-id)])
                 (with-remote-operation-active
                  (lambda ()
+                   (printf "interpreting remote operation~a~n")
                    (interpret!
                     (make-Insert-Dstx-After dstx
                                             (dstx-local-id
@@ -303,6 +304,7 @@
              [(msg-origin-remote? msg)
               (with-remote-operation-active
                (lambda ()
+                 (printf "interpreting remote operation~a~n")
                  (interpret!
                   (make-Delete-Dstx
                    (dstx-local-id (woot-id->local-dstx id))))))]
