@@ -3,7 +3,8 @@
            "utilities.ss")
   
   
-  (provide install-rigid-keymap-bindings!)
+  (provide install-rigid-keymap-bindings!
+           with-disabled-keys)
   
   
   
@@ -39,7 +40,17 @@
     (send keymap set-grab-key-function rigid-grab-key))
   
   
-  
+  ;; with-disabled-keys: keymap (-> any) -> any
+  ;; Temporarily disables the keymap, and reinstalls the rigid keymap afterwards.
+  (define (with-disabled-keys keymap thunk)
+    (dynamic-wind
+     (lambda ()
+       (send keymap remove-grab-key-function)
+       (send keymap set-grab-key-function dead-grab-key))
+     thunk
+     (lambda ()
+       (send keymap remove-grab-key-function)
+       (send keymap set-grab-key-function rigid-grab-key))))
   
   
   ;; rigid-grab-key: string-or-false keymap text% event
@@ -66,11 +77,11 @@
            [(or meta-down? control-down?)
             no-further-dispatch-needed]
            [(printable-char? key-code)
-            (dynamic-wind (lambda () 
-                            (send editor set-in-unstructured-editing? #t)) 
-                          (lambda () 
-                            (send editor insert key-code)) 
-                          (lambda () 
+            (dynamic-wind (lambda ()
+                            (send editor set-in-unstructured-editing? #t))
+                          (lambda ()
+                            (send editor insert key-code))
+                          (lambda ()
                             (send editor set-in-unstructured-editing? #f)))
             no-further-dispatch-needed]
            [else
@@ -79,6 +90,12 @@
        more-dispatch-needed]
       [else
        no-further-dispatch-needed]))
+  
+  
+  ;; A grab-key function that deadens all input.
+  (define (dead-grab-key callback-name/false km editor event)
+    #t)
+  
   
   
   ;; printable-char?: maybe-char -> boolean

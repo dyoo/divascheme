@@ -558,7 +558,7 @@
                                  cmd ;; cmd
                                  edit? ;; edit?
                                  ))))]))
-      
+
       
       ;; Command Mode
       (define (new-command-keymap)

@@ -62,14 +62,19 @@
     
     ;; do-interpretation: world Protocol-Syntax-tree -> void
     (define (do-interpretation world ast)
-      (with-unstructured-decoration
-       (lambda ()
-         (restore-editor-to-pre-state!)))
-      (with-structured-decoration
-       (lambda ()
-         (interpret! world ast))))
-    
-    
+      (let ([sema (make-semaphore)])
+        (queue-callback
+         (lambda ()
+           (with-unstructured-decoration
+            (lambda ()
+              (restore-editor-to-pre-state!)))
+           (with-structured-decoration
+            (lambda ()
+              (interpret! world ast)))
+           (semaphore-post sema)))
+        (yield sema)))
+       
+
     ;; delete-insertion-point!: -> void
     ;; Deletes the insertion point.
     (define (delete-insertion-point!)      
