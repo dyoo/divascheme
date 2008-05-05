@@ -3,7 +3,7 @@
   ;; onto the queue along with its dependencies.  We can also tell the queue
   ;; when some dependency has been satisfied. Finally, we can get elements from the
   ;; queue whose dependencies are all satisfied.
-  
+  ;;
   (require (lib "async-channel.ss")
            (lib "plt-match.ss")
            (lib "contract.ss"))
@@ -30,7 +30,7 @@
   ;;
   ;; External interaction will pass things off through the worker-channel
   ;; to serialize operations into the queue.
-  (define-struct tqueue (satisfied-deps dep-to-targets ready worker-channel))
+  (define-struct tqueue (satisfied-deps dep-to-targets ready worker-channel worker-thread))
   ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
   
   
@@ -45,9 +45,11 @@
                         (make-hash-table) ;; dep-to-targets will map a dep to a list of targets
                         (make-async-channel) ; ready will contain any ready elements.
                         (make-channel) ;; worker channel
+                        #f
                         )])
       ;; Start the worker thread loop at this point:
-      (thread (lambda () (worker-thread-loop a-tqueue)))
+      (set-tqueue-worker-thread!
+       (thread (lambda () (worker-thread-loop a-tqueue))))
       a-tqueue))
   
   
@@ -58,6 +60,7 @@
   ;; add!: tqueue X (listof dep) -> void
   ;; Adds a new element to the system.
   (define (add! a-tqueue an-elt deps)
+    (keep-worker-thread-alive! a-tqueue)
     (channel-put (tqueue-worker-channel a-tqueue)
                  (make-cmd:add! an-elt deps)))
   
@@ -67,16 +70,34 @@
   ;; Any target targets whose dependencies are cleared are moved into the
   ;; ready channel.
   (define (satisfy! a-tqueue a-dep)
+    (keep-worker-thread-alive! a-tqueue)
     (channel-put (tqueue-worker-channel a-tqueue)
                  (make-cmd:satisfy! a-dep)))
   
   
-  ;; get!: tqueue -> elt
+  ;; get: tqueue -> elt
   ;; Gets a ready element from the tqueue.  Blocks if none are available.
-  (define (get! a-tqueue)
+  (define (get a-tqueue)
+    (keep-worker-thread-alive! a-tqueue)
     (async-channel-get (tqueue-ready a-tqueue)))
   
-  ;; worker-thread-loop
+  
+  ;; try-get: tqueue -> (or/c elt #f)
+  (define (try-get a-tqueue)
+    (keep-worker-thread-alive! a-tqueue)
+    (async-channel-try-get (tqueue-ready a-tqueue)))
+  
+  
+  ;; get-ready-channel: tqueue -> async-channel
+  ;; Returns low-level access to the async-channel that returns
+  ;; the ready elements.
+  (define (get-ready-channel a-tqueue)
+    (keep-worker-thread-alive! a-tqueue)
+    (tqueue-ready a-tqueue))
+  
+  
+  ;; worker-thread-loop: tqueue -> void
+  ;; The worker thread will just do things.
   (define (worker-thread-loop a-tqueue)
     (let ([cmd (channel-get (tqueue-worker-channel a-tqueue))])
       (match cmd
@@ -90,6 +111,11 @@
   
   ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
   ;; Helpers and internal definitions.
+  
+  ;; keep-worker-thread-alive!: tqueue -> void
+  ;; For kill-safety, we resume the worker thread if it had stopped earlier.
+  (define (keep-worker-thread-alive! a-tqueue)
+    (thread-resume (tqueue-worker-thread a-tqueue) (current-thread)))
   
   
   ;; internal-add!: tqueue X (listof dep) -> void
@@ -162,4 +188,6 @@
   (provide/contract [new-topological-queue (-> tqueue?)]
                     [add! (tqueue? elt/c (listof dep/c) . -> . any)]
                     [satisfy! (tqueue? dep/c . -> . any)]
-                    [get! (tqueue? . -> . elt/c)]))
+                    [get (tqueue? . -> . elt/c)]
+                    [try-get (tqueue? . -> . (or/c elt/c false/c))]
+                    [get-ready-channel (tqueue? . -> . async-channel?)]))
