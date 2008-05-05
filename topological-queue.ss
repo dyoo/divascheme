@@ -5,6 +5,7 @@
   ;; queue whose dependencies are all satisfied.
   
   (require (lib "async-channel.ss")
+           (lib "plt-match.ss")
            (lib "contract.ss"))
   
   
@@ -41,8 +42,50 @@
   
   ;; add: tqueue X (listof dep) -> void
   ;; Adds a new element to the system.
+  ;; Fixme: not kill safe.
   (define (add a-tqueue an-elt deps)
-    (void))
+    (match a-tqueue
+      [(struct tqueue (satisfied-deps dep-to-unexecuteds ready))
+       
+       (let ([an-unexecuted (make-unexecuted (length deps) an-elt)])
+         ;; Mark off the dependencies that are already satisfied.
+         (for-each (lambda (a-dep)
+                     (cond
+                       [(satisifed? a-tqueue a-dep)
+                        (unexecuted-decrement-dep-count! a-tqueue an-unexecuted)]
+                       [else
+                        (register-dependency! a-tqueue an-unexecuted a-dep)]))
+                   deps))]))
+  
+  
+  
+  
+  ;; satisifed?: tqueue dep -> boolean
+  ;; Returns true when a-tqueue knows that a-dep is already satisfied.
+  (define (satisifed? a-tqueue a-dep)
+    (hash-table-get (tqueue-satisfied-deps a-tqueue) a-dep #f))
+  
+  
+  ;; unexecuted-decrement-dep-count!: unexecuted -> void
+  ;; Decrements the dependency count of the unexecuted element.
+  (define (unexecuted-decrement-dep-count! a-tqueue an-unexecuted)
+    (unless (> (unexecuted-dep-count an-unexecuted) 0)
+      (error 'unexecuted-decrement-dep-count!
+             "Impossible to decrement past zero."))
+    (set-unexecuted-dep-count! an-unexecuted
+                               (sub1 (unexecuted-dep-count an-unexecuted)))
+    
+    ;; And if the count goes to zero, add to the ready queue.
+    (when (unexecuted-can-execute? an-unexecuted)
+      (async-channel-put (tqueue-ready a-tqueue) (unexecuted-elt an-unexecuted))))
+  
+  
+  
+  ;; unexecuted-can-execute?: unexecuted -> boolean
+  ;; Returns true if the unexecuted is ready for execution.
+  (define (unexecuted-can-execute? an-unexecuted)
+    (= (unexecuted-dep-count an-unexecuted) 0))
+  
   
   
   ;; Gets a ready element from the tqueue.  Blocks if none are available.
@@ -50,8 +93,16 @@
     (async-channel-get (tqueue-ready a-tqueue)))
   
   
-  (define (satisfy a-tqueue a-dep)
+  (define (register-dependency! a-tqueue an-unexecuted a-dep)
+    ;; fixme
     (void))
+  
+  
+  (define (satisfy a-tqueue a-dep)
+    ;; fixme
+    (void))
+  
+  
   
   
   ;; An element can be anything.
