@@ -49,6 +49,7 @@
                         )])
       ;; Start the worker thread loop at this point:
       (set-tqueue-worker-thread!
+       a-tqueue
        (thread (lambda () (worker-thread-loop a-tqueue))))
       a-tqueue))
   
