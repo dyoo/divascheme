@@ -5,8 +5,9 @@
   ;; queue whose dependencies are all satisfied.
   ;;
   (require (lib "async-channel.ss")
-           (lib "plt-match.ss")
-           (lib "contract.ss"))
+           (lib "contract.ss")
+           (lib "list.ss")
+           (lib "plt-match.ss"))
   
   
   
@@ -123,14 +124,21 @@
   ;; Adds a new element to the system.
   (define (internal-add! a-tqueue an-elt deps)
     (let ([a-target (make-target (length deps) an-elt)])
-      ;; Mark off the dependencies that are already satisfied.
-      (for-each (lambda (a-dep)
-                  (cond
-                    [(dependency-satisifed? a-tqueue a-dep)
-                     (target-decrement-dep-count!/maybe-add-to-ready a-tqueue a-target)]
-                    [else
-                     (register-dependency! a-tqueue a-target a-dep)]))
-                deps)))
+      (cond
+        ;; Degenerate case: if there aren't any dependencies, just add it to our ready queue.
+        [(empty? deps)
+         (when (target-can-execute? a-target)
+           (add-to-ready! a-tqueue a-target))]
+        
+        ;; Otherwise, mark off the dependencies that are already satisfied.
+        [else
+         (for-each (lambda (a-dep)
+                     (cond
+                       [(dependency-satisifed? a-tqueue a-dep)
+                        (target-decrement-dep-count!/maybe-add-to-ready a-tqueue a-target)]
+                       [else
+                        (register-dependency! a-tqueue a-target a-dep)]))
+                   deps)])))
   
   
   ;; internal-satisfy!: tqueue dep -> void
@@ -159,11 +167,14 @@
              "Impossible to decrement past zero."))
     (set-target-dep-count! a-target
                                (sub1 (target-dep-count a-target)))
-    
-    ;; And if the count goes to zero, add to the ready queue.
+    ;; When the count goes to zero, add to the ready queue.
     (when (target-can-execute? a-target)
-      (async-channel-put (tqueue-ready a-tqueue) (target-elt a-target))))
+      (add-to-ready! a-tqueue a-target)))
   
+  
+  ;; add-to-ready!: tqueue target -> void
+  (define (add-to-ready! a-tqueue a-target)
+    (async-channel-put (tqueue-ready a-tqueue) (target-elt a-target)))
   
   
   ;; target-can-execute?: target -> boolean
@@ -176,7 +187,7 @@
   ;; Adds a new dep->target mapping.
   (define (register-dependency! a-tqueue a-target a-dep)
     (let ([ht (tqueue-dep-to-targets a-tqueue)])
-      (hash-table-put! ht (cons a-target (hash-table-get ht a-dep '())))))
+      (hash-table-put! ht (cons a-target (hash-table-get ht a-dep '())) #t)))
   
   
   
