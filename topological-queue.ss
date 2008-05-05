@@ -5,6 +5,7 @@
   ;; queue whose dependencies are all satisfied.
   
   (require (lib "async-channel.ss")
+           (lib "plt-match.ss")
            (lib "contract.ss"))
   
   
@@ -26,24 +27,74 @@
   ;; satisfied-deps: a set of the satisfied dependencies.
   ;; dep-to-targets: a map from a dependency to a (listof target) that depend on it.
   ;; ready: an async-channel that holds all the elements.
-  (define-struct tqueue (satisfied-deps dep-to-targets ready))
+  ;;
+  ;; External interaction will pass things off through the worker-channel
+  ;; to serialize operations into the queue.
+  (define-struct tqueue (satisfied-deps dep-to-targets ready worker-channel))
   ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
   
   
   
   
   ;; new-topological-queue: -> tqueue
-  ;; Returns a new topological queue.
+  ;; Returns a new topological queue.  Creates an internal thread
+  ;; to handle serialized access to the thread.
   (define (new-topological-queue)
-    (make-tqueue (make-hash-table) ;; satisifed-deps will be the keys
-                 (make-hash-table) ;; dep-to-targets will map a dep to a list of targets
-                 (make-async-channel) ; ready will contain any ready elements.
-                 ))
+    (let ([a-tqueue
+           (make-tqueue (make-hash-table) ;; satisifed-deps will be the keys
+                        (make-hash-table) ;; dep-to-targets will map a dep to a list of targets
+                        (make-async-channel) ; ready will contain any ready elements.
+                        (make-channel) ;; worker channel
+                        )])
+      ;; Start the worker thread loop at this point:
+      (thread (lambda () (worker-thread-loop a-tqueue)))
+      a-tqueue))
   
+  
+  (define-struct cmd ())
+  (define-struct (cmd:add! cmd) (elt deps))
+  (define-struct (cmd:satisfy! cmd) (dep))
   
   ;; add!: tqueue X (listof dep) -> void
   ;; Adds a new element to the system.
   (define (add! a-tqueue an-elt deps)
+    (channel-put (tqueue-worker-channel a-tqueue)
+                 (make-cmd:add! an-elt deps)))
+  
+  
+  ;; satisfy!: tqueue dep -> void
+  ;; Tells the tqueue that a certain dependency has just been satisfied.
+  ;; Any target targets whose dependencies are cleared are moved into the
+  ;; ready channel.
+  (define (satisfy! a-tqueue a-dep)
+    (channel-put (tqueue-worker-channel a-tqueue)
+                 (make-cmd:satisfy! a-dep)))
+  
+  
+  ;; get!: tqueue -> elt
+  ;; Gets a ready element from the tqueue.  Blocks if none are available.
+  (define (get! a-tqueue)
+    (async-channel-get (tqueue-ready a-tqueue)))
+  
+  ;; worker-thread-loop
+  (define (worker-thread-loop a-tqueue)
+    (let ([cmd (channel-get (tqueue-worker-channel a-tqueue))])
+      (match cmd
+        [(struct cmd:add! (elt deps))
+         (internal-add! a-tqueue elt deps)]
+        [(struct cmd:satisfy! (dep))
+         (internal-satisfy! a-tqueue dep)]))
+    (worker-thread-loop a-tqueue))
+  
+  
+  
+  ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+  ;; Helpers and internal definitions.
+  
+  
+  ;; internal-add!: tqueue X (listof dep) -> void
+  ;; Adds a new element to the system.
+  (define (internal-add! a-tqueue an-elt deps)
     (let ([a-target (make-target (length deps) an-elt)])
       ;; Mark off the dependencies that are already satisfied.
       (for-each (lambda (a-dep)
@@ -55,17 +106,11 @@
                 deps)))
   
   
-  ;; get!: tqueue -> elt
-  ;; Gets a ready element from the tqueue.  Blocks if none are available.
-  (define (get! a-tqueue)
-    (async-channel-get (tqueue-ready a-tqueue)))
-  
-  
-  ;; satisfy!: tqueue dep -> void
+  ;; internal-satisfy!: tqueue dep -> void
   ;; Tells the tqueue that a certain dependency has just been satisfied.
   ;; Any target targets whose dependencies are cleared are moved into the
   ;; ready channel.
-  (define (satisfy! a-tqueue a-dep)
+  (define (internal-satisfy! a-tqueue a-dep)
     (for-each (lambda (a-target)
                 (target-decrement-dep-count!/maybe-add-to-ready a-tqueue a-target))
               (hash-table-get (tqueue-dep-to-targets a-tqueue) a-dep '()))
