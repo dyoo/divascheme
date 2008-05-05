@@ -16,15 +16,17 @@
   ;; A dependency is assumed to be an opaque value that can be only compared by eq?.
   
   
-  ;; an unexecuted contains the number of unsatisfied dependencies, and the
+  ;; A target contains the number of unsatisfied dependencies, and the
   ;; element that we return when the dependency count goes to zero.
-  (define-struct unexecuted (dep-count elt))
+  (define-struct target (dep-count elt))
   
+  ;; tqueues represent the topological queue structure.  They are opaque.
+  ;;
   ;; a tqueue holds:
   ;; satisfied-deps: a set of the satisfied dependencies.
-  ;; dep-to-unexecuteds: a map from a dependency to a (listof unexecuted) that depend on it.
+  ;; dep-to-targets: a map from a dependency to a (listof target) that depend on it.
   ;; ready: an async-channel that holds all the elements.
-  (define-struct tqueue (satisfied-deps dep-to-unexecuteds ready))
+  (define-struct tqueue (satisfied-deps dep-to-targets ready))
   ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
   
   
@@ -34,7 +36,7 @@
   ;; Returns a new topological queue.
   (define (new-topological-queue)
     (make-tqueue (make-hash-table) ;; satisifed-deps will be the keys
-                 (make-hash-table) ;; dep-to-unexecuteds will map a dep to a list of unexecuteds
+                 (make-hash-table) ;; dep-to-targets will map a dep to a list of targets
                  (make-async-channel) ; ready will contain any ready elements.
                  ))
   
@@ -42,14 +44,14 @@
   ;; add!: tqueue X (listof dep) -> void
   ;; Adds a new element to the system.
   (define (add! a-tqueue an-elt deps)
-    (let ([an-unexecuted (make-unexecuted (length deps) an-elt)])
+    (let ([a-target (make-target (length deps) an-elt)])
       ;; Mark off the dependencies that are already satisfied.
       (for-each (lambda (a-dep)
                   (cond
                     [(dependency-satisifed? a-tqueue a-dep)
-                     (unexecuted-decrement-dep-count!/maybe-add-to-ready a-tqueue an-unexecuted)]
+                     (target-decrement-dep-count!/maybe-add-to-ready a-tqueue a-target)]
                     [else
-                     (register-dependency! a-tqueue an-unexecuted a-dep)]))
+                     (register-dependency! a-tqueue a-target a-dep)]))
                 deps)))
   
   
@@ -61,12 +63,12 @@
   
   ;; satisfy!: tqueue dep -> void
   ;; Tells the tqueue that a certain dependency has just been satisfied.
-  ;; Any unexecuted targets whose dependencies are cleared are moved into the
+  ;; Any target targets whose dependencies are cleared are moved into the
   ;; ready channel.
   (define (satisfy! a-tqueue a-dep)
-    (for-each (lambda (an-unexecuted)
-                (unexecuted-decrement-dep-count!/maybe-add-to-ready a-tqueue an-unexecuted))
-              (hash-table-get (tqueue-dep-to-unexecuteds a-tqueue) a-dep '()))
+    (for-each (lambda (a-target)
+                (target-decrement-dep-count!/maybe-add-to-ready a-tqueue a-target))
+              (hash-table-get (tqueue-dep-to-targets a-tqueue) a-dep '()))
     (hash-table-put! (tqueue-satisfied-deps a-tqueue) a-dep #t))
   
   
@@ -77,32 +79,32 @@
     (hash-table-get (tqueue-satisfied-deps a-tqueue) a-dep #f))
   
   
-  ;; unexecuted-decrement-dep-count!: unexecuted -> void
-  ;; Decrements the dependency count of the unexecuted element.
-  (define (unexecuted-decrement-dep-count!/maybe-add-to-ready a-tqueue an-unexecuted)
-    (unless (> (unexecuted-dep-count an-unexecuted) 0)
-      (error 'unexecuted-decrement-dep-count!
+  ;; target-decrement-dep-count!: target -> void
+  ;; Decrements the dependency count of the target element.
+  (define (target-decrement-dep-count!/maybe-add-to-ready a-tqueue a-target)
+    (unless (> (target-dep-count a-target) 0)
+      (error 'target-decrement-dep-count!
              "Impossible to decrement past zero."))
-    (set-unexecuted-dep-count! an-unexecuted
-                               (sub1 (unexecuted-dep-count an-unexecuted)))
+    (set-target-dep-count! a-target
+                               (sub1 (target-dep-count a-target)))
     
     ;; And if the count goes to zero, add to the ready queue.
-    (when (unexecuted-can-execute? an-unexecuted)
-      (async-channel-put (tqueue-ready a-tqueue) (unexecuted-elt an-unexecuted))))
+    (when (target-can-execute? a-target)
+      (async-channel-put (tqueue-ready a-tqueue) (target-elt a-target))))
   
   
   
-  ;; unexecuted-can-execute?: unexecuted -> boolean
-  ;; Returns true if the unexecuted is ready for execution.
-  (define (unexecuted-can-execute? an-unexecuted)
-    (= (unexecuted-dep-count an-unexecuted) 0))
+  ;; target-can-execute?: target -> boolean
+  ;; Returns true if the target is ready for execution.
+  (define (target-can-execute? a-target)
+    (= (target-dep-count a-target) 0))
   
   
-  ;; register-dependency!: tqueue unexecuted dep -> void
-  ;; Adds a new dep->unexecuted mapping.
-  (define (register-dependency! a-tqueue an-unexecuted a-dep)
-    (let ([ht (tqueue-dep-to-unexecuteds a-tqueue)])
-      (hash-table-put! ht (cons an-unexecuted (hash-table-get ht a-dep '())))))
+  ;; register-dependency!: tqueue target dep -> void
+  ;; Adds a new dep->target mapping.
+  (define (register-dependency! a-tqueue a-target a-dep)
+    (let ([ht (tqueue-dep-to-targets a-tqueue)])
+      (hash-table-put! ht (cons a-target (hash-table-get ht a-dep '())))))
   
   
   
@@ -114,5 +116,5 @@
   
   (provide/contract [new-topological-queue (-> tqueue?)]
                     [add! (tqueue? elt/c (listof dep/c) . -> . any)]
-                    [get! (tqueue? . -> . elt/c)]
-                    [satisfy! (tqueue? dep/c . -> . any)]))
+                    [satisfy! (tqueue? dep/c . -> . any)]
+                    [get! (tqueue? . -> . elt/c)]))
