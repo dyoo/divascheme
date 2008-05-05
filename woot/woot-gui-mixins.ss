@@ -186,7 +186,9 @@
                get-dstx-cursor
                woot-id->local-dstx
                with-remote-operation-active
-               queue-callback/in-command-mode)
+               queue-callback/in-command-mode
+               begin-edit-sequence
+               end-edit-sequence)
       
       
       (define woot-custodian (make-custodian))
@@ -278,7 +280,12 @@
         (queue-callback/in-command-mode
          (lambda ()
            (let ([ops (consume-msg! woot-state a-msg)])
-             (for-each maybe-apply-remote-operation ops)))))
+             (dynamic-wind (lambda ()
+                             (begin-edit-sequence))
+                           (lambda ()
+                             (for-each maybe-apply-remote-operation ops))
+                           (lambda ()
+                             (end-edit-sequence)))))))
       
       
       ;; maybe-apply-op: op -> void
@@ -292,24 +299,26 @@
                      (visible-before-or-at woot-state after-id)])
                 (with-remote-operation-active
                  (lambda ()
-                   (printf "interpreting remote operation~a~n")
+                   #;(printf "interpreting remote operation~a~n" an-op)
                    (interpret!
                     (make-Insert-Dstx-After dstx
                                             (dstx-local-id
                                              (woot-id->local-dstx visible-woot-id)))))))]
              [else
-              (printf "local~n")])]
+              (void)
+              #;(printf "local~n")])]
           [(struct op:delete (msg id))
            (cond
              [(msg-origin-remote? msg)
               (with-remote-operation-active
                (lambda ()
-                 (printf "interpreting remote operation~a~n")
+                 #;(printf "interpreting remote operation~a~n" an-op)
                  (interpret!
                   (make-Delete-Dstx
                    (dstx-local-id (woot-id->local-dstx id))))))]
              [else
-              (printf "local~n")])]))
+              (void)
+              #;(printf "local~n")])]))
       
       
       ;; msg-origin-remote?: msg -> boolean

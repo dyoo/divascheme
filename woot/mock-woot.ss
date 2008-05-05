@@ -91,7 +91,7 @@
   (define (integrate-insert! a-state a-msg)
     ;; fixme: adjust cursor
     ;; fixme: find whatever dstx is visible, and insert after that thing.
-    (printf "integrating ~s~n" a-msg)
+    #;(printf "integrating ~s~n" a-msg)
     (match a-msg
       [(struct msg:insert (host-id dstx after-id before-id))
        (let ([a-cursor (focus/woot-id (state-cursor a-state) after-id)])
@@ -102,8 +102,6 @@
   
   ;; integrate-delete!: state msg -> op
   (define (integrate-delete! a-state a-msg)
-    ;; fixme: adjust cursor
-    ;; fixme: find whatever dstx is visible, and insert after that thing.
     (match a-msg
       [(struct msg:delete (host-id id))
        (let ([a-cursor (focus/woot-id (state-cursor a-state) id)])
