@@ -24,4 +24,29 @@
         
         (check-eq? (try-get tqueue) 'b)
         (satisfy! tqueue 'b)
-        (check-eq? (try-get tqueue) 'c))))))
+        (check-eq? (try-get tqueue) 'c)))
+     
+     
+     (test-case
+      "'b' depends on 'a' and 'c'"
+      (let ([tqueue (new-topological-queue)])
+        (add! tqueue 'a '())
+        (add! tqueue 'c '())
+        (add! tqueue 'b '(a c))
+        
+        (check-eq? (get tqueue) 'a)
+        (check-eq? (get tqueue) 'c)
+        (check-false (try-get tqueue))
+        (satisfy! tqueue 'a)
+        (check-false (try-get tqueue))
+        (satisfy! tqueue 'c)
+        (check-eq? (get tqueue) 'b)))
+     
+     
+     (test-case
+      "'b' depends on 'a' and 'c' again"
+      (let ([tqueue (new-topological-queue)])
+        (satisfy! tqueue 'a)
+        (satisfy! tqueue 'c)
+        (add! tqueue 'b '(a c))
+        (check-eq? (get tqueue) 'b))))))
