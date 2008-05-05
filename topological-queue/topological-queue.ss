@@ -37,10 +37,10 @@
   
   
   
-  ;; new-topological-queue: -> tqueue
+  ;; new-tqueue: -> tqueue
   ;; Returns a new topological queue.  Creates an internal thread
   ;; to handle serialized access to the thread.
-  (define (new-topological-queue)
+  (define (new-tqueue)
     (let ([a-tqueue
            (make-tqueue (make-hash-table) ;; satisifed-deps will be the keys
                         (make-hash-table) ;; dep-to-targets will map a dep to a list of targets
@@ -55,23 +55,25 @@
       a-tqueue))
   
   
+  ;; cmds will let us interact with the worker thread.
   (define-struct cmd ())
   (define-struct (cmd:add! cmd) (elt deps))
   (define-struct (cmd:satisfy! cmd) (dep done))
   
-  ;; add!: tqueue X (listof dep) -> void
-  ;; Adds a new element to the system.
-  (define (add! a-tqueue an-elt deps)
+  
+  ;; tqueue-add!: tqueue X (listof dep) -> void
+  ;; Adds a new element to the topological queue.
+  (define (tqueue-add! a-tqueue an-elt deps)
     (keep-worker-thread-alive! a-tqueue)
     (channel-put (tqueue-worker-channel a-tqueue)
                  (make-cmd:add! an-elt deps)))
   
   
-  ;; satisfy!: tqueue dep -> void
+  ;; tqueue-satisfy!: tqueue dep -> void
   ;; Tells the tqueue that a certain dependency has just been satisfied.
   ;; Any target targets whose dependencies are cleared are moved into the
   ;; ready channel.
-  (define (satisfy! a-tqueue a-dep)
+  (define (tqueue-satisfy! a-tqueue a-dep)
     (keep-worker-thread-alive! a-tqueue)
     (let ([sema (make-semaphore)])
       (channel-put (tqueue-worker-channel a-tqueue)
@@ -79,25 +81,37 @@
       (sync sema)))
   
   
-  ;; get: tqueue -> elt
+  ;; tqueue-get: tqueue -> elt
   ;; Gets a ready element from the tqueue.  Blocks if none are available.
-  (define (get a-tqueue)
+  (define (tqueue-get a-tqueue)
     (keep-worker-thread-alive! a-tqueue)
     (async-channel-get (tqueue-ready a-tqueue)))
   
   
-  ;; try-get: tqueue -> (or/c elt #f)
-  (define (try-get a-tqueue)
+  ;; tqueue-try-get: tqueue -> (or/c elt #f)
+  ;; Try to get an element out of the queue.  If no such element exists, returns #f.
+  (define (tqueue-try-get a-tqueue)
     (keep-worker-thread-alive! a-tqueue)
     (async-channel-try-get (tqueue-ready a-tqueue)))
   
   
-  ;; get-ready-channel: tqueue -> async-channel
+  ;; tqueue-ready-channel: tqueue -> async-channel
   ;; Returns low-level access to the async-channel that returns
   ;; the ready elements.
-  (define (get-ready-channel a-tqueue)
+  (define (tqueue-ready-channel a-tqueue)
     (keep-worker-thread-alive! a-tqueue)
     (tqueue-ready a-tqueue))
+  
+  
+  
+  ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+  ;; Helpers and internal definitions.
+  
+  
+  ;; keep-worker-thread-alive!: tqueue -> void
+  ;; For kill-safety, we resume the worker thread if it had stopped earlier.
+  (define (keep-worker-thread-alive! a-tqueue)
+    (thread-resume (tqueue-worker-thread a-tqueue) (current-thread)))
   
   
   ;; worker-thread-loop: tqueue -> void
@@ -111,16 +125,6 @@
          (internal-satisfy! a-tqueue dep)
          (semaphore-post sema)]))
     (worker-thread-loop a-tqueue))
-  
-  
-  
-  ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
-  ;; Helpers and internal definitions.
-  
-  ;; keep-worker-thread-alive!: tqueue -> void
-  ;; For kill-safety, we resume the worker thread if it had stopped earlier.
-  (define (keep-worker-thread-alive! a-tqueue)
-    (thread-resume (tqueue-worker-thread a-tqueue) (current-thread)))
   
   
   ;; internal-add!: tqueue X (listof dep) -> void
@@ -202,9 +206,10 @@
   ;; A dependency can be anything.
   (define dep/c any/c)
   
-  (provide/contract [new-topological-queue (-> tqueue?)]
-                    [add! (tqueue? elt/c (listof dep/c) . -> . any)]
-                    [satisfy! (tqueue? dep/c . -> . any)]
-                    [get (tqueue? . -> . elt/c)]
-                    [try-get (tqueue? . -> . (or/c elt/c false/c))]
-                    [get-ready-channel (tqueue? . -> . async-channel?)]))
+  (provide/contract [new-tqueue (-> tqueue?)]
+                    [tqueue? (any/c . -> . boolean?)]
+                    [tqueue-add! (tqueue? elt/c (listof dep/c) . -> . any)]
+                    [tqueue-satisfy! (tqueue? dep/c . -> . any)]
+                    [tqueue-get (tqueue? . -> . elt/c)]
+                    [tqueue-try-get (tqueue? . -> . (or/c elt/c false/c))]
+                    [tqueue-ready-channel (tqueue? . -> . async-channel?)]))

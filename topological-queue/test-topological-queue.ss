@@ -13,40 +13,40 @@
      "test-topological-queue.ss"
      (test-case
       "c depends on b, b depends on a"
-      (let ([tqueue (new-topological-queue)])
-        (add! tqueue 'a '())
-        (check-eq? (get tqueue) 'a)
-        (add! tqueue 'b '(a))
-        (check-false (try-get tqueue))
-        (add! tqueue 'c '(b))
-        (check-false (try-get tqueue))
-        (satisfy! tqueue 'a)
+      (let ([tqueue (new-tqueue)])
+        (tqueue-add! tqueue 'a '())
+        (check-eq? (tqueue-get tqueue) 'a)
+        (tqueue-add! tqueue 'b '(a))
+        (check-false (tqueue-try-get tqueue))
+        (tqueue-add! tqueue 'c '(b))
+        (check-false (tqueue-try-get tqueue))
+        (tqueue-satisfy! tqueue 'a)
         
-        (check-eq? (try-get tqueue) 'b)
-        (satisfy! tqueue 'b)
-        (check-eq? (try-get tqueue) 'c)))
+        (check-eq? (tqueue-try-get tqueue) 'b)
+        (tqueue-satisfy! tqueue 'b)
+        (check-eq? (tqueue-try-get tqueue) 'c)))
      
      
      (test-case
       "'b' depends on 'a' and 'c'"
-      (let ([tqueue (new-topological-queue)])
-        (add! tqueue 'a '())
-        (add! tqueue 'c '())
-        (add! tqueue 'b '(a c))
+      (let ([tqueue (new-tqueue)])
+        (tqueue-add! tqueue 'a '())
+        (tqueue-add! tqueue 'c '())
+        (tqueue-add! tqueue 'b '(a c))
         
-        (check-eq? (get tqueue) 'a)
-        (check-eq? (get tqueue) 'c)
-        (check-false (try-get tqueue))
-        (satisfy! tqueue 'a)
-        (check-false (try-get tqueue))
-        (satisfy! tqueue 'c)
-        (check-eq? (get tqueue) 'b)))
+        (check-eq? (tqueue-get tqueue) 'a)
+        (check-eq? (tqueue-get tqueue) 'c)
+        (check-false (tqueue-try-get tqueue))
+        (tqueue-satisfy! tqueue 'a)
+        (check-false (tqueue-try-get tqueue))
+        (tqueue-satisfy! tqueue 'c)
+        (check-eq? (tqueue-get tqueue) 'b)))
      
      
      (test-case
       "'b' depends on 'a' and 'c' again"
-      (let ([tqueue (new-topological-queue)])
-        (satisfy! tqueue 'a)
-        (satisfy! tqueue 'c)
-        (add! tqueue 'b '(a c))
-        (check-eq? (get tqueue) 'b))))))
+      (let ([tqueue (new-tqueue)])
+        (tqueue-satisfy! tqueue 'a)
+        (tqueue-satisfy! tqueue 'c)
+        (tqueue-add! tqueue 'b '(a c))
+        (check-eq? (tqueue-get tqueue) 'b))))))
