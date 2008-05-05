@@ -21,6 +21,7 @@
         (add! tqueue 'c '(b))
         (check-false (try-get tqueue))
         (satisfy! tqueue 'a)
+        
         (check-eq? (try-get tqueue) 'b)
         (satisfy! tqueue 'b)
         (check-eq? (try-get tqueue) 'c))))))

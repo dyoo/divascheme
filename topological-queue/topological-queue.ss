@@ -20,7 +20,7 @@
   
   ;; A target contains the number of unsatisfied dependencies, and the
   ;; element that we return when the dependency count goes to zero.
-  (define-struct target (dep-count elt))
+  (define-struct target (dep-count elt) #f)
   
   ;; tqueues represent the topological queue structure.  They are opaque.
   ;;
@@ -57,7 +57,7 @@
   
   (define-struct cmd ())
   (define-struct (cmd:add! cmd) (elt deps))
-  (define-struct (cmd:satisfy! cmd) (dep))
+  (define-struct (cmd:satisfy! cmd) (dep done))
   
   ;; add!: tqueue X (listof dep) -> void
   ;; Adds a new element to the system.
@@ -73,8 +73,10 @@
   ;; ready channel.
   (define (satisfy! a-tqueue a-dep)
     (keep-worker-thread-alive! a-tqueue)
-    (channel-put (tqueue-worker-channel a-tqueue)
-                 (make-cmd:satisfy! a-dep)))
+    (let ([sema (make-semaphore)])
+      (channel-put (tqueue-worker-channel a-tqueue)
+                   (make-cmd:satisfy! a-dep sema))
+      (sync sema)))
   
   
   ;; get: tqueue -> elt
@@ -105,8 +107,9 @@
       (match cmd
         [(struct cmd:add! (elt deps))
          (internal-add! a-tqueue elt deps)]
-        [(struct cmd:satisfy! (dep))
-         (internal-satisfy! a-tqueue dep)]))
+        [(struct cmd:satisfy! (dep sema))
+         (internal-satisfy! a-tqueue dep)
+         (semaphore-post sema)]))
     (worker-thread-loop a-tqueue))
   
   
@@ -149,6 +152,7 @@
     (for-each (lambda (a-target)
                 (target-decrement-dep-count!/maybe-add-to-ready a-tqueue a-target))
               (hash-table-get (tqueue-dep-to-targets a-tqueue) a-dep '()))
+    (hash-table-remove! (tqueue-dep-to-targets a-tqueue) a-dep)
     (hash-table-put! (tqueue-satisfied-deps a-tqueue) a-dep #t))
   
   
@@ -165,8 +169,7 @@
     (unless (> (target-dep-count a-target) 0)
       (error 'target-decrement-dep-count!
              "Impossible to decrement past zero."))
-    (set-target-dep-count! a-target
-                               (sub1 (target-dep-count a-target)))
+    (set-target-dep-count! a-target (sub1 (target-dep-count a-target)))
     ;; When the count goes to zero, add to the ready queue.
     (when (target-can-execute? a-target)
       (add-to-ready! a-tqueue a-target)))
@@ -187,7 +190,9 @@
   ;; Adds a new dep->target mapping.
   (define (register-dependency! a-tqueue a-target a-dep)
     (let ([ht (tqueue-dep-to-targets a-tqueue)])
-      (hash-table-put! ht (cons a-target (hash-table-get ht a-dep '())) #t)))
+      (hash-table-put!
+       ht a-dep
+       (cons a-target (hash-table-get ht a-dep '())))))
   
   
   
