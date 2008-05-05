@@ -6,7 +6,7 @@
            (only (lib "13.ss" "srfi") string-join))
   
   
-  (provide/contract [new-dispatcher (request? . -> . response?)])
+  (provide/contract [new-dispatcher (-> (request? . -> . response?))])
   
   
   

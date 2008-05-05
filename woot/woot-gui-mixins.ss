@@ -10,7 +10,7 @@
            "mock-woot.ss"
            "utilities.ss"
            (prefix self-ip: "self-ip-address.ss")
-           (prefix server: "server.ss")
+           (prefix server: "start-server.ss")
            (prefix client: "client.ss"))
   
   (provide woot-text-mixin
