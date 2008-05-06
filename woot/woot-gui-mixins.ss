@@ -238,21 +238,10 @@
       (define (start-network-client url)
         (parameterize ([current-custodian woot-custodian])
           (set! network-mailbox-client (client:new-client url))
-          (set! woot-state (new-mock-woot (list (get-toplevel-sentinel))))
-          (start-process-client-message-loop!)
-          
-          ;; TODO: send over all the other structured elements in the buffer.
-          
-          ))
+          (set! woot-state
+                (new-mock-woot (send (get-dstx-cursor) get-functional-cursor)))
+          (start-process-client-message-loop!)))
       
-      
-      
-      ;; get-toplevel-sentinel: -> dstx
-      ;; Returns the toplevel sentinel space.
-      (define (get-toplevel-sentinel)
-        (let ([cursor (get-dstx-cursor)])
-          (send cursor focus-toplevel!)
-          (send cursor cursor-dstx)))
       
       
       ;; start-process-client-message-loop!: -> void
