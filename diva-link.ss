@@ -308,19 +308,6 @@
       
       
       
-      ;; STUFFS about the interpretation of the abstract syntax tree.
-      
-      ;; This function can be called from other threads,
-      ;; and so we are not sure of the value of current-eventspace (if exists).
-      (define (push-callback callback)
-        (parameterize ([current-eventspace (send (get-top-level-window) get-eventspace)])
-          (queue-callback callback)))
-      
-      
-      
-      
-      
-      
       
       
       
@@ -337,7 +324,7 @@
       
       ;; interpret!: ast -> void
       ;; Immediately evaluate the ast on the world in mred.
-      ;; Assumes that we are running in the gui thread.
+      ;; Assumes that we are running in the event handler thread.
       (define/public (interpret! an-ast)
         (unless (eq? (current-thread)
                      (eventspace-handler-thread (current-eventspace)))
@@ -366,10 +353,12 @@
       
       ;; diva-ast-put/wait+world: world ast -> void
       ;; Applies the ast on the given world.
-      ;; This assumes that we are currently in the gui thread.  Do not call
+      ;; This assumes that we are currently in the event handler thread.  Do not call
       ;; this function directly unless we know we're in the gui event thread.
-      ;; TODO: add defensive check for this condition.
       (define (diva-ast-put/wait+world world ast)
+        (unless (eq? (current-thread)
+                     (eventspace-handler-thread (current-eventspace)))
+          (error 'diva-ast-put/wait+world "Called outside of event handler thread"))
         (push-into-mred
          (with-divascheme-handlers
           world
@@ -387,7 +376,7 @@
                   (let loop ()
                     (let ([new-ast (async-channel-get command-mailbox)]
                           [sema (make-semaphore 0)])
-                      (push-callback
+                      (queue-callback
                        (lambda ()
                          (interpret! new-ast)
                          (semaphore-post sema)))
