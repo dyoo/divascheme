@@ -20,7 +20,8 @@
   
   (define initial-cursor
     (let ([a-cursor (make-toplevel-cursor (list))])
-      (replace a-cursor (decorate (cursor-dstx a-cursor)))))
+      (replace a-cursor (dstx-set-woot-id (cursor-dstx a-cursor)
+                                          first-sentinel-woot-id))))
   
   (define my-sentinel-space
     (cursor-dstx initial-cursor))

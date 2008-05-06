@@ -39,7 +39,6 @@
   ;; Tells the topological sort which elements we already know about.
   (define (initially-satisfy-from-toplevel-dstxs a-state)
     (for-each (lambda (a-dstx)
-                (printf "looking at ~s~n" a-dstx)
                 (for-each (lambda (a-woot-id)
                             (tqueue-satisfy! (state-tqueue a-state)
                                              (woot-id->dependency a-woot-id)))
