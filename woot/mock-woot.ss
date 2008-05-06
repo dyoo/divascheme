@@ -69,9 +69,9 @@
         [(not next-executable-msg)
          '()]
         [else
-         (let ([an-op
-                (integrate! a-state next-executable-msg)])
+         (let ([an-op (integrate! a-state next-executable-msg)])
            (for-each (lambda (a-dep)
+                       (printf "satisfying ~s~n" a-dep)
                        (tqueue-satisfy! (state-tqueue a-state) a-dep))
                      (msg-integration-satisfies next-executable-msg))
            (cons an-op (integrate-all-executables! a-state)))])))
@@ -157,6 +157,7 @@
   (define (msg-integration-satisfies a-msg)
     (match a-msg
       [(struct msg:insert (host-id dstx after-woot-id before-woot-id))
+       #;(printf "the woot ids of ~s are ~s~n" dstx (dstx-all-woot-ids dstx))
        (dstx-all-woot-ids dstx)]
       [(struct msg:delete (host-id woot-id))
        (list)]))

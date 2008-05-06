@@ -57,7 +57,7 @@
   
   ;; cmds will let us interact with the worker thread.
   (define-struct cmd ())
-  (define-struct (cmd:add! cmd) (elt deps))
+  (define-struct (cmd:add! cmd) (elt deps done))
   (define-struct (cmd:satisfy! cmd) (dep done))
   
   
@@ -65,8 +65,10 @@
   ;; Adds a new element to the topological queue.
   (define (tqueue-add! a-tqueue an-elt deps)
     (keep-worker-thread-alive! a-tqueue)
-    (channel-put (tqueue-worker-channel a-tqueue)
-                 (make-cmd:add! an-elt deps)))
+    (let ([sema (make-semaphore)])
+      (channel-put (tqueue-worker-channel a-tqueue)
+                   (make-cmd:add! an-elt deps sema))
+      (sync sema)))
   
   
   ;; tqueue-satisfy!: tqueue dep -> void
@@ -119,11 +121,12 @@
   (define (worker-thread-loop a-tqueue)
     (let ([cmd (channel-get (tqueue-worker-channel a-tqueue))])
       (match cmd
-        [(struct cmd:add! (elt deps))
-         (internal-add! a-tqueue elt deps)]
-        [(struct cmd:satisfy! (dep sema))
+        [(struct cmd:add! (elt deps done))
+         (internal-add! a-tqueue elt deps)
+         (semaphore-post done)]
+        [(struct cmd:satisfy! (dep done))
          (internal-satisfy! a-tqueue dep)
-         (semaphore-post sema)]))
+         (semaphore-post done)]))
     (worker-thread-loop a-tqueue))
   
   
