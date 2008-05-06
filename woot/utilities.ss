@@ -1,11 +1,13 @@
 (module utilities mzscheme
   (require (lib "contract.ss")
+           (lib "plt-match.ss")
            "../dsyntax/dsyntax.ss"
            "woot-struct.ss")
   
   (provide/contract [first-sentinel-woot-id woot-id?]
                     [fresh-woot-id (string? . -> . woot-id?)]
                     [dstx-woot-id (dstx? . -> . (or/c woot-id? false/c))]
+                    [dstx-all-woot-ids (dstx? . -> . (listof woot-id?))]
                     [dstx-local-id (dstx? . -> . number?)]
                     [dstx-set-woot-id (dstx? woot-id? . -> . dstx?)]
                     [deep-attach-woot-ids (dstx? string? . -> . dstx?)]
@@ -27,6 +29,23 @@
   ;; a woot-id, returns false.
   (define (dstx-woot-id a-dstx)
     (dstx-property-ref a-dstx 'woot-id (lambda () #f)))
+  
+  
+  
+  ;; dstx-all-woot-ids: dstx -> (listof woot-id)
+  ;; Given a dstx, returns all the woot ids of the dstx.  Does
+  ;; a deep traversal.
+  (define (dstx-all-woot-ids a-dstx)
+    (match a-dstx
+      [(struct atom (props content))
+       (list (dstx-woot-id a-dstx))]
+      [(struct special-atom (props content width))
+       (list (dstx-woot-id a-dstx))]
+      [(struct space (props content))
+       (list (dstx-woot-id a-dstx))]
+      [(struct fusion (props prefix children suffix))
+       (append (list (dstx-woot-id a-dstx))
+               (apply append (map dstx-all-woot-ids children)))]))
   
   
   ;; dstx-local-id: dstx -> number

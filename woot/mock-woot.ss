@@ -2,21 +2,22 @@
   (require (lib "contract.ss")
            (lib "list.ss")
            (lib "plt-match.ss")
-           "woot-struct.ss"
+           "../topological-queue/topological-queue.ss"
            "../dsyntax/dsyntax.ss"
+           "woot-struct.ss"
            "utilities.ss")
   
   ;; This is a mock-up of what interface we need from the woot algorithm.
   ;; Unlike the real woot, we expect this to break when there are concurrent
-  ;; edits!
+  ;; edits!  Fixme!
   
   
-  ;; unexecuted is a list of the unexecuted msg structures.
+  ;; State should be an opaque structure.
+  ;;
   ;; cursor is a functional cursor maintaining the structures that we
   ;; know about.
-  ;; State should be an opaque structure.
-  (define-struct state (unexecuted cursor))
-  
+  ;; tqueue represents the topological queue for messages.
+  (define-struct state (cursor tqueue))
   
   
   (provide/contract [new-mock-woot ((listof dstx?) . -> . state?)]
@@ -28,12 +29,27 @@
   ;; Creates a new mock-woot interface.
   ;; Fixme: we need to initialize with the woot ids of the boundaries.
   (define (new-mock-woot initial-dstxs)
-    (make-state
-     '()
-     (make-toplevel-cursor initial-dstxs)))
+    (let ([a-state (make-state
+                    '()
+                    (make-toplevel-cursor initial-dstxs)
+                    (new-tqueue))])
+      (initially-satisfy-from-toplevel-dstxs a-state)
+      a-state))
   
   
-  ;; consume-msg: a-state -> (listof Protocol-Syntax-Tree)
+  
+  ;; initially-satisfy-toplevel-dstxs: state -> void
+  ;; Tells the topological sort which elements we already know about.
+  (define (initially-satisfy-from-toplevel-dstxs a-state)
+    (for-each (lambda (a-dstx)
+                (for-each (lambda (a-woot-id)
+                            (tqueue-satisfy! (state-tqueue a-state)
+                                             (woot-id->dependency a-woot-id)))
+                          (dstx-all-woot-ids a-dstx)))
+              (cursor-toplevel-dstxs (state-cursor a-state))))
+  
+  
+  ;; consume-msg: a-state -> (listof op)
   ;; Add a new message to the state, and return a list of Interpreter
   ;; commands that we can evaluate.
   (define (consume-msg! a-state a-msg)
@@ -44,35 +60,24 @@
   ;; add-to-unexecuted!: mock-woot msg -> void
   ;; Adds to our pending queue of unexecuted messages.
   (define (add-to-unexecuted! a-state a-msg)
-    (set-state-unexecuted! a-state
-                           (cons a-msg (state-unexecuted a-state))))
+    (tqueue-add! (state-tqueue a-state) a-msg (msg-precondition-dependencies a-msg)))
   
   
-  ;; integrate-all-executables!: state -> (listof Protocol-Syntax-Tree)
+  ;; integrate-all-executables!: state -> (listof op)
   ;; Look for all executable messages, integrate them, and get back
   ;; a list of the commands to evaluate, in topological order.
   (define (integrate-all-executables! a-state)
-    (let loop ()
-      (let ([executables (filter (lambda (a-msg)
-                                   (is-executable? a-state a-msg))
-                                 (state-unexecuted a-state))])
-        (cond
-          [(empty? executables)
-           '()]
-          [else
-           (remove-from-unexecuted! a-state executables)
-           (append (map (lambda (a-msg)
-                          (integrate! a-state a-msg))
-                        executables)
-                   (loop))]))))
-  
-  
-  ;; remove-from-unexecuted!: mock-woot (listof msg) -> void
-  (define (remove-from-unexecuted! a-state msgs-to-remove)
-    (set-state-unexecuted! a-state
-                           (foldl (lambda (a-msg msgs) (remove a-msg msgs))
-                                  (state-unexecuted a-state)
-                                  msgs-to-remove)))
+    (let ([next-executable-msg (tqueue-try-get (state-tqueue a-state))])
+      (cond
+        [(not next-executable-msg)
+         '()]
+        [else
+         (let ([an-op
+                (integrate! a-state next-executable-msg)])
+           (for-each (lambda (a-dep)
+                       (tqueue-satisfy! (state-tqueue a-state) a-dep))
+                     (msg-integration-satisfies next-executable-msg))
+           (cons an-op (integrate-all-executables! a-state)))])))
   
   
   
@@ -89,9 +94,6 @@
   
   ;; integrate-insert!: state msg -> op
   (define (integrate-insert! a-state a-msg)
-    ;; fixme: adjust cursor
-    ;; fixme: find whatever dstx is visible, and insert after that thing.
-    #;(printf "integrating ~s~n" a-msg)
     (match a-msg
       [(struct msg:insert (host-id dstx after-id before-id))
        (let ([a-cursor (focus/woot-id (state-cursor a-state) after-id)])
@@ -125,27 +127,43 @@
          #f])))
   
   
+  ;; woot-id->dependency: woot-id -> symbol
+  ;; Given a woot id, returns a symbol that can be fed into
+  ;; topological-queue.
+  (define (woot-id->dependency a-woot-id)
+    (string->symbol (string-append (woot-id-logic-id a-woot-id)
+                                   "::"
+                                   (woot-id-host-id a-woot-id))))
   
-  ;; is-executable?: mock-woot msg -> boolean
-  ;; Returns true if we can execute and integrate this message.
-  (define (is-executable? a-state a-msg)
-    (let ([result
-           (match a-msg
-             [(struct msg:insert (host-id dstx after-woot-id before-woot-id))
-              (cond
-                [(and after-woot-id before-woot-id)
-                 ;; Inserting between two dstxs
-                 (and (focus/woot-id (state-cursor a-state) after-woot-id)
-                      (focus/woot-id (state-cursor a-state) before-woot-id)
-                      #t)]
-                [else
-                 ;; Inserting at end of fusion's children
-                 (and (focus/woot-id (state-cursor a-state) after-woot-id)
-                      #t)])]
-             [(struct msg:delete (host-id woot-id))
-              (and (focus/woot-id (state-cursor a-state) woot-id)
-                   #t)])])
-      result))
+  
+  ;; msg-precondition-dependencies: msg -> (listof symbol)
+  ;; Returns the preconditions necessary to integrate the message.
+  ;; Insertion requires that the after-woot-id is known, and
+  ;; optionally the before-woot-id.
+  ;; Deletion requires the woot-id to be executed.
+  (define (msg-precondition-dependencies a-msg)
+    (match a-msg
+      [(struct msg:insert (host-id dstx after-woot-id before-woot-id))
+       (cond
+         [(and after-woot-id before-woot-id)
+          (list (woot-id->dependency after-woot-id)
+                (woot-id->dependency before-woot-id))]
+         [else
+          (list (woot-id->dependency after-woot-id))])]
+      [(struct msg:delete (host-id woot-id))
+       (list (woot-id->dependency woot-id))]))
+  
+  
+  ;; msg-integration-satisfies: msg -> (listof symbol)
+  ;; Once this message is integrated, returns a list of the dependencies
+  ;; that this message has satisfied.
+  (define (msg-integration-satisfies a-msg)
+    (match a-msg
+      [(struct msg:insert (host-id dstx after-woot-id before-woot-id))
+       (dstx-all-woot-ids dstx)]
+      [(struct msg:delete (host-id woot-id))
+       (list)]))
+  
   
   
   ;; focus/woot-id: cursor woot-id -> (or/c cursor false/c)
