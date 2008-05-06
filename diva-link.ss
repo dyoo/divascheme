@@ -541,13 +541,28 @@
                                  
                                  ;; interpreter
                                  (lambda (world ast)
-                                   (diva-ast-put/wait+world world ast))
+                                   (call-in-event-thread
+                                    (lambda ()
+                                      (diva-ast-put/wait+world world ast))))
                                  
                                  on-exit ;; post-exit-hook
                                  cmd ;; cmd
                                  edit? ;; edit?
                                  ))))]))
-
+      
+      
+      ;; Force a call in the event thread.  Blocks until this is called.
+      (define (call-in-event-thread thunk)
+        (cond
+          [(eq? (current-thread) (eventspace-handler-thread (current-eventspace)))
+           (thunk)]
+          [else
+           (let ([ch (make-channel)])
+             (queue-callback (lambda ()
+                               (let ([result (thunk)])
+                                 (channel-put ch result)))
+                             #t)
+             (sync ch))]))
       
       ;; Command Mode
       (define (new-command-keymap)

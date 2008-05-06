@@ -57,16 +57,20 @@
       
       
       ;; We need to detect when things are being evaluated because they're
-      ;; driven by the outside world.  The parameter in-remote-operation is
+      ;; driven by the outside world.  The in-remote-operation? is
       ;; meant to protect the potential feedback that might happen otherwise.
-      (define in-remote-operation? (make-parameter #f))
+      (define in-remote-operation? #f)
+      
       
       ;; with-remote-operation-active: (-> X) -> X
-      ;; Evalutes the thunk in a dynamic environment where the in-remote-operation? parameter
+      ;; Evalutes the thunk in a dynamic environment where the in-remote-operation?
       ;; is true.
       (define/public (with-remote-operation-active thunk)
-        (parameterize ([in-remote-operation? #t])
-          (thunk)))
+        (let ([old-val in-remote-operation?])
+          (dynamic-wind
+           (lambda () (set! in-remote-operation? #t))
+           thunk
+           (lambda () (set! in-remote-operation? old-val)))))
       
       
       ;; get-host-id: -> string
@@ -108,13 +112,13 @@
       ;; on-woot-structured-insert: dstx woot-id woot-id -> void
       ;; We define additional hooks for the network mixin to do its stuff.
       (define/pubment (on-woot-structured-insert a-dstx after-woot-id before-woot-id)
-        (when (not (in-remote-operation?))
+        (when (not in-remote-operation?)
           (inner (void) on-woot-structured-insert a-dstx after-woot-id before-woot-id)))
       
       
       ;; on-woot-structured-delete: woot-id -> void
       (define/pubment (on-woot-structured-delete woot-id)
-        (when (not (in-remote-operation?))
+        (when (not in-remote-operation?)
           (inner (void) on-woot-structured-delete woot-id)))
       
       
