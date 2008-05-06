@@ -129,7 +129,7 @@
   ;; Given a woot id, returns a symbol that can be fed into
   ;; topological-queue.
   (define (woot-id->dependency a-woot-id)
-    (string->symbol (string-append (woot-id-logic-id a-woot-id)
+    (string->symbol (string-append (number->string (woot-id-logic-id a-woot-id))
                                    "::"
                                    (woot-id-host-id a-woot-id))))
   
