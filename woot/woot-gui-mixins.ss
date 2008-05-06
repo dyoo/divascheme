@@ -208,6 +208,7 @@
       (define/public (host-session)
         (let ([url (start-local-server)])
           (start-network-client url)
+          (integrate-initial-state)
           (message-box
            "Host session started"
            (format "Session started.\nOther hosts may join by using the session url: ~s"
@@ -260,6 +261,18 @@
                      (integrate-message-into-woot msg)
                      (loop)))))))
       
+      
+      (define (integrate-initial-state)
+        ;; fixme: go through the text and generate insert-between messages
+        (let ([a-cursor (get-dstx-cursor)])
+          (send a-cursor focus-toplevel!)
+          ;; fixme!
+          ;; not ready yet: do this tomorrow!
+          #;(let loop ()
+              (integrate-message-into-woot
+               (make-msg:insert (get-host-id) (cursor-dstx) after-woot-id before-woot-id))
+              ))
+        (void))
       
       
       ;; integrate a message-to-woot: msg -> void
