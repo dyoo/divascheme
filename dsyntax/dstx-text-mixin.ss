@@ -39,6 +39,7 @@
                          enable-dstx-parsing
                          disable-dstx-parsing
                          
+                         reparse-all-dstxs!
                          decorate-new-dstx
                          
                          on-structured-insert-before
@@ -888,48 +889,10 @@
         (insert-before!/sync-with-text a-dstx #t))
       
       
-      ;; insert-before!/sync-with-text: cursor boolean -> void
-      ;; Inserts a dstx before the current focus.  If sync? is false,
-      ;; doesn't reflect textual change to the current-text.
-      ;; Protected.
-      (define/public (insert-before!/sync-with-text a-dstx sync?)
-        (resynchronize-with-main-editing-cursor!)
-        (send current-text on-structured-insert-before
-              (get-functional-cursor) a-dstx)
-        (let ([a-dstx (send current-text decorate-new-dstx a-dstx)])
-          (with-structured-editing
-           (lambda ()
-             (when sync?
-               (send current-text set-position (cursor-pos) 'same #f #f 'local)
-               (pretty-print-to-text a-dstx))
-             (set! f-cursor (cursor:insert-before f-cursor a-dstx))
-             (mark-this-cursor-as-up-to-date-editor!)
-             (send current-text after-structured-insert-before f-cursor)))))
-      
-      
       ;; insert-after!: dstx -> void
       ;; Insert a dstx after the current focus.
       (define/public (insert-after! a-dstx)
         (insert-after!/sync-with-text a-dstx #t))
-      
-      
-      ;; insert-after!/sync-with-text: dstx boolean -> void
-      ;; Insert a dstx after the current focus.  If sync is false,
-      ;; doesn't keep in sync with current-text.
-      ;; Protected.
-      (define/public (insert-after!/sync-with-text a-dstx sync?)
-        (resynchronize-with-main-editing-cursor!)
-        (send current-text on-structured-insert-after
-              (get-functional-cursor) a-dstx)
-        (let ([a-dstx (send current-text decorate-new-dstx a-dstx)])
-          (with-structured-editing
-           (lambda ()
-             (when sync?
-               (send current-text set-position (cursor-endpos) 'same #f #f 'local)
-               (pretty-print-to-text a-dstx))
-             (set! f-cursor (cursor:insert-after f-cursor a-dstx))
-             (mark-this-cursor-as-up-to-date-editor!)
-             (send current-text after-structured-insert-after f-cursor)))))
       
       
       ;; delete! -> void
@@ -939,34 +902,94 @@
         (delete!/sync-with-text #t))
       
       
+      ;; call-in-eventspace-thread: (-> X) -> X
+      ;; Makes sure we call the thunk in the eventspace thread, to guarantee serial behavior.
+      (define (call-in-eventspace-thread thunk)
+        (cond
+          [(eq? (current-thread) (eventspace-handler-thread (current-eventspace)))
+           (thunk)]
+          [else
+           (let ([ch (make-channel)])
+             (queue-callback (lambda ()
+                               (let ([result (thunk)])
+                                 (channel-put ch result)))
+                             #t)
+             (sync ch))]))
+      
+      
+      ;; insert-before!/sync-with-text: cursor boolean -> void
+      ;; Inserts a dstx before the current focus.  If sync? is false,
+      ;; doesn't reflect textual change to the current-text.
+      ;; Protected.
+      (define/public (insert-before!/sync-with-text a-dstx sync?)
+        (call-in-eventspace-thread
+         (lambda ()
+           (resynchronize-with-main-editing-cursor!)
+           (send current-text on-structured-insert-before
+                 (get-functional-cursor) a-dstx)
+           (let ([a-dstx (send current-text decorate-new-dstx a-dstx)])
+             (with-structured-editing
+              (lambda ()
+                (when sync?
+                  (send current-text set-position (cursor-pos) 'same #f #f 'local)
+                  (pretty-print-to-text a-dstx))
+                (set! f-cursor (cursor:insert-before f-cursor a-dstx))
+                (mark-this-cursor-as-up-to-date-editor!)
+                (send current-text after-structured-insert-before f-cursor)))))))
+      
+      
+      ;; insert-after!/sync-with-text: dstx boolean -> void
+      ;; Insert a dstx after the current focus.  If sync is false,
+      ;; doesn't keep in sync with current-text.
+      ;; Protected.
+      (define/public (insert-after!/sync-with-text a-dstx sync?)
+        (call-in-eventspace-thread
+         (lambda ()
+           (resynchronize-with-main-editing-cursor!)
+           (send current-text on-structured-insert-after
+                 (get-functional-cursor) a-dstx)
+           (let ([a-dstx (send current-text decorate-new-dstx a-dstx)])
+             (with-structured-editing
+              (lambda ()
+                (when sync?
+                  (send current-text set-position (cursor-endpos) 'same #f #f 'local)
+                  (pretty-print-to-text a-dstx))
+                (set! f-cursor (cursor:insert-after f-cursor a-dstx))
+                (mark-this-cursor-as-up-to-date-editor!)
+                (send current-text after-structured-insert-after f-cursor)))))))
+      
+      
+      
       ;; delete!/sync-with-text: boolean -> void
       ;; Delete the dstx at the current focus.  Focus moves preferably to the next
       ;; oldest sibling.
       ;; If sync is false, does not keep current-text in sync.
       ;; Protected.
       (define/public (delete!/sync-with-text sync?)
-        (resynchronize-with-main-editing-cursor!)
-        (let ([deleted-dstx (cursor-dstx)])
-          (send current-text on-structured-delete (get-functional-cursor))
-          (with-structured-editing
-           (lambda ()
-             (let ([deletion-length
-                    (- (struct:loc-pos (cursor:loc-after
-                                        (struct:cursor-loc f-cursor)
-                                        (cursor-dstx)))
-                       (cursor-pos))])
-               (when sync?
-                 (cond [(send current-text can-delete? (cursor-pos) deletion-length)
-                        (send current-text delete
-                              (cursor-pos) (+ (cursor-pos) deletion-length) #f)]
-                       [else
-                        ;; fixme: I've got to do something here!
-                        (error 'delete!)]))
-               (set! f-cursor (cursor:delete f-cursor))
-               (set! f-cursor (cursor:replace
-                               f-cursor
-                               (send current-text
-                                     decorate-new-dstx
-                                     (struct:cursor-dstx f-cursor))))
-               (mark-this-cursor-as-up-to-date-editor!)
-               (send current-text after-structured-delete f-cursor deleted-dstx)))))))))
+        (call-in-eventspace-thread
+         (lambda ()
+           (resynchronize-with-main-editing-cursor!)
+           (let ([deleted-dstx (cursor-dstx)])
+             (send current-text on-structured-delete (get-functional-cursor))
+             (with-structured-editing
+              (lambda ()
+                (let ([deletion-length
+                       (- (struct:loc-pos (cursor:loc-after
+                                           (struct:cursor-loc f-cursor)
+                                           (cursor-dstx)))
+                          (cursor-pos))])
+                  (when sync?
+                    (cond [(send current-text can-delete? (cursor-pos) deletion-length)
+                           (send current-text delete
+                                 (cursor-pos) (+ (cursor-pos) deletion-length) #f)]
+                          [else
+                           ;; fixme: I've got to do something here!
+                           (error 'delete!)]))
+                  (set! f-cursor (cursor:delete f-cursor))
+                  (set! f-cursor (cursor:replace
+                                  f-cursor
+                                  (send current-text
+                                        decorate-new-dstx
+                                        (struct:cursor-dstx f-cursor))))
+                  (mark-this-cursor-as-up-to-date-editor!)
+                  (send current-text after-structured-delete f-cursor deleted-dstx)))))))))))

@@ -541,7 +541,7 @@
                                  
                                  ;; interpreter
                                  (lambda (world ast)
-                                   (call-in-event-thread
+                                   (call-in-eventspace-thread
                                     (lambda ()
                                       (diva-ast-put/wait+world world ast))))
                                  
@@ -551,8 +551,8 @@
                                  ))))]))
       
       
-      ;; Force a call in the event thread.  Blocks until this is called.
-      (define (call-in-event-thread thunk)
+      ;; Force a call in the event thread.  Blocks until we can evaluate and return from the thunk.
+      (define (call-in-eventspace-thread thunk)
         (cond
           [(eq? (current-thread) (eventspace-handler-thread (current-eventspace)))
            (thunk)]
