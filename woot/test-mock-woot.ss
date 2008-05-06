@@ -18,6 +18,13 @@
   (define (decorate a-dstx)
     (deep-attach-woot-ids a-dstx host-id))
   
+  (define initial-cursor
+    (let ([a-cursor (make-toplevel-cursor (list))])
+      (replace a-cursor (decorate (cursor-dstx a-cursor)))))
+  
+  (define my-sentinel-space
+    (cursor-dstx initial-cursor))
+  
   
   (define test-mock-woot
     (test-suite
@@ -25,12 +32,12 @@
      
      (test-case
       "construction"
-      (mock:new-mock-woot (list a-sentinel-space)))
+      (mock:new-mock-woot initial-cursor))
      
      
      (test-case
       "inserting an atom into empty buffer."
-      (let* ([woot (mock:new-mock-woot (list a-sentinel-space))]
+      (let* ([woot (mock:new-mock-woot initial-cursor)]
              [an-atom (decorate (new-atom "hello"))]
              [new-ops
               (mock:consume-msg! woot
@@ -48,7 +55,7 @@
      
      (test-case
       "inserting without satisfying precondition should be empty"
-      (let* ([woot (mock:new-mock-woot (list a-sentinel-space))]
+      (let* ([woot (mock:new-mock-woot initial-cursor)]
              [new-cmds
               (mock:consume-msg! woot
                                  (make-msg:insert
@@ -61,7 +68,7 @@
      
      (test-case
       "inserting hello world in reverse order"
-      (let* ([woot (mock:new-mock-woot (list a-sentinel-space))]
+      (let* ([woot (mock:new-mock-woot initial-cursor)]
              [world-atom (decorate (new-atom "world"))]
              [hello-atom (decorate (new-atom "hello"))]
              [new-cmds-1
@@ -69,13 +76,13 @@
                                  (make-msg:insert host-id world-atom (dstx-woot-id hello-atom) #f))]
              [new-cmds-2
               (mock:consume-msg! woot
-                                 (make-msg:insert host-id hello-atom (dstx-woot-id a-sentinel-space) #f))])
+                                 (make-msg:insert host-id hello-atom (dstx-woot-id my-sentinel-space) #f))])
         (check-equal? new-cmds-1 '())
         (check-equal? (length new-cmds-2) 2)
         (check-equal? (op:insert-after-dstx (first new-cmds-2))
                       hello-atom)
         (check-equal? (op:insert-after-id (first new-cmds-2))
-                      (dstx-woot-id a-sentinel-space))
+                      (dstx-woot-id my-sentinel-space))
         
         (check-equal? (op:insert-after-dstx (second new-cmds-2))
                       world-atom)
@@ -89,7 +96,11 @@
       (let* ([foo (decorate (new-atom "foo"))]
              [bar (decorate (new-atom "bar"))]
              [baz (decorate (new-atom "baz"))]
-             [woot (mock:new-mock-woot (list a-sentinel-space foo bar baz))]
+             [a-cursor (insert-after
+                        (insert-after (insert-after initial-cursor foo)
+                                      bar)
+                        baz)]
+             [woot (mock:new-mock-woot a-cursor)]
              [new-cmds
               (mock:consume-msg! woot
                                  (make-msg:delete host-id (dstx-woot-id bar)))])

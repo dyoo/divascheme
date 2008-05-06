@@ -20,7 +20,7 @@
   (define-struct state (cursor tqueue))
   
   
-  (provide/contract [new-mock-woot ((listof dstx?) . -> . state?)]
+  (provide/contract [new-mock-woot (cursor? . -> . state?)]
                     [visible-before-or-at (state? woot-id? . -> . woot-id?)]
                     [consume-msg! (state? msg? . -> . (listof op?))])
   
@@ -28,11 +28,8 @@
   
   ;; Creates a new mock-woot interface.
   ;; Fixme: we need to initialize with the woot ids of the boundaries.
-  (define (new-mock-woot initial-dstxs)
-    (let ([a-state (make-state
-                    '()
-                    (make-toplevel-cursor initial-dstxs)
-                    (new-tqueue))])
+  (define (new-mock-woot initial-cursor)
+    (let ([a-state (make-state initial-cursor (new-tqueue))])
       (initially-satisfy-from-toplevel-dstxs a-state)
       a-state))
   
@@ -42,6 +39,7 @@
   ;; Tells the topological sort which elements we already know about.
   (define (initially-satisfy-from-toplevel-dstxs a-state)
     (for-each (lambda (a-dstx)
+                (printf "looking at ~s~n" a-dstx)
                 (for-each (lambda (a-woot-id)
                             (tqueue-satisfy! (state-tqueue a-state)
                                              (woot-id->dependency a-woot-id)))
