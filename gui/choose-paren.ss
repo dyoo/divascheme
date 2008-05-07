@@ -29,16 +29,24 @@
       [else default-cmd]))
   
   
+  
+  (define (with-unstructured-decoration editor f)
+    (let ([old-val (send editor in-unstructured-editing?)])
+      (dynamic-wind (lambda () (send editor set-in-unstructured-editing? #t))
+                    f
+                    (lambda () (send editor set-in-unstructured-editing? old-val)))))
+  
+  
+  
   ;; choose-paren: scheme-text% -> char
   ;; Returns the right square paren to use at the context where the cursor is.
   (define (choose-paren text)
-    (dynamic-wind 
-     (lambda () 
-       (send text set-in-unstructured-editing? #t)) 
-     (lambda () 
+    (with-unstructured-decoration
+     text
+     (lambda ()
        (let* ([pos (send text get-start-position)]
               [real-char #\[]
-              [change-to (λ (i c) 
+              [change-to (λ (i c)
                            ;(printf "change-to, case ~a\n" i)
                            (set! real-char c))]
               [start-pos (send text get-start-position)]
@@ -82,7 +90,7 @@
                      (let ([b-w-p-char (send text get-character (- before-whitespace-pos 1))])
                        (cond
                          [(equal? b-w-p-char #\()
-                          (let* ([second-before-whitespace-pos (send text skip-whitespace 
+                          (let* ([second-before-whitespace-pos (send text skip-whitespace
                                                                      (- before-whitespace-pos 1)
                                                                      'backward
                                                                      #t)]
@@ -102,7 +110,7 @@
                                (void)]
                               [else
                                ;; go back one more sexp in the same row, looking for `let loop' pattern
-                               (let* ([second-before-whitespace-pos2 (send text skip-whitespace 
+                               (let* ([second-before-whitespace-pos2 (send text skip-whitespace
                                                                            second-backwards-match
                                                                            'backward
                                                                            #t)]
@@ -124,16 +132,14 @@
                                    [else
                                     ;; otherwise, round.
                                     (change-to 4 #\()]))]))]
-                         [else 
+                         [else
                           (change-to 5 #\()]))]
-                    [else 
+                    [else
                      (change-to 6 #\()]))])))
          (send text delete pos (+ pos 1) #f)
          (send text end-edit-sequence)
-         real-char)) 
-     
-     (lambda ()
-       (send text set-in-unstructured-editing? #t))))
+         real-char))))
+  
   
   
   ;; find-keyword-and-distance : -> (union #f (cons string number))
