@@ -1,12 +1,11 @@
 DivaScheme TODO
 
- woot-dstx (bridge) get working
- adjust serialize to not use serialize (or use 399)
- add move operations
- speed up dstx
- robustify network stuffs
- add option for pausing & resuming sync
- add disconnect button
- send initial buffer contents
- insert syncs in between atom insertions
- make URL copy/pasteable
+ woot-dstx (bridge) get working (adam)
+ adjust serialize to not use serialize (or use 399) (chris)
+ add move operations (adam)
+ robustify network stuffs (chris)
+ add option for pausing & resuming sync (danny)
+ add disconnect button (danny)
+ send initial buffer contents (chris)
+ insert syncs in between atom insertions (danny)
+ make URL copy/pasteable (adam)
