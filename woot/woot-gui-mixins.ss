@@ -127,6 +127,7 @@
       ;; on-woot-structured-insert.
       (define/augment (on-structured-insert-before a-fcursor a-dstx)
         (when (not (dstx-from-unstructured-editing? a-dstx))
+          (printf "structured-insert-before: ~s~n" a-dstx)
           (cond
             [(focus-younger/no-snap a-fcursor)
              (on-woot-structured-insert (deep-strip-local-ids a-dstx)
@@ -143,9 +144,10 @@
       ;; Given a structured insert appropriate for woot, we call out to
       ;; on-woot-structured-insert.
       (define/augment (on-structured-insert-after a-fcursor a-dstx)
-        (when (space? a-dstx) (printf "WE GOT A SPACE! ~s\n" a-dstx))
+        #;(when (space? a-dstx) (printf "WE GOT A SPACE! ~s\n" a-dstx))
         (when (not (dstx-from-unstructured-editing? a-dstx))
-          (when (space? a-dstx) (printf "OK still got that space! ~s\n" a-dstx))
+          #;(when (space? a-dstx) (printf "OK still got that space! ~s\n" a-dstx))
+          (printf "structured-insert-after: ~s~n" a-dstx)
           (cond
             [(focus-older/no-snap a-fcursor)
              (on-woot-structured-insert (deep-strip-local-ids a-dstx)
@@ -163,7 +165,9 @@
       ;; Given a structured delete appropriate for woot, we call out to
       ;; on-woot-structured-insert.
       (define/augment (on-structured-delete a-fcursor)
+        (printf "** on-structured delete ~s~n" (cursor-dstx a-fcursor))
         (when (not (dstx-from-unstructured-editing? (cursor-dstx a-fcursor)))
+          (printf "structured delete of ~s~n" (cursor-dstx a-fcursor))
           (cond
             [(and (focus-younger/no-snap a-fcursor)
                   (focus-older/no-snap a-fcursor))

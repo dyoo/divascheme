@@ -586,8 +586,8 @@
                   (diva-message "")
                   
                   (check-good-syntax)
-                  (zero-out-command-mode-sema)
                   (set-in-unstructured-editing? #t)
+                  (zero-out-command-mode-sema)
                   (when (get-check-syntax-button)
                     (set! was-button-enabled? (send (get-check-syntax-button) is-enabled?))
                     (send (get-check-syntax-button) enable #f)))
@@ -597,8 +597,8 @@
                   
                   (when (get-check-syntax-button)
                     (send (get-check-syntax-button) enable was-button-enabled?))
-                  (semaphore-post command-mode-sema)
-                  (set-in-unstructured-editing? #f)))
+                  (set-in-unstructured-editing? #f)
+                  (semaphore-post command-mode-sema)))
           (make-command-keymap this
                                (lambda (edit?)
                                  (to-insert-mode edit? on-entry on-exit))
