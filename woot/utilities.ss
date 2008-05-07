@@ -19,9 +19,10 @@
   
   
   ;; fresh-woot-id: string -> woot-id
-  ;; Returns a fresh woot id.
-  (define (fresh-woot-id host-ip)
-    (make-woot-id (next-logical-id) "" #;host-ip))
+  ;; Returns a fresh woot id.  The host id is meant to uniquely identify
+  ;; the entity that generates the woot id.
+  (define (fresh-woot-id host-id)
+    (make-woot-id (next-logical-id) host-id))
   
   
   ;; dstx-woot-id: dstx -> (or/c woot-id false)
@@ -61,13 +62,13 @@
   
   ;; deep-attach-woot-id: dstx string -> dstx
   ;; Attach new woot identifiers to any dstx that doesn't yet have one.
-  (define (deep-attach-woot-ids a-dstx host-ip)
+  (define (deep-attach-woot-ids a-dstx host-id)
     (dstx-deepmap (lambda (a-dstx)
                     (cond
                       [(dstx-woot-id a-dstx)
                        a-dstx]
                       [else
-                       (dstx-set-woot-id a-dstx (fresh-woot-id host-ip))]))
+                       (dstx-set-woot-id a-dstx (fresh-woot-id host-id))]))
                   a-dstx))
   
   
