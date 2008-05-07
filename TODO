@@ -1,0 +1,8 @@
+DivaScheme TODO
+
+
+
+woot-dstx (bridge) get working
+adjust serialize to not use serialize (or use 399)
+add move operations
+speed up dstx
