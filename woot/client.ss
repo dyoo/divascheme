@@ -9,7 +9,7 @@
            (lib "list.ss")
            (lib "xml.ss" "xml"))
   
-  (define-struct client (url last-seen-id mailbox polling-delay))
+  (define-struct client (url last-seen-id mailbox polling-delay worker-thread))
   
   
   
@@ -22,30 +22,41 @@
    [client-send-message (client? any/c . -> . any)])
   
   
-  
-  (define default-polling-delay 0.1)
+  ;; Wait 100 milliseconds between pulls.
+  (define default-polling-delay 100)
   
   ;; start-client: string -> client
   ;; Begins a client that periodically polls
   ;; the text for new events.  It also accepts new events and sends
   ;; them out to the server.
   (define (new-client url)
-    (let ([client (make-client url -1 (make-async-channel) default-polling-delay)])
-      (thread (lambda () (polling-loop client)))
+    (let* ([client (make-client url -1 (make-async-channel) default-polling-delay #f)]
+           [worker-t (thread (lambda () (worker-loop client)))])
+      (set-client-worker-thread! client worker-t)
       client))
   
   
-  ;; polling-loop: client -> void
-  ;; Never terminates: calls polling-loop continuously.
-  (define (polling-loop a-client)
-    (client-pull a-client)
-    (sleep (client-polling-delay a-client))
-    (polling-loop a-client))
+  
+  ;; worker-loop: client -> void
+  ;; Never terminates: the client worker thread maintains the state of the system.
+  (define (worker-loop a-client)
+    (let loop ()
+      (let ([handle-polling-evt
+             (wrap-evt (alarm-evt
+                        (+ (current-inexact-milliseconds) default-polling-delay))
+                       (lambda (evt)
+                         (client-pull a-client)))])
+        (void
+         (sync
+          (choice-evt handle-polling-evt))))
+      (loop)))
+  
   
   
   ;; client-send-message: client string -> void
   ;; Sends a client message to the server.
   (define (client-send-message a-client a-message)
+    (thread-resume (client-worker-thread a-client) (current-thread))
     (let* ([encoded-params (alist->form-urlencoded
                             `((action . "push")
                               (msg . ,a-message)))]
@@ -56,10 +67,11 @@
       (close-input-port (get-pure-port url))))
   
   
-  ;; with-custodian: (-> X) -> X
+  
+  ;; with-resource-reclamation: (-> X) -> X
   ;; Evaluate a thunk with a custodian, cleaning up all resources consumed by the
   ;; application of the thunk.
-  (define (with-custodian thunk)
+  (define (with-resource-reclamation thunk)
     (let ([a-cust (make-custodian)])
       (dynamic-wind (lambda ()
                       (void))
@@ -73,7 +85,7 @@
   ;; client-pull: client -> void
   ;; Retrieves new messages from the server and puts them in the mailbox.
   (define (client-pull a-client)
-    (with-custodian
+    (with-resource-reclamation
      (lambda ()
        (let* ([encoded-params (alist->form-urlencoded
                                `((action . "pull")
