@@ -301,7 +301,6 @@
           [(in-dstx-edit-sequence?)
            (void)]
           [else
-           #;(printf "after-insert ~a ~a: ~s~n" start-pos len (send this get-text start-pos (+ start-pos len)))
            (handle-possibly-unstructured-insert start-pos len)]))
       
       
@@ -986,10 +985,5 @@
                            ;; fixme: I've got to do something here!
                            (error 'delete!)]))
                   (set! f-cursor (cursor:delete f-cursor))
-                  (set! f-cursor (cursor:replace
-                                  f-cursor
-                                  (send current-text
-                                        decorate-new-dstx
-                                        (struct:cursor-dstx f-cursor))))
                   (mark-this-cursor-as-up-to-date-editor!)
                   (send current-text after-structured-delete f-cursor deleted-dstx)))))))))))

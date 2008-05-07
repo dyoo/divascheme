@@ -128,6 +128,7 @@
                
                enable-dstx-parsing
                disable-dstx-parsing
+               get-dstx-cursor
                
                begin-edit-sequence
                end-edit-sequence
@@ -586,7 +587,6 @@
                   (diva-message "")
                   
                   (check-good-syntax)
-                  (set-in-unstructured-editing? #t)
                   (zero-out-command-mode-sema)
                   (when (get-check-syntax-button)
                     (set! was-button-enabled? (send (get-check-syntax-button) is-enabled?))
@@ -597,7 +597,6 @@
                   
                   (when (get-check-syntax-button)
                     (send (get-check-syntax-button) enable was-button-enabled?))
-                  (set-in-unstructured-editing? #f)
                   (semaphore-post command-mode-sema)))
           (make-command-keymap this
                                (lambda (edit?)

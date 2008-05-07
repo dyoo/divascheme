@@ -127,7 +127,6 @@
       ;; on-woot-structured-insert.
       (define/augment (on-structured-insert-before a-fcursor a-dstx)
         (when (not (dstx-from-unstructured-editing? a-dstx))
-          (printf "structured-insert-before: ~s~n" a-dstx)
           (cond
             [(focus-younger/no-snap a-fcursor)
              (on-woot-structured-insert (deep-strip-local-ids a-dstx)
@@ -144,10 +143,7 @@
       ;; Given a structured insert appropriate for woot, we call out to
       ;; on-woot-structured-insert.
       (define/augment (on-structured-insert-after a-fcursor a-dstx)
-        #;(when (space? a-dstx) (printf "WE GOT A SPACE! ~s\n" a-dstx))
         (when (not (dstx-from-unstructured-editing? a-dstx))
-          #;(when (space? a-dstx) (printf "OK still got that space! ~s\n" a-dstx))
-          (printf "structured-insert-after: ~s~n" a-dstx)
           (cond
             [(focus-older/no-snap a-fcursor)
              (on-woot-structured-insert (deep-strip-local-ids a-dstx)
@@ -165,9 +161,7 @@
       ;; Given a structured delete appropriate for woot, we call out to
       ;; on-woot-structured-insert.
       (define/augment (on-structured-delete a-fcursor)
-        (printf "** on-structured delete ~s~n" (cursor-dstx a-fcursor))
         (when (not (dstx-from-unstructured-editing? (cursor-dstx a-fcursor)))
-          (printf "structured delete of ~s~n" (cursor-dstx a-fcursor))
           (cond
             [(and (focus-younger/no-snap a-fcursor)
                   (focus-older/no-snap a-fcursor))
@@ -311,26 +305,22 @@
                      (visible-before-or-at woot-state after-id)])
                 (with-remote-operation-active
                  (lambda ()
-                   #;(printf "interpreting remote operation~a~n" an-op)
                    (interpret!
                     (make-Insert-Dstx-After dstx
                                             (dstx-local-id
                                              (woot-id->local-dstx visible-woot-id)))))))]
              [else
-              (void)
-              #;(printf "local~n")])]
+              (void)])]
           [(struct op:delete (msg id))
            (cond
              [(msg-origin-remote? msg)
               (with-remote-operation-active
                (lambda ()
-                 #;(printf "interpreting remote operation~a~n" an-op)
                  (interpret!
                   (make-Delete-Dstx
                    (dstx-local-id (woot-id->local-dstx id))))))]
              [else
-              (void)
-              #;(printf "local~n")])]))
+              (void)])]))
       
       
       ;; msg-origin-remote?: msg -> boolean

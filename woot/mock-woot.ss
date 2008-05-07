@@ -50,7 +50,6 @@
   ;; Add a new message to the state, and return a list of Interpreter
   ;; commands that we can evaluate.
   (define (consume-msg! a-state a-msg)
-    (printf "~s\n" a-msg)
     (add-to-unexecuted! a-state a-msg)
     (integrate-all-executables! a-state))
   

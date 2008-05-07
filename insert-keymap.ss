@@ -60,14 +60,30 @@
       (when cmd (eval-cmd cmd)))
     
     
+    ;; Force a call in the event thread.  Blocks until we can evaluate and return from the thunk.
+    (define (call-in-eventspace-thread thunk)
+      (cond
+        [(eq? (current-thread) (eventspace-handler-thread (current-eventspace)))
+         (thunk)]
+        [else
+         (let ([ch (make-channel)])
+           (queue-callback (lambda ()
+                             (let ([result (thunk)])
+                               (channel-put ch result)))
+                           #t)
+           (sync ch))]))
+    
+    
     ;; do-interpretation: world Protocol-Syntax-tree -> void
     (define (do-interpretation world ast)
-      (with-unstructured-decoration
+      (call-in-eventspace-thread
        (lambda ()
-         (restore-editor-to-pre-state!)))
-      (with-structured-decoration
-       (lambda ()
-         (interpret! world ast))))
+         (with-unstructured-decoration
+          (lambda ()
+            (restore-editor-to-pre-state!)))
+         (with-structured-decoration
+          (lambda ()
+            (interpret! world ast))))))
     
     
     ;; delete-insertion-point!: -> void
@@ -325,8 +341,11 @@
                    [else
                     (save-original-selected-dstx!)
                     (send editor delete)])
+             (send editor diva:set-selection-position left-point)
              (when need-space-before
-               (send editor insert " "))
+               (send editor insert " " left-point)
+               (send editor diva:set-selection-position
+                     (add1 left-point)))
              (when need-space-after
                (send editor insert " ")
                (send editor diva:set-selection-position
