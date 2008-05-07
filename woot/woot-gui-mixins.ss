@@ -143,7 +143,9 @@
       ;; Given a structured insert appropriate for woot, we call out to
       ;; on-woot-structured-insert.
       (define/augment (on-structured-insert-after a-fcursor a-dstx)
+        (when (space? a-dstx) (printf "WE GOT A SPACE! ~s\n" a-dstx))
         (when (not (dstx-from-unstructured-editing? a-dstx))
+          (when (space? a-dstx) (printf "OK still got that space! ~s\n" a-dstx))
           (cond
             [(focus-older/no-snap a-fcursor)
              (on-woot-structured-insert (deep-strip-local-ids a-dstx)

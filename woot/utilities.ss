@@ -21,7 +21,7 @@
   ;; fresh-woot-id: string -> woot-id
   ;; Returns a fresh woot id.
   (define (fresh-woot-id host-ip)
-    (make-woot-id (next-logical-id) host-ip))
+    (make-woot-id (next-logical-id) "" #;host-ip))
   
   
   ;; dstx-woot-id: dstx -> (or/c woot-id false)
