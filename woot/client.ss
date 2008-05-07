@@ -9,7 +9,7 @@
            (lib "list.ss")
            (lib "xml.ss" "xml"))
   
-  (define-struct client (url last-seen-id mailbox polling-delay worker-thread))
+  (define-struct client (url last-seen-id mailbox polling-delay polling? worker-thread in-ch))
   
   
   
@@ -18,6 +18,8 @@
    [new-client (string? . -> . any)]
    ;; client-mailbox: client -> async-channel
    [client-mailbox (client? . -> . async-channel?)]
+   [client-start-polling (client? . -> . any)]
+   [client-pause-polling (client? . -> . any)]
    ;; client-send-message: client string -> void
    [client-send-message (client? any/c . -> . any)])
   
@@ -30,7 +32,13 @@
   ;; the text for new events.  It also accepts new events and sends
   ;; them out to the server.
   (define (new-client url)
-    (let* ([client (make-client url -1 (make-async-channel) default-polling-delay #f)]
+    (let* ([client (make-client url
+                                -1
+                                (make-async-channel)
+                                default-polling-delay
+                                #t ; polling is initially turned on
+                                'uninitialized ; thread will be momentarily initiallized
+                                (make-channel))]
            [worker-t (thread (lambda () (worker-loop client)))])
       (set-client-worker-thread! client worker-t)
       client))
@@ -43,13 +51,37 @@
     (let loop ()
       (let ([handle-polling-evt
              (wrap-evt (alarm-evt
-                        (+ (current-inexact-milliseconds) default-polling-delay))
+                        (+ (current-inexact-milliseconds)
+                           (client-polling-delay a-client)))
                        (lambda (evt)
-                         (client-pull a-client)))])
-        (void
-         (sync
-          (choice-evt handle-polling-evt))))
-      (loop)))
+                         (client-pull a-client)))]
+            [handle-in-ch-evt
+             (wrap-evt (client-in-ch a-client)
+                       (lambda (msg)
+                         (match msg
+                           ['pause-polling
+                            (set-client-polling?! a-client #f)]
+                           ['start-polling
+                            (set-client-polling?! a-client #t)])))])
+        (cond
+          [(client-polling? a-client)
+           (void (sync (choice-evt handle-polling-evt handle-in-ch-evt)))]
+          [else
+           (void (sync (choice-evt handle-in-ch-evt)))])
+        (loop))))
+  
+  
+  
+  ;; client-pause-polling: client -> void
+  (define (client-pause-polling a-client)
+    (thread-resume (client-worker-thread a-client) (current-thread))
+    (channel-put (client-in-ch a-client) 'pause-polling))
+  
+  
+  ;; client-start-polling: client -> void
+  (define (client-start-polling a-client)
+    (thread-resume (client-worker-thread a-client) (current-thread))
+    (channel-put (client-in-ch a-client) 'start-polling))
   
   
   
