@@ -1,8 +1,12 @@
 DivaScheme TODO
 
-
-
-woot-dstx (bridge) get working
-adjust serialize to not use serialize (or use 399)
-add move operations
-speed up dstx
+ woot-dstx (bridge) get working
+ adjust serialize to not use serialize (or use 399)
+ add move operations
+ speed up dstx
+ robustify network stuffs
+ add option for pausing & resuming sync
+ add disconnect button
+ send initial buffer contents
+ insert syncs in between atom insertions
+ make URL copy/pasteable
