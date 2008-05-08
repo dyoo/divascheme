@@ -82,7 +82,7 @@
   ;;  - one for giving feedbacks to the user
   ;;  - one for answering questions
   ;; All These panels need a super panel which contains them.
-  (provide voice-label/message/question-panel%)
+  
   (define voice-label/message/question-panel%
     (class object%
       (init parent)
