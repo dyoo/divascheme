@@ -86,86 +86,95 @@
   (define voice-label/message/question-panel%
     (class object%
       (init parent)
-      (super-new)
+      
       
       (define voice-label-width 200)
-      
-      (define voice-label/message/question-panel
-        (new horizontal-panel%
-             [parent parent]
-             [stretchable-height false]
-             [stretchable-width true]
-             [alignment '(left center)]
-             [horiz-margin 10]))
-      
+      (define voice-label/message/question-panel #f)
       ;; The panel showing the current mode.
-      (define voice-label-msg
-        (new message%
-             [label ""]
-             [parent voice-label/message/question-panel]
-             [stretchable-width true]
-             [stretchable-height false]))
-      
+      (define voice-label-msg #f)
       ;; The feedback panel.
-      (define voice-message-msg
-        (new message%
-             [label ""]
-             [parent voice-label/message/question-panel]
-             [stretchable-width true]
-             [stretchable-height false]))
-      
-      
-      (define voice-question-panel
-        (new horizontal-panel%
-             [parent voice-label/message/question-panel]
-             [stretchable-height false]
-             [stretchable-width true]
-             [alignment '(right center)]
-             [horiz-margin 10]))
-      
-      (define voice-question-msg
-        (new message%
-             [label ""]
-             [parent voice-question-panel]
-             [stretchable-width true]
-             [stretchable-height false]))
-      
+      (define voice-message-msg #f)
+      (define voice-question-panel #f)
+      (define voice-question-msg #f)
       ;; The panel to answer questions need an object where the user can type.
-      (define voice-question-text
-        (new text%))
-      
+      (define voice-question-text #f)
       ;; The answering panel.
-      (define voice-question-canvas
-        (new editor-canvas%
-             [parent voice-question-panel]
-             [editor voice-question-text]
-             [style '(no-hscroll no-vscroll)]
-             [stretchable-width true]
-             [stretchable-height false]
-             [min-width 0]
-             [line-count 1]))
+      (define voice-question-canvas #f)
       
-      (define make-voice-question-text-keymap
-        (lambda (cancel answer)
-          (let ([question-text-keymap (make-object keymap:aug-keymap%)])
-            (send question-text-keymap add-function "voice-question-text:cancel"
-                  (lambda (any event)
-                    (cancel)))
-            (send question-text-keymap add-function "voice-question-text:answer"
-                  (lambda (any event)
-                    (answer)))
-            (send question-text-keymap map-function "space" "voice-question-text:answer")
-            (send question-text-keymap map-function "tab" "voice-question-text:answer")
-            (send question-text-keymap map-function "enter" "voice-question-text:answer")
-            (send question-text-keymap map-function "numpadenter" "voice-question-text:answer")
-            (send question-text-keymap map-function "esc" "voice-question-text:cancel")
-            (send question-text-keymap map-function "c:g" "voice-question-text:cancel")
-            question-text-keymap)))
       
-      ;; Configuration of these panels.
-      (send voice-label-msg show false)
-      (send voice-question-canvas show false)
-      (send voice-label/message/question-panel min-height (+ 8 (send voice-question-canvas min-height)))
+      
+      (define (initialize)
+        (super-new)
+        (set! voice-label/message/question-panel
+              (new horizontal-panel%
+                   [parent parent]
+                   [stretchable-height false]
+                   [stretchable-width true]
+                   [alignment '(left center)]
+                   [horiz-margin 10]))
+        (set! voice-label-msg
+              (new message%
+                   [label ""]
+                   [parent voice-label/message/question-panel]
+                   [stretchable-width true]
+                   [stretchable-height false]))
+        (set! voice-message-msg
+              (new message%
+                   [label ""]
+                   [parent voice-label/message/question-panel]
+                   [stretchable-width true]
+                   [stretchable-height false]))
+        (set! voice-question-panel
+              (new horizontal-panel%
+                   [parent voice-label/message/question-panel]
+                   [stretchable-height false]
+                   [stretchable-width true]
+                   [alignment '(right center)]
+                   [horiz-margin 10]))
+        (set! voice-question-msg
+              (new message%
+                   [label ""]
+                   [parent voice-question-panel]
+                   [stretchable-width true]
+                   [stretchable-height false]))
+        (set! voice-question-text
+              (new text%))
+        (set! voice-question-canvas
+              (new editor-canvas%
+                   [parent voice-question-panel]
+                   [editor voice-question-text]
+                   [style '(no-hscroll no-vscroll)]
+                   [stretchable-width true]
+                   [stretchable-height false]
+                   [min-width 0]
+                   [line-count 1]))
+        
+        (send voice-label-msg show false)
+        (send voice-question-canvas show false)
+        (send voice-label/message/question-panel min-height (+ 8 (send voice-question-canvas min-height))))
+      
+      
+      
+      
+      
+      
+      
+      (define (make-voice-question-text-keymap cancel answer)
+        (let ([question-text-keymap (make-object keymap:aug-keymap%)])
+          (send question-text-keymap add-function "voice-question-text:cancel"
+                (lambda (any event)
+                  (cancel)))
+          (send question-text-keymap add-function "voice-question-text:answer"
+                (lambda (any event)
+                  (answer)))
+          (send question-text-keymap map-function "space" "voice-question-text:answer")
+          (send question-text-keymap map-function "tab" "voice-question-text:answer")
+          (send question-text-keymap map-function "enter" "voice-question-text:answer")
+          (send question-text-keymap map-function "numpadenter" "voice-question-text:answer")
+          (send question-text-keymap map-function "esc" "voice-question-text:cancel")
+          (send question-text-keymap map-function "c:g" "voice-question-text:cancel")
+          question-text-keymap))
+      
       
       (define (voice-label-hide)
         (send voice-label-msg min-width 0)
@@ -182,7 +191,8 @@
       (define/public (voice-label label)
         (if label
             (begin
-              (send voice-label-msg set-label (substring label 0 (min voice-label-width (string-length label))))
+              (send voice-label-msg set-label
+                    (substring label 0 (min voice-label-width (string-length label))))
               (voice-label-show))
             (begin
               (voice-label-hide))))
@@ -248,5 +258,6 @@
           (send voice-question-text erase)
           (send voice-question-text insert default)
           (send voice-question-text set-position 0 (string-length default) false false 'local)
-          (voice-question-panel-show)))))
-  )
+          (voice-question-panel-show)))
+      
+      (initialize))))
