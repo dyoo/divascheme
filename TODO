@@ -7,5 +7,10 @@ DivaScheme TODO
  add option for pausing & resuming sync (danny)
  add disconnect button (danny)
  send initial buffer contents (chris)
+
  insert syncs in between atom insertions (danny)
+
+   - done!  We call diva-link's apply-all-command-mode-queued-thunks!
+   between calls to the interpreter from insert mode.
+
  make URL copy/pasteable (adam)
