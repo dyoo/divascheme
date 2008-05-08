@@ -96,6 +96,12 @@
        (new-atom "#lang")))
      
      (test-case
+      "parsing misspelled lang should be that atom too"
+      (check-equal?
+       (parse "#langs")
+       (new-atom "#langs")))
+     
+     (test-case
       "parse vector"
       (check-equal?
        (parse "#(1)")

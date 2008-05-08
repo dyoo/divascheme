@@ -77,6 +77,12 @@
          (:: "#" (char-set "eibodx") pound-prefix-free-atom)     ;; numeric constants
          (:: "#%" pound-prefix-free-atom)
          (:: "#:" (:* atom-char)) ;; keywords
+         
+         ;; Catchall for a pounded thing: as long as it doesn't have a quoter at the
+         ;; beginning of it, let's treat it as an atom.
+         (:& (:: "#" (:+ atom-char))
+             (complement (:: quoters (:* atom-char))))
+         
          (:: "#\\" any-char)
          (:: "#\\" alphabetic alphabetic (:* alphabetic))
          (:: "#\\" (:? any-char) (:+ digit))
@@ -202,19 +208,24 @@
             
             (quoters
              (token-quoter-prefix (string-intern lexeme)))
-            (pounded-atoms
-             (token-atom (string-intern lexeme)))
-            (pound-prefix-free-atom
-             (token-atom (string-intern lexeme)))
+            
             (line-comment
              (token-atom lexeme))
+            
             (string-literal
              (token-atom lexeme))
+            
+            (pound-prefix-free-atom
+             (token-atom (string-intern lexeme)))
+            
             ("#<<"
              (token-atom (get-here-string input-port
                                           (lambda (recovery) recovery))))
             ("#|"
              (token-atom (get-nested-comment input-port)))
+            
+            (pounded-atoms
+             (token-atom (string-intern lexeme)))
             
             ((special)
              (token-special-atom lexeme))
