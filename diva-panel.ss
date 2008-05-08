@@ -36,31 +36,41 @@
         (set! diva-label/message/question-panel
               (make-object voice-label/message/question-panel% diva-container-panel))
         
-        ;; Initially, hide the panel.
+        
+        ;; Initially, we hide the panel.
         (diva-panel-hide))
       
       
-      (define (diva-displayed?)
-        (member diva-container-panel (send (get-area-container) get-children)))
-      
+      ;; diva-panel-show: -> void
+      ;; Makes the panel visible.
       (define/public (diva-panel-show)
         (diva-label "DivaScheme: command mode")
         (diva-message "")
-        (unless (diva-displayed?)
-          (send (get-area-container) change-children (lambda (children) `(,@children ,diva-container-panel)))))
+        (send (get-area-container) change-children
+              (lambda (children) `(,@children ,diva-container-panel))))
       
+      
+      ;; diva-panel-hide: -> void
+      ;; Hides the panel from view.
       (define/public (diva-panel-hide)
-        (when (diva-displayed?)
-          (send (get-area-container) change-children (lambda (children) (remq diva-container-panel children)))))
+        (send (get-area-container) change-children
+              (lambda (children) (remq diva-container-panel children))))
       
       
-      
+      ;; diva-label: string -> void
+      ;; Sets the label on the left side of the panel.
       (define/public (diva-label label)
         (send diva-label/message/question-panel voice-label label))
       
+      
+      ;; diva-message: format (listof string) -> void
+      ;; Displays a message on the right hand side of the panel.
       (define/public (diva-message message . args)
         (send/apply diva-label/message/question-panel voice-message message args))
       
+      
+      ;; diva-question: string string ??? ??? -> void
+      ;; Prompts the user for an answer.
       (define/public (diva-question question default cancel answer)
         (send diva-label/message/question-panel voice-question question default cancel answer))
       
