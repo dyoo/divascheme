@@ -144,6 +144,8 @@
       ;; STATE STUFFS
       (define -in-unstructured-editing? #f)
       (define command-mode-sema (make-semaphore 1))
+      (define command-mode-queued-thunks '())
+      
       (define current-mred #f)
       (define current-world #f)
       (define last-action-load? false)
@@ -170,10 +172,27 @@
       ;; queue-callback/in-command-mode: (-> void) -> void
       ;; Queue callback, but wait until we're in command mode before evaluating the thunk.
       (define/public (queue-callback/in-command-mode thunk)
+        (call-in-eventspace-thread
+         (lambda ()
+           (set! command-mode-queued-thunks (cons thunk command-mode-queued-thunks))))
         (queue-callback
          (lambda ()
            (yield (semaphore-peek-evt command-mode-sema))
-           (thunk))))
+           (apply-all-command-mode-queued-thunks!))))
+      
+      
+      
+      ;; apply-all-command-mode-queued-thunks!: -> void
+      ;; Applies all of the thunks in command-mode-queued-thunks that were waiting to
+      ;; run when we are in a good, structured state within a command-mode context.
+      (define (apply-all-command-mode-queued-thunks!)
+        (call-in-eventspace-thread
+         (lambda ()
+           (let ([thunks command-mode-queued-thunks])
+             (set! command-mode-queued-thunks '())
+             (for-each (lambda (t) (t)) thunks)))))
+      
+      
       
       
       ;; zero-out-command-mode-sema: -> void
@@ -544,7 +563,10 @@
                                  (lambda (world ast)
                                    (call-in-eventspace-thread
                                     (lambda ()
-                                      (diva-ast-put/wait+world world ast))))
+                                      (diva-ast-put/wait+world world ast)
+                                      ;;  we interleave a run of everything that's queued
+                                      ;;  to run on command mode.
+                                      (apply-all-command-mode-queued-thunks!))))
                                  
                                  on-exit ;; post-exit-hook
                                  cmd ;; cmd
