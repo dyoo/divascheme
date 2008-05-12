@@ -16,6 +16,7 @@
   (define-serializable-struct msg (host-id) #f)
   (define-serializable-struct (msg:insert msg) (dstx after-id before-id) #f)
   (define-serializable-struct (msg:delete msg) (id) #f)
+  (define-serializable-struct (msg:move msg) (id after-id before-id) #f)
   
   ;; msg->string: msg -> string
   ;; Convert a msg into a form suitable for transport.
