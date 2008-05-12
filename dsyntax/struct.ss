@@ -215,6 +215,7 @@
 
 (define property-map/c (listof (list/c symbol? any/c)))
 
+
 (provide/contract
  [empty-property-map property-map/c]
  
@@ -242,8 +243,10 @@
  [a-sentinel-space sentinel-space?]
  
  [dstx-property-names (dstx? . -> . (listof symbol?))]
- [dstx-property-ref (case-> (dstx? symbol? . -> . any)
-                            (dstx? symbol? (-> any) . -> . any))]
+ ;; any/c is used to work around a bug with case->.  Should be fixed
+ ;; soon.
+ [dstx-property-ref (case-> (dstx? symbol? . -> . any/c)
+                            (dstx? symbol? (-> any) . -> . any/c))]
  [dstx-property-set (dstx? symbol? any/c . -> . dstx?)]
  [dstx-property-remove (dstx? symbol? . -> . dstx?)]
  
