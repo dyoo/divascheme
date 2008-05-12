@@ -1,8 +1,8 @@
 #lang scheme/base
 
 (require "../dsyntax/dsyntax.ss"
-         (lib "contract.ss")
-         (lib "plt-match.ss"))
+         scheme/contract
+         scheme/match)
 
 ;; woot-id represents a globally unique id.
 (define-struct woot-id (logic-id host-id) #:prefab)
@@ -23,27 +23,27 @@
 (define (msg->string a-msg)
   (match a-msg
     [(struct msg:insert (host-id dstx after-id before-id))
-     (format "~s" (serialize a-msg))]
+     (format "~s" a-msg)]
     [(struct msg:delete (host-id id))
-     (format "~s" (serialize a-msg))]))
+     (format "~s" a-msg)]))
 
 
 
 ;; operations are produced after we process messages.
-(define-struct op (msg) #f)
-(define-struct (op:insert-after op) (dstx id) #f)
-(define-struct (op:delete op) (id) #f)
+(define-struct op (msg) #:transparent)
+(define-struct (op:insert-after op) (dstx id) #:transparent)
+(define-struct (op:delete op) (id) #:transparent)
 
 
 ;; Rehydrate a string back into a message.
 (define (string->msg a-msg)
   (let ([ip (open-input-string a-msg)])
-    (deserialize (read ip))))
+    (read ip)))
 
 ;; Tomb types are used to denote movement and deletion tombs
-(define-struct tomb () #f)
-(define-struct (tomb:d tomb) () #f)
-(define-struct (tomb:m tomb) (id) #f)
+(define-struct tomb () #:transparent)
+(define-struct (tomb:d tomb) () #:transparent)
+(define-struct (tomb:m tomb) (id) #:transparent)
 
 
 
