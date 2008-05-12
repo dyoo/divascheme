@@ -91,7 +91,7 @@
   ;; integrate-insert!: state msg -> op
   (define (integrate-insert! a-state a-msg)
     (match a-msg
-      [(struct msg:insert (host-id dstx after-id before-id))
+      [(struct msg:insert (host dstx after-id before-id))
        (let* ([a-cursor-before (focus/woot-id (state-cursor a-state) after-id)]
               [a-cursor-just-before (focus-search a-cursor-before
                                                   (λ (el)
@@ -111,14 +111,23 @@
       [(struct msg:delete (host-id id))
        (let* ([a-cursor (focus/woot-id (state-cursor a-state) id)]
               [chased-cursor (cursor-chase a-cursor)])
-         (set-state-cursor!
-          a-state
-          (replace chased-cursor (dstx-set-invisible (cursor-dstx chased-cursor))))
+         (set-state-cursor! a-state
+                            (replace chased-cursor (dstx-set-invisible (cursor-dstx chased-cursor))))
          (make-op:delete a-msg id))]))
   
-  #;(define (integrate-move! a-state a-msg)
+  ;; integrate-move!: state msg -> state
+  (define (integrate-move! a-state a-msg)
     (match a-msg
-      [(struct msg:move ())]))
+      [(struct msg:move (host from-id after-id before-id new-id))
+       (let* ([from-cursor (focus/woot-id (state-cursor a-state) from-id)]
+              [moved-dstx (cursor-dstx from-cursor)])
+         (set-state-cursor! a-state
+                            (replace from-cursor (make-tomb-m new-id)))
+         (integrate-insert! a-state (make-msg:insert (dstx-set-woot-id moved-dstx new-id)
+                                                     after-id
+                                                     before-id)))]))
+  
+  
   
   
   ;; visible-before-or-at: state woot-id -> (or/c woot-id #f)
@@ -214,4 +223,6 @@
       (if (tomb:m? a-tomb)
           (cursor-chase (focus/woot-id a-cursor
                                        (tomb:m-id a-dstx)))
-          (a-dstx)))))
+          (a-dstx))))
+  
+  )

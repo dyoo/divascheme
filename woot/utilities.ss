@@ -14,7 +14,8 @@
                     [dstx-tomb (dstx? . -> . (or/c tomb? false/c))]
                     [deep-attach-woot-ids (dstx? string? . -> . dstx?)]
                     [deep-strip-local-ids (dstx? . -> . dstx?)]
-                    [woot-id-> (woot-id? woot-id? . -> . boolean?)])
+                    [woot-id-> (woot-id? woot-id? . -> . boolean?)]
+                    [make-tomb-m (woot-id? . -> . tomb?)])
   
   
   ;; The very first dstx will have this identifier, which is shared among all clients.
@@ -109,5 +110,10 @@
                   (woot-id-host-id id2))
         (> (woot-id-logic-id id1)
            (woot-id-logic-id id2))))
-             
+  
+  ;; make-tomb-m: woot-id -> tomb
+  ;; Creates a tomb from movement
+  (define (make-tomb-m id)
+    (dstx-set-tomb (new-space "")
+                   (make-tomb:m id)))
   )

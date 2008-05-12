@@ -16,7 +16,7 @@
   (define-serializable-struct msg (host-id) #f)
   (define-serializable-struct (msg:insert msg) (dstx after-id before-id) #f)
   (define-serializable-struct (msg:delete msg) (id) #f)
-  (define-serializable-struct (msg:move msg) (id after-id before-id) #f)
+  (define-serializable-struct (msg:move msg) (from-id after-id before-id new-id) #f)
   
   ;; msg->string: msg -> string
   ;; Convert a msg into a form suitable for transport.
@@ -33,7 +33,7 @@
   (define-struct op (msg) #f)
   (define-struct (op:insert-after op) (dstx id) #f)
   (define-struct (op:delete op) (id) #f)
-
+  
   
   ;; Rehydrate a string back into a message.
   (define (string->msg a-msg)
@@ -60,6 +60,11 @@
                               (or/c false/c woot-id?)])]
    [struct (msg:delete msg) ([host-id string?]
                              [id woot-id?])]
+   [struct (msg:move msg) ([host-id string?]
+                           [from-id woot-id?]
+                           [after-id woot-id?]
+                           [before-id woot-id?]
+                           [new-id woot-id?])]
    
    [msg->string (msg? . -> . string?)]
    [string->msg (string? . -> . msg?)]
