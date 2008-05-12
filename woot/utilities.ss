@@ -71,9 +71,7 @@
   ;; dstx-tomb: dstx -> (or/c tomb false)
   ;; Returns 'move, 'delete, or #f depending on the tomb type of the dstx
   (define (dstx-tomb a-dstx)
-    (dstx-property-ref a-dstx
-                       'woot-tomb
-                       (λ l #f)))
+    (dstx-property-ref a-dstx 'woot-tomb (lambda () #f)))
   
   ;; deep-attach-woot-id: dstx string -> dstx
   ;; Attach new woot identifiers to any dstx that doesn't yet have one.
@@ -118,5 +116,4 @@
   (define (make-tomb-m id)
     (dstx-set-tomb (new-space "")
                    (make-tomb:m id)))
-  
   )
