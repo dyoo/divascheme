@@ -94,6 +94,7 @@
       [(struct msg:insert (host dstx after-id before-id))
        (let* ([a-cursor-before (focus/woot-id (state-cursor a-state) after-id)]
               [a-cursor-just-before (focus-search a-cursor-before
+                                                  focus-older
                                                   (λ (el)
                                                     (or (not (focus-older el))
                                                         (eq? before-id
@@ -223,6 +224,6 @@
       (if (tomb:m? a-tomb)
           (cursor-chase (focus/woot-id a-cursor
                                        (tomb:m-id a-dstx)))
-          (a-dstx))))
+          a-cursor)))
   
   )
