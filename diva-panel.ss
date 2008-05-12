@@ -5,7 +5,8 @@
            (lib "mred.ss" "mred")
            (lib "framework.ss" "framework"))
   
-  (provide diva-panel:frame-mixin)
+  (provide diva-panel:frame-mixin
+           changable-message%)
   
   
   ;; Provides a bottom frame for informative messages and prompts for DivaScheme.
@@ -21,14 +22,15 @@
       
       
       (define (initialize)
-        (super-instantiate ())
+        (super-new)
         (set! diva-container-panel
               (new horizontal-panel%
                    [parent (get-area-container)]
                    [stretchable-height false]
                    [stretchable-width true]))
         (set! diva-label/message/question-panel
-              (make-object voice-label/message/question-panel% diva-container-panel))
+              (new voice-label/message/question-panel%
+                   [parent diva-container-panel]))
         
         
         ;; Initially, we hide the panel.
@@ -110,33 +112,25 @@
                    [parent parent]
                    [stretchable-height false]
                    [stretchable-width true]
-                   [alignment '(left center)]
-                   [horiz-margin 10]))
+                   [alignment '(left center)]))
         (set! voice-label-msg
-              (new message%
+              (new changable-message%
                    [label ""]
-                   [parent voice-label/message/question-panel]
-                   [stretchable-width true]
-                   [stretchable-height false]))
+                   [parent voice-label/message/question-panel]))
         (set! voice-message-msg
-              (new message%
+              (new changable-message%
                    [label ""]
-                   [parent voice-label/message/question-panel]
-                   [stretchable-width true]
-                   [stretchable-height false]))
+                   [parent voice-label/message/question-panel]))
         (set! voice-question-panel
               (new horizontal-panel%
                    [parent voice-label/message/question-panel]
                    [stretchable-height false]
                    [stretchable-width true]
-                   [alignment '(right center)]
-                   [horiz-margin 10]))
+                   [alignment '(right center)]))
         (set! voice-question-msg
-              (new message%
+              (new changable-message%
                    [label ""]
-                   [parent voice-question-panel]
-                   [stretchable-width true]
-                   [stretchable-height false]))
+                   [parent voice-question-panel]))
         (set! voice-question-text
               (new text%))
         (set! voice-question-canvas
@@ -150,12 +144,7 @@
                    [line-count 1]))
         
         (send voice-label-msg show false)
-        (send voice-question-canvas show false)
-        (send voice-label/message/question-panel min-height (+ 8 (send voice-question-canvas min-height))))
-      
-      
-      
-      
+        (send voice-question-canvas show false))
       
       
       
@@ -177,11 +166,9 @@
       
       
       (define (voice-label-hide)
-        (send voice-label-msg min-width 0)
         (send voice-label-msg show false))
       
       (define (voice-label-show)
-        (send voice-label-msg min-width voice-label-width)
         (send voice-label-msg show true))
       
       (define (voice-label-shown?)
@@ -202,7 +189,7 @@
       (define (set-message-text text message . args)
         (let* ([message (apply format message args)]
                [short-message (substring message 0 (min 200 (string-length message)))])
-          (send text min-width (string-length short-message))
+          #;(send text min-width (string-length short-message))
           (send text set-label short-message)))
       
       ;; The function to show a message.
@@ -259,5 +246,39 @@
           (send voice-question-text insert default)
           (send voice-question-text set-position 0 (string-length default) false false 'local)
           (voice-question-panel-show)))
+      
+      (initialize)))
+  
+  
+  
+  ;; changable-message%: defines a label that knows how to resize itself.  Since message% doesn't
+  ;; change its geometry when we change the label, we make an auxillary class to do this
+  ;; geometry management for us.
+  (define changable-message%
+    (class panel%
+      (init [label #f])
+      (inherit change-children)
+      
+      (define (initialize)
+        (super-new)
+        (when label
+          (redraw-label label)))
+      
+      
+      ;; redraw-label: string -> void
+      ;; Remove all children, and add a single message child.
+      (define (redraw-label label-text)
+        (change-children (lambda (children) '()))
+        (new message%
+             [parent this]
+             [label label-text])
+        (void))
+      
+      
+      (define/override (set-label a-label)
+        (super set-label a-label)
+        (when a-label
+          (redraw-label a-label)))
+      
       
       (initialize))))
