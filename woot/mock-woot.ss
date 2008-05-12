@@ -223,6 +223,6 @@
       (if (tomb:m? a-tomb)
           (cursor-chase (focus/woot-id a-cursor
                                        (tomb:m-id a-dstx)))
-          (a-dstx))))
+          a-cursor)))
   
   )
