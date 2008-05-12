@@ -201,11 +201,11 @@
 
 ;; Cursors.  Zipper structure for efficient movement within a dstx,
 ;; also keeping track of our cursor position.
-(define-struct cursor (dstx loc parent youngers-rev youngers-loc-rev olders))
+(define-struct cursor (dstx loc parent youngers-rev youngers-loc-rev olders) #:transparent)
 
 
 ;; location: line and column.
-(define-struct loc (line col pos))
+(define-struct loc (line col pos) #:transparent)
 
 
 (define (nelistof x)
