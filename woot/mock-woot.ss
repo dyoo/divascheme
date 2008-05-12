@@ -91,10 +91,17 @@
   ;; integrate-insert!: state msg -> op
   (define (integrate-insert! a-state a-msg)
     (match a-msg
-      [(struct msg:insert (host-id dstx after-id before-id))
-       (let ([a-cursor (focus/woot-id (state-cursor a-state) after-id)])
-         (set-state-cursor! a-state (insert-after a-cursor dstx)))
-       (make-op:insert-after a-msg dstx after-id)]))
+      [(struct msg:insert (host dstx after-id before-id))
+       (let* ([a-cursor-before (focus/woot-id (state-cursor a-state) after-id)]
+              [a-cursor-just-before (focus-search a-cursor-before
+                                                  (λ (el)
+                                                    (or (not (focus-older el))
+                                                        (eq? before-id
+                                                             (dstx-woot-id (focus-older el)))
+                                                        (woot-id-> (dstx-woot-id (focus-older el))
+                                                                   (dstx-woot-id dstx)))))])
+         (set-state-cursor! a-state (insert-after a-cursor-just-before dstx))
+         (make-op:insert-after a-msg dstx (dstx-woot-id (cursor-dstx a-cursor-just-before))))]))
   
   
   
@@ -102,11 +109,25 @@
   (define (integrate-delete! a-state a-msg)
     (match a-msg
       [(struct msg:delete (host-id id))
-       (let ([a-cursor (focus/woot-id (state-cursor a-state) id)])
-         (set-state-cursor!
-          a-state
-          (replace a-cursor (dstx-set-invisible (cursor-dstx a-cursor)))))
-       (make-op:delete a-msg id)]))
+       (let* ([a-cursor (focus/woot-id (state-cursor a-state) id)]
+              [chased-cursor (cursor-chase a-cursor)])
+         (set-state-cursor! a-state
+                            (replace chased-cursor (dstx-set-invisible (cursor-dstx chased-cursor))))
+         (make-op:delete a-msg id))]))
+  
+  ;; integrate-move!: state msg -> state
+  (define (integrate-move! a-state a-msg)
+    (match a-msg
+      [(struct msg:move (host from-id after-id before-id new-id))
+       (let* ([from-cursor (focus/woot-id (state-cursor a-state) from-id)]
+              [moved-dstx (cursor-dstx from-cursor)])
+         (set-state-cursor! a-state
+                            (replace from-cursor (make-tomb-m new-id)))
+         (integrate-insert! a-state (make-msg:insert (dstx-set-woot-id moved-dstx new-id)
+                                                     after-id
+                                                     before-id)))]))
+  
+  
   
   
   ;; visible-before-or-at: state woot-id -> (or/c woot-id #f)
@@ -121,7 +142,6 @@
          => loop]
         [else
          #f])))
-  
   
   ;; woot-id->dependency: woot-id -> symbol
   ;; Given a woot id, returns a symbol that can be fed into
@@ -179,4 +199,30 @@
   ;; dstx-visible?: dstx -> boolean
   ;; Return the visible property of the dstx.  Default is visible.
   (define (dstx-visible? a-dstx)
-    (dstx-property-ref a-dstx 'visible (lambda () #t))))
+    (dstx-property-ref a-dstx 'visible (lambda () #t)))
+  
+  ;; focus-search: cursor focus-function (cursor -> boolean) -> (or/c cursor #f)
+  ;; Move across a cursor until the predicate is true.  If we can't find,
+  ;; return #f.  Otherwise, return the cursor.
+  (define (focus-search a-cursor a-movement a-pred)
+    (cond
+      [(a-pred a-cursor)
+       a-cursor]
+      [else
+       (let ([new-cursor (a-movement a-cursor)])
+         (cond
+           [new-cursor
+            (focus-search new-cursor a-movement a-pred)]
+           [else #f]))]))
+  
+  ;; cursor-chase: cursor -> cursor
+  ;; follows tomb-m references from a dstx
+  (define (cursor-chase a-cursor)
+    (let* ((a-dstx (cursor-dstx a-cursor))
+           (a-tomb (dstx-tomb a-dstx)))
+      (if (tomb:m? a-tomb)
+          (cursor-chase (focus/woot-id a-cursor
+                                       (tomb:m-id a-dstx)))
+          (a-dstx))))
+  
+  )
