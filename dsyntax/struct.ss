@@ -2,9 +2,9 @@
 
 ;; Provides fundamental structures for dstx objects.
 
-(require (lib "contract.ss")
-         (lib "plt-match.ss")
-         (lib "list.ss")
+(require scheme/contract
+         scheme/match
+         scheme/list
          "weak-memoize.ss")
 
 
@@ -201,11 +201,11 @@
 
 ;; Cursors.  Zipper structure for efficient movement within a dstx,
 ;; also keeping track of our cursor position.
-(define-struct cursor
-  (dstx loc parent youngers-rev youngers-loc-rev olders) #f)
+(define-struct cursor (dstx loc parent youngers-rev youngers-loc-rev olders))
+
 
 ;; location: line and column.
-(define-struct loc (line col pos) #f)
+(define-struct loc (line col pos))
 
 
 (define (nelistof x)
