@@ -16,10 +16,19 @@
   (provide/contract
    ;; make-client: string -> client
    [new-client (string? . -> . any)]
+   
+   ;; client-url: client? -> string
+   [client-url (client? . -> . string?)]
+   
    ;; client-mailbox: client -> async-channel
    [client-mailbox (client? . -> . async-channel?)]
+   
+   ;; client-start-polling: client -> void
    [client-start-polling (client? . -> . any)]
+   
+   ;; client-pause-polling: client -> void
    [client-pause-polling (client? . -> . any)]
+   
    ;; client-send-message: client string -> void
    [client-send-message (client? any/c . -> . any)])
   

@@ -9,6 +9,7 @@
            "woot-struct.ss"
            "mock-woot.ss"
            "utilities.ss"
+           "../gui/changable-message.ss"
            (prefix self-ip: "self-ip-address.ss")
            (prefix server: "start-server.ss")
            (prefix client: "client.ss"))
@@ -199,11 +200,11 @@
       (define network-mailbox-client #f)
       (define mailbox-client-thread #f)
       (define woot-state #f)
+      (define notifier-widget #f)
       
       
       (define (initialize)
         (super-new))
-      
       
       
       ;; host-session: -> void
@@ -216,7 +217,12 @@
           (message-box
            "Host session started"
            (format "Session started.\nOther hosts may join by using the session url: ~s"
-                   url))))
+                   url))
+          (set! notifier-widget
+                (new network-notifier-widget%
+                     [parent (send (get-top-level-window) get-diva-panel)]
+                     [woot-state woot-state]
+                     [mailbox-client network-mailbox-client]))))
       
       ;; join-session: -> void
       ;; Brings up a dialog box asking which system to join to.
@@ -354,6 +360,41 @@
         (inner (void) on-woot-structured-delete woot-id))
       
       (initialize)))
+  
+  
+  ;; A little widget that shows when we're connected.
+  (define network-notifier-widget%
+    (class object%
+      (init-field parent
+                  woot-state
+                  mailbox-client)
+      
+      (define h-panel #f)
+      (define msg-panel #f)
+      
+      
+      (define (initialize)
+        (super-new)
+        (set! h-panel (new horizontal-panel% [parent parent]))
+        (set! msg-panel (make-message-panel h-panel)))
+      
+      (define (make-message-panel parent)
+        (define message-panel (new horizontal-panel% [parent parent]))
+        (new immutable-text-field%
+             [parent message-panel]
+             [label "Connected to "]
+             [init-value (client:client-url mailbox-client)])
+        message-panel)
+      
+      
+      (initialize)))
+  
+  
+  (define immutable-text-field%
+    (class text-field%
+      (inherit get-editor)
+      (super-new)
+      (send (get-editor) lock #t)))
   
   
   ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
