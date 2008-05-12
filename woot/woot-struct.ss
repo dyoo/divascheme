@@ -32,13 +32,17 @@
   (define-struct op (msg) #f)
   (define-struct (op:insert-after op) (dstx id) #f)
   (define-struct (op:delete op) (id) #f)
-  
+
   
   ;; Rehydrate a string back into a message.
   (define (string->msg a-msg)
     (let ([ip (open-input-string a-msg)])
       (deserialize (read ip))))
   
+  ;; Tomb types are used to denote movement and deletion tombs
+  (define-struct tomb () #f)
+  (define-struct (tomb:d tomb) () #f)
+  (define-struct (tomb:m tomb) (id) #f)
   
   
   
@@ -65,7 +69,10 @@
                                  [dstx dstx?]
                                  [id woot-id?])]
    [struct (op:delete op) ([msg msg?]
-                           [id woot-id?])])
+                           [id woot-id?])]
+   [struct tomb ()]
+   [struct (tomb:d tomb) ()]
+   [struct (tomb:m tomb) ([id woot-id?])])
   
   
   )

@@ -10,8 +10,11 @@
                     [dstx-all-woot-ids (dstx? . -> . (listof woot-id?))]
                     [dstx-local-id (dstx? . -> . number?)]
                     [dstx-set-woot-id (dstx? woot-id? . -> . dstx?)]
+                    [dstx-set-tomb (dstx? (or/c tomb? false/c) . -> . dstx?)]
+                    [dstx-tomb (dstx? . -> . (or/c tomb? false/c))]
                     [deep-attach-woot-ids (dstx? string? . -> . dstx?)]
-                    [deep-strip-local-ids (dstx? . -> . dstx?)])
+                    [deep-strip-local-ids (dstx? . -> . dstx?)]
+                    [woot-id-> (woot-id? woot-id? . -> . boolean?)])
   
   
   ;; The very first dstx will have this identifier, which is shared among all clients.
@@ -59,6 +62,15 @@
   (define (dstx-set-woot-id a-dstx a-woot-id)
     (dstx-property-set a-dstx 'woot-id a-woot-id))
   
+  ;; dstx-set-tomb: dstx (or/c tomb false) -> dstx
+  ;; Set the tomb type of the dstx
+  (define (dstx-set-tomb a-dstx a-tomb)
+    (dstx-property-set a-dstx 'woot-tomb a-tomb))
+  
+  ;; dstx-tomb: dstx -> (or/c tomb false)
+  ;; Returns 'move, 'delete, or #f depending on the tomb type of the dstx
+  (define (dstx-tomb a-dstx)
+    (dstx-property-ref a-dstx 'woot-tomb))
   
   ;; deep-attach-woot-id: dstx string -> dstx
   ;; Attach new woot identifiers to any dstx that doesn't yet have one.
@@ -88,4 +100,14 @@
     (let ([n 0])
       (lambda ()
         (set! n (add1 n))
-        n))))
+        n)))
+  
+  ;; woot-id->: woot-id woot-id -> boolean
+  ;; compares two woot-ids
+  (define (woot-id-> id1 id2)
+    (or (string>? (woot-id-host-id id1)
+                  (woot-id-host-id id2))
+        (> (woot-id-logic-id id1)
+           (woot-id-logic-id id2))))
+             
+  )
