@@ -165,6 +165,7 @@
                      [World-markers (imperative-marker-list->world-markers other-markers)]))))
   
   
+  
   ;; World-markers->marker-list: World -> (listof (list symbol marker))
   ;; Given a world, we pull out all the functional markers and construct
   ;; imperative ones that we'll track.
@@ -279,12 +280,20 @@
                (lambda (a-dstx)
                  (equal? (dstx-local-id a-dstx)
                          id)))
-         (let ([deleted-world
-                (preserve-selection-and-mark
-                 a-world
-                 a-text
-                 (lambda ()
-                   (send a-cursor delete!)))])
+         
+         (let* ([selection-start
+                 (send a-text add-marker! (send a-text get-start-position))]
+                [selection-end
+                 (send a-text add-marker! (send a-text get-end-position))]
+                [deleted-world
+                 (preserve-selection-and-mark
+                  a-world
+                  a-text
+                  (lambda ()
+                    (send a-cursor delete!)))])
+           (send a-text set-position
+                 (marker-pos selection-start)
+                 (marker-pos selection-end) #f #f 'local)
            (let ([new-world (update-world-fn deleted-world)])
              (update-mred-fn new-world)
              new-world))]
@@ -324,12 +333,19 @@
                (lambda (a-dstx)
                  (equal? (dstx-local-id a-dstx)
                          id)))
-         (let ([inserted-world
-                (preserve-selection-and-mark
-                 a-world
-                 a-text
-                 (lambda ()
-                   (send a-cursor insert-after! a-dstx)))])
+         (let* ([selection-start
+                 (send a-text add-marker! (send a-text get-start-position))]
+                [selection-end
+                 (send a-text add-marker! (send a-text get-end-position))]
+                [inserted-world
+                 (preserve-selection-and-mark
+                  a-world
+                  a-text
+                  (lambda ()
+                    (send a-cursor insert-after! a-dstx)))])
+           (send a-text set-position
+                 (marker-pos selection-start)
+                 (marker-pos selection-end) #f #f 'local)
            (let ([new-world (update-world-fn inserted-world)])
              (update-mred-fn new-world)
              new-world))]
