@@ -609,6 +609,8 @@
                   (diva-message "")
                   
                   (check-good-syntax)
+                  (call-in-eventspace-thread (lambda ()
+                                               (set-in-unstructured-editing? #t)))
                   (zero-out-command-mode-sema)
                   (when (get-check-syntax-button)
                     (set! was-button-enabled? (send (get-check-syntax-button) is-enabled?))
@@ -619,6 +621,8 @@
                   
                   (when (get-check-syntax-button)
                     (send (get-check-syntax-button) enable was-button-enabled?))
+                  (call-in-eventspace-thread (lambda ()
+                                               (set-in-unstructured-editing? #f)))
                   (semaphore-post command-mode-sema)))
           (make-command-keymap this
                                (lambda (edit?)
