@@ -166,4 +166,31 @@
         (check-equal? (length new-cmds) 1)
         (check-equal? (op:delete-id (first new-cmds)) (dstx-woot-id bar))
         (check-equal? (mock:visible-before-or-at woot (dstx-woot-id bar))
-                      (dstx-woot-id foo)))))))
+                      (dstx-woot-id foo))))
+     
+     
+     
+     (test-case
+      "deleting bar from 'foo bar baz', then adding it to the end"
+      (let* ([foo (decorate (new-atom "foo"))]
+             [bar (decorate (new-atom "bar"))]
+             [baz (decorate (new-atom "baz"))]
+             [a-cursor (insert-after
+                        (insert-after (insert-after initial-cursor foo)
+                                      bar)
+                        baz)]
+             [woot (mock:new-mock-woot a-cursor)]
+             [new-cmds-1
+              (mock:consume-msg! woot
+                                 (make-msg:delete host-id (dstx-woot-id bar)))]
+             [new-cmds-2
+              (mock:consume-msg! woot
+                                 (make-msg:insert host-id bar (dstx-woot-id baz) #f))])
+        (check-equal? (length new-cmds-1) 1)
+        (check-equal? (op:delete-id (first new-cmds-1)) (dstx-woot-id bar))
+        (check-equal? (mock:visible-before-or-at woot (dstx-woot-id bar))
+                      (dstx-woot-id bar))
+        
+        (check-equal? (length new-cmds-2) 1)
+        (check-equal? (op:insert-after-dstx (first new-cmds-2)) bar)
+        (check-equal? (op:insert-after-id (first new-cmds-2)) (dstx-woot-id baz)))))))
