@@ -86,8 +86,8 @@
         (let ([a-cursor (get-dstx-cursor)])
           (send a-cursor focus-find/dstx!
                 (lambda (a-dstx)
-                  (equal? (dstx-woot-id a-dstx)
-                          a-woot-id)))
+                  (woot-id-equal? (dstx-woot-id a-dstx)
+                                  a-woot-id)))
           (send a-cursor cursor-dstx)))
       
       
