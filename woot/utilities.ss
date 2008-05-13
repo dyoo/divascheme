@@ -113,7 +113,8 @@
                                   (woot-id-host-id id2))
                         (> (woot-id-logic-id id1)
                            (woot-id-logic-id id2))))])
-      (print "%s %s %s" id1 id2 res)))
+      (printf "~v ~v ~v~n" id1 id2 res)
+      res))
   
   ;; make-tomb-m: woot-id -> tomb
   ;; Creates a tomb from movement

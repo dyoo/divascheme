@@ -55,8 +55,6 @@
   ;; Add a new message to the state, and return a list of Interpreter
   ;; commands that we can evaluate.
   (define (consume-msg! a-state a-msg)
-    ;(display a-msg)
-    ;(newline)
     (add-to-unexecuted! a-state a-msg)
     (integrate-all-executables! a-state))
   
@@ -102,14 +100,17 @@
     (match a-msg
       [(struct msg:insert (host dstx after-id before-id))
        (let* ([a-cursor-before (focus/woot-id (state-cursor a-state) after-id)]
-              [a-cursor-just-before (focus-search a-cursor-before
-                                                  focus-older/no-snap
-                                                  (λ (el)
-                                                    (or (not (focus-older/no-snap el))
-                                                        (equal? before-id
-                                                                (cursor-woot-id (focus-older/no-snap el)))
-                                                        (woot-id-> (cursor-woot-id (focus-older/no-snap el))
-                                                                   (dstx-woot-id dstx)))))])
+              [a-cursor-just-before
+               (focus-search a-cursor-before
+                             focus-older/no-snap
+                             (λ (el)
+                               (or (not (focus-older/no-snap el))
+                                   (and before-id
+                                        (woot-id-equal?
+                                         before-id
+                                         (cursor-woot-id (focus-older/no-snap el))))
+                                   (woot-id-> (cursor-woot-id (focus-older/no-snap el))
+                                              (dstx-woot-id dstx)))))])
          (set-state-cursor! a-state (insert-after a-cursor-just-before dstx))
          (cond
            [(cursor-visible-at-and-above? (state-cursor a-state))
@@ -227,7 +228,7 @@
   (define (focus/woot-id a-cursor a-woot-id)
     (focus-find/dstx a-cursor
                      (lambda (a-dstx)
-                       (equal? a-woot-id (dstx-woot-id a-dstx)))))
+                       (woot-id-equal? a-woot-id (dstx-woot-id a-dstx)))))
   
   
   ;; dstx-set-invisible: dstx -> dstx
@@ -263,6 +264,4 @@
       (if (tomb:m? a-tomb)
           (cursor-chase (focus/woot-id a-cursor
                                        (tomb:m-id a-dstx)))
-          a-cursor)))
-  
-  )
+          a-cursor))))

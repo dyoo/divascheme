@@ -47,6 +47,12 @@
 (define-struct (tomb:m tomb) (id) #:transparent)
 
 
+;; woot-id-equal?: woot-id woot-id -> boolean
+;; Returns true if the woot ids are the same.
+(define (woot-id-equal? woot-id-1 woot-id-2)
+  (equal? woot-id-1 woot-id-2))
+
+
 
 (provide/contract
  
@@ -69,6 +75,8 @@
  
  [msg->string (msg? . -> . string?)]
  [string->msg (string? . -> . msg?)]
+ 
+ [woot-id-equal? (woot-id? woot-id? . -> . boolean?)]
  
  
  [struct op ([msg msg?])]
