@@ -22,7 +22,12 @@
   
   (provide/contract [new-mock-woot (cursor? . -> . state?)]
                     [visible-before-or-at (state? woot-id? . -> . woot-id?)]
-                    [consume-msg! (state? msg? . -> . (listof op?))])
+                    [consume-msg! (state? msg? . -> . (listof op?))]
+                    
+                    ;; for debugging
+                    [struct state ([cursor cursor?]
+                                   [tqueue tqueue?])]
+                    )
   
   
   

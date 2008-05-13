@@ -222,5 +222,5 @@
         
         (check-equal? (length new-cmds-2) 1)
         (check-equal? (op:insert-after-dstx (first new-cmds-2)) b-new)
-        (check-equal? (op:insert-after-id (first new-cmds-2)) (dstx-woot-id a))))
-     )))
+        (check-equal? (mock:visible-before-or-at woot (op:insert-after-id (first new-cmds-2)))
+                      (dstx-woot-id a)))))))
