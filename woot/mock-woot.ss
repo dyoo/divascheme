@@ -98,8 +98,8 @@
                                                   (λ (el)
                                                     (or (not (focus-older el))
                                                         (eq? before-id
-                                                             (dstx-woot-id (focus-older el)))
-                                                        (woot-id-> (dstx-woot-id (focus-older el))
+                                                             (dstx-woot-id (cursor-dstx (focus-older el))))
+                                                        (woot-id-> (dstx-woot-id (cursor-dstx (focus-older el)))
                                                                    (dstx-woot-id dstx)))))])
          (set-state-cursor! a-state (insert-after a-cursor-just-before dstx))
          (make-op:insert-after a-msg dstx (dstx-woot-id (cursor-dstx a-cursor-just-before))))]))
