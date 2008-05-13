@@ -311,7 +311,6 @@
            (void)]
           
           [(struct op:insert-after (msg dstx after-id))
-           (printf "maybe-apply-remote-operation op:insert-after: ~s ~s~n" dstx after-id)
            (let ([visible-woot-id
                   (visible-before-or-at woot-state after-id)])
              (with-remote-operation-active
@@ -322,7 +321,6 @@
                                           (woot-id->local-dstx visible-woot-id)))))))]
           
           [(struct op:delete (msg id))
-           (printf "maybe-apply-remote-operation op:delete: ~s ~n" id)
            (with-remote-operation-active
             (lambda ()
               (interpret!
