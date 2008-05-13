@@ -7,6 +7,7 @@
   (provide/contract [first-sentinel-woot-id woot-id?]
                     [fresh-woot-id (string? . -> . woot-id?)]
                     [dstx-woot-id (dstx? . -> . (or/c woot-id? false/c))]
+                    [cursor-woot-id (cursor? . -> . (or/c woot-id? false/c))]
                     [dstx-all-woot-ids (dstx? . -> . (listof woot-id?))]
                     [dstx-local-id (dstx? . -> . number?)]
                     [dstx-set-woot-id (dstx? woot-id? . -> . dstx?)]
@@ -118,4 +119,8 @@
   (define (make-tomb-m id)
     (dstx-set-tomb (new-space "")
                    (make-tomb:m id)))
+  
+  ;; cursor-woot-id: cursor -> woot-id
+  (define (cursor-woot-id a-cursor)
+    (dstx-woot-id (cursor-dstx a-cursor)))
   )
