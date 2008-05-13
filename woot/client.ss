@@ -20,6 +20,9 @@
    ;; client-url: client? -> string
    [client-url (client? . -> . string?)]
    
+   ;; client-polling?: client? -> boolean
+   [client-polling? (client? . -> . boolean?)]
+   
    ;; client-mailbox: client -> async-channel
    [client-mailbox (client? . -> . async-channel?)]
    
