@@ -100,11 +100,11 @@
                                                   (λ (el)
                                                     (or (not (focus-older el))
                                                         (eq? before-id
-                                                             (dstx-woot-id (focus-older el)))
-                                                        (woot-id-> (dstx-woot-id (focus-older el))
+                                                             (cursor-woot-id (focus-older el)))
+                                                        (woot-id-> (cursor-woot-id (focus-older el))
                                                                    (dstx-woot-id dstx)))))])
          (set-state-cursor! a-state (insert-after a-cursor-just-before dstx))
-         (make-op:insert-after a-msg dstx (dstx-woot-id (cursor-dstx a-cursor-just-before))))]))
+         (make-op:insert-after a-msg dstx (cursor-woot-id a-cursor-just-before)))]))
   
   
   
@@ -140,7 +140,7 @@
     (let loop ([a-cursor (focus/woot-id (state-cursor a-state) a-woot-id)])
       (cond
         [(dstx-visible? (cursor-dstx a-cursor))
-         (dstx-woot-id (cursor-dstx a-cursor))]
+         (cursor-woot-id a-cursor)]
         [(focus-younger/no-snap a-cursor)
          => loop]
         [else
