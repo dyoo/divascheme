@@ -223,4 +223,36 @@
         (check-equal? (length new-cmds-2) 1)
         (check-equal? (op:insert-after-dstx (first new-cmds-2)) b-new)
         (check-equal? (mock:visible-before-or-at woot (op:insert-after-id (first new-cmds-2)))
-                      (dstx-woot-id a)))))))
+                      (dstx-woot-id a))))
+     
+     
+     
+     
+     (test-case
+      "concurrent insert of a and b should have the same effect, regardless of order."
+      (let* ([a (decorate (new-atom "a"))]
+             [b (decorate (new-atom "b"))]
+             [a-cursor initial-cursor])
+        (let* ([woot (mock:new-mock-woot a-cursor)]
+               [new-cmds-1
+                (mock:consume-msg! woot
+                                   (make-msg:insert host-id a first-sentinel-woot-id #f))]
+               [new-cmds-2
+                (mock:consume-msg! woot
+                                   (make-msg:insert host-id b first-sentinel-woot-id #f))])
+          (check-equal? (mock:visible-before-or-at woot (op:insert-after-id (first new-cmds-1)))
+                        first-sentinel-woot-id)
+          (check-equal? (mock:visible-before-or-at woot (op:insert-after-id (first new-cmds-2)))
+                        (dstx-woot-id a)))
+        
+        (let* ([woot (mock:new-mock-woot a-cursor)]
+               [new-cmds-1
+                (mock:consume-msg! woot
+                                   (make-msg:insert host-id b first-sentinel-woot-id #f))]
+               [new-cmds-2
+                (mock:consume-msg! woot
+                                   (make-msg:insert host-id a first-sentinel-woot-id #f))])
+          (check-equal? (mock:visible-before-or-at woot (op:insert-after-id (first new-cmds-1)))
+                        first-sentinel-woot-id)
+          (check-equal? (mock:visible-before-or-at woot (op:insert-after-id (first new-cmds-2)))
+                        first-sentinel-woot-id)))))))
