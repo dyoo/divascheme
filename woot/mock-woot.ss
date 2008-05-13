@@ -85,7 +85,9 @@
       [(struct msg:insert (host-id dstx after-id before-id))
        (integrate-insert! a-state a-msg)]
       [(struct msg:delete (host-id id))
-       (integrate-delete! a-state a-msg)]))
+       (integrate-delete! a-state a-msg)]
+      [(struct msg:move (host-id from-id after-id before-id new-id))
+       (integrate-move! a-state a-msg)]))
   
   
   ;; integrate-insert!: state msg -> op
