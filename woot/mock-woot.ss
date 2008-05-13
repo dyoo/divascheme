@@ -120,7 +120,6 @@
   
   
   
-  
   ;; integrate-delete!: state msg -> op
   (define (integrate-delete! a-state a-msg)
     (match a-msg

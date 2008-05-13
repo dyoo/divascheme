@@ -107,12 +107,14 @@
   ;; woot-id->: woot-id woot-id -> boolean
   ;; compares two woot-ids
   (define (woot-id-> id1 id2)
-    (or (string>? (woot-id-host-id id1)
-                  (woot-id-host-id id2))
-        (and (string=? (woot-id-host-id id1)
-                       (woot-id-host-id id2))
-             (> (woot-id-logic-id id1)
-                (woot-id-logic-id id2)))))
+    (let ([res (or (string>? (woot-id-host-id id1)
+                             (woot-id-host-id id2))
+                   (and (string=? (woot-id-host-id id1)
+                                  (woot-id-host-id id2))
+                        (> (woot-id-logic-id id1)
+                           (woot-id-logic-id id2))))])
+      (printf "~v ~v ~v~n" id1 id2 res)
+      res))
   
   ;; make-tomb-m: woot-id -> tomb
   ;; Creates a tomb from movement
