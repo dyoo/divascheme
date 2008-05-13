@@ -272,19 +272,24 @@
   
   
   ;; delete-dstx: local-id World text% (World -> World) (World -> void) -> World
-  (define (delete-dstx id world a-text update-world-fn update-mred-fn)
+  (define (delete-dstx id a-world a-text update-world-fn update-mred-fn)
     (let ([a-cursor (send a-text get-dstx-cursor)])
       (cond
         [(send a-cursor try-focus-find/dstx!
                (lambda (a-dstx)
                  (equal? (dstx-local-id a-dstx)
                          id)))
-         (send a-cursor delete!)
-         (let ([new-world (update-world-fn world)])
-           (update-mred-fn new-world)
-           new-world)]
+         (let ([deleted-world
+                (preserve-selection-and-mark
+                 a-world
+                 a-text
+                 (lambda ()
+                   (send a-cursor delete!)))])
+           (let ([new-world (update-world-fn deleted-world)])
+             (update-mred-fn new-world)
+             new-world))]
         [else
-         world])))
+         a-world])))
   
   
   ;; insert-rope: rope number World text% (World -> World) (World -> void) -> World
@@ -312,19 +317,24 @@
            new-world)])))
   
   
-  (define (insert-dstx-after a-dstx id world a-text update-world-fn update-mred-fn)
+  (define (insert-dstx-after a-dstx id a-world a-text update-world-fn update-mred-fn)
     (let ([a-cursor (send a-text get-dstx-cursor)])
       (cond
         [(send a-cursor try-focus-find/dstx!
                (lambda (a-dstx)
                  (equal? (dstx-local-id a-dstx)
                          id)))
-         (send a-cursor insert-after! a-dstx)
-         (let ([new-world (update-world-fn world)])
-           (update-mred-fn new-world)
-           new-world)]
+         (let ([inserted-world
+                (preserve-selection-and-mark
+                 a-world
+                 a-text
+                 (lambda ()
+                   (send a-cursor insert-after! a-dstx)))])
+           (let ([new-world (update-world-fn inserted-world)])
+             (update-mred-fn new-world)
+             new-world))]
         [else
-         world])))
+         a-world])))
   
   
   ;; cleanup-everything: world text% (World -> World) (World -> void) -> World
