@@ -304,6 +304,9 @@
       ;; Maybe interpret the operation.
       (define (maybe-apply-remote-operation an-op)
         (match an-op
+          [(struct op:no-op (msg))
+           (void)]
+          
           [(struct op:insert-after (msg dstx after-id))
            (cond
              [(msg-origin-remote? msg)
@@ -317,6 +320,7 @@
                                              (woot-id->local-dstx visible-woot-id)))))))]
              [else
               (void)])]
+          
           [(struct op:delete (msg id))
            (cond
              [(msg-origin-remote? msg)
