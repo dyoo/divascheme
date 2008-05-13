@@ -193,4 +193,34 @@
         
         (check-equal? (length new-cmds-2) 1)
         (check-equal? (op:insert-after-dstx (first new-cmds-2)) bar)
-        (check-equal? (op:insert-after-id (first new-cmds-2)) (dstx-woot-id baz)))))))
+        (check-equal? (op:insert-after-id (first new-cmds-2)) (dstx-woot-id baz))))
+     
+     
+     
+     (test-case
+      "deleting b from  'a b c', then adding it again it to the middle"
+      (let* ([a (decorate (new-atom "a"))]
+             [b (decorate (new-atom "b"))]
+             [c (decorate (new-atom "c"))]
+             [b-new (decorate (new-atom "b"))]
+             [a-cursor (insert-after
+                        (insert-after (insert-after initial-cursor a)
+                                      b)
+                        c)]
+             [woot (mock:new-mock-woot a-cursor)]
+             [new-cmds-1
+              (mock:consume-msg! woot
+                                 (make-msg:delete host-id (dstx-woot-id b)))]
+             [new-cmds-2
+              (mock:consume-msg! woot
+                                 (make-msg:insert host-id
+                                                  b-new
+                                                  (dstx-woot-id a)
+                                                  (dstx-woot-id c)))])
+        (check-equal? (length new-cmds-1) 1)
+        (check-equal? (op:delete-id (first new-cmds-1)) (dstx-woot-id b))
+        
+        (check-equal? (length new-cmds-2) 1)
+        (check-equal? (op:insert-after-dstx (first new-cmds-2)) b-new)
+        (check-equal? (op:insert-after-id (first new-cmds-2)) (dstx-woot-id a))))
+     )))
