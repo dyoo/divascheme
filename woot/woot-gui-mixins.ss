@@ -291,48 +291,43 @@
       (define (integrate-message-into-woot a-msg)
         (queue-callback/in-command-mode
          (lambda ()
-           (let ([ops (consume-msg! woot-state a-msg)])
-             (dynamic-wind (lambda ()
-                             (begin-edit-sequence))
-                           (lambda ()
-                             (for-each maybe-apply-remote-operation ops))
-                           (lambda ()
-                             (end-edit-sequence)))))))
+           (cond [(msg-origin-remote? a-msg)
+                  (let ([ops (consume-msg! woot-state a-msg)])
+                    (dynamic-wind (lambda ()
+                                    (begin-edit-sequence))
+                                  (lambda ()
+                                    (for-each apply-remote-operation ops))
+                                  (lambda ()
+                                    (end-edit-sequence))))]
+                 [else
+                  (void)]))))
       
       
-      ;; maybe-apply-op: op -> void
-      ;; Maybe interpret the operation.
-      (define (maybe-apply-remote-operation an-op)
+      ;; apply-remote-operation: op -> void
+      ;; Apply the effects of the remote operation onto the local buffer state.
+      (define (apply-remote-operation an-op)
         (match an-op
           [(struct op:no-op (msg))
            (void)]
           
           [(struct op:insert-after (msg dstx after-id))
-           (cond
-             [(msg-origin-remote? msg)
-              (printf "maybe-apply-remote-operation op:insert-after: ~s ~s~n" dstx after-id)
-              (let ([visible-woot-id
-                     (visible-before-or-at woot-state after-id)])
-                (with-remote-operation-active
-                 (lambda ()
-                   (interpret!
-                    (make-Insert-Dstx-After dstx
-                                            (dstx-local-id
-                                             (woot-id->local-dstx visible-woot-id)))))))]
-             [else
-              (void)])]
+           (printf "maybe-apply-remote-operation op:insert-after: ~s ~s~n" dstx after-id)
+           (let ([visible-woot-id
+                  (visible-before-or-at woot-state after-id)])
+             (with-remote-operation-active
+              (lambda ()
+                (interpret!
+                 (make-Insert-Dstx-After dstx
+                                         (dstx-local-id
+                                          (woot-id->local-dstx visible-woot-id)))))))]
           
           [(struct op:delete (msg id))
-           (cond
-             [(msg-origin-remote? msg)
-              (printf "maybe-apply-remote-operation op:delete: ~s ~n" id)
-              (with-remote-operation-active
-               (lambda ()
-                 (interpret!
-                  (make-Delete-Dstx
-                   (dstx-local-id (woot-id->local-dstx id))))))]
-             [else
-              (void)])]))
+           (printf "maybe-apply-remote-operation op:delete: ~s ~n" id)
+           (with-remote-operation-active
+            (lambda ()
+              (interpret!
+               (make-Delete-Dstx
+                (dstx-local-id (woot-id->local-dstx id))))))]))
       
       
       ;; msg-origin-remote?: msg -> boolean
@@ -347,10 +342,12 @@
       ;; Broadcast a structured insert.
       (define/augment (on-woot-structured-insert a-dstx after-woot-id before-woot-id)
         (when network-mailbox-client
-          (client:client-send-message
-           network-mailbox-client
-           (msg->string
-            (make-msg:insert (get-host-id) a-dstx after-woot-id before-woot-id))))
+          (let ([a-msg (make-msg:insert (get-host-id) a-dstx after-woot-id before-woot-id)])
+            ;; Locally integrate the message.
+            (queue-callback/in-command-mode
+             (lambda () (consume-msg! woot-state a-msg)))
+            ;; And send it remotely.
+            (client:client-send-message network-mailbox-client (msg->string a-msg))))
         (inner (void) on-woot-structured-insert a-dstx after-woot-id before-woot-id))
       
       
@@ -359,10 +356,12 @@
       ;; Broadcast a structured delete.
       (define/augment (on-woot-structured-delete woot-id)
         (when network-mailbox-client
-          (client:client-send-message
-           network-mailbox-client
-           (msg->string
-            (make-msg:delete (get-host-id) woot-id))))
+          (let ([a-msg (make-msg:delete (get-host-id) woot-id)])
+            ;; Locally integrate the message.
+            (queue-callback/in-command-mode
+             (lambda () (consume-msg! woot-state a-msg)))
+            ;; And send it remotely.
+            (client:client-send-message network-mailbox-client (msg->string a-msg))))
         (inner (void) on-woot-structured-delete woot-id))
       
       (initialize)))
