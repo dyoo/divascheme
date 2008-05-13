@@ -99,13 +99,13 @@
       [(struct msg:insert (host dstx after-id before-id))
        (let* ([a-cursor-before (focus/woot-id (state-cursor a-state) after-id)]
               [a-cursor-just-before (focus-search a-cursor-before
-                                                  focus-older
+                                                  focus-older/no-snap
                                                   (λ (el)
-                                                    (or (not (focus-older el))
+                                                    (or (not (focus-older/no-snap el))
                                                         (equal?
                                                          before-id
-                                                         (dstx-woot-id (cursor-dstx (focus-older el))))
-                                                        (woot-id-> (dstx-woot-id (cursor-dstx (focus-older el)))
+                                                         (dstx-woot-id (cursor-dstx (focus-older/no-snap el))))
+                                                        (woot-id-> (dstx-woot-id (cursor-dstx (focus-older/no-snap el)))
                                                                    (dstx-woot-id dstx)))))])
          (set-state-cursor! a-state (insert-after a-cursor-just-before dstx))
          (make-op:insert-after a-msg dstx (dstx-woot-id (cursor-dstx a-cursor-just-before))))]))

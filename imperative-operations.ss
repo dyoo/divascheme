@@ -252,12 +252,15 @@
   
   
   ;; transpose: world text% (World -> World) (World -> void) -> World
+  ;; FIXME: transpose disabled for now: we need to make it work structurally
+  ;; rather than using the native transpose-sexp.
   (define (transpose original-world world window update-world-fn update-mred-fn)
-    (send window transpose-sexp (pos->index (World-cursor-position world)))
-    (let ([new-world (copy-struct World (update-world-fn world)
-                                  [World-cancel original-world])])
-      (update-mred-fn new-world)
-      new-world))
+    original-world
+    #;(send window transpose-sexp (pos->index (World-cursor-position world)))
+    #;(let ([new-world (copy-struct World (update-world-fn world)
+                                    [World-cancel original-world])])
+        (update-mred-fn new-world)
+        new-world))
   
   
   ;; delete-range: number number world text% (World->World) (World -> void) -> World
