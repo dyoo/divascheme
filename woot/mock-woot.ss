@@ -55,6 +55,8 @@
   ;; Add a new message to the state, and return a list of Interpreter
   ;; commands that we can evaluate.
   (define (consume-msg! a-state a-msg)
+    ;(display a-msg)
+    ;(newline)
     (add-to-unexecuted! a-state a-msg)
     (integrate-all-executables! a-state))
   
@@ -104,9 +106,8 @@
                                                   focus-older/no-snap
                                                   (λ (el)
                                                     (or (not (focus-older/no-snap el))
-                                                        (equal?
-                                                         before-id
-                                                         (cursor-woot-id (focus-older/no-snap el)))
+                                                        (equal? before-id
+                                                                (cursor-woot-id (focus-older/no-snap el)))
                                                         (woot-id-> (cursor-woot-id (focus-older/no-snap el))
                                                                    (dstx-woot-id dstx)))))])
          (set-state-cursor! a-state (insert-after a-cursor-just-before dstx))
