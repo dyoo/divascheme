@@ -9,7 +9,8 @@
            (lib "list.ss")
            (lib "xml.ss" "xml"))
   
-  (define-struct client (url last-seen-id mailbox polling-delay polling? worker-thread in-ch))
+  (define-struct client (url last-seen-id mailbox outbox
+                             polling-delay polling? worker-thread in-ch))
   
   
   
@@ -44,12 +45,13 @@
   ;; the text for new events.  It also accepts new events and sends
   ;; them out to the server.
   (define (new-client url)
-    (let* ([client (make-client url
-                                -1
-                                (make-async-channel)
-                                default-polling-delay
+    (let* ([client (make-client url ;; url
+                                -1 ;; last-seen-id
+                                (make-async-channel) ;; mailbox
+                                (make-async-channel) ;; outbox
+                                default-polling-delay ;; polling-delay
                                 #t ; polling is initially turned on
-                                'uninitialized ; thread will be momentarily initiallized
+                                'uninitialized ; thread will be momentarily initialized
                                 (make-channel) ; channel for receiving commands.
                                 )]
            [worker-t (thread (lambda () (worker-loop client)))])
@@ -67,7 +69,8 @@
                         (+ (current-inexact-milliseconds)
                            (client-polling-delay a-client)))
                        (lambda (evt)
-                         (client-pull a-client)))]
+                         (send-all-outbound a-client)
+                         (pull-all-inbound a-client)))]
             [handle-in-ch-evt
              (wrap-evt (client-in-ch a-client)
                        (lambda (msg)
@@ -102,15 +105,34 @@
   ;; Sends a client message to the server.
   (define (client-send-message a-client a-message)
     (thread-resume (client-worker-thread a-client) (current-thread))
-    (let* ([encoded-params (alist->form-urlencoded
-                            `((action . "push")
-                              (msg . ,a-message)))]
-           [url (string->url
-                 (string-append (client-url a-client) "?" encoded-params))])
-      ;; fixme: we really should be using put here!
-      ;; we should also double check the return response...
-      (close-input-port (get-pure-port url))))
+    (async-channel-put (client-outbox a-client) a-message))
   
+  
+  
+  ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+  
+  ;; send-all-outbound: client -> void
+  ;; Sends out all outbound messages to the server.
+  (define (send-all-outbound a-client)
+    (let loop ([msg (async-channel-try-get (client-outbox a-client))])
+      (cond
+        [(and (client-polling? a-client)
+              msg)
+         (with-handlers ([exn:fail? (lambda (exn)
+                                      (printf "~a~n" exn)
+                                      (set-client-polling?! a-client #f)
+                                      (async-channel-put (client-outbox a-client) msg))])
+           (let* ([encoded-params (alist->form-urlencoded
+                                   `((action . "push")
+                                     (msg . ,msg)))]
+                  [url (string->url
+                        (string-append (client-url a-client) "?" encoded-params))])
+             ;; fixme: we really should be using put here!
+             ;; we should also double check the return response...
+             (close-input-port (get-pure-port url))))
+         (loop (async-channel-try-get (client-outbox a-client)))]
+        [else
+         (void)])))
   
   
   ;; with-resource-reclamation: (-> X) -> X
@@ -127,9 +149,9 @@
                       (custodian-shutdown-all a-cust)))))
   
   
-  ;; client-pull: client -> void
+  ;; pull-all-inbound: client -> void
   ;; Retrieves new messages from the server and puts them in the mailbox.
-  (define (client-pull a-client)
+  (define (pull-all-inbound a-client)
     (with-resource-reclamation
      (lambda ()
        (let loop ([sexps (reverse (get-sexp-results a-client))])
