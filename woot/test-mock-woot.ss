@@ -55,6 +55,64 @@
      
      
      (test-case
+      "inserting a few atoms into empty buffer."
+      (let* ([woot (mock:new-mock-woot initial-cursor)]
+             [a-atom (decorate (new-atom "a"))]
+             [c-atom (decorate (new-atom "c"))]
+             [d-atom (decorate (new-atom "d"))]
+             [b-atom (decorate (new-atom "b"))]
+             [new-ops-1
+              (mock:consume-msg! woot
+                                 (make-msg:insert
+                                  host-id
+                                  a-atom
+                                  first-sentinel-woot-id #f))]
+             [new-ops-2
+              (mock:consume-msg! woot
+                                 (make-msg:insert
+                                  host-id
+                                  c-atom
+                                  (dstx-woot-id a-atom) #f))]
+             [new-ops-3
+              (mock:consume-msg! woot
+                                 (make-msg:insert
+                                  host-id
+                                  d-atom
+                                  (dstx-woot-id c-atom) #f))]
+             [new-ops-4
+              (mock:consume-msg! woot
+                                 (make-msg:insert
+                                  host-id
+                                  b-atom
+                                  (dstx-woot-id a-atom)
+                                  (dstx-woot-id c-atom)))])
+        (check-equal? (length new-ops-1) 1)
+        (check-equal? (length new-ops-2) 1)
+        (check-equal? (length new-ops-3) 1)
+        (check-equal? (length new-ops-4) 1)
+        (let ([first-op (first new-ops-1)])
+          (check-true (op:insert-after? first-op))
+          (check-equal? (op:insert-after-id first-op) first-sentinel-woot-id)
+          (check-eq? (op:insert-after-dstx first-op) a-atom))
+        
+        (let ([first-op (first new-ops-2)])
+          (check-true (op:insert-after? first-op))
+          (check-equal? (op:insert-after-id first-op) (dstx-woot-id a-atom))
+          (check-eq? (op:insert-after-dstx first-op) c-atom))
+        
+        (let ([first-op (first new-ops-3)])
+          (check-true (op:insert-after? first-op))
+          (check-equal? (op:insert-after-id first-op) (dstx-woot-id c-atom))
+          (check-eq? (op:insert-after-dstx first-op) d-atom))
+        
+        (let ([first-op (first new-ops-4)])
+          (check-true (op:insert-after? first-op))
+          (check-equal? (op:insert-after-id first-op) (dstx-woot-id a-atom))
+          (check-eq? (op:insert-after-dstx first-op) b-atom))))
+     
+     
+     
+     (test-case
       "inserting without satisfying precondition should be empty"
       (let* ([woot (mock:new-mock-woot initial-cursor)]
              [new-cmds
@@ -108,4 +166,61 @@
         (check-equal? (length new-cmds) 1)
         (check-equal? (op:delete-id (first new-cmds)) (dstx-woot-id bar))
         (check-equal? (mock:visible-before-or-at woot (dstx-woot-id bar))
-                      (dstx-woot-id foo)))))))
+                      (dstx-woot-id foo))))
+     
+     
+     
+     (test-case
+      "deleting bar from 'foo bar baz', then adding it to the end"
+      (let* ([foo (decorate (new-atom "foo"))]
+             [bar (decorate (new-atom "bar"))]
+             [baz (decorate (new-atom "baz"))]
+             [a-cursor (insert-after
+                        (insert-after (insert-after initial-cursor foo)
+                                      bar)
+                        baz)]
+             [woot (mock:new-mock-woot a-cursor)]
+             [new-cmds-1
+              (mock:consume-msg! woot
+                                 (make-msg:delete host-id (dstx-woot-id bar)))]
+             [new-cmds-2
+              (mock:consume-msg! woot
+                                 (make-msg:insert host-id bar (dstx-woot-id baz) #f))])
+        (check-equal? (length new-cmds-1) 1)
+        (check-equal? (op:delete-id (first new-cmds-1)) (dstx-woot-id bar))
+        (check-equal? (mock:visible-before-or-at woot (dstx-woot-id bar))
+                      (dstx-woot-id bar))
+        
+        (check-equal? (length new-cmds-2) 1)
+        (check-equal? (op:insert-after-dstx (first new-cmds-2)) bar)
+        (check-equal? (op:insert-after-id (first new-cmds-2)) (dstx-woot-id baz))))
+     
+     
+     
+     (test-case
+      "deleting b from  'a b c', then adding it again it to the middle"
+      (let* ([a (decorate (new-atom "a"))]
+             [b (decorate (new-atom "b"))]
+             [c (decorate (new-atom "c"))]
+             [b-new (decorate (new-atom "b"))]
+             [a-cursor (insert-after
+                        (insert-after (insert-after initial-cursor a)
+                                      b)
+                        c)]
+             [woot (mock:new-mock-woot a-cursor)]
+             [new-cmds-1
+              (mock:consume-msg! woot
+                                 (make-msg:delete host-id (dstx-woot-id b)))]
+             [new-cmds-2
+              (mock:consume-msg! woot
+                                 (make-msg:insert host-id
+                                                  b-new
+                                                  (dstx-woot-id a)
+                                                  (dstx-woot-id c)))])
+        (check-equal? (length new-cmds-1) 1)
+        (check-equal? (op:delete-id (first new-cmds-1)) (dstx-woot-id b))
+        
+        (check-equal? (length new-cmds-2) 1)
+        (check-equal? (op:insert-after-dstx (first new-cmds-2)) b-new)
+        (check-equal? (mock:visible-before-or-at woot (op:insert-after-id (first new-cmds-2)))
+                      (dstx-woot-id a)))))))

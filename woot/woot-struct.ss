@@ -31,6 +31,7 @@
 
 ;; operations are produced after we process messages.
 (define-struct op (msg) #:transparent)
+(define-struct (op:no-op op) () #:transparent)
 (define-struct (op:insert-after op) (dstx id) #:transparent)
 (define-struct (op:delete op) (id) #:transparent)
 
@@ -71,6 +72,7 @@
  
  
  [struct op ([msg msg?])]
+ [struct (op:no-op op) ([msg msg?])]
  [struct (op:insert-after op) ([msg msg?]
                                [dstx dstx?]
                                [id woot-id?])]

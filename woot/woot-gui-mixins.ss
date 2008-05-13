@@ -217,12 +217,7 @@
           (message-box
            "Host session started"
            (format "Session started.\nOther hosts may join by using the session url: ~s"
-                   url))
-          (set! notifier-widget
-                (new network-notifier-widget%
-                     [parent (send (get-top-level-window) get-diva-panel)]
-                     [woot-state woot-state]
-                     [mailbox-client network-mailbox-client]))))
+                   url))))
       
       ;; join-session: -> void
       ;; Brings up a dialog box asking which system to join to.
@@ -251,6 +246,11 @@
           (set! network-mailbox-client (client:new-client url))
           (set! woot-state
                 (new-mock-woot (send (get-dstx-cursor) get-functional-cursor)))
+          (set! notifier-widget
+                (new network-notifier-widget%
+                     [parent (send (get-top-level-window) get-diva-panel)]
+                     [woot-state woot-state]
+                     [mailbox-client network-mailbox-client]))
           (start-process-client-message-loop!)))
       
       
@@ -304,6 +304,9 @@
       ;; Maybe interpret the operation.
       (define (maybe-apply-remote-operation an-op)
         (match an-op
+          [(struct op:no-op (msg))
+           (void)]
+          
           [(struct op:insert-after (msg dstx after-id))
            (cond
              [(msg-origin-remote? msg)
@@ -317,6 +320,7 @@
                                              (woot-id->local-dstx visible-woot-id)))))))]
              [else
               (void)])]
+          
           [(struct op:delete (msg id))
            (cond
              [(msg-origin-remote? msg)
@@ -376,15 +380,38 @@
       (define (initialize)
         (super-new)
         (set! h-panel (new horizontal-panel% [parent parent]))
-        (set! msg-panel (make-message-panel h-panel)))
+        (refresh-message-panel!))
       
-      (define (make-message-panel parent)
-        (define message-panel (new horizontal-panel% [parent parent]))
+      
+      ;; refresh-message-panel!: subarea% -> void
+      ;; Refreshes the message panel to contain information about the state of the connection
+      ;; to the woot server.  Also provides buttons to stop the mailbox polling
+      ;; and resume
+      (define (refresh-message-panel!)
+        (when msg-panel
+          (send h-panel delete-child msg-panel))
+        
+        (set! msg-panel (new horizontal-panel% [parent h-panel]))
         (new immutable-text-field%
-             [parent message-panel]
+             [parent msg-panel]
              [label "Connected to "]
              [init-value (client:client-url mailbox-client)])
-        message-panel)
+        (cond
+          [(client:client-polling? mailbox-client)
+           (new button%
+                [label "Pause syncing"]
+                [parent msg-panel]
+                [callback (lambda (btn evt)
+                            (client:client-pause-polling mailbox-client)
+                            (refresh-message-panel!))])]
+          [else
+           (new button%
+                [label "Resume syncing"]
+                [parent msg-panel]
+                [callback (lambda (btn evt)
+                            (client:client-start-polling mailbox-client)
+                            (refresh-message-panel!))])])
+        (void))
       
       
       (initialize)))

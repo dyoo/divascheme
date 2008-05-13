@@ -20,6 +20,9 @@
    ;; client-url: client? -> string
    [client-url (client? . -> . string?)]
    
+   ;; client-polling?: client? -> boolean
+   [client-polling? (client? . -> . boolean?)]
+   
    ;; client-mailbox: client -> async-channel
    [client-mailbox (client? . -> . async-channel?)]
    
@@ -47,7 +50,8 @@
                                 default-polling-delay
                                 #t ; polling is initially turned on
                                 'uninitialized ; thread will be momentarily initiallized
-                                (make-channel))]
+                                (make-channel) ; channel for receiving commands.
+                                )]
            [worker-t (thread (lambda () (worker-loop client)))])
       (set-client-worker-thread! client worker-t)
       client))
@@ -128,30 +132,42 @@
   (define (client-pull a-client)
     (with-resource-reclamation
      (lambda ()
-       (let* ([encoded-params (alist->form-urlencoded
-                               `((action . "pull")
-                                 (last-seen . ,(number->string (client-last-seen-id a-client)))))]
-              [url (string->url
-                    (string-append (client-url a-client) "?" encoded-params))])
-         (let ([ip (get-pure-port url)])
-           (let loop ([sexps (reverse (get-sexp-results ip))])
-             (cond
-               [(empty? sexps)
-                (void)]
-               [else
-                (match (first sexps)
-                  [(list id payload)
-                   (set-client-last-seen-id! a-client
-                                             (max (client-last-seen-id a-client)
-                                                  id))
-                   (async-channel-put (client-mailbox a-client) payload)
-                   (loop (rest sexps))])])))))))
+       (let loop ([sexps (reverse (get-sexp-results a-client))])
+         (cond
+           [(empty? sexps)
+            (void)]
+           [else
+            (match (first sexps)
+              [(list id payload)
+               (set-client-last-seen-id! a-client
+                                         (max (client-last-seen-id a-client)
+                                              id))
+               (async-channel-put (client-mailbox a-client) payload)
+               (loop (rest sexps))])])))))
+  
   
   
   ;; get-sexp-results: input-port -> (listof (list number string))
-  (define (get-sexp-results ip)
-    (match (xml->xexpr (read-xml/element ip))
-      [(list 'html _
-             (list 'head _ _)
-             (list 'body _ (list 'p _ payload)))
-       (read (open-input-string payload))])))
+  (define (get-sexp-results a-client)
+    (with-handlers ([exn:fail? (lambda (exn)
+                                 (printf "~a~n" exn)
+                                 (set-client-polling?! a-client #f)
+                                 '())])
+      (let ([ip (get-pure-port (make-next-results-url a-client))])
+        (match (xml->xexpr (read-xml/element ip))
+          [(list 'html _
+                 (list 'head _ _)
+                 (list 'body _ (list 'p _ payload)))
+           (read (open-input-string payload))]))))
+  
+  
+  ;; make-url: client -> url
+  ;; Builds the url we need to get the next set of messages.
+  (define (make-next-results-url a-client)
+    (let* ([encoded-params (alist->form-urlencoded
+                            `((action . "pull")
+                              (last-seen . ,(number->string
+                                             (client-last-seen-id a-client)))))]
+           [url (string->url
+                 (string-append (client-url a-client) "?" encoded-params))])
+      url)))

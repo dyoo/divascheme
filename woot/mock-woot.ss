@@ -22,7 +22,12 @@
   
   (provide/contract [new-mock-woot (cursor? . -> . state?)]
                     [visible-before-or-at (state? woot-id? . -> . woot-id?)]
-                    [consume-msg! (state? msg? . -> . (listof op?))])
+                    [consume-msg! (state? msg? . -> . (listof op?))]
+                    
+                    ;; for debugging
+                    [struct state ([cursor cursor?]
+                                   [tqueue tqueue?])]
+                    )
   
   
   
@@ -96,15 +101,20 @@
       [(struct msg:insert (host dstx after-id before-id))
        (let* ([a-cursor-before (focus/woot-id (state-cursor a-state) after-id)]
               [a-cursor-just-before (focus-search a-cursor-before
-                                                  focus-older
+                                                  focus-older/no-snap
                                                   (λ (el)
-                                                    (or (not (focus-older el))
-                                                        (eq? before-id
-                                                             (cursor-woot-id (focus-older el)))
-                                                        (woot-id-> (cursor-woot-id (focus-older el))
+                                                    (or (not (focus-older/no-snap el))
+                                                        (equal?
+                                                         before-id
+                                                         (cursor-woot-id (focus-older/no-snap el)))
+                                                        (woot-id-> (cursor-woot-id (focus-older/no-snap el))
                                                                    (dstx-woot-id dstx)))))])
          (set-state-cursor! a-state (insert-after a-cursor-just-before dstx))
-         (make-op:insert-after a-msg dstx (cursor-woot-id a-cursor-just-before)))]))
+         (cond
+           [(cursor-visible-at-and-above? (state-cursor a-state))
+            (make-op:insert-after a-msg dstx (cursor-woot-id a-cursor-just-before))]
+           [else
+            (make-op:no-op a-msg)]))]))
   
   
   
@@ -114,9 +124,16 @@
       [(struct msg:delete (host-id id))
        (let* ([a-cursor (focus/woot-id (state-cursor a-state) id)]
               [chased-cursor (cursor-chase a-cursor)])
-         (set-state-cursor! a-state
-                            (replace chased-cursor (dstx-set-invisible (cursor-dstx chased-cursor))))
-         (make-op:delete a-msg id))]))
+         (cond
+           [(cursor-visible-at-and-above? chased-cursor)
+            (set-state-cursor!
+             a-state
+             (replace chased-cursor (dstx-set-invisible (cursor-dstx chased-cursor))))
+            (make-op:delete a-msg id)]
+           [else
+            (set-state-cursor! a-state
+                               (replace chased-cursor (dstx-set-invisible (cursor-dstx chased-cursor))))
+            (make-op:no-op a-msg)]))]))
   
   ;; integrate-move!: state msg -> state
   (define (integrate-move! a-state a-msg)
@@ -145,6 +162,25 @@
          => loop]
         [else
          #f])))
+  
+  
+  
+  ;; cursor-visible-at-and-above?: state woot-id -> boolean
+  ;; Returns true if the dstx given by the woot id is visible because all
+  ;; of its enclosing expressions are visible.
+  (define (cursor-visible-at-and-above? a-cursor)
+    (let loop ([a-cursor a-cursor])
+      (cond
+        [(dstx-visible? (cursor-dstx a-cursor))
+         (cond
+           [(focus-out a-cursor)
+            =>
+            loop]
+           [else
+            #t])]
+        [else
+         #f])))
+  
   
   ;; woot-id->dependency: woot-id -> symbol
   ;; Given a woot id, returns a symbol that can be fed into
