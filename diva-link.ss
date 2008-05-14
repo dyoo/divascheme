@@ -190,7 +190,12 @@
          (lambda ()
            (let ([thunks command-mode-queued-thunks])
              (set! command-mode-queued-thunks '())
-             (for-each (lambda (t) (t)) thunks)))))
+             (dynamic-wind (lambda ()
+                             (begin-edit-sequence))
+                           (lambda ()
+                             (for-each (lambda (t) (t)) thunks))
+                           (lambda ()
+                             (end-edit-sequence)))))))
       
       
       
