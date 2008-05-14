@@ -4,6 +4,7 @@
            (lib "plt-match.ss")
            (lib "mred.ss" "mred")
            (lib "async-channel.ss")
+           (lib "list.ss")
            "../dsyntax/dsyntax.ss"
            "../structures.ss"
            "woot-struct.ss"
@@ -291,17 +292,28 @@
              '()])))
       
       
+      ;; integrate-initial-state: -> void
+      ;; Go through the toplevel dstxs and send them over as if the user
+      ;; had entered them in sequence.
       (define (integrate-initial-state)
-        ;; fixme: go through the text and generate insert-between messages
-        (let ([a-cursor (get-dstx-cursor)])
-          (send a-cursor focus-toplevel!)
-          ;; fixme!
-          ;; not ready yet: do this tomorrow!
-          #;(let loop ()
-              (integrate-message-into-woot
-               (make-msg:insert (get-host-id) (cursor-dstx) after-woot-id before-woot-id))
-              ))
-        (void))
+        (let ([toplevel-dstxs (send (get-dstx-cursor) get-toplevel-dstxs)])
+          (let loop ([dstxs toplevel-dstxs])
+            (match dstxs
+              [(list)
+               (void)]
+              [(list after-dstx a-dstx)
+               (local-integrate-message
+                (make-msg:insert (get-host-id)
+                                 a-dstx
+                                 (dstx-woot-id after-dstx)
+                                 #f))]
+              [(list after-dstx a-dstx others ...)
+               (local-integrate-message
+                (make-msg:insert (get-host-id)
+                                 a-dstx
+                                 (dstx-woot-id after-dstx)
+                                 #f))
+               (loop (rest dstxs))]))))
       
       
       ;; integrate a message-to-woot: msg -> void
@@ -353,6 +365,14 @@
         (not (string=? (get-host-id)
                        (msg-host-id a-msg))))
       
+      
+      
+      (define (local-integrate-message a-msg)
+        ;; Locally integrate the message.
+        (queue-callback/in-command-mode
+         (lambda () (consume-msg! woot-state a-msg)))
+        ;; And send it remotely.
+        (client:client-send-message network-mailbox-client (msg->string a-msg)))
       
       
       ;; on-woot-structured-insert: dstx woot-id woot-id -> void
