@@ -268,8 +268,27 @@
                    (let ([msg (string->msg
                                (async-channel-get
                                 (client:client-mailbox network-mailbox-client)))])
-                     (integrate-message-into-woot msg)
-                     (loop)))))))
+                     (dynamic-wind
+                      (lambda ()
+                        (begin-edit-sequence))
+                      (lambda ()
+                        (integrate-message-into-woot msg)
+                        (for-each integrate-message-into-woot (collect-other-messages)))
+                      (lambda ()
+                        (end-edit-sequence))))
+                   (loop))))))
+      
+      
+      ;; Returns other messages that might be in the mailbox.
+      (define (collect-other-messages)
+        (let ([maybe-msg (async-channel-try-get
+                          (client:client-mailbox network-mailbox-client))])
+          (cond
+            [maybe-msg
+             (let ([msg (string->msg maybe-msg)])
+               (cons msg (collect-other-messages)))]
+            [else
+             '()])))
       
       
       (define (integrate-initial-state)
