@@ -38,7 +38,7 @@
   
   
   ;; Wait 100 milliseconds between pulls.
-  (define default-polling-delay 100)
+  (define default-polling-delay 500)
   
   ;; start-client: string -> client
   ;; Begins a client that periodically polls
@@ -168,7 +168,6 @@
                (loop (rest sexps))])])))))
   
   
-  
   ;; get-sexp-results: input-port -> (listof (list number string))
   (define (get-sexp-results a-client)
     (with-handlers ([exn:fail? (lambda (exn)
@@ -176,11 +175,13 @@
                                  (set-client-polling?! a-client #f)
                                  '())])
       (let ([ip (get-pure-port (make-next-results-url a-client))])
-        (match (xml->xexpr (read-xml/element ip))
-          [(list 'html _
-                 (list 'head _ _)
-                 (list 'body _ (list 'p _ payload)))
-           (read (open-input-string payload))]))))
+        (let ([xml (read-xml/element ip)])
+          (match (xml->xexpr xml)
+            [(list 'html _
+                   (list 'head _ _)
+                   (list 'body _ (list 'p _ payload ...)))
+             (let ([result (read (open-input-string (apply string-append payload)))])
+               result)])))))
   
   
   ;; make-url: client -> url
