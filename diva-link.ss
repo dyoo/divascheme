@@ -610,25 +610,26 @@
                 (define was-button-enabled? #t)
                 
                 (define (on-entry)
-                  (diva-label "DivaScheme: insertion mode")
-                  (diva-message "")
-                  
-                  (check-good-syntax)
-                  (call-in-eventspace-thread (lambda ()
-                                               (set-in-unstructured-editing? #t)))
-                  (zero-out-command-mode-sema)
-                  (when (get-check-syntax-button)
-                    (set! was-button-enabled? (send (get-check-syntax-button) is-enabled?))
-                    (send (get-check-syntax-button) enable #f)))
+                  (call-in-eventspace-thread
+                   (lambda ()
+                     (diva-label "DivaScheme: insertion mode")
+                     (diva-message "")
+                     (check-good-syntax)
+                     (set-in-unstructured-editing? #t)
+                     (zero-out-command-mode-sema)
+                     (when (get-check-syntax-button)
+                       (set! was-button-enabled? (send (get-check-syntax-button) is-enabled?))
+                       (send (get-check-syntax-button) enable #f)))))
                 
                 (define (on-exit)
-                  (diva-label "DivaScheme: command mode")
-                  
-                  (when (get-check-syntax-button)
-                    (send (get-check-syntax-button) enable was-button-enabled?))
-                  (call-in-eventspace-thread (lambda ()
-                                               (set-in-unstructured-editing? #f)))
-                  (semaphore-post command-mode-sema)))
+                  (call-in-eventspace-thread
+                   (lambda ()
+                     (diva-label "DivaScheme: command mode")
+                     
+                     (when (get-check-syntax-button)
+                       (send (get-check-syntax-button) enable was-button-enabled?))
+                     (set-in-unstructured-editing? #f)
+                     (semaphore-post command-mode-sema)))))
           (make-command-keymap this
                                (lambda (edit?)
                                  (to-insert-mode edit? on-entry on-exit))

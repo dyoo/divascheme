@@ -51,7 +51,8 @@
       
       (define (initialize)
         (set! host-id (string-append
-                       (self-ip:self-ip-address)
+                       (with-handlers ([exn:fail? (lambda (exn) "unknown")])
+                         (self-ip:self-ip-address))
                        "::"
                        (number->string (random big-number))))
         (super-new))
