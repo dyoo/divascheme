@@ -36,7 +36,7 @@
     
     (define left-edge-of-insert (send editor get-start-position))
     (define right-edge-of-insert (send editor get-start-position))
-    (define original-selected-dstx #f)
+    (define original-selected-dstxs '())
     (define need-space-before #f)
     (define need-space-after #f)
     
@@ -113,12 +113,13 @@
           
           (lambda ()
             (delete-insertion-point!)
-            (when original-selected-dstx
-              (let ([a-cursor (send editor get-dstx-cursor)])
-                (send a-cursor focus-endpos! (send editor get-start-position))
-                (send a-cursor insert-after! original-selected-dstx)
-                ;; Restore the structured nature of the dstx.
-                (send a-cursor property-remove! 'from-unstructured-editing)))
+            (let ([a-cursor (send editor get-dstx-cursor)])
+              (send a-cursor focus-endpos! (send editor get-start-position))
+              (for-each (lambda (dstx)
+                          (send a-cursor insert-after! dstx)
+                          ;; Restore the structured nature of the dstx.
+                          (send a-cursor property-remove! 'from-unstructured-editing))
+                        original-selected-dstxs))
             (let ([index (pos->index
                           (World-cursor-position world-at-beginning-of-insert))])
               (send editor diva:set-selection-position
@@ -273,19 +274,26 @@
     
     
     
-    ;; save-original-selected-dstx!: -> void
-    ;; Saves the dstx at the selection.
-    (define (save-original-selected-dstx!)
+    ;; save-original-selected-dstxs!: -> void
+    ;; Saves the dstxs highlighted at the selection.
+    (define (save-original-selected-dstxs!)
       (let ([a-cursor (send editor get-dstx-cursor)])
-        (cond
-          [(send a-cursor can-focus-pos? (send editor get-start-position))
-           (send a-cursor focus-pos! (send editor get-start-position))
-           ;; Temporarily mark the selected dstx as unstructured.  When we
-           ;; reinstate it, we'll restore it.
-           (send a-cursor property-set! 'from-unstructured-editing #t)
-           (set! original-selected-dstx (send a-cursor cursor-dstx))]
-          [else
-           (set! original-selected-dstx #f)])))
+        (set! original-selected-dstxs
+              (let loop ([start-pos (send editor get-start-position)])
+                (cond
+                  [(= start-pos (send editor get-end-position))
+                   '()]
+                  [(send a-cursor can-focus-pos? start-pos)
+                   (send a-cursor focus-pos! start-pos)
+                   ;; Temporarily mark the selected dstx as unstructured.  When we
+                   ;; reinstate it, we'll restore it.
+                   (send a-cursor property-set! 'from-unstructured-editing #t)
+                   (cons (send a-cursor cursor-dstx)
+                         (loop (send a-cursor cursor-endpos)))]
+                  [else '()])))))
+    
+    
+    
     
     
     ;; begin-symbol-edit: -> void
@@ -312,7 +320,7 @@
                        [end-pos (send editor get-end-position)]
                        [selection-rope-before-insert
                         (read-subrope-in-text editor start-pos (- end-pos start-pos))])
-                  (save-original-selected-dstx!)
+                  (save-original-selected-dstxs!)
                   (begin-symbol start-pos end-pos)
                   (send editor delete)
                   (insert-rope-in-text editor selection-rope-before-insert)
@@ -337,9 +345,9 @@
                  (begin-symbol left-point left-point))
              (unset-insert&delete-callbacks)
              (cond [(empty-selection?)
-                    (set! original-selected-dstx #f)]
+                    (set! original-selected-dstxs '())]
                    [else
-                    (save-original-selected-dstx!)
+                    (save-original-selected-dstxs!)
                     (send editor delete)])
              (send editor diva:set-selection-position left-point)
              (when need-space-before
