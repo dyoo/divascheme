@@ -191,6 +191,7 @@
                get-host-id
                get-top-level-window
                get-dstx-cursor
+               get-toplevel-dstxs
                woot-id->local-dstx
                with-remote-operation-active
                queue-callback/in-command-mode
@@ -297,7 +298,7 @@
       ;; Go through the toplevel dstxs and send them over as if the user
       ;; had entered them in sequence.
       (define (integrate-initial-state)
-        (let ([toplevel-dstxs (send (get-dstx-cursor) get-toplevel-dstxs)])
+        (let ([toplevel-dstxs (get-toplevel-dstxs)])
           (let loop ([dstxs toplevel-dstxs])
             (match dstxs
               [(list)
