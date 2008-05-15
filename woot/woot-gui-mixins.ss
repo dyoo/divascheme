@@ -336,9 +336,9 @@
         (queue-callback/in-command-mode
          (lambda ()
            (cond [(msg-origin-remote? a-msg)
-                  (printf "integrating ~s~n" a-msg)
+                  #;(printf "integrating ~s~n" a-msg)
                   (let ([ops (consume-msg! woot-state a-msg)])
-                    (printf "executing ops ~s~n" ops)
+                    #;(printf "executing ops ~s~n" ops)
                     (dynamic-wind (lambda ()
                                     (begin-edit-sequence))
                                   (lambda ()
