@@ -301,7 +301,7 @@
         (let ([toplevel-dstxs (get-toplevel-dstxs)])
           (let loop ([dstxs toplevel-dstxs])
             (match dstxs
-              [(list)
+              [(list sentinel-space)
                (void)]
               [(list after-dstx a-dstx)
                (integrate-local-message-and-send-remotely
@@ -346,7 +346,9 @@
                                   (lambda ()
                                     (end-edit-sequence))))]
                  [else
-                  (error 'integrate-remote-message "Not called on remote message.")]))))
+                  ;; Avoid feedback: don't integrate messages that we ourselves
+                  ;; generated.
+                  (void)]))))
       
       
       ;; apply-remote-operation: op -> void
