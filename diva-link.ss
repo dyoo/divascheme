@@ -174,7 +174,10 @@
       (define/public (queue-callback/in-command-mode thunk)
         (call-in-eventspace-thread
          (lambda ()
-           (set! command-mode-queued-thunks (cons thunk command-mode-queued-thunks))))
+           ;; Subtle: we need to maintain the order of the thunks, because
+           ;; there are dependencies.
+           (set! command-mode-queued-thunks
+                 (append command-mode-queued-thunks (list thunk)))))
         (queue-callback
          (lambda ()
            (yield (semaphore-peek-evt command-mode-sema))

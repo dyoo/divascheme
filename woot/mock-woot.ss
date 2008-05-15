@@ -152,7 +152,7 @@
   
   
   
-  ;; visible-before-or-at: state woot-id -> (or/c woot-id #f)
+  ;; visible-before-or-at: state woot-id -> woot-id
   ;; Given the woot-id of a dstx, returns the woot-id of a dstx that is visible
   ;; at or before the given dstx.
   (define (visible-before-or-at a-state a-woot-id)
@@ -163,7 +163,7 @@
         [(focus-younger/no-snap a-cursor)
          => loop]
         [else
-         #f])))
+         (error 'visible-before-or-at)])))
   
   
   
