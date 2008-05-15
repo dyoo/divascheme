@@ -215,7 +215,6 @@
       (define/public (host-session)
         (let ([url (start-local-server)])
           (start-network-client url)
-          (integrate-initial-state)
           (message-box
            "Host session started"
            (format "Session started.\nOther hosts may join by using the session url: ~s"
@@ -253,7 +252,8 @@
                      [parent (send (get-top-level-window) get-diva-panel)]
                      [woot-state woot-state]
                      [mailbox-client network-mailbox-client]))
-          (start-process-client-message-loop!)))
+          (start-process-client-message-loop!)
+          (integrate-initial-state)))
       
       
       
@@ -274,8 +274,8 @@
                       (lambda ()
                         (begin-edit-sequence))
                       (lambda ()
-                        (integrate-message-into-woot msg)
-                        (for-each integrate-message-into-woot (collect-other-messages)))
+                        (integrate-remote-message msg)
+                        (for-each integrate-remote-message (collect-other-messages)))
                       (lambda ()
                         (end-edit-sequence))))
                    (loop))))))
@@ -303,13 +303,13 @@
               [(list)
                (void)]
               [(list after-dstx a-dstx)
-               (local-integrate-message
+               (integrate-local-message-and-send-remotely
                 (make-msg:insert (get-host-id)
                                  a-dstx
                                  (dstx-woot-id after-dstx)
                                  #f))]
               [(list after-dstx a-dstx others ...)
-               (local-integrate-message
+               (integrate-local-message-and-send-remotely
                 (make-msg:insert (get-host-id)
                                  a-dstx
                                  (dstx-woot-id after-dstx)
@@ -317,10 +317,21 @@
                (loop (rest dstxs))]))))
       
       
-      ;; integrate a message-to-woot: msg -> void
-      ;; Send a message off to woot.  This is running under the context of a queue-callback
-      ;; in command mode.
-      (define (integrate-message-into-woot a-msg)
+      ;; local-integrate-message-and-send-remotely: msg -> void
+      ;; Given a message that was generated locally, integrate it into woot state
+      ;; and broadcast it to remote peers.
+      (define (integrate-local-message-and-send-remotely a-msg)
+        (queue-callback/in-command-mode
+         (lambda ()
+           ;; Locally integrate the message.
+           (consume-msg! woot-state a-msg)
+           ;; And send it remotely.
+           (client:client-send-message network-mailbox-client (msg->string a-msg)))))
+      
+      
+      ;; integrate-remote-message: msg -> void
+      ;; Send a message off to woot the woot state.
+      (define (integrate-remote-message a-msg)
         (queue-callback/in-command-mode
          (lambda ()
            (cond [(msg-origin-remote? a-msg)
@@ -334,7 +345,7 @@
                                   (lambda ()
                                     (end-edit-sequence))))]
                  [else
-                  (void)]))))
+                  (error 'integrate-remote-message "Not called on remote message.")]))))
       
       
       ;; apply-remote-operation: op -> void
@@ -370,24 +381,14 @@
       
       
       
-      (define (local-integrate-message a-msg)
-        ;; Locally integrate the message.
-        (queue-callback/in-command-mode
-         (lambda () (consume-msg! woot-state a-msg)))
-        ;; And send it remotely.
-        (client:client-send-message network-mailbox-client (msg->string a-msg)))
-      
       
       ;; on-woot-structured-insert: dstx woot-id woot-id -> void
       ;; Broadcast a structured insert.
       (define/augment (on-woot-structured-insert a-dstx after-woot-id before-woot-id)
         (when network-mailbox-client
+          
           (let ([a-msg (make-msg:insert (get-host-id) a-dstx after-woot-id before-woot-id)])
-            ;; Locally integrate the message.
-            (queue-callback/in-command-mode
-             (lambda () (consume-msg! woot-state a-msg)))
-            ;; And send it remotely.
-            (client:client-send-message network-mailbox-client (msg->string a-msg))))
+            (integrate-local-message-and-send-remotely a-msg)))
         (inner (void) on-woot-structured-insert a-dstx after-woot-id before-woot-id))
       
       
@@ -397,11 +398,7 @@
       (define/augment (on-woot-structured-delete woot-id)
         (when network-mailbox-client
           (let ([a-msg (make-msg:delete (get-host-id) woot-id)])
-            ;; Locally integrate the message.
-            (queue-callback/in-command-mode
-             (lambda () (consume-msg! woot-state a-msg)))
-            ;; And send it remotely.
-            (client:client-send-message network-mailbox-client (msg->string a-msg))))
+            (integrate-local-message-and-send-remotely a-msg)))
         (inner (void) on-woot-structured-delete woot-id))
       
       (initialize)))
