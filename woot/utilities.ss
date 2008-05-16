@@ -5,6 +5,7 @@
            "woot-struct.ss")
   
   (provide/contract [first-sentinel-woot-id woot-id?]
+                    [initial-toplevel-cursor cursor?]
                     [fresh-woot-id (string? . -> . woot-id?)]
                     [dstx-woot-id (dstx? . -> . (or/c woot-id? false/c))]
                     [cursor-woot-id (cursor? . -> . (or/c woot-id? false/c))]
@@ -21,7 +22,9 @@
   
   ;; The very first dstx will have this identifier, which is shared among all clients.
   (define first-sentinel-woot-id (make-woot-id 0 "woot"))
-  
+  (define initial-toplevel-cursor
+    (let ([a-cursor (make-toplevel-cursor (list))])
+      (property-set a-cursor 'woot-id first-sentinel-woot-id)))
   
   ;; fresh-woot-id: string -> woot-id
   ;; Returns a fresh woot id.  The host id is meant to uniquely identify

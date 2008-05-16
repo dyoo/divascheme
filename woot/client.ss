@@ -114,23 +114,26 @@
   ;; send-all-outbound: client -> void
   ;; Sends out all outbound messages to the server.
   (define (send-all-outbound a-client)
-    (let loop ([msg (async-channel-try-get (client-outbox a-client))])
+    (let loop ()
       (cond
         [(and (client-polling? a-client)
-              msg)
-         (with-handlers ([exn:fail? (lambda (exn)
-                                      (printf "~a~n" exn)
-                                      (set-client-polling?! a-client #f)
-                                      (async-channel-put (client-outbox a-client) msg))])
-           (let* ([encoded-params (alist->form-urlencoded
-                                   `((action . "push")
-                                     (msg . ,msg)))]
-                  [url (string->url
-                        (string-append (client-url a-client) "?" encoded-params))])
-             ;; fixme: we really should be using put here!
-             ;; we should also double check the return response...
-             (close-input-port (get-pure-port url))))
-         (loop (async-channel-try-get (client-outbox a-client)))]
+              (async-channel-try-get (client-outbox a-client)))
+         =>
+         (lambda (msg)
+           (with-handlers ([exn:fail?
+                            (lambda (exn)
+                              (printf "~a~n" exn)
+                              #;(set-client-polling?! a-client #f)
+                              (async-channel-put (client-outbox a-client) msg))])
+             (let* ([encoded-params (alist->form-urlencoded
+                                     `((action . "push")
+                                       (msg . ,msg)))]
+                    [url (string->url
+                          (string-append (client-url a-client) "?" encoded-params))])
+               ;; fixme: we really should be using put here!
+               ;; we should also double check the return response...
+               (close-input-port (get-pure-port url))))
+           (loop))]
         [else
          (void)])))
   
@@ -172,7 +175,7 @@
   (define (get-sexp-results a-client)
     (with-handlers ([exn:fail? (lambda (exn)
                                  (printf "~a~n" exn)
-                                 (set-client-polling?! a-client #f)
+                                 #;(set-client-polling?! a-client #f)
                                  '())])
       (let ([ip (get-pure-port (make-next-results-url a-client))])
         (let ([xml (read-xml/element ip)])

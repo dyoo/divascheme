@@ -246,8 +246,7 @@
       (define (start-network-client url)
         (parameterize ([current-custodian woot-custodian])
           (set! network-mailbox-client (client:new-client url))
-          (set! woot-state
-                (new-mock-woot (send (get-dstx-cursor) get-functional-cursor)))
+          (set! woot-state (new-mock-woot initial-toplevel-cursor))
           (set! notifier-widget
                 (new network-notifier-widget%
                      [parent (send (get-top-level-window) get-diva-panel)]
@@ -387,7 +386,6 @@
       ;; Broadcast a structured insert.
       (define/augment (on-woot-structured-insert a-dstx after-woot-id before-woot-id)
         (when network-mailbox-client
-          
           (let ([a-msg (make-msg:insert (get-host-id) a-dstx after-woot-id before-woot-id)])
             (integrate-local-message-and-send-remotely a-msg)))
         (inner (void) on-woot-structured-insert a-dstx after-woot-id before-woot-id))
