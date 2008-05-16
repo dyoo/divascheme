@@ -10,7 +10,7 @@
            (lib "xml.ss" "xml"))
   
   (define-struct client (url last-seen-id mailbox outbox
-                             polling-delay polling? worker-thread in-ch))
+                             polling-delay polling? worker-thread in-ch error-ch))
   
   
   
@@ -27,6 +27,10 @@
    ;; client-mailbox: client -> async-channel
    [client-mailbox (client? . -> . async-channel?)]
    
+   ;; client-error-ch: client -> async-channel
+   ;; Contains exceptions that occur.
+   [client-error-ch (client? . -> . async-channel?)]
+   
    ;; client-start-polling: client -> void
    [client-start-polling (client? . -> . any)]
    
@@ -37,7 +41,7 @@
    [client-send-message (client? any/c . -> . any)])
   
   
-  ;; Wait 100 milliseconds between pulls.
+  ;; Wait 500 milliseconds between pulls.
   (define default-polling-delay 500)
   
   ;; start-client: string -> client
@@ -53,6 +57,7 @@
                                 #t ; polling is initially turned on
                                 'uninitialized ; thread will be momentarily initialized
                                 (make-async-channel) ; channel for receiving commands.
+                                (make-async-channel) ; channel for reporting network errors
                                 )]
            [worker-t (thread (lambda () (worker-loop client)))])
       (set-client-worker-thread! client worker-t)
@@ -122,8 +127,9 @@
          (lambda (msg)
            (with-handlers ([exn:fail?
                             (lambda (exn)
-                              (printf "~a~n" exn)
-                              #;(set-client-polling?! a-client #f)
+                              ;; Report the error
+                              (async-channel-put (client-error-ch a-client) exn)
+                              ;; and requeue the message to be sent later.
                               (async-channel-put (client-outbox a-client) msg))])
              (let* ([encoded-params (alist->form-urlencoded
                                      `((action . "push")
@@ -174,15 +180,18 @@
   ;; get-sexp-results: input-port -> (listof (list number string))
   (define (get-sexp-results a-client)
     (with-handlers ([exn:fail? (lambda (exn)
-                                 (printf "~a~n" exn)
-                                 #;(set-client-polling?! a-client #f)
+                                 ;; report the error.
+                                 (async-channel-put (client-error-ch a-client) exn)
+                                 ;; and return empty.
                                  '())])
       (let ([ip (get-pure-port (make-next-results-url a-client))])
         (let ([xml (read-xml/element ip)])
           (match (xml->xexpr xml)
             [(list 'html _
                    (list 'head _ _)
-                   (list 'body _ (list 'p _ payload ...)))
+                   (list 'body _
+                         ;; subtle: payload may be multiple strings by XML chunking.
+                         (list 'p _ payload ...)))
              (let ([result (read (open-input-string (apply string-append payload)))])
                result)])))))
   
