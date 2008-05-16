@@ -1,15 +1,10 @@
 (module mock-woot mzscheme
   (require (lib "contract.ss")
-           (lib "list.ss")
            (lib "plt-match.ss")
-           "../topological-queue/topological-queue.ss"
+           (planet "tqueue.ss" ("dyoo" "tqueue.plt" 1 1))
            "../dsyntax/dsyntax.ss"
            "woot-struct.ss"
            "utilities.ss")
-  
-  ;; This is a mock-up of what interface we need from the woot algorithm.
-  ;; Unlike the real woot, we expect this to break when there are concurrent
-  ;; edits!  Fixme!
   
   
   ;; State should be an opaque structure.
