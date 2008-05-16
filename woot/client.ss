@@ -52,7 +52,7 @@
                                 default-polling-delay ;; polling-delay
                                 #t ; polling is initially turned on
                                 'uninitialized ; thread will be momentarily initialized
-                                (make-channel) ; channel for receiving commands.
+                                (make-async-channel) ; channel for receiving commands.
                                 )]
            [worker-t (thread (lambda () (worker-loop client)))])
       (set-client-worker-thread! client worker-t)
@@ -91,13 +91,13 @@
   ;; client-pause-polling: client -> void
   (define (client-pause-polling a-client)
     (thread-resume (client-worker-thread a-client) (current-thread))
-    (channel-put (client-in-ch a-client) 'pause-polling))
+    (async-channel-put (client-in-ch a-client) 'pause-polling))
   
   
   ;; client-start-polling: client -> void
   (define (client-start-polling a-client)
     (thread-resume (client-worker-thread a-client) (current-thread))
-    (channel-put (client-in-ch a-client) 'start-polling))
+    (async-channel-put (client-in-ch a-client) 'start-polling))
   
   
   
