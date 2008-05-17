@@ -201,10 +201,14 @@
       (define server-custodian (make-custodian))
       (define server-url #f)
       
+      (define default-session-url (default-hosting-url))
+      
       (define client-custodian (make-custodian))
       (define network-mailbox-client #f)
       (define woot-state #f)
       (define notifier-widget #f)
+      
+      
       
       
       (define (initialize)
@@ -244,9 +248,10 @@
         (let ([session-url (get-text-from-user "Join shared session"
                                                "Session url:"
                                                (get-top-level-window)
-                                               (default-hosting-url))])
+                                               default-session-url)])
           (cond
             [session-url
+             (set! default-session-url session-url)
              (start-network-client session-url)
              (message-box
               "Connected to server"
@@ -604,13 +609,8 @@
   ;; default-hosting-url: -> string
   ;; Returns a string representing a default hosting connection.
   (define (default-hosting-url)
-    (hosting-url default-port-number))
+    "http://???.???.???.???:44444/")
   
-  
-  ;; hosting-url number string: -> string
-  ;; Returns a string representing the connection url.
-  (define (hosting-url port)
-    (format "http://~a:~a/" (self-ip:self-ip-address) port))
   
   
   ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
