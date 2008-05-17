@@ -182,6 +182,7 @@
   
   
   
+  
   ;; woot-text-mixin: diva-text% -> diva-text%
   ;; Infrastructure for tying in woot stuff with the network and DivaScheme
   (define (network-mixin super%)
@@ -222,7 +223,7 @@
         (diva-message "")
         (let ([url (start-local-server)]
               [local-url (format "http://localhost:~a" default-port-number)])
-          (start-network-client local-url)
+          (start-network-client local-url url)
           (message-box
            "Host session started"
            (format "Session started.\nOther hosts may join by using the session url: ~s.~nIf your computer is under a NAT, it may be difficult for others to join."
@@ -252,7 +253,7 @@
           (cond
             [session-url
              (set! default-session-url session-url)
-             (start-network-client session-url)
+             (start-network-client session-url session-url)
              (message-box
               "Connected to server"
               (format "Connected to session."))]
@@ -289,9 +290,10 @@
           (set! server-custodian (make-custodian))))
       
       
-      ;; start-network-client: string -> void
-      ;; Starts up the client part of the server.
-      (define (start-network-client url)
+      ;; start-network-client: string string -> void
+      ;; Starts up the client part of the server.  The external url will show on the
+      ;; output of the notifier widget.
+      (define (start-network-client url external-url)
         (maybe-shutdown-network-client)
         (parameterize ([current-custodian client-custodian])
           (set! network-mailbox-client (client:new-client url))
@@ -299,6 +301,7 @@
           (set! notifier-widget
                 (new network-notifier-widget%
                      [parent (send (get-top-level-window) get-diva-panel)]
+                     [external-url external-url]
                      [woot-state woot-state]
                      [mailbox-client network-mailbox-client]))
           (start-process-client-message-loop!)
@@ -487,7 +490,8 @@
     (class object%
       (init-field parent
                   woot-state
-                  mailbox-client)
+                  mailbox-client
+                  external-url)
       
       (define h-panel #f)
       (define msg-panel #f)
@@ -511,7 +515,7 @@
         (new immutable-text-field%
              [parent msg-panel]
              [label "Connected to "]
-             [init-value (client:client-url mailbox-client)])
+             [init-value external-url])
         (cond
           [(client:client-polling? mailbox-client)
            (new button%
