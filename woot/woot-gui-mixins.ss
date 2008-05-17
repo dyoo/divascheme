@@ -201,7 +201,7 @@
       (define server-custodian (make-custodian))
       (define server-url #f)
       
-      (define woot-custodian (make-custodian))
+      (define client-custodian (make-custodian))
       (define network-mailbox-client #f)
       (define woot-state #f)
       (define notifier-widget #f)
@@ -215,18 +215,20 @@
       ;; Brings up a dialog window to host a session.  Shows our ip, and
       ;; some message on how to get others to join.
       (define/public (host-session)
+        (diva-message "")
         (let ([url (start-local-server)]
               [local-url (format "http://localhost:~a" default-port-number)])
           (start-network-client local-url)
           (message-box
            "Host session started"
-           (format "Session started.\nOther hosts may join by using the session url: ~s.~nIf your host is under a NAT, it may be difficult for others to join."
+           (format "Session started.\nOther hosts may join by using the session url: ~s.~nIf your computer is under a NAT, it may be difficult for others to join."
                    url))))
       
       
       ;; close-hosting-session: -> void
       ;; Closes down the hosting session and notifies the user.
       (define/public (close-hosting-session)
+        (diva-message "")
         (maybe-shutdown-local-server)
         (maybe-shutdown-network-client)
         (message-box
@@ -234,18 +236,29 @@
          "Hosting session closed."))
       
       
-      ;; join-session: -> void
-      ;; Brings up a dialog box asking which system to join to.
+      ;; join-session: -> boolean
+      ;; Brings up a dialog box asking which system to join to.  Returns true if
+      ;; we successfully get a session-url to join to.
       (define/public (join-session)
+        (diva-message "")
         (let ([session-url (get-text-from-user "Join shared session"
                                                "Session url:"
                                                (get-top-level-window)
                                                (default-hosting-url))])
-          (when session-url
-            (start-network-client session-url)
-            (message-box
-             "Connected to server"
-             (format "Connected to session.")))))
+          (cond
+            [session-url
+             (start-network-client session-url)
+             (message-box
+              "Connected to server"
+              (format "Connected to session."))]
+            [else
+             #f])))
+      
+      
+      ;; detach-from-session: -> void
+      (define/public (detach-from-session)
+        (diva-message "")
+        (maybe-shutdown-network-client))
       
       
       
@@ -275,7 +288,7 @@
       ;; Starts up the client part of the server.
       (define (start-network-client url)
         (maybe-shutdown-network-client)
-        (parameterize ([current-custodian woot-custodian])
+        (parameterize ([current-custodian client-custodian])
           (set! network-mailbox-client (client:new-client url))
           (set! woot-state (new-mock-woot initial-toplevel-cursor))
           (set! notifier-widget
@@ -293,9 +306,9 @@
         (when notifier-widget
           (send notifier-widget detach!))
         
-        (when woot-custodian
-          (custodian-shutdown-all woot-custodian))
-        (set! woot-custodian (make-custodian))
+        (when client-custodian
+          (custodian-shutdown-all client-custodian))
+        (set! client-custodian (make-custodian))
         (set! network-mailbox-client #f)
         (set! woot-state #f)
         (set! notifier-widget #f))
@@ -544,6 +557,8 @@
       (define host-label-string "Host shared session...")
       (define stop-hosting-label-string "Stop hosting session...")
       
+      (define join-shared-session-label-string "Join shared session...")
+      (define detach-from-session-label-string "Detach from session...")
       
       
       (define (initialize)
@@ -557,16 +572,28 @@
                                  [(string=? (send menu-item get-label)
                                             host-label-string)
                                   (send (get-definitions-text) host-session)
+                                  (send join-menu-item enable #f)
                                   (send menu-item set-label stop-hosting-label-string)]
                                  [else
                                   (send (get-definitions-text) close-hosting-session)
+                                  (send join-menu-item enable #t)
                                   (send menu-item set-label host-label-string)]))]))
         (set! join-menu-item
               (new menu-item%
-                   [label "Join shared session..."]
+                   [label join-shared-session-label-string]
                    [parent (get-diva-menu)]
                    [callback (lambda (menu-item control-event)
-                               (send (get-definitions-text) join-session))])))
+                               (cond
+                                 [(string=? (send menu-item get-label)
+                                            join-shared-session-label-string)
+                                  (let ([joined? (send (get-definitions-text) join-session)])
+                                    (when joined?
+                                      (send host-menu-item enable #f)
+                                      (send menu-item set-label detach-from-session-label-string)))]
+                                 [else
+                                  (send (get-definitions-text) detach-from-session)
+                                  (send host-menu-item enable #t)
+                                  (send menu-item set-label join-shared-session-label-string)]))])))
       
       
       (initialize)))

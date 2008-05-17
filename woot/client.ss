@@ -147,21 +147,24 @@
   ;; with-resource-reclamation: (-> X) -> X
   ;; Evaluate a thunk with a custodian, cleaning up all resources consumed by the
   ;; application of the thunk.
-  (define (with-resource-reclamation thunk)
-    (let ([a-cust (make-custodian)])
-      (dynamic-wind (lambda ()
-                      (void))
-                    (lambda ()
-                      (parameterize ([current-custodian a-cust])
-                        (thunk)))
-                    (lambda ()
-                      (custodian-shutdown-all a-cust)))))
+  (define (with-resource-reclamation a-client thunk)
+    (with-handlers ([exn:fail? (lambda (exn)
+                                 (async-channel-put (client-error-ch a-client) exn))])
+      (let ([a-cust (make-custodian)])
+        (dynamic-wind (lambda ()
+                        (void))
+                      (lambda ()
+                        (parameterize ([current-custodian a-cust])
+                          (thunk)))
+                      (lambda ()
+                        (custodian-shutdown-all a-cust))))))
   
   
   ;; pull-all-inbound: client -> void
   ;; Retrieves new messages from the server and puts them in the mailbox.
   (define (pull-all-inbound a-client)
     (with-resource-reclamation
+     a-client
      (lambda ()
        (let loop ([sexps (reverse (get-sexp-results a-client))])
          (cond
