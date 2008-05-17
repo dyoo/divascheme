@@ -8,7 +8,7 @@
 
 (provide/contract [start-server (number? . -> . string?)])
 
-;; start-server: number string -> void
+;; start-server: number -> string
 ;; Creates a web server under the current custodian.
 ;; Returns the url used to talk to this server.
 (define (start-server port)
