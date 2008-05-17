@@ -185,7 +185,7 @@
   (define (woot-id->dependency a-woot-id)
     (string->symbol (string-append (number->string (woot-id-logic-id a-woot-id))
                                    "::"
-                                   (woot-id-host-id a-woot-id))))
+                                   (symbol->string (woot-id-host-id a-woot-id)))))
   
   
   ;; msg-precondition-dependencies: msg -> (listof symbol)

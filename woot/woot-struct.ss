@@ -57,17 +57,17 @@
 (provide/contract
  
  [struct woot-id ([logic-id natural-number/c]
-                  [host-id string?])]
+                  [host-id symbol?])]
  
- [struct msg ([host-id string?])]
- [struct (msg:insert msg) ([host-id string?]
+ [struct msg ([host-id symbol?])]
+ [struct (msg:insert msg) ([host-id symbol?]
                            [dstx dstx?]
                            [after-id woot-id?]
                            [before-id
                             (or/c false/c woot-id?)])]
- [struct (msg:delete msg) ([host-id string?]
+ [struct (msg:delete msg) ([host-id symbol?]
                            [id woot-id?])]
- [struct (msg:move msg) ([host-id string?]
+ [struct (msg:move msg) ([host-id symbol?]
                          [from-id woot-id?]
                          [after-id woot-id?]
                          [before-id woot-id?]

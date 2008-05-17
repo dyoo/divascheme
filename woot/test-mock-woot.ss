@@ -13,7 +13,7 @@
     (test/text-ui test-mock-woot))
   
   
-  (define host-id "test")
+  (define host-id 'test)
   
   (define (decorate a-dstx)
     (deep-attach-woot-ids a-dstx host-id))

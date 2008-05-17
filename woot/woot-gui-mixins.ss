@@ -1,18 +1,19 @@
-(module woot-gui-mixins mzscheme
+(module woot-gui-mixins scheme
   
-  (require (lib "class.ss")
-           (lib "plt-match.ss")
-           (lib "mred.ss" "mred")
-           (lib "async-channel.ss")
-           (lib "list.ss")
+  (require scheme/class
+           scheme/match
+           scheme/gui
+           scheme/async-channel
+           scheme/list
+           scheme/bool
            "../dsyntax/dsyntax.ss"
            "../structures.ss"
            "woot-struct.ss"
            "mock-woot.ss"
            "utilities.ss"
-           (prefix self-ip: "self-ip-address.ss")
-           (prefix server: "start-server.ss")
-           (prefix client: "client.ss"))
+           (prefix-in self-ip: "self-ip-address.ss")
+           (prefix-in server: "start-server.ss")
+           (prefix-in client: "client.ss"))
   
   (provide woot-text-mixin
            woot-frame-mixin)
@@ -50,11 +51,12 @@
       (define host-id #f)
       
       (define (initialize)
-        (set! host-id (string-append
-                       (with-handlers ([exn:fail? (lambda (exn) "unknown")])
-                         (self-ip:self-ip-address))
-                       "::"
-                       (number->string (random big-number))))
+        (set! host-id (string->symbol
+                       (string-append
+                        (with-handlers ([exn:fail? (lambda (exn) "unknown")])
+                          (self-ip:self-ip-address))
+                        "::"
+                        (number->string (random big-number)))))
         (super-new))
       
       
@@ -455,7 +457,7 @@
       ;; msg-origin-remote?: msg -> boolean
       ;; Returns true if the operation was generated off-site remotely.
       (define (msg-origin-remote? a-msg)
-        (not (string=? (get-host-id)
+        (not (symbol=? (get-host-id)
                        (msg-host-id a-msg))))
       
       

@@ -6,7 +6,7 @@
   
   (provide/contract [first-sentinel-woot-id woot-id?]
                     [initial-toplevel-cursor cursor?]
-                    [fresh-woot-id (string? . -> . woot-id?)]
+                    [fresh-woot-id (symbol? . -> . woot-id?)]
                     [dstx-woot-id (dstx? . -> . (or/c woot-id? false/c))]
                     [cursor-woot-id (cursor? . -> . (or/c woot-id? false/c))]
                     [dstx-all-woot-ids (dstx? . -> . (listof woot-id?))]
@@ -14,19 +14,20 @@
                     [dstx-set-woot-id (dstx? woot-id? . -> . dstx?)]
                     [dstx-set-tomb (dstx? (or/c tomb? false/c) . -> . dstx?)]
                     [dstx-tomb (dstx? . -> . (or/c tomb? false/c))]
-                    [deep-attach-woot-ids (dstx? string? . -> . dstx?)]
+                    [deep-attach-woot-ids (dstx? symbol? . -> . dstx?)]
                     [deep-strip-local-ids (dstx? . -> . dstx?)]
                     [woot-id-> (woot-id? woot-id? . -> . boolean?)]
                     [make-tomb-m (woot-id? . -> . tomb?)])
   
   
   ;; The very first dstx will have this identifier, which is shared among all clients.
-  (define first-sentinel-woot-id (make-woot-id 0 "woot"))
+  (define first-sentinel-woot-id (make-woot-id 0 'woot))
   (define initial-toplevel-cursor
     (let ([a-cursor (make-toplevel-cursor (list))])
       (property-set a-cursor 'woot-id first-sentinel-woot-id)))
   
-  ;; fresh-woot-id: string -> woot-id
+  
+  ;; fresh-woot-id: symbol -> woot-id
   ;; Returns a fresh woot id.  The host id is meant to uniquely identify
   ;; the entity that generates the woot id.
   (define (fresh-woot-id host-id)
@@ -77,7 +78,7 @@
   (define (dstx-tomb a-dstx)
     (dstx-property-ref a-dstx 'woot-tomb (lambda () #f)))
   
-  ;; deep-attach-woot-id: dstx string -> dstx
+  ;; deep-attach-woot-id: dstx symbol -> dstx
   ;; Attach new woot identifiers to any dstx that doesn't yet have one.
   (define (deep-attach-woot-ids a-dstx host-id)
     (dstx-deepmap (lambda (a-dstx)
@@ -110,10 +111,10 @@
   ;; woot-id->: woot-id woot-id -> boolean
   ;; compares two woot-ids
   (define (woot-id-> id1 id2)
-    (let ([res (or (string>? (woot-id-host-id id1)
-                             (woot-id-host-id id2))
-                   (and (string=? (woot-id-host-id id1)
-                                  (woot-id-host-id id2))
+    (let ([res (or (string>? (symbol->string (woot-id-host-id id1))
+                             (symbol->string (woot-id-host-id id2)))
+                   (and (string=? (symbol->string (woot-id-host-id id1))
+                                  (symbol->string (woot-id-host-id id2)))
                         (> (woot-id-logic-id id1)
                            (woot-id-logic-id id2))))])
       res))
@@ -126,5 +127,4 @@
   
   ;; cursor-woot-id: cursor -> woot-id
   (define (cursor-woot-id a-cursor)
-    (dstx-woot-id (cursor-dstx a-cursor)))
-  )
+    (dstx-woot-id (cursor-dstx a-cursor))))
