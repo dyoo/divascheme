@@ -227,22 +227,23 @@
                                                "Session url:"
                                                (get-top-level-window)
                                                (default-hosting-url))])
-          (start-network-client session-url)
-          (message-box
-           "Connected to server"
-           (format "Connected to session."))))
+          (when session-url
+            (start-network-client session-url)
+            (message-box
+             "Connected to server"
+             (format "Connected to session.")))))
       
       
       ;; start-local-server: string -> string
       ;; Starts up the local server.
       (define (start-local-server)
-        (parameterize ([current-custodian woot-custodian])
-          (server:start-server default-port-number)))
+        (server:start-server default-port-number))
       
       
       ;; start-network-client: string -> void
       ;; Starts up the client part of the server.
       (define (start-network-client url)
+        (reset-state!)
         (parameterize ([current-custodian woot-custodian])
           (set! network-mailbox-client (client:new-client url))
           (set! woot-state (new-mock-woot initial-toplevel-cursor))
@@ -253,6 +254,20 @@
                      [mailbox-client network-mailbox-client]))
           (start-process-client-message-loop!)
           (integrate-initial-state)))
+      
+      
+      ;; reset-state!: -> void
+      ;; If we were active, turn ourself off.
+      (define (reset-state!)
+        (when notifier-widget
+          (send notifier-widget detach!))
+        
+        (when woot-custodian
+          (custodian-shutdown-all woot-custodian))
+        (set! woot-custodian (make-custodian))
+        (set! network-mailbox-client #f)
+        (set! network-mailbox-client #f)
+        (set! notifier-widget #f))
       
       
       
@@ -461,6 +476,14 @@
                             (client:client-start-polling mailbox-client)
                             (refresh-message-panel!))])])
         (void))
+      
+      
+      ;; detach!: -> void
+      ;; Remove the notifier.
+      (define/public (detach!)
+        (send parent delete-child h-panel)
+        (set! h-panel #f)
+        (set! msg-panel #f))
       
       
       (initialize)))
