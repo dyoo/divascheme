@@ -10,7 +10,6 @@
            "woot-struct.ss"
            "mock-woot.ss"
            "utilities.ss"
-           "../gui/changable-message.ss"
            (prefix self-ip: "self-ip-address.ss")
            (prefix server: "start-server.ss")
            (prefix client: "client.ss"))

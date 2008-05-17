@@ -1,7 +1,7 @@
 (module mock-woot mzscheme
   (require (lib "contract.ss")
            (lib "plt-match.ss")
-           (planet "tqueue.ss" ("dyoo" "tqueue.plt" 1 1))
+           (planet "tqueue.ss" ("dyoo" "tqueue.plt" 1 2))
            "../dsyntax/dsyntax.ss"
            "woot-struct.ss"
            "utilities.ss")
