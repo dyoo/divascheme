@@ -192,6 +192,7 @@
                get-dstx-cursor
                get-toplevel-dstxs
                woot-id->local-dstx
+               diva-message
                with-remote-operation-active
                queue-callback/in-command-mode
                begin-edit-sequence
@@ -200,7 +201,6 @@
       
       (define woot-custodian (make-custodian))
       (define network-mailbox-client #f)
-      (define mailbox-client-thread #f)
       (define woot-state #f)
       (define notifier-widget #f)
       
@@ -259,28 +259,41 @@
       ;; start-process-client-message-loop!: -> void
       ;; Starts up a thread that reads messages from the network and passes them off to
       ;; woot.
-      ;; When we get messages from the client, queue-callback a handler that
-      ;; kickstarts woot.
       (define (start-process-client-message-loop!)
-        (set! mailbox-client-thread
-              (thread
-               (lambda ()
-                 (let loop ()
-                   (let ([msg (string->msg
-                               (async-channel-get
-                                (client:client-mailbox network-mailbox-client)))])
-                     (dynamic-wind
-                      (lambda ()
-                        (begin-edit-sequence))
-                      (lambda ()
-                        (integrate-remote-message msg)
-                        (for-each integrate-remote-message (collect-other-messages)))
-                      (lambda ()
-                        (end-edit-sequence))))
-                   (loop))))))
+        ;; message-handling thread
+        (thread
+         (lambda ()
+           (let loop ()
+             (sync
+              (wrap-evt (client:client-mailbox network-mailbox-client)
+                        (lambda (a-str)
+                          (let ([msg (string->msg a-str)])
+                            (dynamic-wind
+                             (lambda ()
+                               (begin-edit-sequence))
+                             (lambda ()
+                               (integrate-remote-message msg)
+                               (for-each integrate-remote-message (collect-other-messages)))
+                             (lambda ()
+                               (end-edit-sequence)))))))
+             (loop))))
+        
+        ;; error notification thread
+        (thread
+         (lambda ()
+           (let loop ()
+             (sync (wrap-evt (client:client-error-ch network-mailbox-client)
+                             (lambda (exn)
+                               (printf "~s~n" exn)
+                               (diva-message
+                                "Network error; pausing sync!")
+                               (client:client-pause-polling network-mailbox-client)
+                               (send notifier-widget refresh-message-panel!))))
+             (loop)))))
       
       
-      ;; Returns other messages that might be in the mailbox.
+      ;; collect-other-messages: -> (listof msg)
+      ;; Returns the other messages that might be in the mailbox.
       (define (collect-other-messages)
         (let ([maybe-msg (async-channel-try-get
                           (client:client-mailbox network-mailbox-client))])
@@ -423,7 +436,7 @@
       ;; Refreshes the message panel to contain information about the state of the connection
       ;; to the woot server.  Also provides buttons to stop the mailbox polling
       ;; and resume
-      (define (refresh-message-panel!)
+      (define/public (refresh-message-panel!)
         (when msg-panel
           (send h-panel delete-child msg-panel))
         
