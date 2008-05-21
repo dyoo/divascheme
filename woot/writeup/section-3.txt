@@ -1,0 +1,44 @@
+Implementation
+--------------
+
+Changing DivaScheme to support features necessary for WOOT
+
+Writing network code
+
+Adjusting GUI
+
+Adapting the WOOT algorithm
+
+
+
+DivaScheme overview
+-------------------
+
+What is DivaScheme
+
+What are the different modes?  Insert mode, Command mode.
+
+What are the operations we're supporting?
+
+Insert, Delete.  Move is currently represented as a combination of
+insertion and deletion; future work to make move work at an operation
+peer to the others.
+
+
+Merging unstructured state-based DivaScheme with structured operation-based algorithm
+-------------------------------------------------------------------------------------
+
+What does WOOT require from DivaScheme?
+
+* Persistent data structures
+
+* Interpretation of commands expressed as operations rather than direct changes to world state
+
+
+What did we have to do to maintain such structures?
+
+
+
+
+
+etc. (we're still working on the implementation!)
