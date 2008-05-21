@@ -1,28 +1,76 @@
 Implementation
 --------------
 
-Changing DivaScheme to support features necessary for WOOT
-
-Writing network code
-
-Adjusting GUI
-
-Adapting the WOOT algorithm
+The implementation of Distributed DivaScheme required us to make
+substantial changes to the internals of the DivaScheme text editor;
+these changes made it possible for DivaScheme to support collaborative
+editing.  We also extended the WOOT algorithm from working directly on
+character sequences to s-expression data structures, and extended the
+theory to support the move operator.  We implemented a simple web
+servlet to allow multiple clients to simultaneously send and receive
+operations from the host machine.
 
 
 
 DivaScheme overview
 -------------------
 
-What is DivaScheme
+## What is DivaScheme?
 
-What are the different modes?  Insert mode, Command mode.
+DivaScheme is a semi-structured text editor whose operations ensure
+that the text buffer is structured according to the syntactic rules of
+Scheme.  These operations include inserting and deleting s-expressions
+and navigating through the text at the s-expression level.  Unbalanced
+s-expressions are impossible for the user to enter, as long as the
+user stays within DivaScheme.
+
+The editor has two modes of input:
+
+    * Command mode
+
+    * Insert mode
+
+Command mode corresponds to the Command mode in a vi-style editor.  A
+user may enter the Insert-Before or Insert-After command to enter
+DivaScheme's Insert mode.  While in Insert Mode, the user is allowed
+to enter a single symbol or edit an existing symbol.
+
+
+## What changes did we have to make?
+
+We needed to make substantial changes to the DivaScheme core to
+support the aims of this project.  Internally, DivaScheme maintained a
+buffer representing the textual contents of the screen; before an
+operation is applied, the system calls the scheme parser to get an
+abstract syntax tree (AST), applies the operation in the context of
+that AST, and then destroys the AST afterwards.  This architecture was
+incompatible with the implementation of WOOT for two reasons:
+
+    * All the operations were state based.  They directly changed the
+      contents of the text buffer, making it difficult to capture the
+      operations we wanted to share across peers.  Even worse, those
+      changes were expressed in terms of the text buffer, not in terms
+      of structured edits on the AST.
+
+    * The only thing that persists between operations was the contents
+      of the text buffer.
+
+We made substantial backend changes to DivaScheme so that all
+operations were 
+
+
 
 What are the operations we're supporting?
 
 Insert, Delete.  Move is currently represented as a combination of
 insertion and deletion; future work to make move work at an operation
 peer to the others.
+
+
+dsyntax
+
+We developed a syntax library called dsyntax to let us annotate
+s-expressions with WOOT identifiers.
 
 
 Merging unstructured state-based DivaScheme with structured operation-based algorithm
@@ -37,6 +85,21 @@ What does WOOT require from DivaScheme?
 
 What did we have to do to maintain such structures?
 
+
+
+
+Extending WOOT
+--------------
+
+Extended the notion of the sentinel beginning and ending characters Sentinels to allow insertion into s-expressions.
+
+
+
+
+
+
+Network
+-------
 
 
 
