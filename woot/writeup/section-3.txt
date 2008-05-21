@@ -4,18 +4,15 @@ Implementation
 The implementation of Distributed DivaScheme required us to make
 substantial changes to the internals of the DivaScheme text editor;
 these changes made it possible for DivaScheme to support collaborative
-editing.  We also extended the WOOT algorithm from working directly on
-character sequences to structured s-expressions, and extended the WOOT
-theory to support the move operator.  We implemented a simple web
-servlet to allow multiple clients to simultaneously send and receive
-operations from the host machine.
+editing.  We implemented a simple web servlet to allow multiple
+clients to concurrently send and receive operations from the host
+machine.  We implemented our extended WOOT algorithm and tied it to
+the DivaScheme interpreter.
 
 
 
 DivaScheme overview
 -------------------
-
-## What is DivaScheme?
 
 DivaScheme is a semi-structured text editor whose operations ensure
 that the text buffer is structured according to the syntactic rules of
@@ -37,17 +34,16 @@ to go into DivaScheme's Insert mode.  Entering Insert Mode saves the
 state of the buffer.  While in Insert Mode, the user is allowed to
 enter a single symbol or edit an existing symbol.  Once the user exits
 Insert mode, DivaScheme generates an operation based on the edit, and
-applies that operation to the buffer's saved state from the beginning
-of Insert mode.
+applies the interpretation of that operation to the buffer's prior
+saved state.
 
-We needed to make substantial changes to the DivaScheme core to
-support the goals of this project.  Although DivaScheme advertised
-itself as a structured text editor, internally, it did not maintain a
-structured representation of the buffer, but rather kept a
-unstructured representation of the buffer's character content.
+We needed to make changes to the DivaScheme core to support the goals
+of this project.  Although DivaScheme advertised itself as a
+structured text editor, internally, it did not maintain a structured
+representation of the buffer, but rather kept a unstructured
+representation of the buffer's character content.
 
-
-DivaScheme applied an operation by:
+DivaScheme interpreted an operation by:
 
    * parsing the contents of the screen to an abstract syntax tree
      (AST),
@@ -58,70 +54,93 @@ DivaScheme applied an operation by:
    * destroying the AST at the end of the operation's application.
 
 
-This architecture was incompatible with the implementation of WOOT for
-two main reasons:
+This architecture was incompatible with WOOT for two main reasons:
 
     * The only thing that persisted between operations was the
       contents of the text buffer.  In order to support WOOT for
       s-expressions, the AST needed to persist across operations.
 
 
-    * All the operations were state based.  They directly changed the
-      contents of the text buffer, making it difficult to capture the
-      operations we wanted to share across peers.  Directly related to
-      this was a secondary problem: those changes were expressed in
-      terms of unstructured changes to the text buffer, not in terms
-      of structured operations on the AST.
+    * The effect of an operation's interpretation was state based, not
+      operation-based.  An operation's interpretation directly changed
+      the contents of the text buffer.  We needed to capture those
+      effects to share them across peers.  Furthermore, those changes
+      were expressed in terms of unstructured modifications to the
+      text buffer, not in terms of structured operations on the AST.
 
 
-We developed a syntax library called dsyntax to let us annotate
-s-expressions with WOOT identifiers.  We incorporated an persistent
-dsyntax AST structure into the DivaScheme world state.  This change
-allowed us to keep track of s-expressions.  As an unorthodox design
-decision, we treated whitespace and comments as significant elements
-of the AST, as they too needed be sent across to other clients and
-annotated with WOOT ids.
+We developed a syntax library called dsyntax to address these
+problems.  We extended the DivaScheme World state to include a
+persistent dsyntax AST structure; this change allowed us to keep track
+of s-expressions and correlate them with WOOT identifiers.  As an
+unorthodox design decision, we treated whitespace and comments as
+significant elements of the AST, as they too needed be sent across to
+other clients.
+
 
 We made backend changes to the DivaScheme operation interpreter so
 that the evaluation of operations were expressed in terms of
-structured edits that are both (1) applied to the text buffer and (2)
-stored away for later integration into WOOT.  We expressed the
-interpretation of a DivaScheme operation in terms of two primitive
-structured edits on the dsyntax AST:
+structured edits that are (1) applied to the text buffer and (2)
+stored away for later integration into the WOOT subsystem.  We
+expressed the interpretation of a DivaScheme operation in terms of two
+primitive structured edits on the dsyntax AST:
 
    * Insert-Between: insert an element between two s-expressions
 
    * Delete: delete an existing s-expression
 
-Some of the operations in DivaScheme move s-expresions around in the
-AST.  Unfortunately, due to lack of time, we could not support Move as
-a primitive structured edit; Move is currently implemented a
-combination of the an Insert-Between and Delete structured edit.
-Although our WOOT extensions support Move semantically, Distributed
-DivaScheme doesn't emit Move as a single structured edit and does not
-take full advantage of our WOOT implementation.  It is future work to
-express Move as an primitive structured edit.
 
-
-
-
-
-
-
-Extending WOOT
---------------
-
-Extended the notion of the sentinel beginning and ending characters Sentinels to allow insertion into s-expressions.
-
-
-
-
+Due to lack of time, we had to compromise some existing features in
+the original DivaScheme.  Limitations of our current system include
+the lack of support for structured Undo or graphical snips.  A more
+serious compromise is that some operations in DivaScheme move
+s-expresions around in the AST.  But unfortunately, due to lack of
+time, we could not adjust DivaScheme to support a primitive Move
+structured edit.  Move is currently implemented as a sequence of
+Insert-Between and Delete.  Although our WOOT extensions support Move
+semantically, Distributed DivaScheme doesn't emit Move as a single
+structured edit and does not take full advantage of our WOOT
+implementation.  It is future work to address both of these problems.
 
 
 Network
 -------
 
+[fill me in]
+
+Simple broadcast/polling architecture.  String messages passed.
+mzscheme 3.99's prefab structure types [cite] allow for simple
+serialization of the structured edit objects.  Simple web server
+starts on the host machine.  Note: the host is not privileged: the
+host machine immediately starts up a client that connects, just as
+other clients would.  Consequently, the architecture supports multiple
+clients.  Tested with three so far, with expected results.
+
+Network client mixin monitors for the application of local structured
+edits; integrates new structured edits into the local WOOT state and
+sends those structured edits out to the server.
 
 
 
-etc. (we're still working on the implementation!)
+Implementing WOOT
+-----------------
+
+[fill me in]
+
+Use of the same dsyntax library to represent WOOT's view of the AST.
+Representation of tombstones by annotating an s-expression with a
+designated 'deleted flag.
+
+Extended the notion of the sentinel beginning and ending characters
+Sentinels to allow insertion into s-expressions.
+
+Maintains a topologically-sorted queue that returns operations when
+their preconditions are all met.
+
+WOOT implementation provides a single point of entry for integrating
+new messages and receiving edits to apply to the local screen's buffer
+state.
+
+
+[fill me in]
+
