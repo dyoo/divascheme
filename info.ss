@@ -3,11 +3,12 @@
   (define name "DivaScheme")
   (define blurb '("semi-structured programming editing for DrScheme"))
   (define homepage "http://www.cs.brown.edu/research/plt/software/divascheme/")
-  (define version "2.3")
+  (define version "2.4")
   (define doc.txt "doc.txt")
   
-  (define release-notes '((p "Recent changes in 2.3:")
+  (define release-notes '((p "Recent changes in 2.4:")
                           (ul
+                           (li "Updated to support PLT Scheme 4.0")
                            (li "Graphical snips are supported.")
                            (li "Comments can be edited without exiting DivaScheme.")
                            (li "Up and down can be used in Insert Mode.")

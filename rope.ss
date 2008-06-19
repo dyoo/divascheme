@@ -1,5 +1,5 @@
 (module rope mzscheme
-  (require (planet "rope.ss" ("dyoo" "rope.plt" 3))
+  (require (planet "rope.ss" ("dyoo" "rope.plt" 3 2))
            (only (lib "13.ss" "srfi") string-count string-fold)
            (lib "contract.ss")
            (lib "etc.ss")
@@ -151,7 +151,7 @@
   (define rope-empty (string->rope ""))
   
   
-  (provide (all-from (planet "rope.ss" ("dyoo" "rope.plt" 3))))
+  (provide (all-from (planet "rope.ss" ("dyoo" "rope.plt" 3 2))))
   
   
   (provide/contract
