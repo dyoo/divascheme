@@ -8,11 +8,7 @@
   
   (define release-notes '((p "Recent changes in 2.4:")
                           (ul
-                           (li "Updated to support PLT Scheme 4.0")
-                           (li "Graphical snips are supported.")
-                           (li "Comments can be edited without exiting DivaScheme.")
-                           (li "Up and down can be used in Insert Mode.")
-                           (li "Tab autocompletion has been improved."))
+                           (li "Updated to support PLT Scheme 4.0"))
                           (p "For more details, see http://www.cs.brown.edu/research/plt/software/divascheme/")))
   
   (define primary-file "install.ss")
