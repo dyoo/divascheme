@@ -75,9 +75,13 @@
       
       ;; switch-on: -> void 
       (define/public (switch-on)
-        (when (allow-enable?)
-          (notify (make-diva-switch-on-evt))
-          (set! divascheme-is-on? #t)))
+        (cond
+          [(allow-enable?)
+           (notify (make-diva-switch-on-evt))
+           (set! divascheme-is-on? #t)]
+          [else
+           (message-box
+            "Error" "A language level should be selected first.")]))
       
       ;; switch-off: -> void 
       (define/public (switch-off)
