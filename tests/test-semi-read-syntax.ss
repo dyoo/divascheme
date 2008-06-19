@@ -1,8 +1,8 @@
 (module test-semi-read-syntax mzscheme
-  (require (planet "test.ss" ("schematics" "schemeunit.plt" 2 8))
-           (planet "text-ui.ss" ("schematics" "schemeunit.plt" 2 8))
+  (require (planet "test.ss" ("schematics" "schemeunit.plt" 2 10))
+           (planet "text-ui.ss" ("schematics" "schemeunit.plt" 2 10))
            (lib "list.ss")
-           "semi-read-syntax.ss")
+           "../semi-read-syntax/semi-read-syntax.ss")
   
   ;; parse: string -> sexpr
   ;; Quick and dirty function for seeing if we get expected results from semi-read-syntax

@@ -25,11 +25,12 @@
   
   ;; Some of the tests we have are broken; don't try to
   ;; compile them.
-  (define compile-omit-paths (list "tests"))
+  (define compile-omit-paths (list "tests"
+                                   "test-data"))
+                                   
 
   
-  ;; minimal version of DrScheme necessary will be 360.
-  (define required-core-version "360")
+  (define required-core-version "4.0")
   
   ;; The following are commented out because they don't work well
   ;; for people who don't have permission to write to the default bin
