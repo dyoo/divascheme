@@ -5,6 +5,7 @@
   
   (require (lib "class.ss")
            (lib "list.ss")
+           (lib "mred.ss" "mred")
            (lib "string-constant.ss" "string-constants")
            "language.ss")
   
