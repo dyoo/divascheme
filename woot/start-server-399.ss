@@ -14,4 +14,4 @@
 (define (start-server port)
   (let ([shutdown (serve #:dispatch (dispatch-lift:make (new-dispatcher))
                          #:port port)])
-    (format "http://~a:~a/" (self-ip-address) port)))
+    (format "http://~a:~a/" "127.0.0.1" port)))
