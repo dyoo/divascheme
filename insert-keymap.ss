@@ -363,7 +363,9 @@
     
     (define (text-already-introduces-open? txt)
       (or (string=? txt "#")
-          (string=? txt "#s")))
+          (string=? txt "#s")
+	  (string=? txt "#hasheq")
+          (string=? txt "#hash")))
     
     (define (magic-expand-insertion-text)
       (define quote-prefix "^([\"#'`,@]*)")

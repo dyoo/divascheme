@@ -48,6 +48,8 @@
       ;; introduced a set of parens that wasn't in the original input.
       (|#| "#($expr$ ---)")
       (|#s| "#s($expr$ ---)")
+      (|#hasheq| "#hasheq($expr$ ---)")
+      (|#hash| "#hash($expr$ ---)")
       
       (|#'| "#'$expr$")
       (|#`| "#`$expr$")
