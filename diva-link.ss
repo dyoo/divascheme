@@ -185,6 +185,7 @@
       ;; error-exn: exn -> void
       ;; Report an exception message.
       (define (error-exn exn)
+        #;(printf "~s~n" exn)
         (let ([err-msg (format "DivaScheme Error: ~a" exn)])
           (print-error-trace (current-error-port) exn)
           (diva-message err-msg)))

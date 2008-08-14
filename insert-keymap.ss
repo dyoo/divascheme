@@ -294,7 +294,9 @@
         (set! clear-highlight
               (send editor highlight-range
                     left-
-                    (crop (add1 right-edge-of-insert))
+                    (clamp (add1 right-edge-of-insert)
+                           left-
+                           (send editor last-position))
                     (insert-color)))))
     
     
