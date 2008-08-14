@@ -130,6 +130,27 @@
               (define token (position-token-token pos-token))
               (define type (token-name token))
               (define val (token-value token))]
+
+        ;; Does weird prefix kluding
+        (define (do-weird-prefix-kludge)
+          (define (add-padding! padding-char len)
+            (hash-table-put! 
+	     ht (position-offset (position-token-start-pos pos-token)) val)
+	    (display (make-string len padding-char)
+		     to-op)
+	    (when (> (string-length val) len)
+              (display (substring val len) to-op)))
+	  
+	  (cond [(or (string-prefix? "#;" val)
+		     (string-prefix? "#s" val))
+                 (add-padding! #\' 2)]
+		[(string-prefix? "#hasheq" val)
+                 (add-padding! #\X 7)]
+                [(string-prefix? "#hash" val)
+                 (add-padding! #\X 5)]
+                [else
+                 (display val to-op)]))
+                        
         (cond
           [(eq? type 'end)
            (close-output-port to-op)]
@@ -171,18 +192,7 @@
                    (display "X" to-op)]
                   
                   [(prefix quoter-prefix)
-                   (cond
-                     [(or (string-prefix? "#;" val) (string-prefix? "#s" val))
-                      (hash-table-put! ht (position-offset (position-token-start-pos pos-token)) val)
-                      (display "''" to-op)
-                      ;; The condition below is redundant,
-                      ;; but a workaround a bug in the ports produced by
-                      ;; make-pipe-with-specials: it can't accept
-                      ;; empty strings.
-                      (when (> (string-length val) 2)
-                        (display (substring val 2) to-op))]
-                     [else
-                      (display val to-op)])]
+                   (do-weird-prefix-kludge)]
                   
                   [(suffix)
                    (display val to-op)])

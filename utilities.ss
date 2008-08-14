@@ -436,6 +436,7 @@
       (with-handlers
           ([(lambda args true)
             (lambda (exn)
+              (printf "~s~n" exn)
               (raise (make-voice-exn "The parenthesis of the definitions text are not correctly balanced.")))])
         (let loop ([stx (read-scheme-tree)])
           (if (eof-object? stx)
