@@ -3,12 +3,12 @@
   (define name "DivaScheme")
   (define blurb '("semi-structured programming editing for DrScheme"))
   (define homepage "http://www.cs.brown.edu/research/plt/software/divascheme/")
-  (define version "2.4")
+  (define version "2.5")
   (define doc.txt "doc.txt")
   
-  (define release-notes '((p "Recent changes in 2.4:")
+  (define release-notes '((p "Recent changes in 2.5:")
                           (ul
-                           (li "Updated to support PLT Scheme 4.0"))
+                           (li "For 4.0: fixed a bug that was causing DivaScheme to freeze."))
                           (p "For more details, see http://www.cs.brown.edu/research/plt/software/divascheme/")))
   
   (define primary-file "install.ss")
@@ -28,6 +28,7 @@
 
   
   (define required-core-version "4.0")
+  (define repositories '("4.x"))
   
   ;; The following are commented out because they don't work well
   ;; for people who don't have permission to write to the default bin
