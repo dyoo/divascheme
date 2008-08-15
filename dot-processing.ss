@@ -14,7 +14,7 @@
      (with-handlers
          ([(lambda args #t)
            (lambda (exn)
-             (printf "~s~n" exn)
+             #;(printf "~s~n" exn)
              (raise
               (make-voice-exn
                (format "The parenthesis of the definitions text are not correctly balanced: ~a"
@@ -29,7 +29,7 @@
      (with-handlers
          ([(lambda args #t)
            (lambda (exn)
-             (printf "~s~n" exn)
+             #;(printf "~s~n" exn)
              (raise
               (make-voice-exn
                (format "The parenthesis of the definitions text are not correctly balanced: ~a"
