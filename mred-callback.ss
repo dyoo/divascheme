@@ -181,10 +181,7 @@
           (set! hide-mark
                 (highlight-range mark-start-position
                                  mark-end-position
-                                 mark-color
-                                 false
-                                 false
-                                 'low))))
+                                 mark-color))))
       
       (define hide-mark (lambda () ()))
       
