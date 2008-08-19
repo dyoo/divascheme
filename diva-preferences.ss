@@ -69,7 +69,7 @@
       ("esc" "diva:stop-extend-selection")
       ("w" "diva:edit-symbol")
       ("home" "diva:first")
-      ("end" "diva:end")))
+      ("end" "diva:last")))
   
   (define default-command-mode-bindings/qwerty
     (append
